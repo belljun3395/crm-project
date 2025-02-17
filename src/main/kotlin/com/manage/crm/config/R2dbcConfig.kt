@@ -1,7 +1,8 @@
 package com.manage.crm.config
 
+import com.manage.crm.user.domain.repository.converter.UserAttributeReadingConverter
+import com.manage.crm.user.domain.repository.converter.UserAttributeWritingConverter
 import io.r2dbc.spi.ConnectionFactory
-import org.springframework.cglib.core.Converter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.convert.CustomConversions
@@ -35,7 +36,10 @@ class R2dbcConfig {
 
         return R2dbcCustomConversions(
             CustomConversions.StoreConversions.of(dialect.simpleTypeHolder, converters),
-            emptyList<Converter>()
+            listOf(
+                UserAttributeWritingConverter(),
+                UserAttributeReadingConverter()
+            )
         )
     }
 }

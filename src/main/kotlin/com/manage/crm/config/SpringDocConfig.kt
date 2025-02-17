@@ -70,3 +70,7 @@ class SpringDocConfig(
             )
     }
 }
+
+object SwaggerTag {
+    const val USERS_SWAGGER_TAG = "Users API"
+}
