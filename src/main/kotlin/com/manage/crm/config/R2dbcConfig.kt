@@ -1,5 +1,9 @@
 package com.manage.crm.config
 
+import com.manage.crm.email.domain.repository.converter.EventIdReadingConverter
+import com.manage.crm.email.domain.repository.converter.EventIdWritingConverter
+import com.manage.crm.email.domain.repository.converter.VariablesReadingConverter
+import com.manage.crm.email.domain.repository.converter.VariablesWritingConverter
 import com.manage.crm.user.domain.repository.converter.UserAttributeReadingConverter
 import com.manage.crm.user.domain.repository.converter.UserAttributeWritingConverter
 import io.r2dbc.spi.ConnectionFactory
@@ -38,7 +42,11 @@ class R2dbcConfig {
             CustomConversions.StoreConversions.of(dialect.simpleTypeHolder, converters),
             listOf(
                 UserAttributeWritingConverter(),
-                UserAttributeReadingConverter()
+                UserAttributeReadingConverter(),
+                VariablesWritingConverter(),
+                VariablesReadingConverter(),
+                EventIdWritingConverter(),
+                EventIdReadingConverter()
             )
         )
     }
