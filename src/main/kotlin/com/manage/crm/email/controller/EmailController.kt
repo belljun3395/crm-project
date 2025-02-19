@@ -3,12 +3,14 @@ package com.manage.crm.email.controller
 import com.manage.crm.config.SwaggerTag
 import com.manage.crm.email.application.BrowseEmailNotificationSchedulesUseCase
 import com.manage.crm.email.application.BrowseTemplateUseCase
+import com.manage.crm.email.application.CancelNotificationEmailUseCase
 import com.manage.crm.email.application.PostEmailNotificationSchedulesUseCase
 import com.manage.crm.email.application.PostTemplateUseCase
 import com.manage.crm.email.application.SendNotificationEmailUseCase
 import com.manage.crm.email.application.dto.BrowseEmailNotificationSchedulesUseCaseOut
 import com.manage.crm.email.application.dto.BrowseTemplateUseCaseIn
 import com.manage.crm.email.application.dto.BrowseTemplateUseCaseOut
+import com.manage.crm.email.application.dto.CancelNotificationEmailUseCaseIn
 import com.manage.crm.email.application.dto.PostEmailNotificationSchedulesUseCaseIn
 import com.manage.crm.email.application.dto.PostEmailNotificationSchedulesUseCaseOut
 import com.manage.crm.email.application.dto.PostTemplateUseCaseIn
@@ -18,12 +20,15 @@ import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseOut
 import com.manage.crm.email.controller.request.PostNotificationEmailRequest
 import com.manage.crm.email.controller.request.PostTemplateRequest
 import com.manage.crm.email.controller.request.SendNotificationEmailRequest
+import com.manage.crm.email.domain.vo.EventId
 import com.manage.crm.support.web.ApiResponse
 import com.manage.crm.support.web.ApiResponseGenerator
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -39,7 +44,8 @@ class EmailController(
     private val postTemplateUseCase: PostTemplateUseCase,
     private val sendNotificationEmailUseCase: SendNotificationEmailUseCase,
     private val browseEmailNotificationSchedulesUseCase: BrowseEmailNotificationSchedulesUseCase,
-    private val postEmailNotificationSchedulesUseCase: PostEmailNotificationSchedulesUseCase
+    private val postEmailNotificationSchedulesUseCase: PostEmailNotificationSchedulesUseCase,
+    private val cancelNotificationEmailUseCase: CancelNotificationEmailUseCase
 ) {
     @GetMapping(value = ["/templates"])
     suspend fun browseEmailTemplates(
@@ -103,6 +109,15 @@ class EmailController(
                     expiredTime = request.expiredTime
                 )
             )
+            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+    }
+
+    @DeleteMapping(value = ["/schedules/notifications/email/{scheduleId}"])
+    suspend fun cancelEmailNotificationSchedule(
+        @PathVariable("scheduleId") scheduleId: String
+    ): ApiResponse<ApiResponse.SuccessBody<CancelNotificationEmailUseCaseOut>> {
+        return cancelNotificationEmailUseCase
+            .execute(CancelNotificationEmailUseCaseIn(EventId(scheduleId)))
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
     }
 }
