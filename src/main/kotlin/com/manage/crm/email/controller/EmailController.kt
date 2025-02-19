@@ -3,15 +3,19 @@ package com.manage.crm.email.controller
 import com.manage.crm.config.SwaggerTag
 import com.manage.crm.email.application.BrowseEmailNotificationSchedulesUseCase
 import com.manage.crm.email.application.BrowseTemplateUseCase
+import com.manage.crm.email.application.PostEmailNotificationSchedulesUseCase
 import com.manage.crm.email.application.PostTemplateUseCase
 import com.manage.crm.email.application.SendNotificationEmailUseCase
 import com.manage.crm.email.application.dto.BrowseEmailNotificationSchedulesUseCaseOut
 import com.manage.crm.email.application.dto.BrowseTemplateUseCaseIn
 import com.manage.crm.email.application.dto.BrowseTemplateUseCaseOut
+import com.manage.crm.email.application.dto.PostEmailNotificationSchedulesUseCaseIn
+import com.manage.crm.email.application.dto.PostEmailNotificationSchedulesUseCaseOut
 import com.manage.crm.email.application.dto.PostTemplateUseCaseIn
 import com.manage.crm.email.application.dto.PostTemplateUseCaseOut
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseIn
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseOut
+import com.manage.crm.email.controller.request.PostNotificationEmailRequest
 import com.manage.crm.email.controller.request.PostTemplateRequest
 import com.manage.crm.email.controller.request.SendNotificationEmailRequest
 import com.manage.crm.support.web.ApiResponse
@@ -34,7 +38,8 @@ class EmailController(
     private val browseTemplateUseCase: BrowseTemplateUseCase,
     private val postTemplateUseCase: PostTemplateUseCase,
     private val sendNotificationEmailUseCase: SendNotificationEmailUseCase,
-    private val browseEmailNotificationSchedulesUseCase: BrowseEmailNotificationSchedulesUseCase
+    private val browseEmailNotificationSchedulesUseCase: BrowseEmailNotificationSchedulesUseCase,
+    private val postEmailNotificationSchedulesUseCase: PostEmailNotificationSchedulesUseCase
 ) {
     @GetMapping(value = ["/templates"])
     suspend fun browseEmailTemplates(
@@ -82,6 +87,22 @@ class EmailController(
     suspend fun browseEmailNotificationSchedules(): ApiResponse<ApiResponse.SuccessBody<BrowseEmailNotificationSchedulesUseCaseOut>> {
         return browseEmailNotificationSchedulesUseCase
             .execute()
+            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+    }
+
+    @PostMapping(value = ["/schedules/notifications/email"])
+    suspend fun postEmailNotificationSchedule(
+        @RequestBody request: PostNotificationEmailRequest
+    ): ApiResponse<ApiResponse.SuccessBody<PostEmailNotificationSchedulesUseCaseOut>> {
+        return postEmailNotificationSchedulesUseCase
+            .execute(
+                PostEmailNotificationSchedulesUseCaseIn(
+                    templateId = request.templateId,
+                    templateVersion = request.templateVersion,
+                    userIds = request.userIds,
+                    expiredTime = request.expiredTime
+                )
+            )
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
     }
 }
