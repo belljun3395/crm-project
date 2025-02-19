@@ -36,10 +36,13 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
      */
     suspend fun handle(event: NotificationEmailSendTimeOutInvokeEvent) {
         transactionalTemplates.writer.executeAndAwait {
-            scheduledEventRepository
-                .findByEventIdAndCompletedFalseForUpdate(event.timeOutEventId)
-                ?.complete()
-                ?: return@executeAndAwait
+            val scheduledEvent = (
+                scheduledEventRepository
+                    .findByEventIdAndCompletedFalseForUpdate(event.timeOutEventId)
+                    ?.complete()
+                    ?: return@executeAndAwait
+                )
+            scheduledEventRepository.save(scheduledEvent)
 
             val templateId = event.templateId
             val templateVersion = event.templateVersion
