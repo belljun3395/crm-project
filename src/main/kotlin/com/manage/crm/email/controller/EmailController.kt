@@ -3,11 +3,15 @@ package com.manage.crm.email.controller
 import com.manage.crm.config.SwaggerTag
 import com.manage.crm.email.application.BrowseTemplateUseCase
 import com.manage.crm.email.application.PostTemplateUseCase
+import com.manage.crm.email.application.SendNotificationEmailUseCase
 import com.manage.crm.email.application.dto.BrowseTemplateUseCaseIn
 import com.manage.crm.email.application.dto.BrowseTemplateUseCaseOut
 import com.manage.crm.email.application.dto.PostTemplateUseCaseIn
 import com.manage.crm.email.application.dto.PostTemplateUseCaseOut
+import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseIn
+import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseOut
 import com.manage.crm.email.controller.request.PostTemplateRequest
+import com.manage.crm.email.controller.request.SendNotificationEmailRequest
 import com.manage.crm.support.web.ApiResponse
 import com.manage.crm.support.web.ApiResponseGenerator
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -26,7 +30,8 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping(value = ["/api/v1/emails"])
 class EmailController(
     private val browseTemplateUseCase: BrowseTemplateUseCase,
-    private val postTemplateUseCase: PostTemplateUseCase
+    private val postTemplateUseCase: PostTemplateUseCase,
+    private val sendNotificationEmailUseCase: SendNotificationEmailUseCase
 ) {
     @GetMapping(value = ["/templates"])
     suspend fun browseEmailTemplates(
@@ -50,6 +55,21 @@ class EmailController(
                     version = request.version,
                     body = request.body,
                     variables = request.variables ?: emptyList()
+                )
+            )
+            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+    }
+
+    @PostMapping(value = ["/send/notifications/email"])
+    suspend fun sendNotificationEmail(
+        @RequestBody request: SendNotificationEmailRequest
+    ): ApiResponse<ApiResponse.SuccessBody<SendNotificationEmailUseCaseOut>> {
+        return sendNotificationEmailUseCase
+            .execute(
+                SendNotificationEmailUseCaseIn(
+                    templateId = request.templateId,
+                    templateVersion = request.templateVersion,
+                    userIds = request.userIds ?: emptyList()
                 )
             )
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
