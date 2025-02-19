@@ -1,9 +1,11 @@
 package com.manage.crm.email.controller
 
 import com.manage.crm.config.SwaggerTag
+import com.manage.crm.email.application.BrowseEmailNotificationSchedulesUseCase
 import com.manage.crm.email.application.BrowseTemplateUseCase
 import com.manage.crm.email.application.PostTemplateUseCase
 import com.manage.crm.email.application.SendNotificationEmailUseCase
+import com.manage.crm.email.application.dto.BrowseEmailNotificationSchedulesUseCaseOut
 import com.manage.crm.email.application.dto.BrowseTemplateUseCaseIn
 import com.manage.crm.email.application.dto.BrowseTemplateUseCaseOut
 import com.manage.crm.email.application.dto.PostTemplateUseCaseIn
@@ -31,7 +33,8 @@ import org.springframework.web.bind.annotation.RestController
 class EmailController(
     private val browseTemplateUseCase: BrowseTemplateUseCase,
     private val postTemplateUseCase: PostTemplateUseCase,
-    private val sendNotificationEmailUseCase: SendNotificationEmailUseCase
+    private val sendNotificationEmailUseCase: SendNotificationEmailUseCase,
+    private val browseEmailNotificationSchedulesUseCase: BrowseEmailNotificationSchedulesUseCase
 ) {
     @GetMapping(value = ["/templates"])
     suspend fun browseEmailTemplates(
@@ -72,6 +75,13 @@ class EmailController(
                     userIds = request.userIds ?: emptyList()
                 )
             )
+            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+    }
+
+    @GetMapping(value = ["/schedules/notifications/email"])
+    suspend fun browseEmailNotificationSchedules(): ApiResponse<ApiResponse.SuccessBody<BrowseEmailNotificationSchedulesUseCaseOut>> {
+        return browseEmailNotificationSchedulesUseCase
+            .execute()
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
     }
 }
