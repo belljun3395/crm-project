@@ -53,9 +53,7 @@ class NotificationEmailSendTimeOutEventRePlayer(
                                         templateId = payload.templateId(),
                                         templateVersion = payload.templateVersion(),
                                         userIds = payload.userIds(),
-                                        expiredTime = payload.expiredTime(),
-                                        completed = it.completed,
-                                        eventPublisher = applicationEventPublisher
+                                        expiredTime = payload.expiredTime()
                                     )
                                 if (event.isExpired()) {
                                     expiredEventsLogBuffer.appendLine("  - eventId: ${event.eventId} expiredTime: ${event.expiredTime}")

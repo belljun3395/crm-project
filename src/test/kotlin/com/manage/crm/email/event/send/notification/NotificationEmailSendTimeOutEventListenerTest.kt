@@ -57,9 +57,7 @@ class NotificationEmailSendTimeOutEventListenerTest(
                     templateId = 1,
                     templateVersion = 1.0f,
                     userIds = listOf(1L),
-                    expiredTime = expiredTime,
-                    completed = false,
-                    eventPublisher = eventPublisher
+                    expiredTime = expiredTime
                 )
                 `when`(notificationEmailSendTimeOutEventHandler.handle(event)).thenReturn(Unit)
 
@@ -74,66 +72,6 @@ class NotificationEmailSendTimeOutEventListenerTest(
                                 )
                             }
                         }
-                }
-            }
-        }
-    }
-
-    @Test
-    fun `notification email send time out event is created and expired`(scenario: Scenario) {
-        runTest {
-            // ----------------- Create Event -----------------
-            run {
-                // given
-                val notificationEmailSendTimeOutEvent = NotificationEmailSendTimeOutEvent(
-                    eventId = EventId("1"),
-                    templateId = 1,
-                    templateVersion = 1.0f,
-                    userIds = listOf(1L),
-                    expiredTime = LocalDateTime.now().plusNanos(1),
-                    completed = false,
-                    eventPublisher = eventPublisher
-                )
-                `when`(notificationEmailSendTimeOutEventHandler.handle(notificationEmailSendTimeOutEvent)).thenReturn(
-                    Unit
-                )
-
-                // when & then
-                run {
-                    scenario.publish(notificationEmailSendTimeOutEvent)
-                        .andWaitForEventOfType(NotificationEmailSendTimeOutEvent::class.java)
-                        .toArriveAndAssert { _, _ ->
-                            runBlocking {
-                                verify(notificationEmailSendTimeOutEventHandler, times(1)).handle(
-                                    notificationEmailSendTimeOutEvent
-                                )
-                            }
-                        }
-
-                    // ----------------- After Event is Expired -----------------
-                    run {
-                        // when
-                        val event = NotificationEmailSendTimeOutInvokeEvent(
-                            timeOutEventId = notificationEmailSendTimeOutEvent.eventId,
-                            templateId = notificationEmailSendTimeOutEvent.templateId,
-                            templateVersion = notificationEmailSendTimeOutEvent.templateVersion,
-                            userIds = notificationEmailSendTimeOutEvent.userIds
-                        )
-                        `when`(notificationEmailSendTimeOutInvokeEventHandler.handle(event)).thenReturn(Unit)
-
-                        // then
-                        run {
-                            scenario.publish(event)
-                                .andWaitForEventOfType(NotificationEmailSendTimeOutInvokeEvent::class.java)
-                                .toArriveAndAssert { _, _ ->
-                                    runBlocking {
-                                        verify(notificationEmailSendTimeOutInvokeEventHandler, times(1)).handle(
-                                            event
-                                        )
-                                    }
-                                }
-                        }
-                    }
                 }
             }
         }

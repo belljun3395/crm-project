@@ -36,8 +36,7 @@ class ScheduleTaskService(
                 templateId = input.templateId,
                 templateVersion = input.templateVersion,
                 userIds = input.userIds,
-                expiredTime = input.expiredTime,
-                eventPublisher = applicationEventPublisher
+                expiredTime = input.expiredTime
             )
         )
         return enrolledSchedule.scheduleArn()

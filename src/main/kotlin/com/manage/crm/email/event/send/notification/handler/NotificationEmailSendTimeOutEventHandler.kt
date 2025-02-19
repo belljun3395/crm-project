@@ -28,7 +28,7 @@ class NotificationEmailSendTimeOutEventHandler(
                     eventId = event.eventId,
                     eventClass = event.javaClass.simpleName,
                     eventPayload = objectMapper.writeValueAsString(event),
-                    completed = event.completed,
+                    completed = false,
                     scheduledAt = scheduledAt
                 )
             )
