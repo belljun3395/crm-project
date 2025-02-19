@@ -24,7 +24,7 @@ class ScheduleTaskService(
     val log = KotlinLogging.logger {}
 
     fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String {
-        val enrolledSchedule = awsSchedulerService.createSchedule(
+        awsSchedulerService.createSchedule(
             name = input.eventId.value,
             schedule = input.expiredTime,
             input = input
@@ -39,7 +39,7 @@ class ScheduleTaskService(
                 expiredTime = input.expiredTime
             )
         )
-        return enrolledSchedule.scheduleArn()
+        return input.eventId.value
     }
 
     fun cancel(scheduleName: String) {

@@ -1,7 +1,9 @@
 package com.manage.crm.email.application
 
+import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
 import com.manage.crm.email.application.dto.PostEmailNotificationSchedulesUseCaseIn
 import com.manage.crm.email.application.service.ScheduleTaskService
+import com.manage.crm.email.domain.vo.EventId
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -25,16 +27,24 @@ class PostEmailNotificationSchedulesUseCaseTest : BehaviorSpec({
                 userIds = listOf(1, 2, 3),
                 expiredTime = LocalDateTime.now().plusDays(1)
             )
-            // case parameter's event id is not injected
-            coEvery { scheduleTaskService.newSchedule(any()) } answers { "newSchedule" }
+
+            val eventId = EventId()
+            val input = NotificationEmailSendTimeOutEventInput(
+                templateId = 1,
+                templateVersion = 1.0f,
+                userIds = listOf(1, 2, 3),
+                eventId = eventId,
+                expiredTime = LocalDateTime.now().plusDays(1)
+            )
+            coEvery { scheduleTaskService.newSchedule(any(NotificationEmailSendTimeOutEventInput::class)) } answers { input.eventId.value }
 
             val result = useCase.execute(useCaseIn)
             then("should return PostEmailNotificationSchedulesUseCaseOut") {
-                result.newSchedule shouldBe "newSchedule"
+                result.newSchedule shouldBe eventId.value
             }
 
             then("create new schedule") {
-                coVerify(exactly = 1) { scheduleTaskService.newSchedule(any()) }
+                coVerify(exactly = 1) { scheduleTaskService.newSchedule(any(NotificationEmailSendTimeOutEventInput::class)) }
             }
         }
     }

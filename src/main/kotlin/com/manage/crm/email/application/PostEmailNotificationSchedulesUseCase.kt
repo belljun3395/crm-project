@@ -22,12 +22,13 @@ class PostEmailNotificationSchedulesUseCase(
         val userIds = useCaseIn.userIds
         val expiredTime = useCaseIn.expiredTime
 
+        val eventId = EventId()
         val newSchedule = scheduleTaskService.newSchedule(
             NotificationEmailSendTimeOutEventInput(
                 templateId = templateId,
                 templateVersion = templateVersion,
                 userIds = userIds,
-                eventId = EventId(),
+                eventId = eventId,
                 expiredTime = expiredTime
             )
         )
