@@ -4,6 +4,7 @@ import com.manage.crm.config.SwaggerTag
 import com.manage.crm.email.application.BrowseEmailNotificationSchedulesUseCase
 import com.manage.crm.email.application.BrowseTemplateUseCase
 import com.manage.crm.email.application.CancelNotificationEmailUseCase
+import com.manage.crm.email.application.DeleteTemplateUseCase
 import com.manage.crm.email.application.PostEmailNotificationSchedulesUseCase
 import com.manage.crm.email.application.PostTemplateUseCase
 import com.manage.crm.email.application.SendNotificationEmailUseCase
@@ -11,6 +12,9 @@ import com.manage.crm.email.application.dto.BrowseEmailNotificationSchedulesUseC
 import com.manage.crm.email.application.dto.BrowseTemplateUseCaseIn
 import com.manage.crm.email.application.dto.BrowseTemplateUseCaseOut
 import com.manage.crm.email.application.dto.CancelNotificationEmailUseCaseIn
+import com.manage.crm.email.application.dto.CancelNotificationEmailUseCaseOut
+import com.manage.crm.email.application.dto.DeleteTemplateUseCaseIn
+import com.manage.crm.email.application.dto.DeleteTemplateUseCaseOut
 import com.manage.crm.email.application.dto.PostEmailNotificationSchedulesUseCaseIn
 import com.manage.crm.email.application.dto.PostEmailNotificationSchedulesUseCaseOut
 import com.manage.crm.email.application.dto.PostTemplateUseCaseIn
@@ -42,6 +46,7 @@ import org.springframework.web.bind.annotation.RestController
 class EmailController(
     private val browseTemplateUseCase: BrowseTemplateUseCase,
     private val postTemplateUseCase: PostTemplateUseCase,
+    private val deleteTemplateUseCase: DeleteTemplateUseCase,
     private val sendNotificationEmailUseCase: SendNotificationEmailUseCase,
     private val browseEmailNotificationSchedulesUseCase: BrowseEmailNotificationSchedulesUseCase,
     private val postEmailNotificationSchedulesUseCase: PostEmailNotificationSchedulesUseCase,
@@ -84,6 +89,21 @@ class EmailController(
                     templateId = request.templateId,
                     templateVersion = request.templateVersion,
                     userIds = request.userIds ?: emptyList()
+                )
+            )
+            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+    }
+
+    @DeleteMapping(value = ["/templates/{templateId}"])
+    suspend fun deleteEmailTemplate(
+        @PathVariable("templateId") templateId: Long,
+        @RequestParam(required = false) force: Boolean?
+    ): ApiResponse<ApiResponse.SuccessBody<DeleteTemplateUseCaseOut>> {
+        return deleteTemplateUseCase
+            .execute(
+                DeleteTemplateUseCaseIn(
+                    emailTemplateId = templateId,
+                    forceFlag = force ?: false
                 )
             )
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }

@@ -5,7 +5,7 @@ import com.manage.crm.email.domain.vo.EventId
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 
-interface ScheduledEventRepository : CoroutineCrudRepository<ScheduledEvent, Long> {
+interface ScheduledEventRepository : CoroutineCrudRepository<ScheduledEvent, Long>, ScheduledEventCustomRepository {
     suspend fun findByEventId(eventId: EventId): ScheduledEvent?
 
     @Query(
