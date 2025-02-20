@@ -11,7 +11,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.springframework.modulith.test.Scenario
 
-class EventTemplateTransactionListenerInvokeSituation(
+class EventTemplateTransactionListenerTest(
     val emailTemplateRepository: EmailTemplateRepository
 ) : MailEventInvokeSituationTest() {
 

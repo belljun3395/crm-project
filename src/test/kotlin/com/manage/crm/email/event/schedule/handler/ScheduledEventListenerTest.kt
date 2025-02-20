@@ -14,7 +14,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.kotlin.doNothing
 import org.springframework.modulith.test.Scenario
 
-class CancelScheduledEventHandlerTest(
+class ScheduledEventListenerTest(
     private val scheduleTaskService: ScheduleTaskService
 ) : MailEventInvokeSituationTest() {
     @Test

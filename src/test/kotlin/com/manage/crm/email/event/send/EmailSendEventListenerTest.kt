@@ -37,7 +37,7 @@ fun getMessage(status: SentEmailStatus, email: String, timeStamp: ZonedDateTime,
     """.trimIndent()
 }
 
-class EmailSendEventListenerInvokeSituation(
+class EmailSendEventListenerTest(
     applicationEventPublisher: ApplicationEventPublisher,
     eventMessageMapper: SesMessageMapper
 ) : MailEventInvokeSituationTest() {
