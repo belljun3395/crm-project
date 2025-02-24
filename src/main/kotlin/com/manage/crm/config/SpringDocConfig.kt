@@ -74,4 +74,5 @@ class SpringDocConfig(
 object SwaggerTag {
     const val USERS_SWAGGER_TAG = "Users API"
     const val EMAILS_SWAGGER_TAG = "Emails API"
+    const val EVENT_SWAGGER_TAG = "Event API"
 }
