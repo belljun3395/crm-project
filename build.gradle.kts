@@ -132,7 +132,7 @@ tasks.withType<Test> {
 
 openApi {
     customBootRun {
-        jvmArgs = listOf("-Dspring.profiles.active=local")
+        jvmArgs = listOf("-Dspring.profiles.active=local,new")
     }
 }
 
