@@ -6,7 +6,8 @@ import org.springframework.modulith.ApplicationModule
     type = ApplicationModule.Type.OPEN,
     allowedDependencies = [
         "email",
-        "user"
+        "user",
+        "event"
     ]
 )
 class Metadata

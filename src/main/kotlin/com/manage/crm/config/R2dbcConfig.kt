@@ -4,6 +4,8 @@ import com.manage.crm.email.domain.repository.converter.EventIdReadingConverter
 import com.manage.crm.email.domain.repository.converter.EventIdWritingConverter
 import com.manage.crm.email.domain.repository.converter.VariablesReadingConverter
 import com.manage.crm.email.domain.repository.converter.VariablesWritingConverter
+import com.manage.crm.event.domain.repository.converter.PropertiesReadingConverter
+import com.manage.crm.event.domain.repository.converter.PropertiesWritingConverter
 import com.manage.crm.user.domain.repository.converter.UserAttributeReadingConverter
 import com.manage.crm.user.domain.repository.converter.UserAttributeWritingConverter
 import io.r2dbc.spi.ConnectionFactory
@@ -46,7 +48,9 @@ class R2dbcConfig {
                 VariablesWritingConverter(),
                 VariablesReadingConverter(),
                 EventIdWritingConverter(),
-                EventIdReadingConverter()
+                EventIdReadingConverter(),
+                PropertiesWritingConverter(),
+                PropertiesReadingConverter()
             )
         )
     }
