@@ -79,7 +79,7 @@ class EmailController(
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
     }
 
-    @PostMapping(value = ["/send/notifications/email"])
+    @PostMapping(value = ["/send/notifications"])
     suspend fun sendNotificationEmail(
         @RequestBody request: SendNotificationEmailRequest
     ): ApiResponse<ApiResponse.SuccessBody<SendNotificationEmailUseCaseOut>> {
