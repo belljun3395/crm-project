@@ -18,7 +18,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores::class)
 abstract class MailEventInvokeSituationTest : EmailModuleTestTemplate() {
     // ----------------- CancelScheduledEventHandlerTest -----------------
-
     @MockitoBean
     lateinit var awsSchedulerService: AwsSchedulerService
 
