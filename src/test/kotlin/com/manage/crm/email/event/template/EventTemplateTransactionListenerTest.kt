@@ -6,9 +6,7 @@ import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.times
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
+import org.mockito.Mockito.*
 import org.springframework.modulith.test.Scenario
 
 class EventTemplateTransactionListenerTest(
@@ -27,28 +25,23 @@ class EventTemplateTransactionListenerTest(
             )
             emailTemplateRepository.save(emailTemplate) // save email template
             // when
-            run {
-                emailTemplate.modify()
-                    .modifySubject("newSubject")
-                    .modifyBody("newBody", emptyList())
-                    .done()
-                emailTemplateRepository.save(emailTemplate) // modify email template
+            emailTemplate.modify()
+                .modifySubject("newSubject")
+                .modifyBody("newBody", emptyList())
+                .done()
+            emailTemplateRepository.save(emailTemplate) // modify email template
 
-                val event = emailTemplate.domainEvents.first() as PostEmailTemplateEvent
-                `when`(postEmailTemplateEventHandler.handle(event)).thenReturn(Unit)
+            val event = emailTemplate.domainEvents.first() as PostEmailTemplateEvent
+            `when`(postEmailTemplateEventHandler.handle(event)).thenReturn(Unit)
 
-                // then
-                run {
-                    scenario.publish(event)
-                        .andWaitForEventOfType(PostEmailTemplateEvent::class.java)
-                        .toArriveAndAssert { _, _ ->
-                            // then
-                            runBlocking {
-                                verify(postEmailTemplateEventHandler, times(1)).handle(event)
-                            }
-                        }
+            // then
+            scenario.publish(event)
+                .andWaitForEventOfType(PostEmailTemplateEvent::class.java)
+                .toArriveAndAssert { _, _ ->
+                    runBlocking {
+                        verify(postEmailTemplateEventHandler, times(1)).handle(event)
+                    }
                 }
-            }
         }
     }
 }

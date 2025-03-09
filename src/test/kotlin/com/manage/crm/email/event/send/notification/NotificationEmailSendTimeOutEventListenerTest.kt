@@ -11,10 +11,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
-import org.mockito.Mockito.doNothing
-import org.mockito.Mockito.times
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
+import org.mockito.Mockito.*
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.modulith.test.Scenario
 import software.amazon.awssdk.services.scheduler.model.CreateScheduleResponse
@@ -26,7 +23,8 @@ class NotificationEmailSendTimeOutEventListenerTest(
     scheduledEventMessageMapper: ScheduledEventMessageMapper
 ) : MailEventInvokeSituationTest() {
 
-    private var scheduledEventReverseRelay = ScheduledEventReverseRelay(eventPublisher, scheduledEventMessageMapper)
+    private var scheduledEventReverseRelay =
+        ScheduledEventReverseRelay(eventPublisher, scheduledEventMessageMapper)
 
     @Test
     fun `schedule task service new schedule method is called`(scenario: Scenario) {
@@ -49,31 +47,27 @@ class NotificationEmailSendTimeOutEventListenerTest(
             ).thenReturn(CreateScheduleResponse.builder().scheduleArn("arn").build())
 
             // when
-            run {
-                scheduleTaskService.newSchedule(input)
+            scheduleTaskService.newSchedule(input)
 
-                val event = NotificationEmailSendTimeOutEvent(
-                    eventId = EventId("1"),
-                    templateId = 1,
-                    templateVersion = 1.0f,
-                    userIds = listOf(1L),
-                    expiredTime = expiredTime
-                )
-                `when`(notificationEmailSendTimeOutEventHandler.handle(event)).thenReturn(Unit)
+            val event = NotificationEmailSendTimeOutEvent(
+                eventId = EventId("1"),
+                templateId = 1,
+                templateVersion = 1.0f,
+                userIds = listOf(1L),
+                expiredTime = expiredTime
+            )
+            `when`(notificationEmailSendTimeOutEventHandler.handle(event)).thenReturn(Unit)
 
-                // then
-                run {
-                    scenario.publish(event)
-                        .andWaitForEventOfType(NotificationEmailSendTimeOutEvent::class.java)
-                        .toArriveAndAssert { _, _ ->
-                            runBlocking {
-                                verify(notificationEmailSendTimeOutEventHandler, times(1)).handle(
-                                    event
-                                )
-                            }
-                        }
+            // then
+            scenario.publish(event)
+                .andWaitForEventOfType(NotificationEmailSendTimeOutEvent::class.java)
+                .toArriveAndAssert { _, _ ->
+                    runBlocking {
+                        verify(notificationEmailSendTimeOutEventHandler, times(1)).handle(
+                            event
+                        )
+                    }
                 }
-            }
         }
     }
 
@@ -93,28 +87,22 @@ class NotificationEmailSendTimeOutEventListenerTest(
             doNothing().`when`(acknowledgement).acknowledge()
 
             // when
-            run {
-                scheduledEventReverseRelay.onMessage(message, acknowledgement)
-                val event = NotificationEmailSendTimeOutInvokeEvent(
-                    timeOutEventId = EventId("1"),
-                    templateId = 1,
-                    templateVersion = 1.0f,
-                    userIds = listOf(1L)
-                )
+            scheduledEventReverseRelay.onMessage(message, acknowledgement)
+            val event = NotificationEmailSendTimeOutInvokeEvent(
+                timeOutEventId = EventId("1"),
+                templateId = 1,
+                templateVersion = 1.0f,
+                userIds = listOf(1L)
+            )
 
-                // then
-                run {
-                    scenario.publish(event)
-                        .andWaitForEventOfType(NotificationEmailSendTimeOutInvokeEvent::class.java)
-                        .toArriveAndAssert { _, _ ->
-                            runBlocking {
-                                verify(notificationEmailSendTimeOutInvokeEventHandler, times(1)).handle(
-                                    event
-                                )
-                            }
-                        }
+            // then
+            scenario.publish(event)
+                .andWaitForEventOfType(NotificationEmailSendTimeOutInvokeEvent::class.java)
+                .toArriveAndAssert { _, _ ->
+                    runBlocking {
+                        verify(notificationEmailSendTimeOutInvokeEventHandler, times(1)).handle(event)
+                    }
                 }
-            }
         }
     }
 }

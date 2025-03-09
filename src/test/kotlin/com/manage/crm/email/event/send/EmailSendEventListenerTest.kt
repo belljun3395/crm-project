@@ -12,15 +12,17 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
-import org.mockito.Mockito.doNothing
-import org.mockito.Mockito.times
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
+import org.mockito.Mockito.*
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.modulith.test.Scenario
 import java.time.ZonedDateTime
 
-fun getMessage(status: SentEmailStatus, email: String, timeStamp: ZonedDateTime, messageId: String): String {
+fun getMessage(
+    status: SentEmailStatus,
+    email: String,
+    timeStamp: ZonedDateTime,
+    messageId: String
+): String {
     return """
                     {
                         "Type" : "Notification",
@@ -61,29 +63,25 @@ class EmailSendEventListenerTest(
             `when`(nonVariablesMailService.send(sendEmailDto.emailArgs)).thenReturn("messageId")
 
             // when
-            run {
-                nonVariablesMailService.send(sendEmailDto)
+            nonVariablesMailService.send(sendEmailDto)
 
-                val event = EmailSentEvent(
-                    userId = 1,
-                    emailBody = "body",
-                    messageId = "messageId",
-                    destination = "example@example.com",
-                    provider = EmailProviderType.AWS
-                )
-                `when`(emailSentEventHandler.handle(event)).thenReturn(Unit)
+            val event = EmailSentEvent(
+                userId = 1,
+                emailBody = "body",
+                messageId = "messageId",
+                destination = "example@example.com",
+                provider = EmailProviderType.AWS
+            )
+            `when`(emailSentEventHandler.handle(event)).thenReturn(Unit)
 
-                // then
-                run {
-                    scenario.publish(event)
-                        .andWaitForEventOfType(EmailSentEvent::class.java)
-                        .toArriveAndAssert { _, _ ->
-                            runBlocking {
-                                verify(emailSentEventHandler, times(1)).handle(event)
-                            }
-                        }
+            // then
+            scenario.publish(event)
+                .andWaitForEventOfType(EmailSentEvent::class.java)
+                .toArriveAndAssert { _, _ ->
+                    runBlocking {
+                        verify(emailSentEventHandler, times(1)).handle(event)
+                    }
                 }
-            }
         }
     }
 
@@ -100,27 +98,23 @@ class EmailSendEventListenerTest(
             doNothing().`when`(acknowledgement).acknowledge()
 
             // when
-            run {
-                sesMessageReverseRelay.onMessage(message, acknowledgement)
+            sesMessageReverseRelay.onMessage(message, acknowledgement)
 
-                val event = EmailOpenEvent(
-                    messageId = messageId,
-                    destination = email,
-                    timestamp = timeStamp,
-                    provider = EmailProviderType.AWS
-                )
+            val event = EmailOpenEvent(
+                messageId = messageId,
+                destination = email,
+                timestamp = timeStamp,
+                provider = EmailProviderType.AWS
+            )
 
-                // then
-                run {
-                    scenario.publish(event)
-                        .andWaitForEventOfType(EmailOpenEvent::class.java)
-                        .toArriveAndAssert { _, _ ->
-                            runBlocking {
-                                verify(emailOpenEventHandler, times(1)).handle(event)
-                            }
-                        }
+            // then
+            scenario.publish(event)
+                .andWaitForEventOfType(EmailOpenEvent::class.java)
+                .toArriveAndAssert { _, _ ->
+                    runBlocking {
+                        verify(emailOpenEventHandler, times(1)).handle(event)
+                    }
                 }
-            }
         }
     }
 
@@ -137,27 +131,23 @@ class EmailSendEventListenerTest(
             doNothing().`when`(acknowledgement).acknowledge()
 
             // when
-            run {
-                sesMessageReverseRelay.onMessage(message, acknowledgement)
+            sesMessageReverseRelay.onMessage(message, acknowledgement)
 
-                val event = EmailDeliveryEvent(
-                    messageId = messageId,
-                    destination = email,
-                    timestamp = timeStamp,
-                    provider = EmailProviderType.AWS
-                )
+            val event = EmailDeliveryEvent(
+                messageId = messageId,
+                destination = email,
+                timestamp = timeStamp,
+                provider = EmailProviderType.AWS
+            )
 
-                // then
-                run {
-                    scenario.publish(event)
-                        .andWaitForEventOfType(EmailDeliveryEvent::class.java)
-                        .toArriveAndAssert { _, _ ->
-                            runBlocking {
-                                verify(emailDeliveryEventHandler, times(1)).handle(event)
-                            }
-                        }
+            // then
+            scenario.publish(event)
+                .andWaitForEventOfType(EmailDeliveryEvent::class.java)
+                .toArriveAndAssert { _, _ ->
+                    runBlocking {
+                        verify(emailDeliveryEventHandler, times(1)).handle(event)
+                    }
                 }
-            }
         }
     }
 
@@ -174,27 +164,23 @@ class EmailSendEventListenerTest(
             doNothing().`when`(acknowledgement).acknowledge()
 
             // when
-            run {
-                sesMessageReverseRelay.onMessage(message, acknowledgement)
+            sesMessageReverseRelay.onMessage(message, acknowledgement)
 
-                val event = EmailDeliveryDelayEvent(
-                    messageId = messageId,
-                    destination = email,
-                    timestamp = timeStamp,
-                    provider = EmailProviderType.AWS
-                )
+            val event = EmailDeliveryDelayEvent(
+                messageId = messageId,
+                destination = email,
+                timestamp = timeStamp,
+                provider = EmailProviderType.AWS
+            )
 
-                // then
-                run {
-                    scenario.publish(event)
-                        .andWaitForEventOfType(EmailDeliveryDelayEvent::class.java)
-                        .toArriveAndAssert { _, _ ->
-                            runBlocking {
-                                verify(emailDeliveryDelayEventHandler, times(1)).handle(event)
-                            }
-                        }
+            // then
+            scenario.publish(event)
+                .andWaitForEventOfType(EmailDeliveryDelayEvent::class.java)
+                .toArriveAndAssert { _, _ ->
+                    runBlocking {
+                        verify(emailDeliveryDelayEventHandler, times(1)).handle(event)
+                    }
                 }
-            }
         }
     }
 
@@ -211,26 +197,22 @@ class EmailSendEventListenerTest(
             doNothing().`when`(acknowledgement).acknowledge()
 
             // when
-            run {
-                sesMessageReverseRelay.onMessage(message, acknowledgement)
+            sesMessageReverseRelay.onMessage(message, acknowledgement)
 
-                val event = EmailClickEvent(
-                    messageId = messageId,
-                    destination = email,
-                    timestamp = timeStamp,
-                    provider = EmailProviderType.AWS
-                )
-                // then
-                run {
-                    scenario.publish(event)
-                        .andWaitForEventOfType(EmailClickEvent::class.java)
-                        .toArriveAndAssert { _, _ ->
-                            runBlocking {
-                                verify(emailClickEventHandler, times(1)).handle(event)
-                            }
-                        }
+            val event = EmailClickEvent(
+                messageId = messageId,
+                destination = email,
+                timestamp = timeStamp,
+                provider = EmailProviderType.AWS
+            )
+            // then
+            scenario.publish(event)
+                .andWaitForEventOfType(EmailClickEvent::class.java)
+                .toArriveAndAssert { _, _ ->
+                    runBlocking {
+                        verify(emailClickEventHandler, times(1)).handle(event)
+                    }
                 }
-            }
         }
     }
 }

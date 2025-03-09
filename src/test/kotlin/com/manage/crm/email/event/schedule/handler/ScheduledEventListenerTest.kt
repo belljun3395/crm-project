@@ -8,9 +8,7 @@ import com.manage.crm.infrastructure.scheduler.ScheduleName
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.times
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
+import org.mockito.Mockito.*
 import org.mockito.kotlin.doNothing
 import org.springframework.modulith.test.Scenario
 
@@ -25,22 +23,18 @@ class ScheduledEventListenerTest(
             doNothing().`when`(awsSchedulerService).deleteSchedule(scheduleName)
 
             // when
-            run {
-                scheduleTaskService.cancel(scheduleName.value)
+            scheduleTaskService.cancel(scheduleName.value)
 
-                val event = CancelScheduledEvent(EventId(scheduleName.value))
-                `when`(cancelScheduledEventHandler.handle(event)).thenReturn(Unit)
-                // then
-                run {
-                    scenario.publish(event)
-                        .andWaitForEventOfType(CancelScheduledEvent::class.java)
-                        .toArriveAndAssert { _, _ ->
-                            runBlocking {
-                                verify(cancelScheduledEventHandler, times(1)).handle(event)
-                            }
-                        }
+            val event = CancelScheduledEvent(EventId(scheduleName.value))
+            `when`(cancelScheduledEventHandler.handle(event)).thenReturn(Unit)
+            // then
+            scenario.publish(event)
+                .andWaitForEventOfType(CancelScheduledEvent::class.java)
+                .toArriveAndAssert { _, _ ->
+                    runBlocking {
+                        verify(cancelScheduledEventHandler, times(1)).handle(event)
+                    }
                 }
-            }
         }
     }
 }
