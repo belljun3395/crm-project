@@ -2,17 +2,17 @@ package com.manage.crm.email.event.relay.aws
 
 import com.manage.crm.email.event.relay.aws.mapper.SesMessageMapper
 import com.manage.crm.email.event.send.EmailSendEvent
+import com.manage.crm.email.support.EmailEventPublisher
 import io.awspring.cloud.sqs.annotation.SqsListener
 import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
 @Profile("!local && !test")
 @Component
 class SesMessageReverseRelay(
-    private val applicationEventPublisher: ApplicationEventPublisher,
+    private val emailEventPublisher: EmailEventPublisher,
     private val eventMessageMapper: SesMessageMapper
 ) {
     val log = KotlinLogging.logger { }
@@ -30,6 +30,6 @@ class SesMessageReverseRelay(
     }
 
     fun publish(event: EmailSendEvent) {
-        applicationEventPublisher.publishEvent(event)
+        emailEventPublisher.publishEvent(event)
     }
 }
