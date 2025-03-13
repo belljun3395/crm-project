@@ -1,6 +1,6 @@
 package com.manage.crm.email
 
-import com.manage.crm.email.application.service.NonVariablesMailService
+import com.manage.crm.email.application.service.NonVariablesMailServiceImpl
 import com.manage.crm.email.event.schedule.handler.CancelScheduledEventHandler
 import com.manage.crm.email.event.send.handler.EmailClickEventHandler
 import com.manage.crm.email.event.send.handler.EmailDeliveryDelayEventHandler
@@ -10,6 +10,7 @@ import com.manage.crm.email.event.send.handler.EmailSentEventHandler
 import com.manage.crm.email.event.send.notification.handler.NotificationEmailSendTimeOutEventHandler
 import com.manage.crm.email.event.send.notification.handler.NotificationEmailSendTimeOutInvokeEventHandler
 import com.manage.crm.email.event.template.handler.PostEmailTemplateEventHandler
+import com.manage.crm.email.support.EmailEventPublisher
 import com.manage.crm.infrastructure.scheduler.provider.AwsSchedulerService
 import org.junit.jupiter.api.DisplayNameGeneration
 import org.junit.jupiter.api.DisplayNameGenerator
@@ -17,8 +18,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores::class)
 abstract class MailEventInvokeSituationTest : EmailModuleTestTemplate() {
-    // ----------------- CancelScheduledEventHandlerTest -----------------
+    // ----------------- Common -----------------
+    @MockitoBean
+    lateinit var emailEventPublisher: EmailEventPublisher
 
+    // ----------------- CancelScheduledEventHandlerTest -----------------
     @MockitoBean
     lateinit var awsSchedulerService: AwsSchedulerService
 
@@ -34,7 +38,7 @@ abstract class MailEventInvokeSituationTest : EmailModuleTestTemplate() {
 
     // ----------------- EmailSendEventListenerInvokeSituation -----------------
     @MockitoBean
-    lateinit var nonVariablesMailService: NonVariablesMailService
+    lateinit var nonVariablesMailServiceImpl: NonVariablesMailServiceImpl
 
     @MockitoBean
     lateinit var emailSentEventHandler: EmailSentEventHandler

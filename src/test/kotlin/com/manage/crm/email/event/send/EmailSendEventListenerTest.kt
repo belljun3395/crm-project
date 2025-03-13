@@ -2,25 +2,32 @@ package com.manage.crm.email.event.send
 
 import com.manage.crm.email.MailEventInvokeSituationTest
 import com.manage.crm.email.application.dto.NonContent
-import com.manage.crm.email.application.dto.SendEmailDto
+import com.manage.crm.email.application.dto.SendEmailInDto
+import com.manage.crm.email.application.dto.SendEmailOutDto
+import com.manage.crm.email.application.service.NonVariablesMailServicePostEventProcessor
 import com.manage.crm.email.domain.vo.EmailProviderType
 import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.email.event.relay.aws.SesMessageReverseRelay
 import com.manage.crm.email.event.relay.aws.mapper.SesMessageMapper
+import com.manage.crm.email.support.EmailEventPublisher
 import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito
 import org.mockito.Mockito.doNothing
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.mockingDetails
 import org.mockito.Mockito.times
-import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import org.springframework.context.ApplicationEventPublisher
 import org.springframework.modulith.test.Scenario
 import java.time.ZonedDateTime
+import kotlin.test.assertEquals
 
-fun getMessage(status: SentEmailStatus, email: String, timeStamp: ZonedDateTime, messageId: String): String {
+fun getMessage(
+    status: SentEmailStatus,
+    email: String,
+    timeStamp: ZonedDateTime,
+    messageId: String
+): String {
     return """
                     {
                         "Type" : "Notification",
@@ -38,18 +45,19 @@ fun getMessage(status: SentEmailStatus, email: String, timeStamp: ZonedDateTime,
 }
 
 class EmailSendEventListenerTest(
-    applicationEventPublisher: ApplicationEventPublisher,
+    val nonVariablesMailService: NonVariablesMailServicePostEventProcessor,
     eventMessageMapper: SesMessageMapper
 ) : MailEventInvokeSituationTest() {
 
+    private val sesMessageReverseRelayEmailEventPublisher = mock(EmailEventPublisher::class.java)
     private var sesMessageReverseRelay: SesMessageReverseRelay =
-        SesMessageReverseRelay(applicationEventPublisher, eventMessageMapper)
+        SesMessageReverseRelay(sesMessageReverseRelayEmailEventPublisher, eventMessageMapper)
 
     @Test
     fun `after non-variable mail service is called`(scenario: Scenario) {
         runTest {
             // given
-            val sendEmailDto = SendEmailDto(
+            val sendEmailInDto = SendEmailInDto(
                 to = "example@example.com",
                 subject = "subject",
                 template = "template",
@@ -58,32 +66,42 @@ class EmailSendEventListenerTest(
                 destination = "example@example.com",
                 eventType = SentEmailStatus.SEND
             )
-            `when`(nonVariablesMailService.send(sendEmailDto.emailArgs)).thenReturn("messageId")
+            `when`(nonVariablesMailServiceImpl.send(sendEmailInDto.emailArgs)).thenReturn("messageId")
 
-            // when
-            run {
-                nonVariablesMailService.send(sendEmailDto)
-
-                val event = EmailSentEvent(
+            `when`(nonVariablesMailServiceImpl.send(sendEmailInDto)).thenReturn(
+                SendEmailOutDto(
                     userId = 1,
                     emailBody = "body",
                     messageId = "messageId",
                     destination = "example@example.com",
                     provider = EmailProviderType.AWS
                 )
-                `when`(emailSentEventHandler.handle(event)).thenReturn(Unit)
+            )
 
-                // then
-                run {
-                    scenario.publish(event)
-                        .andWaitForEventOfType(EmailSentEvent::class.java)
-                        .toArriveAndAssert { _, _ ->
-                            runBlocking {
-                                verify(emailSentEventHandler, times(1)).handle(event)
-                            }
-                        }
+            val event = EmailSentEvent(
+                userId = 1,
+                emailBody = "body",
+                messageId = "messageId",
+                destination = "example@example.com",
+                provider = EmailProviderType.AWS
+            )
+            doNothing().`when`(emailEventPublisher).publishEvent(event)
+
+            // when
+            nonVariablesMailService.send(sendEmailInDto)
+
+            `when`(emailSentEventHandler.handle(event)).thenReturn(Unit)
+
+            // then
+            val expectedInvocationTime = 1
+            scenario.publish(event)
+                .andWaitForStateChange(
+                    { mockingDetails(emailSentEventHandler).invocations.size },
+                    { mockingDetails(emailSentEventHandler).invocations.size == expectedInvocationTime }
+                )
+                .andVerify { invocationTime ->
+                    assertEquals(invocationTime, expectedInvocationTime)
                 }
-            }
         }
     }
 
@@ -96,31 +114,32 @@ class EmailSendEventListenerTest(
             val email = "example@example.com"
             val messageId = "messageId"
             val message = getMessage(SentEmailStatus.OPEN, email, zoneTime, messageId)
-            val acknowledgement = Mockito.mock(Acknowledgement::class.java)
+            val acknowledgement = mock(Acknowledgement::class.java)
             doNothing().`when`(acknowledgement).acknowledge()
 
+            val event = EmailOpenEvent(
+                messageId = messageId,
+                destination = email,
+                timestamp = timeStamp,
+                provider = EmailProviderType.AWS
+            )
+            doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
+
             // when
-            run {
-                sesMessageReverseRelay.onMessage(message, acknowledgement)
+            sesMessageReverseRelay.onMessage(message, acknowledgement)
 
-                val event = EmailOpenEvent(
-                    messageId = messageId,
-                    destination = email,
-                    timestamp = timeStamp,
-                    provider = EmailProviderType.AWS
+            `when`(emailOpenEventHandler.handle(event)).thenReturn(Unit)
+
+            // then
+            val expectedInvocationTime = 1
+            scenario.publish(event)
+                .andWaitForStateChange(
+                    { mockingDetails(emailOpenEventHandler).invocations.size },
+                    { mockingDetails(emailOpenEventHandler).invocations.size == expectedInvocationTime }
                 )
-
-                // then
-                run {
-                    scenario.publish(event)
-                        .andWaitForEventOfType(EmailOpenEvent::class.java)
-                        .toArriveAndAssert { _, _ ->
-                            runBlocking {
-                                verify(emailOpenEventHandler, times(1)).handle(event)
-                            }
-                        }
+                .andVerify { invocationTime ->
+                    assertEquals(invocationTime, expectedInvocationTime)
                 }
-            }
         }
     }
 
@@ -133,31 +152,32 @@ class EmailSendEventListenerTest(
             val email = "example@example.com"
             val messageId = "messageId"
             val message = getMessage(SentEmailStatus.DELIVERY, email, zoneTime, messageId)
-            val acknowledgement = Mockito.mock(Acknowledgement::class.java)
+            val acknowledgement = mock(Acknowledgement::class.java)
             doNothing().`when`(acknowledgement).acknowledge()
 
+            val event = EmailDeliveryEvent(
+                messageId = messageId,
+                destination = email,
+                timestamp = timeStamp,
+                provider = EmailProviderType.AWS
+            )
+            doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
+
             // when
-            run {
-                sesMessageReverseRelay.onMessage(message, acknowledgement)
+            sesMessageReverseRelay.onMessage(message, acknowledgement)
 
-                val event = EmailDeliveryEvent(
-                    messageId = messageId,
-                    destination = email,
-                    timestamp = timeStamp,
-                    provider = EmailProviderType.AWS
+            `when`(emailDeliveryEventHandler.handle(event)).thenReturn(Unit)
+
+            // then
+            val expectedInvocationTime = 1
+            scenario.publish(event)
+                .andWaitForStateChange(
+                    { mockingDetails(emailDeliveryEventHandler).invocations.size },
+                    { mockingDetails(emailDeliveryEventHandler).invocations.size == expectedInvocationTime }
                 )
-
-                // then
-                run {
-                    scenario.publish(event)
-                        .andWaitForEventOfType(EmailDeliveryEvent::class.java)
-                        .toArriveAndAssert { _, _ ->
-                            runBlocking {
-                                verify(emailDeliveryEventHandler, times(1)).handle(event)
-                            }
-                        }
+                .andVerify { invocationTime ->
+                    assertEquals(invocationTime, expectedInvocationTime)
                 }
-            }
         }
     }
 
@@ -170,31 +190,32 @@ class EmailSendEventListenerTest(
             val email = "example@example.com"
             val messageId = "messageId"
             val message = getMessage(SentEmailStatus.DELIVERYDELAY, email, zoneTime, messageId)
-            val acknowledgement = Mockito.mock(Acknowledgement::class.java)
+            val acknowledgement = mock(Acknowledgement::class.java)
             doNothing().`when`(acknowledgement).acknowledge()
 
+            val event = EmailDeliveryDelayEvent(
+                messageId = messageId,
+                destination = email,
+                timestamp = timeStamp,
+                provider = EmailProviderType.AWS
+            )
+            doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
+
             // when
-            run {
-                sesMessageReverseRelay.onMessage(message, acknowledgement)
+            sesMessageReverseRelay.onMessage(message, acknowledgement)
 
-                val event = EmailDeliveryDelayEvent(
-                    messageId = messageId,
-                    destination = email,
-                    timestamp = timeStamp,
-                    provider = EmailProviderType.AWS
+            `when`(emailDeliveryDelayEventHandler.handle(event)).thenReturn(Unit)
+
+            // then
+            val expectedInvocationTime = 1
+            scenario.publish(event)
+                .andWaitForStateChange(
+                    { mockingDetails(emailDeliveryDelayEventHandler).invocations.size },
+                    { mockingDetails(emailDeliveryDelayEventHandler).invocations.size == expectedInvocationTime }
                 )
-
-                // then
-                run {
-                    scenario.publish(event)
-                        .andWaitForEventOfType(EmailDeliveryDelayEvent::class.java)
-                        .toArriveAndAssert { _, _ ->
-                            runBlocking {
-                                verify(emailDeliveryDelayEventHandler, times(1)).handle(event)
-                            }
-                        }
+                .andVerify { invocationTime ->
+                    assertEquals(invocationTime, expectedInvocationTime)
                 }
-            }
         }
     }
 
@@ -207,30 +228,32 @@ class EmailSendEventListenerTest(
             val email = "example@example.com"
             val messageId = "messageId"
             val message = getMessage(SentEmailStatus.CLICK, email, zoneTime, messageId)
-            val acknowledgement = Mockito.mock(Acknowledgement::class.java)
+            val acknowledgement = mock(Acknowledgement::class.java)
             doNothing().`when`(acknowledgement).acknowledge()
 
-            // when
-            run {
-                sesMessageReverseRelay.onMessage(message, acknowledgement)
+            val event = EmailClickEvent(
+                messageId = messageId,
+                destination = email,
+                timestamp = timeStamp,
+                provider = EmailProviderType.AWS
+            )
+            doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
 
-                val event = EmailClickEvent(
-                    messageId = messageId,
-                    destination = email,
-                    timestamp = timeStamp,
-                    provider = EmailProviderType.AWS
+            // when
+            sesMessageReverseRelay.onMessage(message, acknowledgement)
+
+            `when`(emailClickEventHandler.handle(event)).thenReturn(Unit)
+
+            // then
+            val expectedInvocationTime = 1
+            scenario.publish(event)
+                .andWaitForStateChange(
+                    { mockingDetails(emailClickEventHandler).invocations.size },
+                    { mockingDetails(emailClickEventHandler).invocations.size == expectedInvocationTime }
                 )
-                // then
-                run {
-                    scenario.publish(event)
-                        .andWaitForEventOfType(EmailClickEvent::class.java)
-                        .toArriveAndAssert { _, _ ->
-                            runBlocking {
-                                verify(emailClickEventHandler, times(1)).handle(event)
-                            }
-                        }
+                .andVerify { invocationTime ->
+                    assertEquals(invocationTime, expectedInvocationTime)
                 }
-            }
         }
     }
 }
