@@ -2,10 +2,10 @@ package com.manage.crm.email.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.email.application.dto.NonContent
-import com.manage.crm.email.application.dto.SendEmailDto
+import com.manage.crm.email.application.dto.SendEmailInDto
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseIn
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseOut
-import com.manage.crm.email.application.service.NonVariablesMailService
+import com.manage.crm.email.application.service.NonVariablesMailServicePostEventProcessor
 import com.manage.crm.email.domain.model.NotificationEmailTemplatePropertiesModel
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service
 class SendNotificationEmailUseCase(
     private val emailTemplateRepository: EmailTemplateRepository,
     private val emailTemplateHistoryRepository: EmailTemplateHistoryRepository,
-    private val nonVariablesEmailService: NonVariablesMailService,
+    private val nonVariablesEmailService: NonVariablesMailServicePostEventProcessor,
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper
 ) {
@@ -43,7 +43,7 @@ class SendNotificationEmailUseCase(
         // TODO: Send email asynchronously
         targetUsers.keys.forEach { email ->
             nonVariablesEmailService.send(
-                SendEmailDto(
+                SendEmailInDto(
                     to = email,
                     subject = notificationProperties.subject,
                     template = notificationProperties.body,

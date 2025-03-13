@@ -3,7 +3,7 @@ package com.manage.crm.email.event.send.notification
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
-import com.manage.crm.email.application.service.ScheduleTaskService
+import com.manage.crm.email.application.service.ScheduleTaskServicePostEventProcessor
 import com.manage.crm.email.domain.repository.ScheduledEventRepository
 import com.manage.crm.support.LocalDateTimeExtension
 import com.manage.crm.support.parseExpiredTime
@@ -14,7 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
-import org.springframework.context.ApplicationEventPublisher
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.springframework.transaction.reactive.executeAndAwait
 
@@ -26,13 +26,13 @@ fun JsonNode.userIds() = this["userIds"].map { it.asLong() }
 
 fun JsonNode.expiredTime() = LocalDateTimeExtension().parseExpiredTime(this["expiredTime"].asText())
 
+@Profile("!test")
 @Component
 class NotificationEmailSendTimeOutEventRePlayer(
     private val eventScheduleRepository: ScheduledEventRepository,
     private val objectMapper: ObjectMapper,
-    private val applicationEventPublisher: ApplicationEventPublisher,
     private val transactionalTemplates: TransactionTemplates,
-    private val scheduleTaskService: ScheduleTaskService
+    private val scheduleTaskService: ScheduleTaskServicePostEventProcessor
 ) : ApplicationRunner {
     val log = KotlinLogging.logger {}
 
@@ -61,7 +61,7 @@ class NotificationEmailSendTimeOutEventRePlayer(
                                     expiredEventCount++
                                 } else {
                                     replayedEventsLogBuffer.appendLine("  - eventId: ${event.eventId} expiredTime: ${event.expiredTime}")
-                                    scheduleTaskService.reSchedule(
+                                    val notificationEmailSendTimeOutEventInput =
                                         NotificationEmailSendTimeOutEventInput(
                                             templateId = event.templateId,
                                             templateVersion = event.templateVersion,
@@ -69,6 +69,8 @@ class NotificationEmailSendTimeOutEventRePlayer(
                                             eventId = event.eventId,
                                             expiredTime = event.expiredTime
                                         )
+                                    scheduleTaskService.reSchedule(
+                                        notificationEmailSendTimeOutEventInput
                                     )
                                     replayedEventCount++
                                 }

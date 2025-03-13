@@ -2,7 +2,7 @@ package com.manage.crm.email.application
 
 import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
 import com.manage.crm.email.application.dto.PostEmailNotificationSchedulesUseCaseIn
-import com.manage.crm.email.application.service.ScheduleTaskService
+import com.manage.crm.email.application.service.ScheduleTaskServicePostEventProcessor
 import com.manage.crm.email.domain.vo.EventId
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -12,7 +12,7 @@ import io.mockk.mockk
 import java.time.LocalDateTime
 
 class PostEmailNotificationSchedulesUseCaseTest : BehaviorSpec({
-    lateinit var scheduleTaskService: ScheduleTaskService
+    lateinit var scheduleTaskService: ScheduleTaskServicePostEventProcessor
     lateinit var useCase: PostEmailNotificationSchedulesUseCase
     beforeContainer {
         scheduleTaskService = mockk()

@@ -3,7 +3,7 @@ package com.manage.crm.email.application
 import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
 import com.manage.crm.email.application.dto.PostEmailNotificationSchedulesUseCaseIn
 import com.manage.crm.email.application.dto.PostEmailNotificationSchedulesUseCaseOut
-import com.manage.crm.email.application.service.ScheduleTaskService
+import com.manage.crm.email.application.service.ScheduleTaskServicePostEventProcessor
 import com.manage.crm.email.domain.vo.EventId
 import com.manage.crm.support.out
 import org.springframework.stereotype.Service
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service
  */
 @Service
 class PostEmailNotificationSchedulesUseCase(
-    private val scheduleTaskService: ScheduleTaskService
+    private val scheduleTaskService: ScheduleTaskServicePostEventProcessor
 ) {
 
     suspend fun execute(useCaseIn: PostEmailNotificationSchedulesUseCaseIn): PostEmailNotificationSchedulesUseCaseOut {
