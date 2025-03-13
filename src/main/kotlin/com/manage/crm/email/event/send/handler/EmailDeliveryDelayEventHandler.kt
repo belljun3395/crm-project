@@ -11,6 +11,6 @@ class EmailDeliveryDelayEventHandler(
 ) {
     val log = KotlinLogging.logger {}
 
-    fun handle(event: EmailDeliveryDelayEvent) {
+    suspend fun handle(event: EmailDeliveryDelayEvent) {
     }
 }

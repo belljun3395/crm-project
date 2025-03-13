@@ -3,7 +3,7 @@ package com.manage.crm.email.event.send.notification.handler
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.email.application.dto.NonContent
 import com.manage.crm.email.application.dto.SendEmailArgs
-import com.manage.crm.email.application.service.NonVariablesMailService
+import com.manage.crm.email.application.service.NonVariablesMailServiceImpl
 import com.manage.crm.email.domain.EmailSendHistory
 import com.manage.crm.email.domain.model.NotificationEmailTemplatePropertiesModel
 import com.manage.crm.email.domain.repository.EmailSendHistoryRepository
@@ -25,7 +25,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
     private val emailTemplateHistoryRepository: EmailTemplateHistoryRepository,
     private val emailSendHistoryRepository: EmailSendHistoryRepository,
     private val userRepository: UserRepository,
-    private val nonVariablesEmailService: NonVariablesMailService,
+    private val nonVariablesEmailService: NonVariablesMailServiceImpl,
     private val objectMapper: ObjectMapper,
     private val transactionalTemplates: TransactionTemplates
 ) {
