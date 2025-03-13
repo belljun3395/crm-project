@@ -3,11 +3,12 @@ package com.manage.crm.email.event.template
 import com.manage.crm.email.MailEventInvokeSituationTest
 import com.manage.crm.email.domain.EmailTemplate
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.*
+import org.mockito.Mockito.mockingDetails
+import org.mockito.Mockito.`when`
 import org.springframework.modulith.test.Scenario
+import kotlin.test.assertEquals
 
 class EventTemplateTransactionListenerTest(
     val emailTemplateRepository: EmailTemplateRepository
@@ -35,12 +36,14 @@ class EventTemplateTransactionListenerTest(
             `when`(postEmailTemplateEventHandler.handle(event)).thenReturn(Unit)
 
             // then
+            val expectedInvocationTime = 1
             scenario.publish(event)
-                .andWaitForEventOfType(PostEmailTemplateEvent::class.java)
-                .toArriveAndAssert { _, _ ->
-                    runBlocking {
-                        verify(postEmailTemplateEventHandler, times(1)).handle(event)
-                    }
+                .andWaitForStateChange(
+                    { mockingDetails(postEmailTemplateEventHandler).invocations.size },
+                    { mockingDetails(postEmailTemplateEventHandler).invocations.size == expectedInvocationTime }
+                )
+                .andVerify { invocationTime ->
+                    assertEquals(invocationTime, expectedInvocationTime)
                 }
         }
     }
