@@ -2,7 +2,7 @@ package com.manage.crm.email.application
 
 import com.manage.crm.email.application.dto.CancelNotificationEmailUseCaseIn
 import com.manage.crm.email.application.dto.CancelNotificationEmailUseCaseOut
-import com.manage.crm.email.application.service.ScheduleTaskServicePostEventProcessor
+import com.manage.crm.email.application.service.ScheduleTaskService
 import com.manage.crm.email.domain.vo.EventId
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -11,7 +11,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 
 class CancelNotificationEmailUseCaseTest : BehaviorSpec({
-    lateinit var scheduleTaskService: ScheduleTaskServicePostEventProcessor
+    lateinit var scheduleTaskService: ScheduleTaskService
     lateinit var cancelNotificationEmailUseCase: CancelNotificationEmailUseCase
 
     beforeContainer {

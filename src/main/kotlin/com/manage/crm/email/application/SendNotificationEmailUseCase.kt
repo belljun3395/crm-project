@@ -5,7 +5,7 @@ import com.manage.crm.email.application.dto.NonContent
 import com.manage.crm.email.application.dto.SendEmailInDto
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseIn
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseOut
-import com.manage.crm.email.application.service.NonVariablesMailServicePostEventProcessor
+import com.manage.crm.email.application.service.NonVariablesMailService
 import com.manage.crm.email.domain.model.NotificationEmailTemplatePropertiesModel
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
@@ -14,6 +14,7 @@ import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 
 /**
@@ -24,7 +25,8 @@ import org.springframework.stereotype.Service
 class SendNotificationEmailUseCase(
     private val emailTemplateRepository: EmailTemplateRepository,
     private val emailTemplateHistoryRepository: EmailTemplateHistoryRepository,
-    private val nonVariablesEmailService: NonVariablesMailServicePostEventProcessor,
+    @Qualifier("nonVariablesMailServicePostEventProcessor")
+    private val nonVariablesEmailService: NonVariablesMailService,
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper
 ) {
@@ -38,7 +40,12 @@ class SendNotificationEmailUseCase(
 
         val targetUsers =
             getTargetUsers(userIds, notificationType)
-                .groupBy { objectMapper.readValue(it.userAttributes?.value, Map::class.java)[notificationType] as String }
+                .groupBy {
+                    objectMapper.readValue(
+                        it.userAttributes?.value,
+                        Map::class.java
+                    )[notificationType] as String
+                }
 
         // TODO: Send email asynchronously
         targetUsers.keys.forEach { email ->
@@ -62,7 +69,10 @@ class SendNotificationEmailUseCase(
         }
     }
 
-    private suspend fun getEmailNotificationProperties(templateVersion: Float?, templateId: Long): NotificationEmailTemplatePropertiesModel {
+    private suspend fun getEmailNotificationProperties(
+        templateVersion: Float?,
+        templateId: Long
+    ): NotificationEmailTemplatePropertiesModel {
         return when {
             templateVersion != null -> {
                 emailTemplateHistoryRepository
@@ -75,6 +85,7 @@ class SendNotificationEmailUseCase(
                     }
                     ?: throw IllegalArgumentException("Email Template not found by id and version: $templateId, $templateVersion")
             }
+
             else -> {
                 emailTemplateRepository
                     .findById(templateId)
@@ -95,10 +106,16 @@ class SendNotificationEmailUseCase(
                 userRepository
                     .findAllExistByUserAttributesKey("email")
             }
+
             else -> {
                 userRepository
                     .findAllByIdIn(userIds)
-                    .filter { objectMapper.readValue(it.userAttributes?.value, Map::class.java)[sendType] != null }
+                    .filter {
+                        objectMapper.readValue(
+                            it.userAttributes?.value,
+                            Map::class.java
+                        )[sendType] != null
+                    }
             }
         }
     }

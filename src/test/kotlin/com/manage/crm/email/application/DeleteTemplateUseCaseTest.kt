@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.manage.crm.email.application.dto.DeleteTemplateUseCaseIn
 import com.manage.crm.email.application.dto.DeleteTemplateUseCaseOut
-import com.manage.crm.email.application.service.ScheduleTaskServicePostEventProcessor
+import com.manage.crm.email.application.service.ScheduleTaskService
 import com.manage.crm.email.domain.ScheduledEvent
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.repository.ScheduledEventRepository
@@ -21,7 +21,7 @@ import java.time.LocalDateTime
 class DeleteTemplateUseCaseTest : BehaviorSpec({
     lateinit var emailTemplateRepository: EmailTemplateRepository
     lateinit var scheduledEventRepository: ScheduledEventRepository
-    lateinit var scheduleTaskService: ScheduleTaskServicePostEventProcessor
+    lateinit var scheduleTaskService: ScheduleTaskService
     lateinit var deleteTemplateUseCase: DeleteTemplateUseCase
 
     beforeContainer {
@@ -29,26 +29,31 @@ class DeleteTemplateUseCaseTest : BehaviorSpec({
         scheduledEventRepository = mockk()
         scheduleTaskService = mockk()
         deleteTemplateUseCase =
-            DeleteTemplateUseCase(emailTemplateRepository, scheduledEventRepository, scheduleTaskService)
+            DeleteTemplateUseCase(
+                emailTemplateRepository,
+                scheduledEventRepository,
+                scheduleTaskService
+            )
     }
 
-    fun scheduledEventStubs(templateId: Long, size: Int, objectMapper: ObjectMapper) = (1..size).map {
-        ScheduledEvent(
-            eventId = EventId("eventId$it"),
-            eventClass = NotificationEmailSendTimeOutEvent::class.simpleName!!,
-            eventPayload = objectMapper.writeValueAsString(
-                NotificationEmailSendTimeOutEvent(
-                    eventId = EventId("eventId$it"),
-                    templateId = templateId,
-                    templateVersion = 1.0f,
-                    userIds = listOf(1L),
-                    expiredTime = LocalDateTime.now()
-                )
-            ),
-            completed = false,
-            scheduledAt = ScheduleType.AWS.name
-        )
-    }
+    fun scheduledEventStubs(templateId: Long, size: Int, objectMapper: ObjectMapper) =
+        (1..size).map {
+            ScheduledEvent(
+                eventId = EventId("eventId$it"),
+                eventClass = NotificationEmailSendTimeOutEvent::class.simpleName!!,
+                eventPayload = objectMapper.writeValueAsString(
+                    NotificationEmailSendTimeOutEvent(
+                        eventId = EventId("eventId$it"),
+                        templateId = templateId,
+                        templateVersion = 1.0f,
+                        userIds = listOf(1L),
+                        expiredTime = LocalDateTime.now()
+                    )
+                ),
+                completed = false,
+                scheduledAt = ScheduleType.AWS.name
+            )
+        }
 
     given("DeleteTemplateUseCase") {
         val objectMapper = ObjectMapper().apply {
@@ -56,11 +61,16 @@ class DeleteTemplateUseCaseTest : BehaviorSpec({
         }
         `when`("delete template with force flag") {
             val emailTemplateId = 1L
-            val useCaseIn = DeleteTemplateUseCaseIn(emailTemplateId = emailTemplateId, forceFlag = true)
+            val useCaseIn =
+                DeleteTemplateUseCaseIn(emailTemplateId = emailTemplateId, forceFlag = true)
 
             val eventSize = 3
             val schedules = scheduledEventStubs(emailTemplateId, eventSize, objectMapper)
-            coEvery { scheduledEventRepository.findAllByEmailTemplateIdAndCompletedFalse(emailTemplateId) } returns schedules
+            coEvery {
+                scheduledEventRepository.findAllByEmailTemplateIdAndCompletedFalse(
+                    emailTemplateId
+                )
+            } returns schedules
 
             coEvery { scheduleTaskService.cancel(any()) } returns Unit
 
@@ -72,7 +82,11 @@ class DeleteTemplateUseCaseTest : BehaviorSpec({
             }
 
             then("find all schedules related to email template") {
-                coVerify(exactly = 1) { scheduledEventRepository.findAllByEmailTemplateIdAndCompletedFalse(emailTemplateId) }
+                coVerify(exactly = 1) {
+                    scheduledEventRepository.findAllByEmailTemplateIdAndCompletedFalse(
+                        emailTemplateId
+                    )
+                }
             }
 
             then("cancel all scheduled tasks") {
@@ -86,11 +100,16 @@ class DeleteTemplateUseCaseTest : BehaviorSpec({
 
         `when`("force flag is false and there are schedules") {
             val emailTemplateId = 1L
-            val useCaseIn = DeleteTemplateUseCaseIn(emailTemplateId = emailTemplateId, forceFlag = false)
+            val useCaseIn =
+                DeleteTemplateUseCaseIn(emailTemplateId = emailTemplateId, forceFlag = false)
 
             val eventSize = 3
             val schedules = scheduledEventStubs(emailTemplateId, eventSize, objectMapper)
-            coEvery { scheduledEventRepository.findAllByEmailTemplateIdAndCompletedFalse(emailTemplateId) } returns schedules
+            coEvery {
+                scheduledEventRepository.findAllByEmailTemplateIdAndCompletedFalse(
+                    emailTemplateId
+                )
+            } returns schedules
 
             val result = deleteTemplateUseCase.execute(useCaseIn)
             then("should return DeleteTemplateUseCaseOut") {
@@ -100,9 +119,14 @@ class DeleteTemplateUseCaseTest : BehaviorSpec({
 
         `when`("force flag is false and there are no schedules") {
             val emailTemplateId = 1L
-            val useCaseIn = DeleteTemplateUseCaseIn(emailTemplateId = emailTemplateId, forceFlag = false)
+            val useCaseIn =
+                DeleteTemplateUseCaseIn(emailTemplateId = emailTemplateId, forceFlag = false)
 
-            coEvery { scheduledEventRepository.findAllByEmailTemplateIdAndCompletedFalse(emailTemplateId) } returns emptyList()
+            coEvery {
+                scheduledEventRepository.findAllByEmailTemplateIdAndCompletedFalse(
+                    emailTemplateId
+                )
+            } returns emptyList()
 
             coEvery { emailTemplateRepository.deleteById(any()) } returns Unit
 

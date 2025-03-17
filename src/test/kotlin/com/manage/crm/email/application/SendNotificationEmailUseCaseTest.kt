@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.email.application.dto.SendEmailInDto
 import com.manage.crm.email.application.dto.SendEmailOutDto
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseIn
-import com.manage.crm.email.application.service.NonVariablesMailServicePostEventProcessor
+import com.manage.crm.email.application.service.NonVariablesMailService
 import com.manage.crm.email.domain.EmailTemplate
 import com.manage.crm.email.domain.EmailTemplateHistory
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
@@ -23,7 +23,7 @@ import io.mockk.mockk
 class SendNotificationEmailUseCaseTest : BehaviorSpec({
     lateinit var emailTemplateRepository: EmailTemplateRepository
     lateinit var emailTemplateHistoryRepository: EmailTemplateHistoryRepository
-    lateinit var nonVariablesEmailService: NonVariablesMailServicePostEventProcessor
+    lateinit var nonVariablesEmailService: NonVariablesMailService
     lateinit var userRepository: UserRepository
     lateinit var useCase: SendNotificationEmailUseCase
 
@@ -112,7 +112,12 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                 userIds = listOf(1L, 2L)
             )
 
-            coEvery { emailTemplateHistoryRepository.findByTemplateIdAndVersion(useCaseIn.templateId, useCaseIn.templateVersion!!) } answers {
+            coEvery {
+                emailTemplateHistoryRepository.findByTemplateIdAndVersion(
+                    useCaseIn.templateId,
+                    useCaseIn.templateVersion!!
+                )
+            } answers {
                 EmailTemplateHistory(
                     id = 1,
                     templateId = 1,
@@ -141,7 +146,12 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             }
 
             then("find template by id and version") {
-                coVerify(exactly = 1) { emailTemplateHistoryRepository.findByTemplateIdAndVersion(useCaseIn.templateId, useCaseIn.templateVersion!!) }
+                coVerify(exactly = 1) {
+                    emailTemplateHistoryRepository.findByTemplateIdAndVersion(
+                        useCaseIn.templateId,
+                        useCaseIn.templateVersion!!
+                    )
+                }
             }
 
             then("find users") {
@@ -172,7 +182,11 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             }
 
             val key = "email"
-            coEvery { userRepository.findAllExistByUserAttributesKey(key) } answers { userSubs(useCaseIn.userIds.size) }
+            coEvery { userRepository.findAllExistByUserAttributesKey(key) } answers {
+                userSubs(
+                    useCaseIn.userIds.size
+                )
+            }
 
             coEvery { nonVariablesEmailService.send(any(SendEmailInDto::class)) } answers {
                 SendEmailOutDto(
