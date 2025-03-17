@@ -6,27 +6,29 @@ import com.manage.crm.email.event.schedule.CancelScheduledEvent
 import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutEvent
 import com.manage.crm.email.support.EmailEventPublisher
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 
 @Component
 class ScheduleTaskServicePostEventProcessor(
-    private val scheduleTaskServiceImpl: ScheduleTaskServiceImpl,
+    @Qualifier("scheduleTaskServiceImpl")
+    private val scheduleTaskService: ScheduleTaskService,
     private val emailEventPublisher: EmailEventPublisher
 ) : ScheduleTaskService {
     val log = KotlinLogging.logger {}
 
     override fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String {
-        return newScheduleEventProcess(scheduleTaskServiceImpl.newSchedule(input), input)
+        return newScheduleEventProcess(scheduleTaskService.newSchedule(input), input)
     }
 
     override fun cancel(scheduleName: String) {
-        scheduleTaskServiceImpl.cancel(scheduleName).let {
+        scheduleTaskService.cancel(scheduleName).let {
             cancelEventProcess(scheduleName)
         }
     }
 
     override fun reSchedule(input: NotificationEmailSendTimeOutEventInput) {
-        scheduleTaskServiceImpl.reSchedule(input).let {
+        scheduleTaskService.reSchedule(input).let {
             reScheduleEventProcess(input)
         }
     }

@@ -3,7 +3,7 @@ package com.manage.crm.email.event.send.notification.handler
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.email.application.dto.NonContent
 import com.manage.crm.email.application.dto.SendEmailArgs
-import com.manage.crm.email.application.service.NonVariablesMailServiceImpl
+import com.manage.crm.email.application.service.NonVariablesMailService
 import com.manage.crm.email.domain.EmailSendHistory
 import com.manage.crm.email.domain.model.NotificationEmailTemplatePropertiesModel
 import com.manage.crm.email.domain.repository.EmailSendHistoryRepository
@@ -12,9 +12,11 @@ import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.repository.ScheduledEventRepository
 import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
+import com.manage.crm.infrastructure.mail.MailSender
 import com.manage.crm.support.transactional.TransactionTemplates
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import org.springframework.transaction.reactive.executeAndAwait
 
@@ -25,7 +27,8 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
     private val emailTemplateHistoryRepository: EmailTemplateHistoryRepository,
     private val emailSendHistoryRepository: EmailSendHistoryRepository,
     private val userRepository: UserRepository,
-    private val nonVariablesEmailService: NonVariablesMailServiceImpl,
+    @Qualifier("nonVariablesMailServiceImpl")
+    private val nonVariablesMailService: NonVariablesMailService,
     private val objectMapper: ObjectMapper,
     private val transactionalTemplates: TransactionTemplates
 ) {
@@ -77,9 +80,10 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
 
             val users = userRepository.findAllById(userIds)
             users.collect { user ->
-                val email = user.userAttributes?.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)!!
+                val email =
+                    user.userAttributes?.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)!!
                 val emailMessageId =
-                    nonVariablesEmailService.send(
+                    (nonVariablesMailService as MailSender<SendEmailArgs>).send(
                         SendEmailArgs(
                             to = email,
                             subject = template.subject,
