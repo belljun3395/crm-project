@@ -2,7 +2,7 @@ package com.manage.crm.email.event.send.notification
 
 import com.manage.crm.email.MailEventInvokeSituationTest
 import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
-import com.manage.crm.email.application.service.ScheduleTaskServicePostEventProcessor
+import com.manage.crm.email.application.service.ScheduleTaskService
 import com.manage.crm.email.domain.vo.EventId
 import com.manage.crm.email.event.relay.aws.ScheduledEventReverseRelay
 import com.manage.crm.email.event.relay.aws.mapper.ScheduledEventMessageMapper
@@ -11,13 +11,15 @@ import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.modulith.test.Scenario
 import software.amazon.awssdk.services.scheduler.model.CreateScheduleResponse
 import java.time.LocalDateTime
 import kotlin.test.assertEquals
 
 class NotificationEmailSendTimeOutEventListenerTest(
-    private val scheduleTaskService: ScheduleTaskServicePostEventProcessor,
+    @Qualifier("scheduleTaskServicePostEventProcessor")
+    private val scheduleTaskService: ScheduleTaskService,
     scheduledEventMessageMapper: ScheduledEventMessageMapper
 ) : MailEventInvokeSituationTest() {
 

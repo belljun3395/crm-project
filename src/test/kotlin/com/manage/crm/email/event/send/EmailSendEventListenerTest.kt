@@ -4,7 +4,7 @@ import com.manage.crm.email.MailEventInvokeSituationTest
 import com.manage.crm.email.application.dto.NonContent
 import com.manage.crm.email.application.dto.SendEmailInDto
 import com.manage.crm.email.application.dto.SendEmailOutDto
-import com.manage.crm.email.application.service.NonVariablesMailServicePostEventProcessor
+import com.manage.crm.email.application.service.NonVariablesMailService
 import com.manage.crm.email.domain.vo.EmailProviderType
 import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.email.event.relay.aws.SesMessageReverseRelay
@@ -16,8 +16,8 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.mockingDetails
-import org.mockito.Mockito.times
 import org.mockito.Mockito.`when`
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.modulith.test.Scenario
 import java.time.ZonedDateTime
 import kotlin.test.assertEquals
@@ -45,7 +45,8 @@ fun getMessage(
 }
 
 class EmailSendEventListenerTest(
-    val nonVariablesMailService: NonVariablesMailServicePostEventProcessor,
+    @Qualifier("nonVariablesMailServicePostEventProcessor")
+    val nonVariablesMailService: NonVariablesMailService,
     eventMessageMapper: SesMessageMapper
 ) : MailEventInvokeSituationTest() {
 

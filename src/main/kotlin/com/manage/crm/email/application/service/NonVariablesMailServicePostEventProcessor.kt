@@ -4,16 +4,18 @@ import com.manage.crm.email.application.dto.SendEmailInDto
 import com.manage.crm.email.application.dto.SendEmailOutDto
 import com.manage.crm.email.event.send.EmailSentEvent
 import com.manage.crm.email.support.EmailEventPublisher
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 
 @Component
 class NonVariablesMailServicePostEventProcessor(
-    private val nonVariablesMailServiceImpl: NonVariablesMailServiceImpl,
+    @Qualifier("nonVariablesMailServiceImpl")
+    private val nonVariablesMailService: NonVariablesMailService,
     private val emailEventPublisher: EmailEventPublisher
 ) : NonVariablesMailService {
 
     override suspend fun send(args: SendEmailInDto): SendEmailOutDto {
-        return sendPostEventProcess(nonVariablesMailServiceImpl.send(args))
+        return sendPostEventProcess(nonVariablesMailService.send(args))
     }
 
     fun sendPostEventProcess(outDto: SendEmailOutDto): SendEmailOutDto {
