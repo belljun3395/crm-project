@@ -3,7 +3,7 @@ package com.manage.crm.email.event.send.notification
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
-import com.manage.crm.email.application.service.ScheduleTaskServicePostEventProcessor
+import com.manage.crm.email.application.service.ScheduleTaskService
 import com.manage.crm.email.domain.repository.ScheduledEventRepository
 import com.manage.crm.support.LocalDateTimeExtension
 import com.manage.crm.support.parseExpiredTime
@@ -12,6 +12,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.context.annotation.Profile
@@ -32,7 +33,8 @@ class NotificationEmailSendTimeOutEventRePlayer(
     private val eventScheduleRepository: ScheduledEventRepository,
     private val objectMapper: ObjectMapper,
     private val transactionalTemplates: TransactionTemplates,
-    private val scheduleTaskService: ScheduleTaskServicePostEventProcessor
+    @Qualifier("scheduleTaskServicePostEventProcessor")
+    private val scheduleTaskService: ScheduleTaskService
 ) : ApplicationRunner {
     val log = KotlinLogging.logger {}
 
@@ -44,7 +46,9 @@ class NotificationEmailSendTimeOutEventRePlayer(
                 replay { expiredEventsLogBuffer, replayedEventsLogBuffer ->
                     var expiredEventCount = 0L
                     var replayedEventCount = 0L
-                    eventScheduleRepository.findAllByEventClassAndCompletedFalse(NotificationEmailSendTimeOutEvent::class.simpleName.toString())
+                    eventScheduleRepository.findAllByEventClassAndCompletedFalse(
+                        NotificationEmailSendTimeOutEvent::class.simpleName.toString()
+                    )
                         .forEach {
                             objectMapper.readTree(it.eventPayload).let { payload ->
                                 val event =
@@ -57,7 +61,8 @@ class NotificationEmailSendTimeOutEventRePlayer(
                                     )
                                 if (event.isExpired()) {
                                     expiredEventsLogBuffer.appendLine("  - eventId: ${event.eventId} expiredTime: ${event.expiredTime}")
-                                    eventScheduleRepository.findByEventId(event.eventId)?.notConsumed()?.complete()
+                                    eventScheduleRepository.findByEventId(event.eventId)
+                                        ?.notConsumed()?.complete()
                                     expiredEventCount++
                                 } else {
                                     replayedEventsLogBuffer.appendLine("  - eventId: ${event.eventId} expiredTime: ${event.expiredTime}")
@@ -96,7 +101,10 @@ class NotificationEmailSendTimeOutEventRePlayer(
                 appendLine("Replayed events:")
             }
 
-        val (expiredEventCount, replayedEventCount) = logic(expiredEventsLogBuffer, replayedEventsLogBuffer)
+        val (expiredEventCount, replayedEventCount) = logic(
+            expiredEventsLogBuffer,
+            replayedEventsLogBuffer
+        )
 
         logBuffer.append(expiredEventsLogBuffer)
         logBuffer.append(replayedEventsLogBuffer)
