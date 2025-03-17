@@ -16,7 +16,7 @@ class ScheduleTaskServiceImpl(
     private val scheduledEventRepository: ScheduledEventRepository,
     private val awsSchedulerService: AwsSchedulerService,
     private val objectMapper: ObjectMapper
-) : ScheduleTaskService {
+) : ScheduleTaskService, ScheduleTaskBrowseService {
     val log = KotlinLogging.logger {}
 
     override fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String {
@@ -38,8 +38,7 @@ class ScheduleTaskServiceImpl(
         newSchedule(input)
     }
 
-    // todo refactor to interface
-    suspend fun browseScheduledTasksView(): List<ScheduleTaskView> {
+    override suspend fun browseScheduledTasksView(): List<ScheduleTaskView> {
         val awsScheduleViews = awsSchedulerService.browseSchedule()
             .map { EventId(it.value) }
             .filter { it.value.matches(Regex("[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}")) }

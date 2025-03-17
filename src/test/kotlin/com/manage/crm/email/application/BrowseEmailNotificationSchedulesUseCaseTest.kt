@@ -3,8 +3,7 @@ package com.manage.crm.email.application
 import com.manage.crm.email.application.dto.BrowseEmailNotificationSchedulesUseCaseOut
 import com.manage.crm.email.application.dto.EmailNotificationScheduleDto
 import com.manage.crm.email.application.dto.ScheduleTaskView
-import com.manage.crm.email.application.service.ScheduleTaskService
-import com.manage.crm.email.application.service.ScheduleTaskServiceImpl
+import com.manage.crm.email.application.service.ScheduleTaskBrowseService
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -14,7 +13,7 @@ import java.time.LocalDateTime
 import kotlin.random.Random
 
 class BrowseEmailNotificationSchedulesUseCaseTest : BehaviorSpec({
-    lateinit var scheduleTaskService: ScheduleTaskService
+    lateinit var scheduleTaskService: ScheduleTaskBrowseService
     lateinit var useCase: BrowseEmailNotificationSchedulesUseCase
 
     beforeContainer {
@@ -35,8 +34,7 @@ class BrowseEmailNotificationSchedulesUseCaseTest : BehaviorSpec({
         `when`("browse all schedules") {
             val scheduleTaskViewSize = Random(1).nextInt(1, 10)
             val scheduleTaskViewStubs = scheduleTaskViewStubs(scheduleTaskViewSize)
-            // TODO fix this
-            coEvery { (scheduleTaskService as ScheduleTaskServiceImpl).browseScheduledTasksView() } answers { scheduleTaskViewStubs }
+            coEvery { scheduleTaskService.browseScheduledTasksView() } answers { scheduleTaskViewStubs }
 
             val result = useCase.execute()
             then("should return BrowseEmailNotificationSchedulesUseCaseOut") {
@@ -53,8 +51,7 @@ class BrowseEmailNotificationSchedulesUseCaseTest : BehaviorSpec({
             }
 
             then("browse all schedules") {
-                // TODO fix this
-                coVerify(exactly = 1) { (scheduleTaskService as ScheduleTaskServiceImpl).browseScheduledTasksView() }
+                coVerify(exactly = 1) { scheduleTaskService.browseScheduledTasksView() }
             }
         }
     }
