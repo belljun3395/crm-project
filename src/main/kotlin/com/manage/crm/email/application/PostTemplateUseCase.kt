@@ -7,6 +7,7 @@ import com.manage.crm.email.domain.EmailTemplate
 import com.manage.crm.email.domain.EmailTemplateHistory
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
+import com.manage.crm.email.domain.vo.Variables
 import com.manage.crm.support.out
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
@@ -35,7 +36,9 @@ class PostTemplateUseCase(
                 .filterNot { it.isBlank() }
                 .filterNot { it.isEmpty() }
                 .sorted()
-            if (bodyVariables != variables) {
+                .let { Variables(it) }
+
+            if (bodyVariables != variables.getVariables(false)) {
                 throw IllegalArgumentException("Variables do not match: \n$bodyVariables != $variables")
             }
             return@run variables
