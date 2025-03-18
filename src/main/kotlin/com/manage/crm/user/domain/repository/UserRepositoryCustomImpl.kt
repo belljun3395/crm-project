@@ -17,7 +17,7 @@ class UserRepositoryCustomImpl(
             SELECT * FROM USERS
         """.trimIndent()
         val whereClause = mutableListOf<String>()
-        whereClause.add("user_attributes LIKE '%\"email\": $email%'")
+        whereClause.add("user_attributes LIKE '%\"email\": \"$email\"%'")
         selectQuery = selectQuery.plus(" WHERE ${whereClause.joinToString(" AND ")}")
 
         return dataBaseClient.sql(selectQuery)
