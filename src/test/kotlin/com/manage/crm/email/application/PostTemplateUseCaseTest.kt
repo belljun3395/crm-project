@@ -7,6 +7,7 @@ import com.manage.crm.email.domain.EmailTemplate
 import com.manage.crm.email.domain.EmailTemplateHistory
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
+import com.manage.crm.email.domain.vo.Variables
 import com.manage.crm.email.event.template.PostEmailTemplateEvent
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -64,7 +65,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 templateName = useCaseIn.templateName,
                 subject = useCaseIn.subject!!,
                 body = useCaseIn.body,
-                variables = useCaseIn.variables
+                variables = Variables(useCaseIn.variables)
             ).apply {
                 // set id after save
                 id = 1
@@ -137,7 +138,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 templateName = useCaseIn.templateName,
                 subject = "subject",
                 body = "body",
-                variables = emptyList()
+                variables = Variables(emptyList())
             ).apply {
                 id = useCaseIn.id
                 version = 1.0f
@@ -148,7 +149,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 templateName = useCaseIn.templateName,
                 subject = useCaseIn.subject!!,
                 body = useCaseIn.body,
-                variables = useCaseIn.variables
+                variables = Variables(useCaseIn.variables)
             ).apply {
                 id = useCaseIn.id
                 version = useCaseIn.version!!
