@@ -15,7 +15,7 @@ class EmailTemplateTest : FeatureSpec({
             val variables = Variables()
 
             // when
-            val emailTemplate = EmailTemplate.new(templateName, subject, body, variables.value)
+            val emailTemplate = EmailTemplate.new(templateName, subject, body, Variables(variables.value))
 
             // then
             emailTemplate.templateName shouldBe templateName
@@ -42,7 +42,7 @@ class EmailTemplateTest : FeatureSpec({
         scenario("modify email template subject") {
             // given
             val subject = "newSubject"
-            val emailTemplate = EmailTemplate.new("templateName", "subject", "body", variables.value)
+            val emailTemplate = EmailTemplate.new("templateName", "subject", "body", Variables(variables.value))
             emailTemplate.id = 1
 
             // when
@@ -57,12 +57,12 @@ class EmailTemplateTest : FeatureSpec({
         scenario("modify email template body with variables") {
             // given
             val body = "newBody"
-            val emailTemplate = EmailTemplate.new("templateName", "subject", "body", variables.value)
+            val emailTemplate = EmailTemplate.new("templateName", "subject", "body", Variables(variables.value))
             emailTemplate.id = 1
 
             // when
             val modifiedTemplate = emailTemplate.modify()
-                .modifyBody(body, variables.value)
+                .modifyBody(body, variables)
                 .done()
 
             // then
@@ -72,7 +72,7 @@ class EmailTemplateTest : FeatureSpec({
         scenario("modify email template version") {
             // given
             val version = 2.0f
-            val emailTemplate = EmailTemplate.new("templateName", "subject", "body", variables.value)
+            val emailTemplate = EmailTemplate.new("templateName", "subject", "body", Variables(variables.value))
             emailTemplate.id = 1
 
             // when
@@ -87,7 +87,7 @@ class EmailTemplateTest : FeatureSpec({
         scenario("modify email template version under current version") {
             // given
             val version = 0.9f
-            val emailTemplate = EmailTemplate.new("templateName", "subject", "body", variables.value)
+            val emailTemplate = EmailTemplate.new("templateName", "subject", "body", Variables(variables.value))
             emailTemplate.id = 1
 
             // when

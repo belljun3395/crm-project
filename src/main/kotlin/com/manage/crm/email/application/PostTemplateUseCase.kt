@@ -7,6 +7,7 @@ import com.manage.crm.email.domain.EmailTemplate
 import com.manage.crm.email.domain.EmailTemplateHistory
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
+import com.manage.crm.email.domain.vo.Variables
 import com.manage.crm.support.out
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
@@ -30,13 +31,15 @@ class PostTemplateUseCase(
         val version: Float? = useCaseIn.version
         val body = htmlService.prettyPrintHtml(useCaseIn.body)
         val variables = run {
-            val bodyVariables: List<String> = htmlService.extractVariables(body).sorted()
+            val bodyVariables = htmlService.extractVariables(body).sorted().let { Variables(it) }
             val variables = useCaseIn.variables
                 .filterNot { it.isBlank() }
                 .filterNot { it.isEmpty() }
                 .sorted()
-            if (bodyVariables != variables) {
-                throw IllegalArgumentException("Variables do not match: \n$bodyVariables != $variables")
+                .let { Variables(it) }
+
+            if (bodyVariables.getVariables(false) != variables.getVariables(false)) {
+                throw IllegalArgumentException("Variables do not match: \n${bodyVariables.getVariables(false)} != ${variables.getVariables(false)}")
             }
             return@run variables
         }

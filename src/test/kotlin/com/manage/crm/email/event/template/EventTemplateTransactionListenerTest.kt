@@ -3,6 +3,7 @@ package com.manage.crm.email.event.template
 import com.manage.crm.email.MailEventInvokeSituationTest
 import com.manage.crm.email.domain.EmailTemplate
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
+import com.manage.crm.email.domain.vo.Variables
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mockingDetails
@@ -22,13 +23,13 @@ class EventTemplateTransactionListenerTest(
                 templateName = "templateName",
                 subject = "subject",
                 body = "body",
-                variables = emptyList()
+                variables = Variables(emptyList())
             )
             emailTemplateRepository.save(emailTemplate) // save email template
             // when
             emailTemplate.modify()
                 .modifySubject("newSubject")
-                .modifyBody("newBody", emptyList())
+                .modifyBody("newBody", Variables(emptyList()))
                 .done()
             emailTemplateRepository.save(emailTemplate) // modify email template
 

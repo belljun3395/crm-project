@@ -30,12 +30,12 @@ class EmailTemplate(
     var domainEvents: MutableList<PostEmailTemplateEvent> = mutableListOf()
 
     companion object {
-        fun new(templateName: String, subject: String, body: String, variables: List<String>): EmailTemplate {
+        fun new(templateName: String, subject: String, body: String, variables: Variables): EmailTemplate {
             return EmailTemplate(
                 templateName = templateName,
                 subject = subject,
                 body = body,
-                variables = Variables(variables)
+                variables = variables
             )
         }
     }
@@ -74,10 +74,10 @@ class EmailTemplate(
 
         fun modifyBody(
             body: String,
-            variables: List<String>
+            variables: Variables
         ): EmailTemplateModifyBuilder {
             template.body = body
-            template.variables = Variables(variables)
+            template.variables = variables
             return this
         }
 
