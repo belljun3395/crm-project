@@ -3,7 +3,7 @@ package com.manage.crm.email.domain.vo
 const val DELIMITER = ":"
 
 private fun String.containDefault(delimiter: String = DELIMITER): Boolean {
-    return this.contains(DELIMITER)
+    return this.contains(delimiter)
 }
 
 private fun String.extractKey(delimiter: String = DELIMITER): String {
