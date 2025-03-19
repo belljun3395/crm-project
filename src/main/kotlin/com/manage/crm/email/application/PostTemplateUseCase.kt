@@ -31,15 +31,15 @@ class PostTemplateUseCase(
         val version: Float? = useCaseIn.version
         val body = htmlService.prettyPrintHtml(useCaseIn.body)
         val variables = run {
-            val bodyVariables: List<String> = htmlService.extractVariables(body).sorted()
+            val bodyVariables = htmlService.extractVariables(body).sorted().let { Variables(it) }
             val variables = useCaseIn.variables
                 .filterNot { it.isBlank() }
                 .filterNot { it.isEmpty() }
                 .sorted()
                 .let { Variables(it) }
 
-            if (bodyVariables != variables.getVariables(false)) {
-                throw IllegalArgumentException("Variables do not match: \n$bodyVariables != $variables")
+            if (bodyVariables.getVariables(false) != variables.getVariables(false)) {
+                throw IllegalArgumentException("Variables do not match: \n${bodyVariables.getVariables(false)} != ${variables.getVariables(false)}")
             }
             return@run variables
         }
