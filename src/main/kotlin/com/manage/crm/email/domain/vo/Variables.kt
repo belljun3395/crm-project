@@ -1,11 +1,13 @@
 package com.manage.crm.email.domain.vo
 
-private fun String.isContainDefault(): Boolean {
+const val DELIMITER = ":"
+
+private fun String.containDefault(): Boolean {
     return this.contains(":")
 }
 
-private fun String.getKeyFromValue(): String {
-    return this.substringBefore(":")
+private fun String.extractKey(delimiter: String = DELIMITER): String {
+    return this.substringBefore(delimiter)
 }
 
 data class Variables(
@@ -22,8 +24,8 @@ data class Variables(
             value
         } else {
             value.map {
-                if (it.isContainDefault()) {
-                    it.getKeyFromValue()
+                if (it.containDefault()) {
+                    it.extractKey()
                 } else {
                     it
                 }
@@ -31,13 +33,13 @@ data class Variables(
         }
     }
 
-    fun getVariable(key: String, withDefault: Boolean = true): String? {
-        return value.find { it.getKeyFromValue() == key }
+    fun findVariable(key: String, withDefault: Boolean = true): String? {
+        return value.find { it.extractKey() == key }
             ?.let {
                 if (withDefault) {
                     it
                 } else {
-                    it.getKeyFromValue()
+                    it.extractKey()
                 }
             }
     }

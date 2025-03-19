@@ -39,13 +39,13 @@ class VariablesTest : FeatureSpec({
         }
     }
 
-    feature("Variables#getVariable") {
+    feature("Variables#findVariable") {
         scenario("get variable") {
             // given
             val variables = Variables("title:hello", "name")
 
             // when
-            val result = variables.getVariable("title")
+            val result = variables.findVariable("title")
 
             // then
             result shouldBe "title:hello"
@@ -56,7 +56,7 @@ class VariablesTest : FeatureSpec({
             val variables = Variables("title:hello", "name")
 
             // when
-            val result = variables.getVariable("title", withDefault = false)
+            val result = variables.findVariable("title", withDefault = false)
 
             // then
             result shouldBe "title"
