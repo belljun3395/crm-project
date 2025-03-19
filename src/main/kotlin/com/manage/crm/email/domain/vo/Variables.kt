@@ -29,7 +29,7 @@ data class Variables(
                 if (withDefault) {
                     it
                 } else {
-                    it.substringAfter(":")
+                    it.substringBefore(":")
                 }
             }
     }
