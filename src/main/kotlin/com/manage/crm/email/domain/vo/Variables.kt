@@ -33,8 +33,8 @@ data class Variables(
         }
     }
 
-    fun findVariable(key: String, withDefault: Boolean = true): String? {
-        return value.find { it.extractKey() == key }
+    fun findVariable(key: String, withDefault: Boolean = true, delimiter: String = DELIMITER): String? {
+        return value.find { it == key || it.startsWith("$key$delimiter") }
             ?.let {
                 if (withDefault) {
                     it
