@@ -1,5 +1,13 @@
 package com.manage.crm.email.domain.vo
 
+/**
+ * Variables의 value는 다음과 같은 형태로 저장된다.
+ * - "title:hello", "name"
+ *
+ * "title:hello"는 key와 default value로 구성되어 있다.
+ *
+ * containDefault에서는 key와 default value를 구분하기 위한 delimiter를 사용하여 default value가 있는지 확인한다.
+ */
 private fun String.containDefault(delimiter: String): Boolean {
     return this.contains(delimiter)
 }
