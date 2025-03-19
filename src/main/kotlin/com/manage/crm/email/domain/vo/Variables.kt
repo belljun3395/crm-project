@@ -1,14 +1,14 @@
 package com.manage.crm.email.domain.vo
 
-const val DELIMITER = ":"
-
-private fun String.containDefault(delimiter: String = DELIMITER): Boolean {
+private fun String.containDefault(delimiter: String): Boolean {
     return this.contains(delimiter)
 }
 
-private fun String.extractKey(delimiter: String = DELIMITER): String {
+private fun String.extractKey(delimiter: String): String {
     return this.substringBefore(delimiter)
 }
+
+const val DELIMITER = ":"
 
 data class Variables(
     val value: List<String> = emptyList()
@@ -39,7 +39,7 @@ data class Variables(
                 if (withDefault) {
                     it
                 } else {
-                    it.extractKey()
+                    it.extractKey(delimiter)
                 }
             }
     }
