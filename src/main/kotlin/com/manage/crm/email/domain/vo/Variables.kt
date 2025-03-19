@@ -8,7 +8,7 @@ private fun String.extractKey(delimiter: String): String {
     return this.substringBefore(delimiter)
 }
 
-const val DELIMITER = ":"
+private const val DELIMITER = ":"
 
 data class Variables(
     val value: List<String> = emptyList()
