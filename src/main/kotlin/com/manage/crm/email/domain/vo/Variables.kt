@@ -19,13 +19,13 @@ data class Variables(
         return value.isEmpty()
     }
 
-    fun getVariables(withDefault: Boolean = true): List<String> {
+    fun getVariables(withDefault: Boolean = true, delimiter: String = DELIMITER): List<String> {
         return if (withDefault) {
             value
         } else {
             value.map {
-                if (it.containDefault()) {
-                    it.extractKey()
+                if (it.containDefault(delimiter)) {
+                    it.extractKey(delimiter)
                 } else {
                     it
                 }
