@@ -49,7 +49,7 @@ class BrowseTemplateUseCase(
                             templateName = template.templateName!!,
                             subject = template.subject!!,
                             body = template.body!!,
-                            variables = template.variables.value,
+                            variables = template.variables.getVariables(),
                             version = template.version,
                             createdAt = template.createdAt.toString()
                         ),
@@ -60,7 +60,7 @@ class BrowseTemplateUseCase(
                                 templateId = history.templateId!!,
                                 subject = history.subject!!,
                                 body = history.body!!,
-                                variables = history.variables.value,
+                                variables = history.variables.getVariables(),
                                 version = history.version,
                                 createdAt = history.createdAt.toString()
                             )
