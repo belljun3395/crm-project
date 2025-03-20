@@ -9,7 +9,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
-@Profile("!local && !test")
+@Profile("!local && !test && !local-dev")
 @Component
 class SesMessageReverseRelay(
     private val emailEventPublisher: EmailEventPublisher,
