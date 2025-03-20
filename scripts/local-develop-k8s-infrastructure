@@ -1,0 +1,41 @@
+#!/bin/sh
+
+set -e
+
+echo "🚀 Starting Kubernetes infrastructure deployment..."
+
+INFRA_DIR="../k8s/infrastructure"
+ORIGINAL_DIR=$(pwd)
+echo "📍Executing the script in the directory: $ORIGINAL_DIR"
+
+if [ ! -d "$INFRA_DIR" ]; then
+  echo "❌ Error: Directory $INFRA_DIR does not exist!"
+  exit 1
+fi
+
+echo "📂 Changing directory to infrastructure manifests..."
+cd "$INFRA_DIR"
+
+echo "🗑 Deleting existing infrastructure resources..."
+kubectl delete -f . || echo "⚠️  Warning: Some infrastructure resources might not exist."
+
+echo "📦 Applying new infrastructure manifests..."
+kubectl apply -f .
+
+echo "✅ Infrastructure resources updated successfully."
+
+echo "🔙 Returning to the original script directory: $ORIGINAL_DIR"
+cd "$ORIGINAL_DIR"
+
+echo "🔄 Running Grafana reset script..."
+GRAFANA_RESET_SCRIPT="./local-develop-grafana-reset"
+
+if [ -x "$GRAFANA_RESET_SCRIPT" ]; then
+  "$GRAFANA_RESET_SCRIPT"
+  echo "✅ Grafana reset script executed successfully."
+else
+  echo "❌ Error: Grafana reset script not found or not executable!"
+  exit 1
+fi
+
+echo "🎉 Kubernetes infrastructure deployment completed!"
