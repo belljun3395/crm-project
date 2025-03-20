@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: grafana
-          image: grafana/grafana:latest
+          image: grafana/grafana:10.2.3  # 또는 적절한 안정 버전
           ports:
             - containerPort: 3000
           volumeMounts:
@@ -29,6 +29,13 @@ spec:
               value: debug
             - name: GF_LOKI_URL
               value: http://crm-loki:3100
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
       volumes:
         - name: grafana-dashboard
           persistentVolumeClaim:
@@ -38,4 +45,4 @@ spec:
             name: grafana-provisioning-dashboards-config
         - name: grafana-provisioning-datasources
           configMap:
-              name: grafana-provisioning-datasources-config
+            name: grafana-provisioning-datasources-config
