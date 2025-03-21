@@ -1,0 +1,17 @@
+#!/bin/sh
+
+ORIGINAL_DIR=$(pwd)
+
+echo "🚀 Building the application image..."
+
+eval $(minikube -p minikube docker-env)
+
+cd ../
+
+docker build -t crm-app:lastest .
+
+cd "$ORIGINAL_DIR"
+
+echo "✅ Application image built successfully."
+
+
