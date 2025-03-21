@@ -21,10 +21,7 @@ spec:
               name: k6-scripts
           env:
             - name: K6_PROMETHEUS_RW_SERVER_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: monitoring-config
-                  key: prometheus-write-url
+              value: http://crm-prometheus:9090/api/v1/write
             - name: K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM
               value: "true"
           resources:
