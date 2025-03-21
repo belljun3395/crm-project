@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crm-grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crm-grafana
+  template:
+    metadata:
+      labels:
+        app: crm-grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:10.2.3  # 또는 적절한 안정 버전
+          ports:
+            - containerPort: 3000
+          volumeMounts:
+            - mountPath: /dashboard
+              name: grafana-dashboard
+            - mountPath: /etc/grafana/provisioning/dashboards
+              name: grafana-provisioning-dashboards
+            - mountPath: /etc/grafana/provisioning/datasources
+              name: grafana-provisioning-datasources
+          env:
+            - name: GF_LOG_LEVEL
+              value: debug
+            - name: GF_LOKI_URL
+              value: http://crm-loki:3100
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+      volumes:
+        - name: grafana-dashboard
+          persistentVolumeClaim:
+            claimName: grafana-dashboard-pvc
+        - name: grafana-provisioning-dashboards
+          configMap:
+            name: grafana-provisioning-dashboards-config
+        - name: grafana-provisioning-datasources
+          configMap:
+            name: grafana-provisioning-datasources-config

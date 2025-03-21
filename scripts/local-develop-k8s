@@ -1,0 +1,27 @@
+#!/bin/sh
+
+set -e
+
+echo "🚀 Starting Kubernetes deployment using existing scripts..."
+
+APP_SCRIPT="./local-develop-k8s-application"
+INFRA_SCRIPT="./local-develop-k8s-infrastructure"
+K6_SCRIPT="./local-develop-k8s-k6"
+
+if [ -x "$APP_SCRIPT" ]; then
+  echo "📦 Running application deployment script..."
+  "$APP_SCRIPT"
+else
+  echo "❌ Error: Application deployment script not found or not executable!"
+  exit 1
+fi
+
+if [ -x "$INFRA_SCRIPT" ]; then
+  echo "📦 Running infrastructure deployment script..."
+  "$INFRA_SCRIPT"
+else
+  echo "❌ Error: Infrastructure deployment script not found or not executable!"
+  exit 1
+fi
+
+echo "🎉 Kubernetes deployment completed!"

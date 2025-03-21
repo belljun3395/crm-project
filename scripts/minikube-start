@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo "🚀 Starting Minikube..."
+
+minikube start --driver=docker
+
+echo "✅ Minikube started successfully."

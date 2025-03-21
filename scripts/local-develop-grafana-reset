@@ -1,0 +1,40 @@
+#!/bin/bash
+
+LOCAL_DIR="../k8s/infrastructure/grafana-dashboard"
+GRAFANA_DIR="/dashboard"
+NAMESPACE="default"
+
+GRAFANA_POD=$(kubectl get pods -n $NAMESPACE -l app=crm-grafana -o jsonpath="{.items[0].metadata.name}")
+
+ORIGINAL_DIR=$(pwd)
+echo "📍Executing the script in the directory: $ORIGINAL_DIR"
+
+if [ -z "$GRAFANA_POD" ]; then
+  echo "❌ Grafana Pod를 찾을 수 없습니다. 실행 중인지 확인하세요."
+  exit 1
+fi
+
+echo "✅ Grafana Pod: $GRAFANA_POD"
+
+echo "⏳ Waiting for Grafana Pod to be ready..."
+while [[ $(kubectl get pod "$GRAFANA_POD" -n $NAMESPACE -o jsonpath="{.status.phase}") != "Running" ]]; do
+  echo "⏳ Pod is not ready yet. Retrying in 5 seconds..."
+  sleep 5
+done
+
+echo "✅ Grafana Pod is now running!"
+
+for FILE in "$LOCAL_DIR"/*.json; do
+  FILE_NAME=$(basename "$FILE")
+  echo "⬆️  Uploading $FILE to $GRAFANA_POD:$GRAFANA_DIR/$FILE_NAME"
+  kubectl cp "$FILE" "$GRAFANA_POD":"$GRAFANA_DIR/$FILE_NAME" -n $NAMESPACE
+done
+
+# Grafana Pod 재시작
+echo "🔄 Restarting Grafana Pod..."
+kubectl rollout restart deployment crm-grafana -n $NAMESPACE
+
+echo "🔙 Returning to the original script directory: $ORIGINAL_DIR"
+cd "$ORIGINAL_DIR"
+
+echo "✅ Done! Check Grafana UI for new dashboards."
