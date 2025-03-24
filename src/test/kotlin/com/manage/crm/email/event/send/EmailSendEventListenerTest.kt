@@ -55,7 +55,7 @@ class EmailSendEventListenerTest(
         SesMessageReverseRelay(sesMessageReverseRelayEmailEventPublisher, eventMessageMapper)
 
     @Test
-    fun `after non-variable mail service is called`(scenario: Scenario) {
+    fun `after mail service is called`(scenario: Scenario) {
         runTest {
             // given
             val sendEmailInDto = SendEmailInDto(
@@ -67,9 +67,9 @@ class EmailSendEventListenerTest(
                 destination = "example@example.com",
                 eventType = SentEmailStatus.SEND
             )
-            `when`(nonVariablesMailServiceImpl.send(sendEmailInDto.emailArgs)).thenReturn("messageId")
+            `when`(mailServiceImpl.send(sendEmailInDto.emailArgs)).thenReturn("messageId")
 
-            `when`(nonVariablesMailServiceImpl.send(sendEmailInDto)).thenReturn(
+            `when`(mailServiceImpl.send(sendEmailInDto)).thenReturn(
                 SendEmailOutDto(
                     userId = 1,
                     emailBody = "body",

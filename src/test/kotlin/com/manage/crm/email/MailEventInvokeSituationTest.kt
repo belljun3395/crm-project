@@ -38,7 +38,7 @@ abstract class MailEventInvokeSituationTest : EmailModuleTestTemplate() {
 
     // ----------------- EmailSendEventListenerInvokeSituation -----------------
     @MockitoBean
-    lateinit var nonVariablesMailServiceImpl: MailServiceImpl
+    lateinit var mailServiceImpl: MailServiceImpl
 
     @MockitoBean
     lateinit var emailSentEventHandler: EmailSentEventHandler

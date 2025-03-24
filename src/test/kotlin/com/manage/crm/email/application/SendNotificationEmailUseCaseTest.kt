@@ -213,7 +213,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { userRepository.findAllExistByUserAttributesKey(key) }
             }
 
-            then("send notification email") {
+            then("not send notification email") {
                 coVerify(exactly = 0) { mailService.send(any(SendEmailInDto::class)) }
             }
         }
