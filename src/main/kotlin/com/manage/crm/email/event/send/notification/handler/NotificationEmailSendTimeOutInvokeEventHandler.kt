@@ -2,24 +2,32 @@ package com.manage.crm.email.event.send.notification.handler
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.email.application.dto.NonContent
-import com.manage.crm.email.application.dto.SendEmailArgs
-import com.manage.crm.email.application.service.NonVariablesMailService
+import com.manage.crm.email.application.dto.SendEmailInDto
+import com.manage.crm.email.application.dto.VariablesContent
+import com.manage.crm.email.application.service.MailService
 import com.manage.crm.email.domain.EmailSendHistory
 import com.manage.crm.email.domain.model.NotificationEmailTemplatePropertiesModel
 import com.manage.crm.email.domain.repository.EmailSendHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.repository.ScheduledEventRepository
+import com.manage.crm.email.domain.vo.ATTRIBUTE_TYPE
+import com.manage.crm.email.domain.vo.CUSTOM_ATTRIBUTE_TYPE
 import com.manage.crm.email.domain.vo.SentEmailStatus
+import com.manage.crm.email.domain.vo.Variables
+import com.manage.crm.email.domain.vo.getAttributeKey
+import com.manage.crm.email.domain.vo.getCustomAttributeKey
+import com.manage.crm.email.domain.vo.getKeyType
 import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
-import com.manage.crm.infrastructure.mail.MailSender
 import com.manage.crm.support.transactional.TransactionTemplates
 import com.manage.crm.user.domain.repository.UserRepository
+import com.manage.crm.user.domain.vo.Json
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import org.springframework.transaction.reactive.executeAndAwait
 
+// TODO fix duplicate code @see SendNotificationEmailUseCase
 @Component
 class NotificationEmailSendTimeOutInvokeEventHandler(
     private val scheduledEventRepository: ScheduledEventRepository,
@@ -27,8 +35,8 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
     private val emailTemplateHistoryRepository: EmailTemplateHistoryRepository,
     private val emailSendHistoryRepository: EmailSendHistoryRepository,
     private val userRepository: UserRepository,
-    @Qualifier("nonVariablesMailServiceImpl")
-    private val nonVariablesMailService: NonVariablesMailService,
+    @Qualifier("mailServiceImpl")
+    private val mailService: MailService,
     private val objectMapper: ObjectMapper,
     private val transactionalTemplates: TransactionTemplates
 ) {
@@ -58,7 +66,8 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
                             ?.let {
                                 NotificationEmailTemplatePropertiesModel(
                                     subject = it.subject!!,
-                                    body = it.body!!
+                                    body = it.body!!,
+                                    variables = it.variables
                                 )
                             }
                             ?: throw IllegalArgumentException("Email Template not found by id and version: $templateId, $templateVersion")
@@ -70,7 +79,8 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
                             ?.let {
                                 NotificationEmailTemplatePropertiesModel(
                                     subject = it.subject!!,
-                                    body = it.body!!
+                                    body = it.body!!,
+                                    variables = it.variables
                                 )
                             }
                             ?: throw IllegalArgumentException("Email Template not found by id: $templateId")
@@ -82,15 +92,31 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
             users.collect { user ->
                 val email =
                     user.userAttributes?.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)!!
+                val content = if (template.isNoVariables()) {
+                    NonContent()
+                } else {
+                    val attributes = user.userAttributes!!
+                    val variables = template.variables
+                    variables.getVariables(false)
+                        .associate { key ->
+                            doAssociateVariables(key, attributes, variables)
+                        }.let {
+                            VariablesContent(it)
+                        }
+                }
+
                 val emailMessageId =
-                    (nonVariablesMailService as MailSender<SendEmailArgs>).send(
-                        SendEmailArgs(
+                    mailService.send(
+                        SendEmailInDto(
                             to = email,
                             subject = template.subject,
                             template = template.body,
-                            content = NonContent()
+                            content = content,
+                            emailBody = template.body,
+                            destination = email,
+                            eventType = SentEmailStatus.SEND
                         )
-                    )
+                    ).messageId
 
                 emailSendHistoryRepository.save(
                     EmailSendHistory(
@@ -103,5 +129,27 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
                 )
             }
         }
+    }
+
+    private fun doAssociateVariables(key: String, attributes: Json, variables: Variables): Pair<String, String> {
+        if (key.getKeyType() == ATTRIBUTE_TYPE) {
+            if (attributes.isExist(key.getAttributeKey(), objectMapper)) {
+                return key to attributes.getValue(
+                    key.getAttributeKey(),
+                    objectMapper
+                )
+            }
+        }
+
+        if (key.getKeyType() == CUSTOM_ATTRIBUTE_TYPE) {
+            if (attributes.isExist(key.getCustomAttributeKey(), objectMapper)) {
+                return key to attributes.getValue(
+                    key.getCustomAttributeKey(),
+                    objectMapper
+                )
+            }
+        }
+
+        return key to (variables.findVariableDefault(key) ?: "")
     }
 }
