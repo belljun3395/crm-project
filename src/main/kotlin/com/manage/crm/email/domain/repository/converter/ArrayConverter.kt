@@ -8,6 +8,9 @@ import org.springframework.data.convert.WritingConverter
 @ReadingConverter
 class VariablesReadingConverter : Converter<String, Variables> {
     override fun convert(source: String): Variables {
+        if (source.isEmpty()) {
+            return Variables()
+        }
         val variables = source.split(",").map { it.trim() }
         return Variables(variables)
     }

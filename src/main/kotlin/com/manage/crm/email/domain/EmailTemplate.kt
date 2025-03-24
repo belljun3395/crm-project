@@ -42,14 +42,6 @@ class EmailTemplate(
 
     fun isNewTemplate(): Boolean = id == null
 
-    private fun registerModifyEvent() {
-        domainEvents.add(
-            PostEmailTemplateEvent(
-                templateId = this.id!!
-            )
-        )
-    }
-
     // ----------------- Modify Builder -----------------
     fun modify(): EmailTemplateModifyBuilder = EmailTemplateModifyBuilder(this)
 
@@ -64,7 +56,6 @@ class EmailTemplate(
             template.registerModifyEvent()
             return template
         }
-
         fun modifySubject(subject: String?): EmailTemplateModifyBuilder {
             subject?.let {
                 template.subject = subject
@@ -93,5 +84,13 @@ class EmailTemplate(
             isVersionUpdated = true
             return this
         }
+    }
+
+    private fun registerModifyEvent() {
+        domainEvents.add(
+            PostEmailTemplateEvent(
+                templateId = this.id!!
+            )
+        )
     }
 }

@@ -2,14 +2,12 @@ package com.manage.crm.email.application
 
 import com.manage.crm.email.application.dto.PostTemplateUseCaseIn
 import com.manage.crm.email.application.dto.PostTemplateUseCaseOut
+import com.manage.crm.email.application.service.EmailTemplateRepositoryEventProcessor
 import com.manage.crm.email.application.service.HtmlService
 import com.manage.crm.email.domain.EmailTemplate
-import com.manage.crm.email.domain.EmailTemplateHistory
-import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.vo.Variables
 import com.manage.crm.support.out
-import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -19,10 +17,10 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class PostTemplateUseCase(
     private val emailTemplateRepository: EmailTemplateRepository,
-    private val emailTemplateHistoryRepository: EmailTemplateHistoryRepository,
-    private val htmlService: HtmlService,
-    private val applicationEventPublisher: ApplicationEventPublisher
+    private val emailTemplateSaveRepository: EmailTemplateRepositoryEventProcessor,
+    private val htmlService: HtmlService
 ) {
+
     @Transactional
     suspend fun execute(useCaseIn: PostTemplateUseCaseIn): PostTemplateUseCaseOut {
         val id: Long? = useCaseIn.id
@@ -60,28 +58,8 @@ class PostTemplateUseCase(
                         variables = variables
                     )
                 }
-        val modifiedOrNewTemplateEvents = modifiedOrNewTemplate.domainEvents
 
-        modifiedOrNewTemplate = modifiedOrNewTemplate.let { template ->
-            if (template.isNewTemplate()) {
-                emailTemplateRepository.save(template).let {
-                    emailTemplateHistoryRepository.save(
-                        EmailTemplateHistory(
-                            templateId = it.id!!,
-                            subject = it.subject,
-                            body = it.body,
-                            variables = it.variables,
-                            version = it.version
-                        )
-                    )
-                    it
-                }
-            } else {
-                emailTemplateRepository.save(template)
-            }
-        }
-
-        applicationEventPublisher.publishEvent(modifiedOrNewTemplateEvents)
+        modifiedOrNewTemplate = emailTemplateSaveRepository.save(modifiedOrNewTemplate)
 
         return out {
             PostTemplateUseCaseOut(

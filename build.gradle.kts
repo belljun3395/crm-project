@@ -85,6 +85,10 @@ dependencies {
     /** domain */
     implementation("org.jmolecules.integrations:jmolecules-starter-ddd:${DependencyVersion.JMOLECULES}")
 
+    /** arrow */
+    implementation("io.arrow-kt:arrow-core:${DependencyVersion.ARROW}")
+    implementation("io.arrow-kt:arrow-fx-coroutines:${DependencyVersion.ARROW}")
+
     /** aspectj */
     implementation("org.aspectj:aspectjweaver:${DependencyVersion.ASPECTJ}")
 
