@@ -8,14 +8,14 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 
 @Component
-class NonVariablesMailServicePostEventProcessor(
-    @Qualifier("nonVariablesMailServiceImpl")
-    private val nonVariablesMailService: NonVariablesMailService,
+class MailServicePostEventProcessor(
+    @Qualifier("mailServiceImpl")
+    private val mailService: MailService,
     private val emailEventPublisher: EmailEventPublisher
-) : NonVariablesMailService {
+) : MailService {
 
     override suspend fun send(args: SendEmailInDto): SendEmailOutDto {
-        return sendPostEventProcess(nonVariablesMailService.send(args))
+        return sendPostEventProcess(mailService.send(args))
     }
 
     fun sendPostEventProcess(outDto: SendEmailOutDto): SendEmailOutDto {

@@ -16,12 +16,45 @@ private fun String.extractKey(delimiter: String): String {
     return this.substringBefore(delimiter)
 }
 
+fun String.getKeyType(): String {
+    return this.split(TYPE_DELIMITER)[0] + TYPE_DELIMITER
+}
+
+fun String.getAttributeKey(): String {
+    return this.substringAfter(ATTRIBUTE_TYPE)
+}
+
+fun String.getCustomAttributeKey(): List<String> {
+    return this.substringAfter(CUSTOM_ATTRIBUTE_TYPE).split(TYPE_DELIMITER)
+}
+
 private const val DELIMITER = ":"
+private const val TYPE_DELIMITER = "_"
+const val ATTRIBUTE_TYPE = "attribute$TYPE_DELIMITER"
+const val CUSTOM_ATTRIBUTE_TYPE = "custom$TYPE_DELIMITER"
 
 data class Variables(
     val value: List<String> = emptyList()
 ) {
     constructor(vararg value: String) : this(value.toList())
+
+    init {
+        checkValueContainType()
+    }
+
+    private fun checkValueContainType() {
+        value.forEach {
+            if (!(it.contains(ATTRIBUTE_TYPE) || it.contains(CUSTOM_ATTRIBUTE_TYPE))) {
+                throw IllegalArgumentException("Value need to contain $ATTRIBUTE_TYPE")
+            }
+
+            if (it.contains(CUSTOM_ATTRIBUTE_TYPE)) {
+                if (it.split(TYPE_DELIMITER).size <= 2) {
+                    throw IllegalArgumentException("Custom attribute format is invalid.")
+                }
+            }
+        }
+    }
 
     fun isEmpty(): Boolean {
         return value.isEmpty()
@@ -41,7 +74,11 @@ data class Variables(
         }
     }
 
-    fun findVariable(key: String, withDefault: Boolean = true, delimiter: String = DELIMITER): String? {
+    fun findVariable(
+        key: String,
+        withDefault: Boolean = true,
+        delimiter: String = DELIMITER
+    ): String? {
         return value.find { it == key || it.startsWith("$key$delimiter") }
             ?.let {
                 if (withDefault) {
@@ -50,5 +87,9 @@ data class Variables(
                     it.extractKey(delimiter)
                 }
             }
+    }
+
+    fun findVariableDefault(key: String, delimiter: String = DELIMITER): String? {
+        return value.find { it.startsWith("$key$delimiter") }?.substringAfter(delimiter)
     }
 }

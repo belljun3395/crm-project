@@ -1,6 +1,6 @@
 package com.manage.crm.email
 
-import com.manage.crm.email.application.service.NonVariablesMailServiceImpl
+import com.manage.crm.email.application.service.MailServiceImpl
 import com.manage.crm.email.event.schedule.handler.CancelScheduledEventHandler
 import com.manage.crm.email.event.send.handler.EmailClickEventHandler
 import com.manage.crm.email.event.send.handler.EmailDeliveryDelayEventHandler
@@ -38,7 +38,7 @@ abstract class MailEventInvokeSituationTest : EmailModuleTestTemplate() {
 
     // ----------------- EmailSendEventListenerInvokeSituation -----------------
     @MockitoBean
-    lateinit var nonVariablesMailServiceImpl: NonVariablesMailServiceImpl
+    lateinit var mailServiceImpl: MailServiceImpl
 
     @MockitoBean
     lateinit var emailSentEventHandler: EmailSentEventHandler
