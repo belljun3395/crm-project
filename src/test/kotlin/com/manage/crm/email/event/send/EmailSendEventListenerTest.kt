@@ -4,7 +4,7 @@ import com.manage.crm.email.MailEventInvokeSituationTest
 import com.manage.crm.email.application.dto.NonContent
 import com.manage.crm.email.application.dto.SendEmailInDto
 import com.manage.crm.email.application.dto.SendEmailOutDto
-import com.manage.crm.email.application.service.NonVariablesMailService
+import com.manage.crm.email.application.service.MailService
 import com.manage.crm.email.domain.vo.EmailProviderType
 import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.email.event.relay.aws.SesMessageReverseRelay
@@ -45,8 +45,8 @@ fun getMessage(
 }
 
 class EmailSendEventListenerTest(
-    @Qualifier("nonVariablesMailServicePostEventProcessor")
-    val nonVariablesMailService: NonVariablesMailService,
+    @Qualifier("mailServicePostEventProcessor")
+    val mailService: MailService,
     eventMessageMapper: SesMessageMapper
 ) : MailEventInvokeSituationTest() {
 
@@ -89,7 +89,7 @@ class EmailSendEventListenerTest(
             doNothing().`when`(emailEventPublisher).publishEvent(event)
 
             // when
-            nonVariablesMailService.send(sendEmailInDto)
+            mailService.send(sendEmailInDto)
 
             `when`(emailSentEventHandler.handle(event)).thenReturn(Unit)
 
