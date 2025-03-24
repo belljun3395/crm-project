@@ -53,7 +53,8 @@ class SendNotificationEmailUseCase(
             val content = if (notificationProperties.isNoVariables()) {
                 NonContent()
             } else {
-                val attributes = targetUsers[email]!!.userAttributes!!
+                val user = targetUsers[email]
+                val attributes = user?.userAttributes ?: return@forEach
                 val variables = notificationProperties.variables
                 variables.getVariables(false)
                     .associate { key ->
