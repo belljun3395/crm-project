@@ -33,6 +33,9 @@ object DependencyVersion {
     /** jmolecules */
     const val JMOLECULES = "0.24.1"
 
+    /** arrow */
+    const val ARROW = "1.2.1"
+
     /** AspectJ **/
     const val ASPECTJ = "1.9.5"
 
