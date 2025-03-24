@@ -48,7 +48,7 @@ cp ./build/openapi.json ./docs/
   - UseCase Test
     - UseCase BDD 테스트
       - 요청에 따라 동작을 검증하는 테스트
-    - Service 로직 테스트
-      - 요청에 따른 Service 로직을 검증하는 테스트
-    - Listener 테스트
-      - 이벤트 발행 상황에 따라 Listener가 올바르게 동작하는지 검증하는 테스트
+  - Service 로직 테스트
+    - 요청에 따른 Service 로직을 검증하는 테스트
+  - Listener 테스트
+    - 이벤트 발행 상황에 따라 Listener가 올바르게 동작하는지 검증하는 테스트
