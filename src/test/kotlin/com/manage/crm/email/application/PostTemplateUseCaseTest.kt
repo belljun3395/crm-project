@@ -2,40 +2,32 @@ package com.manage.crm.email.application
 
 import com.manage.crm.email.application.dto.PostTemplateUseCaseIn
 import com.manage.crm.email.application.dto.PostTemplateUseCaseOut
+import com.manage.crm.email.application.service.EmailTemplateRepositoryEventProcessor
 import com.manage.crm.email.application.service.HtmlService
 import com.manage.crm.email.domain.EmailTemplate
-import com.manage.crm.email.domain.EmailTemplateHistory
-import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.vo.Variables
-import com.manage.crm.email.event.template.PostEmailTemplateEvent
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
-import org.springframework.context.ApplicationEventPublisher
 
 class PostTemplateUseCaseTest : BehaviorSpec({
     lateinit var emailTemplateRepository: EmailTemplateRepository
-    lateinit var emailTemplateHistoryRepository: EmailTemplateHistoryRepository
+    lateinit var emailTemplateSaveRepository: EmailTemplateRepositoryEventProcessor
     lateinit var htmlService: HtmlService
-    lateinit var applicationEventPublisher: ApplicationEventPublisher
     lateinit var useCase: PostTemplateUseCase
 
     beforeContainer {
         emailTemplateRepository = mockk()
-        emailTemplateHistoryRepository = mockk()
+        emailTemplateSaveRepository = mockk()
         htmlService = mockk()
-        applicationEventPublisher = mockk()
         useCase = PostTemplateUseCase(
             emailTemplateRepository,
-            emailTemplateHistoryRepository,
-            htmlService,
-            applicationEventPublisher
+            emailTemplateSaveRepository,
+            htmlService
         )
     }
 
@@ -71,18 +63,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 // set id after save
                 id = 1
             }
-            coEvery { emailTemplateRepository.save(any(EmailTemplate::class)) } answers { newEmailTemplate }
-
-            val emailTemplateHistory = EmailTemplateHistory(
-                templateId = newEmailTemplate.id!!,
-                subject = newEmailTemplate.subject,
-                body = newEmailTemplate.body,
-                variables = newEmailTemplate.variables,
-                version = newEmailTemplate.version
-            )
-            coEvery { emailTemplateHistoryRepository.save(any(EmailTemplateHistory::class)) } answers { emailTemplateHistory }
-
-            coEvery { applicationEventPublisher.publishEvent(any(PostEmailTemplateEvent::class)) } just runs
+            coEvery { emailTemplateSaveRepository.save(any(EmailTemplate::class)) } answers { newEmailTemplate }
 
             val result = useCase.execute(useCaseIn)
             then("should return BrowseEmailNotificationSchedulesUseCaseOut") {
@@ -105,16 +86,8 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { emailTemplateRepository.findByTemplateName(useCaseIn.templateName) }
             }
 
-            then("save new template") {
-                coVerify(exactly = 1) { emailTemplateRepository.save(any(EmailTemplate::class)) }
-            }
-
-            then("save new template history") {
-                coVerify(exactly = 1) { emailTemplateHistoryRepository.save(any(EmailTemplateHistory::class)) }
-            }
-
-            then("publish save template event") {
-                coVerify(exactly = 1) { applicationEventPublisher.publishEvent(any(PostEmailTemplateEvent::class)) }
+            then("save new template and publish event") {
+                coVerify(exactly = 1) { emailTemplateSaveRepository.save(any(EmailTemplate::class)) }
             }
         }
 
@@ -155,9 +128,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 id = useCaseIn.id
                 version = useCaseIn.version!!
             }
-            coEvery { emailTemplateRepository.save(any(EmailTemplate::class)) } answers { modifiedEmailTemplate }
-
-            coEvery { applicationEventPublisher.publishEvent(any(PostEmailTemplateEvent::class)) } just runs
+            coEvery { emailTemplateSaveRepository.save(any(EmailTemplate::class)) } answers { modifiedEmailTemplate }
 
             val result = useCase.execute(useCaseIn)
             then("should return BrowseEmailNotificationSchedulesUseCaseOut") {
@@ -180,12 +151,8 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { emailTemplateRepository.findById(useCaseIn.id!!) }
             }
 
-            then("update template") {
-                coVerify(exactly = 1) { emailTemplateRepository.save(any(EmailTemplate::class)) }
-            }
-
-            then("publish update template event") {
-                coVerify(exactly = 1) { applicationEventPublisher.publishEvent(any(PostEmailTemplateEvent::class)) }
+            then("update template and publish event") {
+                coVerify(exactly = 1) { emailTemplateSaveRepository.save(any(EmailTemplate::class)) }
             }
         }
 
@@ -195,8 +162,8 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 templateName = "templateName",
                 subject = "subject",
                 version = null,
-                body = "body with variable \${email}",
-                variables = listOf("email")
+                body = "body with variable \${attribute_email}",
+                variables = listOf("attribute_email")
             )
 
             coEvery { htmlService.prettyPrintHtml(useCaseIn.body) } answers {
@@ -220,18 +187,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 // set id after save
                 id = 1
             }
-            coEvery { emailTemplateRepository.save(any(EmailTemplate::class)) } answers { newEmailTemplate }
-
-            val emailTemplateHistory = EmailTemplateHistory(
-                templateId = newEmailTemplate.id!!,
-                subject = newEmailTemplate.subject,
-                body = newEmailTemplate.body,
-                variables = newEmailTemplate.variables,
-                version = newEmailTemplate.version
-            )
-            coEvery { emailTemplateHistoryRepository.save(any(EmailTemplateHistory::class)) } answers { emailTemplateHistory }
-
-            coEvery { applicationEventPublisher.publishEvent(any(PostEmailTemplateEvent::class)) } just runs
+            coEvery { emailTemplateSaveRepository.save(any(EmailTemplate::class)) } answers { newEmailTemplate }
 
             val result = useCase.execute(useCaseIn)
             then("should return BrowseEmailNotificationSchedulesUseCaseOut") {
@@ -254,16 +210,8 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { emailTemplateRepository.findByTemplateName(useCaseIn.templateName) }
             }
 
-            then("save new template") {
-                coVerify(exactly = 1) { emailTemplateRepository.save(any(EmailTemplate::class)) }
-            }
-
-            then("save new template history") {
-                coVerify(exactly = 1) { emailTemplateHistoryRepository.save(any(EmailTemplateHistory::class)) }
-            }
-
-            then("publish save template event") {
-                coVerify(exactly = 1) { applicationEventPublisher.publishEvent(any(PostEmailTemplateEvent::class)) }
+            then("save new template and publish event") {
+                coVerify(exactly = 1) { emailTemplateSaveRepository.save(any(EmailTemplate::class)) }
             }
         }
 
@@ -273,15 +221,15 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 templateName = "templateName",
                 subject = "subject",
                 version = null,
-                body = "body with variable \${email}",
-                variables = listOf("name")
+                body = "body with variable \${attribute_email}",
+                variables = listOf("attribute_name")
             )
 
             coEvery { htmlService.prettyPrintHtml(useCaseIn.body) } answers {
                 useCaseIn.body
             }
 
-            val bodyVariables = listOf("email")
+            val bodyVariables = listOf("attribute_email")
             coEvery { htmlService.extractVariables(useCaseIn.body) } answers {
                 bodyVariables
             }
@@ -307,15 +255,15 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 templateName = "templateName",
                 subject = "subject",
                 version = null,
-                body = "body with variable \${{email}}",
-                variables = listOf("email")
+                body = "body with variable \${{attribute_email}}",
+                variables = listOf("attribute_email")
             )
 
             coEvery { htmlService.prettyPrintHtml(useCaseIn.body) } answers {
                 useCaseIn.body
             }
 
-            val invalidBodyVariables = listOf("{email}")
+            val invalidBodyVariables = listOf("{attribute_email}")
             coEvery { htmlService.extractVariables(useCaseIn.body) } answers {
                 invalidBodyVariables
             }
@@ -341,8 +289,8 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 templateName = "templateName",
                 subject = "subject",
                 version = null,
-                body = "body with variable \${email}",
-                variables = listOf("email:test@gmail.com")
+                body = "body with variable \${attribute_email}",
+                variables = listOf("attribute_email:test@gmail.com")
             )
 
             coEvery { htmlService.prettyPrintHtml(useCaseIn.body) } answers {
@@ -366,18 +314,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 // set id after save
                 id = 1
             }
-            coEvery { emailTemplateRepository.save(any(EmailTemplate::class)) } answers { newEmailTemplate }
-
-            val emailTemplateHistory = EmailTemplateHistory(
-                templateId = newEmailTemplate.id!!,
-                subject = newEmailTemplate.subject,
-                body = newEmailTemplate.body,
-                variables = newEmailTemplate.variables,
-                version = newEmailTemplate.version
-            )
-            coEvery { emailTemplateHistoryRepository.save(any(EmailTemplateHistory::class)) } answers { emailTemplateHistory }
-
-            coEvery { applicationEventPublisher.publishEvent(any(PostEmailTemplateEvent::class)) } just runs
+            coEvery { emailTemplateSaveRepository.save(any(EmailTemplate::class)) } answers { newEmailTemplate }
 
             val result = useCase.execute(useCaseIn)
             then("should return BrowseEmailNotificationSchedulesUseCaseOut") {
@@ -400,16 +337,8 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { emailTemplateRepository.findByTemplateName(useCaseIn.templateName) }
             }
 
-            then("save new template") {
-                coVerify(exactly = 1) { emailTemplateRepository.save(any(EmailTemplate::class)) }
-            }
-
-            then("save new template history") {
-                coVerify(exactly = 1) { emailTemplateHistoryRepository.save(any(EmailTemplateHistory::class)) }
-            }
-
-            then("publish save template event") {
-                coVerify(exactly = 1) { applicationEventPublisher.publishEvent(any(PostEmailTemplateEvent::class)) }
+            then("save new template and publish event") {
+                coVerify(exactly = 1) { emailTemplateSaveRepository.save(any(EmailTemplate::class)) }
             }
         }
     }
