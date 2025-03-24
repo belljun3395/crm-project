@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.email.application.dto.SendEmailInDto
 import com.manage.crm.email.application.dto.SendEmailOutDto
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseIn
-import com.manage.crm.email.application.service.NonVariablesMailService
+import com.manage.crm.email.application.service.MailService
 import com.manage.crm.email.domain.EmailTemplate
 import com.manage.crm.email.domain.EmailTemplateHistory
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
@@ -23,19 +23,19 @@ import io.mockk.mockk
 class SendNotificationEmailUseCaseTest : BehaviorSpec({
     lateinit var emailTemplateRepository: EmailTemplateRepository
     lateinit var emailTemplateHistoryRepository: EmailTemplateHistoryRepository
-    lateinit var nonVariablesEmailService: NonVariablesMailService
+    lateinit var mailService: MailService
     lateinit var userRepository: UserRepository
     lateinit var useCase: SendNotificationEmailUseCase
 
     beforeContainer {
         emailTemplateRepository = mockk()
         emailTemplateHistoryRepository = mockk()
-        nonVariablesEmailService = mockk()
+        mailService = mockk()
         userRepository = mockk()
         useCase = SendNotificationEmailUseCase(
             emailTemplateRepository,
             emailTemplateHistoryRepository,
-            nonVariablesEmailService,
+            mailService,
             userRepository,
             ObjectMapper()
         )
@@ -49,7 +49,9 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                 userAttributes = Json(
                     """
                     {
-                        "email": "example$it@example.com"
+                        "email": "example$it@example.com",
+                        "name": "name$it",
+                        "detail": "{\"age\" : $it}"
                     }
                     """.trimIndent()
                 )
@@ -77,7 +79,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
             coEvery { userRepository.findAllByIdIn(useCaseIn.userIds) } answers { userSubs(useCaseIn.userIds.size) }
 
-            coEvery { nonVariablesEmailService.send(any(SendEmailInDto::class)) } answers {
+            coEvery { mailService.send(any(SendEmailInDto::class)) } answers {
                 SendEmailOutDto(
                     userId = 1L,
                     emailBody = "emailBody",
@@ -101,7 +103,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             }
 
             then("send notification email") {
-                coVerify(exactly = 2) { nonVariablesEmailService.send(any(SendEmailInDto::class)) }
+                coVerify(exactly = 2) { mailService.send(any(SendEmailInDto::class)) }
             }
         }
 
@@ -130,7 +132,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
             coEvery { userRepository.findAllByIdIn(useCaseIn.userIds) } answers { userSubs(useCaseIn.userIds.size) }
 
-            coEvery { nonVariablesEmailService.send(any(SendEmailInDto::class)) } answers {
+            coEvery { mailService.send(any(SendEmailInDto::class)) } answers {
                 SendEmailOutDto(
                     userId = 1L,
                     emailBody = "emailBody",
@@ -159,7 +161,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             }
 
             then("send notification email") {
-                coVerify(exactly = 2) { nonVariablesEmailService.send(any(SendEmailInDto::class)) }
+                coVerify(exactly = 2) { mailService.send(any(SendEmailInDto::class)) }
             }
         }
 
@@ -188,7 +190,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                 )
             }
 
-            coEvery { nonVariablesEmailService.send(any(SendEmailInDto::class)) } answers {
+            coEvery { mailService.send(any(SendEmailInDto::class)) } answers {
                 SendEmailOutDto(
                     userId = 1L,
                     emailBody = "emailBody",
@@ -212,7 +214,66 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             }
 
             then("send notification email") {
-                coVerify(exactly = 0) { nonVariablesEmailService.send(any(SendEmailInDto::class)) }
+                coVerify(exactly = 0) { mailService.send(any(SendEmailInDto::class)) }
+            }
+        }
+
+        `when`("send notification with variable template") {
+            val useCaseIn = SendNotificationEmailUseCaseIn(
+                templateId = 1,
+                templateVersion = null,
+                userIds = listOf(1L, 2L)
+            )
+
+            coEvery { emailTemplateRepository.findById(useCaseIn.templateId) } answers {
+                EmailTemplate(
+                    id = 1,
+                    templateName = "templateName",
+                    subject = "subject",
+                    body = """
+                        <html>
+                            <head></head>
+                            <body>
+                                <a th:text="\$\{attribute_email}"></a>
+                                <a th:text="\$\{attribute_name}"></a>
+                                <a th:text="\$\{custom_detail_age}"></a>
+                            </body>
+                        </html>
+                    """.trimIndent(),
+                    variables = Variables(
+                        listOf("attribute_email", "attribute_name", "custom_detail_age")
+                    ),
+                    version = 1.0f
+                )
+            }
+
+            coEvery { userRepository.findAllByIdIn(useCaseIn.userIds) } answers { userSubs(useCaseIn.userIds.size) }
+
+            coEvery { mailService.send(any(SendEmailInDto::class)) } answers {
+                SendEmailOutDto(
+                    userId = 1L,
+                    emailBody = "emailBody",
+                    messageId = "messageId",
+                    destination = "destination",
+                    provider = EmailProviderType.JAVA
+                )
+            }
+
+            val result = useCase.execute(useCaseIn)
+            then("should return SendNotificationEmailUseCaseOut") {
+                result.isSuccess shouldBe true
+            }
+
+            then("find template by id") {
+                coVerify(exactly = 1) { emailTemplateRepository.findById(useCaseIn.templateId) }
+            }
+
+            then("find users") {
+                coVerify(exactly = 1) { userRepository.findAllByIdIn(useCaseIn.userIds) }
+            }
+
+            then("send notification email") {
+                coVerify(exactly = 2) { mailService.send(any(SendEmailInDto::class)) }
             }
         }
     }

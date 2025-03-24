@@ -5,15 +5,23 @@ import com.manage.crm.email.application.dto.NonContent
 import com.manage.crm.email.application.dto.SendEmailInDto
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseIn
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseOut
-import com.manage.crm.email.application.service.NonVariablesMailService
+import com.manage.crm.email.application.dto.VariablesContent
+import com.manage.crm.email.application.service.MailService
 import com.manage.crm.email.domain.model.NotificationEmailTemplatePropertiesModel
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
+import com.manage.crm.email.domain.vo.ATTRIBUTE_TYPE
+import com.manage.crm.email.domain.vo.CUSTOM_ATTRIBUTE_TYPE
 import com.manage.crm.email.domain.vo.NotificationType
 import com.manage.crm.email.domain.vo.SentEmailStatus
+import com.manage.crm.email.domain.vo.Variables
+import com.manage.crm.email.domain.vo.getAttributeKey
+import com.manage.crm.email.domain.vo.getCustomAttributeKey
+import com.manage.crm.email.domain.vo.getKeyType
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
+import com.manage.crm.user.domain.vo.Json
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 
@@ -25,8 +33,8 @@ import org.springframework.stereotype.Service
 class SendNotificationEmailUseCase(
     private val emailTemplateRepository: EmailTemplateRepository,
     private val emailTemplateHistoryRepository: EmailTemplateHistoryRepository,
-    @Qualifier("nonVariablesMailServicePostEventProcessor")
-    private val nonVariablesEmailService: NonVariablesMailService,
+    @Qualifier("mailServicePostEventProcessor")
+    private val mailService: MailService,
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper
 ) {
@@ -39,22 +47,34 @@ class SendNotificationEmailUseCase(
         val notificationProperties = getEmailNotificationProperties(templateVersion, templateId)
 
         val targetUsers =
-            getTargetUsers(userIds, notificationType)
-                .groupBy {
-                    objectMapper.readValue(
-                        it.userAttributes?.value,
-                        Map::class.java
-                    )[notificationType] as String
-                }
+            getTargetUsers(userIds, notificationType).associateBy {
+                objectMapper.readValue(
+                    it.userAttributes?.value,
+                    Map::class.java
+                )[notificationType] as String
+            }
 
         // TODO: Send email asynchronously
         targetUsers.keys.forEach { email ->
-            nonVariablesEmailService.send(
+            val content = if (notificationProperties.isNoVariables()) {
+                NonContent()
+            } else {
+                val attributes = targetUsers[email]!!.userAttributes!!
+                val variables = notificationProperties.variables
+                variables.getVariables(false)
+                    .associate { key ->
+                        doAssociateVariables(key, attributes, variables)
+                    }.let {
+                        VariablesContent(it)
+                    }
+            }
+
+            mailService.send(
                 SendEmailInDto(
                     to = email,
                     subject = notificationProperties.subject,
                     template = notificationProperties.body,
-                    content = NonContent(),
+                    content = content,
                     emailBody = notificationProperties.body,
                     destination = email,
                     eventType = SentEmailStatus.SEND
@@ -80,7 +100,8 @@ class SendNotificationEmailUseCase(
                     ?.let {
                         NotificationEmailTemplatePropertiesModel(
                             subject = it.subject!!,
-                            body = it.body!!
+                            body = it.body!!,
+                            variables = it.variables
                         )
                     }
                     ?: throw IllegalArgumentException("Email Template not found by id and version: $templateId, $templateVersion")
@@ -92,7 +113,8 @@ class SendNotificationEmailUseCase(
                     ?.let {
                         NotificationEmailTemplatePropertiesModel(
                             subject = it.subject!!,
-                            body = it.body!!
+                            body = it.body!!,
+                            variables = it.variables
                         )
                     }
                     ?: throw IllegalArgumentException("Email Template not found by id: $templateId")
@@ -104,7 +126,7 @@ class SendNotificationEmailUseCase(
         return when {
             userIds.isEmpty() -> {
                 userRepository
-                    .findAllExistByUserAttributesKey("email")
+                    .findAllExistByUserAttributesKey(sendType)
             }
 
             else -> {
@@ -118,5 +140,27 @@ class SendNotificationEmailUseCase(
                     }
             }
         }
+    }
+
+    private fun doAssociateVariables(key: String, attributes: Json, variables: Variables): Pair<String, String> {
+        if (key.getKeyType() == ATTRIBUTE_TYPE) {
+            if (attributes.isExist(key.getAttributeKey(), objectMapper)) {
+                return key to attributes.getValue(
+                    key.getAttributeKey(),
+                    objectMapper
+                )
+            }
+        }
+
+        if (key.getKeyType() == CUSTOM_ATTRIBUTE_TYPE) {
+            if (attributes.isExist(key.getCustomAttributeKey(), objectMapper)) {
+                return key to attributes.getValue(
+                    key.getCustomAttributeKey(),
+                    objectMapper
+                )
+            }
+        }
+
+        return key to (variables.findVariableDefault(key) ?: "")
     }
 }
