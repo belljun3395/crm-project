@@ -11,17 +11,11 @@ import com.manage.crm.email.domain.repository.EmailSendHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.repository.ScheduledEventRepository
-import com.manage.crm.email.domain.vo.ATTRIBUTE_TYPE
-import com.manage.crm.email.domain.vo.CUSTOM_ATTRIBUTE_TYPE
+import com.manage.crm.email.domain.support.VariablesSupport
 import com.manage.crm.email.domain.vo.SentEmailStatus
-import com.manage.crm.email.domain.vo.Variables
-import com.manage.crm.email.domain.vo.getAttributeKey
-import com.manage.crm.email.domain.vo.getCustomAttributeKey
-import com.manage.crm.email.domain.vo.getKeyType
 import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
 import com.manage.crm.support.transactional.TransactionTemplates
 import com.manage.crm.user.domain.repository.UserRepository
-import com.manage.crm.user.domain.vo.Json
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
@@ -99,7 +93,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
                     val variables = template.variables
                     variables.getVariables(false)
                         .associate { key ->
-                            doAssociateVariables(key, attributes, variables)
+                            VariablesSupport.doAssociate(objectMapper, key, attributes, variables)
                         }.let {
                             VariablesContent(it)
                         }
@@ -129,27 +123,5 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
                 )
             }
         }
-    }
-
-    private fun doAssociateVariables(key: String, attributes: Json, variables: Variables): Pair<String, String> {
-        if (key.getKeyType() == ATTRIBUTE_TYPE) {
-            if (attributes.isExist(key.getAttributeKey(), objectMapper)) {
-                return key to attributes.getValue(
-                    key.getAttributeKey(),
-                    objectMapper
-                )
-            }
-        }
-
-        if (key.getKeyType() == CUSTOM_ATTRIBUTE_TYPE) {
-            if (attributes.isExist(key.getCustomAttributeKey(), objectMapper)) {
-                return key to attributes.getValue(
-                    key.getCustomAttributeKey(),
-                    objectMapper
-                )
-            }
-        }
-
-        return key to (variables.findVariableDefault(key) ?: "")
     }
 }
