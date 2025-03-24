@@ -14,15 +14,18 @@ import org.springframework.boot.autoconfigure.mail.MailProperties
 import org.springframework.stereotype.Component
 
 @Component
-class NonVariablesMailServiceImpl(
+class MailServiceImpl(
     private val userRepository: UserRepository,
     private val mailTemplateProcessor: MailTemplateProcessor,
     mailProperties: MailProperties,
     mailSendProvider: MailSendProvider
-) : MailSender<SendEmailArgs>(mailProperties, mailSendProvider), NonVariablesMailService {
+) : MailSender<SendEmailArgs>(mailProperties, mailSendProvider), MailService {
 
     override fun getHtml(args: SendEmailArgs): String {
         val context = MailContext()
+        args.content.getKeys().forEach { key ->
+            context.setVariable(key, args.content.getValue(key))
+        }
         return mailTemplateProcessor.process(args.template, context, MailTemplateType.STRING)
     }
 
