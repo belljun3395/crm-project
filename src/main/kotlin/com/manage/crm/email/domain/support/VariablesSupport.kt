@@ -12,25 +12,19 @@ import com.manage.crm.user.domain.vo.Json
 class VariablesSupport {
     companion object {
         fun doAssociate(objectMapper: ObjectMapper, key: String, attributes: Json, variables: Variables): Pair<String, String> {
-            if (key.getKeyType() == ATTRIBUTE_TYPE) {
-                if (attributes.isExist(key.getAttributeKey(), objectMapper)) {
-                    return key to attributes.getValue(
-                        key.getAttributeKey(),
-                        objectMapper
-                    )
+            return when {
+                key.getKeyType() == ATTRIBUTE_TYPE && attributes.isExist(key.getAttributeKey(), objectMapper) -> {
+                    key to attributes.getValue(key.getAttributeKey(), objectMapper)
+                }
+
+                key.getKeyType() == CUSTOM_ATTRIBUTE_TYPE && attributes.isExist(key.getCustomAttributeKey(), objectMapper) -> {
+                    key to attributes.getValue(key.getCustomAttributeKey(), objectMapper)
+                }
+
+                else -> {
+                    key to (variables.findVariableDefault(key) ?: "")
                 }
             }
-
-            if (key.getKeyType() == CUSTOM_ATTRIBUTE_TYPE) {
-                if (attributes.isExist(key.getCustomAttributeKey(), objectMapper)) {
-                    return key to attributes.getValue(
-                        key.getCustomAttributeKey(),
-                        objectMapper
-                    )
-                }
-            }
-
-            return key to (variables.findVariableDefault(key) ?: "")
         }
     }
 }
