@@ -5,13 +5,11 @@ import com.manage.crm.email.event.send.handler.EmailDeliveryDelayEventHandler
 import com.manage.crm.email.event.send.handler.EmailDeliveryEventHandler
 import com.manage.crm.email.event.send.handler.EmailOpenEventHandler
 import com.manage.crm.email.event.send.handler.EmailSentEventHandler
+import com.manage.crm.email.support.EmailCoroutineScope.eventListenerScope
 import com.manage.crm.support.transactional.TransactionTemplates
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.springframework.context.event.EventListener
-import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.transaction.reactive.executeAndAwait
 
@@ -26,12 +24,9 @@ class EmailSendEventListener(
 ) {
     val log = KotlinLogging.logger {}
 
-    private val scope = CoroutineScope(Dispatchers.IO)
-
-    @Async
     @EventListener
     fun onEvent(event: EmailSendEvent) {
-        scope.launch {
+        eventListenerScope().launch {
             transactionalTemplates.newTxWriter.executeAndAwait {
                 when (event) {
                     is EmailSentEvent -> emailSentEventHandler.handle(event)
