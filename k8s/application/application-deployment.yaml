@@ -16,6 +16,13 @@ spec:
         - name: crm-app
           image: crm-app:latest
           imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "512Mi"   # 최소 보장 메모리
+              cpu: "250m"
+            limits:
+              memory: "1024Mi"  # 최대 허용 메모리
+              cpu: "500m"
           envFrom:
             - configMapRef:
                 name: crm-config
