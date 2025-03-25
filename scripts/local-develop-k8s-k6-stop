@@ -1,0 +1,28 @@
+#!/bin/sh
+
+set -e
+
+echo "🚀 Stop Kubernetes k6 deployment..."
+
+K6_DIR="../k8s/k6"
+ORIGINAL_DIR=$(pwd)
+echo "📍Executing the script in the directory: $ORIGINAL_DIR"
+
+if [ ! -d "$K6_DIR" ]; then
+  echo "❌ Error: Directory $K6_DIR does not exist!"
+  exit 1
+fi
+
+echo "📂 Changing directory to k6 manifests..."
+
+cd "$K6_DIR"
+
+echo "🗑️ Deleting existing k6 resources..."
+kubectl delete -f . || echo "⚠️  Warning: Some k6 resources might not exist."
+
+echo "✅ K6 resources updated successfully."
+
+echo "🔙 Returning to the original script directory: $ORIGINAL_DIR"
+cd "$ORIGINAL_DIR"
+
+echo "🎉 Kubernetes k6 deployment completed!"
