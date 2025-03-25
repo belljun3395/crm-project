@@ -15,7 +15,7 @@ class AsyncConfig : AsyncConfigurer {
             corePoolSize = 10
             maxPoolSize = 20
             queueCapacity = 500
-            setRejectedExecutionHandler(ThreadPoolExecutor.AbortPolicy())
+            setRejectedExecutionHandler(ThreadPoolExecutor.CallerRunsPolicy())
             setThreadNamePrefix("default-async")
             initialize()
         }
