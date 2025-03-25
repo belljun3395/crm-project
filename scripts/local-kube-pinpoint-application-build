@@ -1,0 +1,32 @@
+#!/bin/sh
+
+set -e
+
+if [ -z "$1" ]; then
+  echo "❌ Usage: $0 <PINPOINT_COLLECTOR_IP>"
+  exit 1
+fi
+
+PINPOINT_COLLECTOR_IP=$1
+ORIGINAL_DIR=$(pwd)
+
+echo "🚀 Building the application image with collector IP: $PINPOINT_COLLECTOR_IP"
+
+# Minikube 실행 상태 확인
+if ! minikube status -p minikube &>/dev/null; then
+  echo "❌ Minikube is not running. Please start minikube first."
+  exit 1
+fi
+
+eval $(minikube -p minikube docker-env)
+
+cd ../
+
+docker build \
+  -f Dockerfile.pinpoint \
+  --build-arg PINPOINT_COLLECTOR_IP="$PINPOINT_COLLECTOR_IP" \
+  -t crm-app:latest .
+
+cd "$ORIGINAL_DIR"
+
+echo "✅ Application image built successfully."

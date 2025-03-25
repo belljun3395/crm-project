@@ -104,6 +104,10 @@ dependencies {
     /** jsoup */
     implementation("org.jsoup:jsoup:${DependencyVersion.JSOUP}")
 
+    /** monitoring */
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
+    implementation("com.github.loki4j:loki-logback-appender:1.4.2")
+
     /** test */
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
