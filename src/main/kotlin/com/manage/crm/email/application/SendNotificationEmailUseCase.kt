@@ -1,6 +1,8 @@
 package com.manage.crm.email.application
 
+import arrow.fx.coroutines.parMap
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.manage.crm.email.application.dto.Content
 import com.manage.crm.email.application.dto.NonContent
 import com.manage.crm.email.application.dto.SendEmailInDto
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseIn
@@ -16,6 +18,7 @@ import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
+import kotlinx.coroutines.Dispatchers
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 
@@ -48,34 +51,10 @@ class SendNotificationEmailUseCase(
                 )[notificationType] as String
             }
 
-        // TODO: Send email asynchronously
-        targetUsers.keys.forEach { email ->
-            val content = if (notificationProperties.isNoVariables()) {
-                NonContent()
-            } else {
-                val user = targetUsers[email]
-                val attributes = user?.userAttributes ?: return@forEach
-                val variables = notificationProperties.variables
-                variables.getVariables(false)
-                    .associate { key ->
-                        VariablesSupport.doAssociate(objectMapper, key, attributes, variables)
-                    }.let {
-                        VariablesContent(it)
-                    }
+        generateNotificationDto(targetUsers, notificationProperties)
+            .parMap(Dispatchers.IO, concurrency = 10) {
+                mailService.send(it)
             }
-
-            mailService.send(
-                SendEmailInDto(
-                    to = email,
-                    subject = notificationProperties.subject,
-                    template = notificationProperties.body,
-                    content = content,
-                    emailBody = notificationProperties.body,
-                    destination = email,
-                    eventType = SentEmailStatus.SEND
-                )
-            )
-        }
 
         return out {
             SendNotificationEmailUseCaseOut(
@@ -136,4 +115,39 @@ class SendNotificationEmailUseCase(
             }
         }
     }
+
+    private fun generateNotificationDto(targetUsers: Map<String, User>, notificationProperties: NotificationEmailTemplatePropertiesModel): List<SendEmailInDto> {
+        return targetUsers.keys
+            .mapNotNull { email ->
+                doGenerateContent(targetUsers, notificationProperties, email)
+                    ?.let { doMapToNotificationDto(email, notificationProperties, it) }
+            }
+            .toList()
+    }
+
+    private fun doGenerateContent(targetUsers: Map<String, User>, notificationProperties: NotificationEmailTemplatePropertiesModel, email: String): Content? {
+        return if (notificationProperties.isNoVariables()) {
+            NonContent()
+        } else {
+            val user = targetUsers[email]
+            val attributes = user?.userAttributes ?: return null
+            val variables = notificationProperties.variables
+            variables.getVariables(false)
+                .associate { key ->
+                    VariablesSupport.doAssociate(objectMapper, key, attributes, variables)
+                }.let {
+                    VariablesContent(it)
+                }
+        }
+    }
+
+    private fun doMapToNotificationDto(email: String, notificationProperties: NotificationEmailTemplatePropertiesModel, content: Content) = SendEmailInDto(
+        to = email,
+        subject = notificationProperties.subject,
+        template = notificationProperties.body,
+        content = content,
+        emailBody = notificationProperties.body,
+        destination = email,
+        eventType = SentEmailStatus.SEND
+    )
 }
