@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crm-mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crm-mysql
+  template:
+    metadata:
+      labels:
+        app: crm-mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql/mysql-server:8.0.27
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "root"
+            - name: MYSQL_ROOT_HOST
+              value: "%"
+            - name: TZ
+              value: "Asia/Seoul"
+          args:
+            - "--character-set-server=utf8mb4"
+            - "--collation-server=utf8mb4_unicode_ci"
+            - "--lower_case_table_names=1"
+            - "--max_connections=500"
+            - "--wait_timeout=7200"
+          volumeMounts:
+            - name: mysql-initdb
+              mountPath: /docker-entrypoint-initdb.d/00_init.sql
+              subPath: 00_init.sql
+      volumes:
+        - name: mysql-initdb
+          configMap:
+            name: mysql-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crm-adminer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crm-adminer
+  template:
+    metadata:
+      labels:
+        app: crm-adminer
+    spec:
+      containers:
+        - name: adminer
+          image: adminer:4
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ADMINER_DEFAULT_SERVER
+              value: "crm-mysql:13306"
+            - name: ADMINER_DESIGN
+              value: "nette"
+            - name: ADMINER_PLUGINS
+              value: "tables-filter tinymce"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crm-redis
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+          app: crm-redis
+    template:
+        metadata:
+          labels:
+            app: crm-redis
+        spec:
+          containers:
+          - name: redis
+            image: redis:latest
+            ports:
+              - containerPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crm-redis-insight
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crm-redis-insight
+  template:
+    metadata:
+      labels:
+        app: crm-redis-insight
+    spec:
+      containers:
+        - name: redis-insight
+          image: redislabs/redisinsight:latest
+          ports:
+            - containerPort: 5540
