@@ -5,6 +5,7 @@ import org.springframework.scheduling.annotation.AsyncConfigurer
 import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import java.util.concurrent.Executor
+import java.util.concurrent.ThreadPoolExecutor
 
 @Configuration
 @EnableAsync
@@ -13,6 +14,8 @@ class AsyncConfig : AsyncConfigurer {
         return ThreadPoolTaskExecutor().apply {
             corePoolSize = 10
             maxPoolSize = 20
+            queueCapacity = 500
+            setRejectedExecutionHandler(ThreadPoolExecutor.AbortPolicy())
             setThreadNamePrefix("default-async")
             initialize()
         }
