@@ -48,7 +48,7 @@ logs
 **/*.back.*
 **/dist
 
-node_modules
+**/node_modules
 bower_components
 
 *.sublime*
@@ -58,3 +58,5 @@ thumb
 sketch
 
 package-lock.json
+
+**/.adminjs

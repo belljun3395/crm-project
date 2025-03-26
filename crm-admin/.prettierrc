@@ -5,6 +5,9 @@
   "singleQuote": true,
   "trailingComma": "all",
   "semi": true,
+  "arrowParens": "always",
+  "bracketSpacing": true,
+  "endOfLine": "lf",
   "overrides": [
     {
       "files": ["*.ts", "*.tsx"],
