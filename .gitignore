@@ -39,3 +39,24 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### react ###
+.DS_*
+*.log
+logs
+**/*.backup.*
+**/*.back.*
+**/dist
+
+**/node_modules
+bower_components
+
+*.sublime*
+
+psd
+thumb
+sketch
+
+package-lock.json
+
+**/.adminjs
