@@ -29,6 +29,18 @@ const authenticate = async (email: string, password: string) => {
     // Use .env file for configuration
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: (() => {
+        switch (process.env.NODE_ENV) {
+          case 'production':
+            return '.env.production';
+          case 'test':
+            return '.env.test';
+          case 'local':
+            return '.env.local';
+          default:
+            return '.env.development';
+        }
+      })(),
     }),
     // Connect to the database
     TypeOrmModule.forRootAsync({
