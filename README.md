@@ -15,31 +15,31 @@ cd ./scripts && bash local-develop-env-reset
 ### 로컬 개발 환경 실행
 
 ```bash
-# build 
-./gradlew bootJar 
-``` 
+# build
+cd ./backend && ./gradlew bootJar && cd ..
+```
 
-``` bash
+```bash
 # run
-java -jar ./build/libs/crm-0.0.1-SNAPSHOT.jar --spring.profiles.active=local,new
+cd ./backend && java -jar ./build/libs/crm-0.0.1-SNAPSHOT.jar --spring.profiles.active=local,new
 ```
 
 ### API 문서
 
 ```bash
 # API 문서 생성
-./gradlew generateOpenApiDocs
+cd ./backend && ./gradlew generateOpenApiDocs && cd ..
 ```
 
 ```bash
 # API 문서 복사
-cp ./build/openapi.json ./docs/
+cd ./backend && cp ./build/openapi.json ../docs/ && cd ..
 ```
 
 ### 테스트 실행
 
 ```bash
-./gradlew test
+cd ./backend && ./gradlew test && cd ..
 ```
 
 ![image](docs/images/test-result.png)
