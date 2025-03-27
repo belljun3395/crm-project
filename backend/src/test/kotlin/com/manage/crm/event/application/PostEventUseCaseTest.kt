@@ -6,6 +6,8 @@ import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.vo.Properties
 import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.user.domain.User
+import com.manage.crm.user.domain.repository.UserRepository
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -15,11 +17,13 @@ import java.time.LocalDateTime.now
 
 class PostEventUseCaseTest : BehaviorSpec({
     lateinit var eventRepository: EventRepository
+    lateinit var userRepository: UserRepository
     lateinit var postEventUseCase: PostEventUseCase
 
     beforeContainer {
         eventRepository = mockk()
-        postEventUseCase = PostEventUseCase(eventRepository)
+        userRepository = mockk()
+        postEventUseCase = PostEventUseCase(eventRepository, userRepository)
     }
 
     given("PostEventUseCase") {
@@ -39,9 +43,15 @@ class PostEventUseCaseTest : BehaviorSpec({
                 )
             )
 
+            val user = User(
+                id = 1L,
+                externalId = useCaseIn.externalId
+            )
+            coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
+
             val event = Event(
                 name = useCaseIn.name,
-                externalId = useCaseIn.externalId,
+                userId = user.id,
                 properties = Properties(
                     useCaseIn.properties.map {
                         Property(
@@ -61,6 +71,10 @@ class PostEventUseCaseTest : BehaviorSpec({
             val result = postEventUseCase.execute(useCaseIn)
             then("should return PostEventUseCaseOut") {
                 result.id shouldBe 1
+            }
+
+            then("find user by externalId") {
+                coVerify(exactly = 1) { userRepository.findByExternalId(useCaseIn.externalId) }
             }
 
             then("save event") {
