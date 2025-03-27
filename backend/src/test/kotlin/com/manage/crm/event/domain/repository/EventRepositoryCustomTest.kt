@@ -35,7 +35,7 @@ class EventRepositoryCustomTest(
                     (1..10).map { it ->
                         Event(
                             name = "event",
-                            externalId = "externalId$it",
+                            userId = it.toLong(),
                             properties = Properties(
                                 listOf(
                                     Property(
@@ -78,7 +78,7 @@ class EventRepositoryCustomTest(
                     (1..10).map { it ->
                         Event(
                             name = "event",
-                            externalId = "externalId$it",
+                            userId = it.toLong(),
                             properties = Properties(
                                 listOf(
                                     Property(
@@ -121,7 +121,7 @@ class EventRepositoryCustomTest(
                     (1..10).map { it ->
                         Event(
                             name = "event",
-                            externalId = "externalId$it",
+                            userId = it.toLong(),
                             properties = Properties(
                                 listOf(
                                     Property(
@@ -157,7 +157,7 @@ class EventRepositoryCustomTest(
                     (1..10).map { it ->
                         Event(
                             name = "event",
-                            externalId = "externalId$it",
+                            userId = it.toLong(),
                             properties = Properties(
                                 listOf(
                                     Property(
@@ -200,7 +200,7 @@ class EventRepositoryCustomTest(
                     (1..10).map { it ->
                         Event(
                             name = "event",
-                            externalId = "externalId$it",
+                            userId = it.toLong(),
                             properties = Properties(
                                 listOf(
                                     Property(
@@ -244,7 +244,7 @@ class EventRepositoryCustomTest(
                     (1..10).map { it ->
                         Event(
                             name = "event",
-                            externalId = "externalId$it",
+                            userId = it.toLong(),
                             properties = Properties(
                                 listOf(
                                     Property(
@@ -291,7 +291,7 @@ class EventRepositoryCustomTest(
                         (1..10).map { it ->
                             Event(
                                 name = "event",
-                                externalId = "externalId$it",
+                                userId = it.toLong(),
                                 properties = Properties(
                                     listOf(
                                         Property(
@@ -332,7 +332,7 @@ class EventRepositoryCustomTest(
                         (1..10).map { it ->
                             Event(
                                 name = "event",
-                                externalId = "externalId$it",
+                                userId = it.toLong(),
                                 properties = Properties(
                                     listOf(
                                         Property(
@@ -382,7 +382,7 @@ class EventRepositoryCustomTest(
                     (1..10).map { it ->
                         Event(
                             name = "event",
-                            externalId = "externalId$it",
+                            userId = it.toLong(),
                             properties = Properties(
                                 listOf(
                                     Property(
@@ -425,7 +425,7 @@ class EventRepositoryCustomTest(
                     (1..10).map { it ->
                         Event(
                             name = "event",
-                            externalId = "externalId$it",
+                            userId = it.toLong(),
                             properties = Properties(
                                 listOf(
                                     Property(
@@ -474,7 +474,7 @@ class EventRepositoryCustomTest(
                     (1..10).map { it ->
                         Event(
                             name = "event",
-                            externalId = "externalId$it",
+                            userId = it.toLong(),
                             properties = Properties(
                                 listOf(
                                     Property(
@@ -522,7 +522,7 @@ class EventRepositoryCustomTest(
                 (1..10).map { it ->
                     Event(
                         name = "event",
-                        externalId = "externalId$it",
+                        userId = it.toLong(),
                         properties = Properties(
                             listOf(
                                 Property(
@@ -584,7 +584,7 @@ class EventRepositoryCustomTest(
                 (1..10).map { it ->
                     Event(
                         name = "event",
-                        externalId = "externalId$it",
+                        userId = it.toLong(),
                         properties = Properties(
                             listOf(
                                 Property(
@@ -636,8 +636,8 @@ class EventRepositoryCustomTest(
 
                 // then
                 assert(result.size == 2)
-                assert(result[0].externalId == "externalId1")
-                assert(result[1].externalId == "externalId8")
+                assert(result[0].userId == 1L)
+                assert(result[1].userId == 8L)
             }
         }
     }

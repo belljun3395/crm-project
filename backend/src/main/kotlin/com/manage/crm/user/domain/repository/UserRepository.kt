@@ -14,4 +14,6 @@ interface UserRepository : CoroutineCrudRepository<User, Long>, UserRepositoryCu
     suspend fun findAllExistByUserAttributesKey(@Param("key") key: String? = "email"): List<User>
 
     suspend fun findAllByIdIn(ids: List<Long>): List<User>
+
+    suspend fun findByExternalId(externalId: String): User?
 }
