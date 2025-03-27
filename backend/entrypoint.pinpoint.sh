@@ -9,7 +9,7 @@ java \
   -XX:InitialRAMPercentage=50.0 \
   -XX:MaxRAMPercentage=80.0 \
   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 \
-  - ${JAVA_OPTS} \
+  -Dkotlinx.coroutines.debug=on \
   -jar \
   -javaagent:${PINPOINT_AGENT_PATH}/pinpoint-bootstrap.jar \
   -Dpinpoint.profiler.profiles.active=release \
