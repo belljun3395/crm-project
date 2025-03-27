@@ -20,7 +20,7 @@ fi
 
 eval $(minikube -p minikube docker-env)
 
-cd ../
+cd ../backend
 
 docker build \
   -f Dockerfile.pinpoint \
