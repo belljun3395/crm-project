@@ -1,8 +1,12 @@
 package com.manage.crm.event.controller
 
 import com.manage.crm.config.SwaggerTag
+import com.manage.crm.event.application.PostCampaignUseCase
 import com.manage.crm.event.application.PostEventUseCase
 import com.manage.crm.event.application.SearchEventsUseCase
+import com.manage.crm.event.application.dto.PostCampaignPropertyDto
+import com.manage.crm.event.application.dto.PostCampaignUseCaseIn
+import com.manage.crm.event.application.dto.PostCampaignUseCaseOut
 import com.manage.crm.event.application.dto.PostEventPropertyDto
 import com.manage.crm.event.application.dto.PostEventUseCaseIn
 import com.manage.crm.event.application.dto.PostEventUseCaseOut
@@ -10,6 +14,7 @@ import com.manage.crm.event.application.dto.PropertyAndOperationDto
 import com.manage.crm.event.application.dto.SearchEventPropertyDto
 import com.manage.crm.event.application.dto.SearchEventsUseCaseIn
 import com.manage.crm.event.application.dto.SearchEventsUseCaseOut
+import com.manage.crm.event.controller.request.PostCampaignRequest
 import com.manage.crm.event.controller.request.PostEventRequest
 import com.manage.crm.event.domain.JoinOperation
 import com.manage.crm.event.domain.Operation
@@ -33,7 +38,8 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping(value = ["/api/v1/events"])
 class EventController(
     private val postEventUseCase: PostEventUseCase,
-    private val searchEventsUseCase: SearchEventsUseCase
+    private val searchEventsUseCase: SearchEventsUseCase,
+    private val postCampaignUseCase: PostCampaignUseCase
 ) {
 
     @PostMapping
@@ -98,6 +104,23 @@ class EventController(
                             joinOperation = JoinOperation.fromValue(it.split("&")[count - 1])
                         )
                     }.toList()
+                )
+            )
+            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+    }
+
+    @PostMapping("/campaign")
+    suspend fun postCampaign(@RequestBody request: PostCampaignRequest): ApiResponse<ApiResponse.SuccessBody<PostCampaignUseCaseOut>> {
+        return postCampaignUseCase
+            .execute(
+                PostCampaignUseCaseIn(
+                    name = request.name,
+                    properties = request.properties.map {
+                        PostCampaignPropertyDto(
+                            key = it.key,
+                            value = it.value
+                        )
+                    }
                 )
             )
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
