@@ -59,7 +59,7 @@ class EventController(
                     }
                 )
             )
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+            .let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
     }
 
     @Parameters(
@@ -123,6 +123,6 @@ class EventController(
                     }
                 )
             )
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+            .let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
     }
 }
