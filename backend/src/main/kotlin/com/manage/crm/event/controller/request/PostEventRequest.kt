@@ -2,6 +2,7 @@ package com.manage.crm.event.controller.request
 
 data class PostEventRequest(
     val name: String,
+    val campaignName: String?,
     val externalId: String,
     val properties: List<PostEventPropertyDto>
 )
