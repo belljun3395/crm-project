@@ -72,20 +72,24 @@ class PostEventUseCase(
             }
 
             val event = eventDeferred.await()
+            val eventId= requireNotNull(event.id)
             val campaign = try {
                 campaignDeferred.await()
             } catch (e: CampaignNotFoundException) {
-                return@supervisorScope SavedEvent(event.id!!, SaveEventMessage.EVENT_SAVE_BUT_NOT_CAMPAIGN)
+                log.warn { "Campaign not found: ${e.message}" }
+                return@supervisorScope SavedEvent(eventId, SaveEventMessage.EVENT_SAVE_BUT_NOT_CAMPAIGN)
             }
 
             campaign
                 ?.let {
-                    if (!it.allMatchPropertyKeys(event.properties!!.getKeys())) {
-                        return@let SavedEvent(event.id!!, SaveEventMessage.PROPERTIES_MISMATCH)
+                    val eventProperties = requireNotNull(event.properties) { "Event properties cannot be null" }
+                    if (!it.allMatchPropertyKeys(eventProperties.getKeys())) {
+                        log.warn { "Properties mismatch between campaign and event. Campaign: ${it.properties!!.getKeys()}, Event: ${eventProperties.getKeys()}" }
+                        return@let SavedEvent(eventId, SaveEventMessage.PROPERTIES_MISMATCH)
                     }
                     setCampaignEvent(campaign, event)
-                    SavedEvent(event.id!!, SaveEventMessage.EVENT_SAVE_WITH_CAMPAIGN)
-                } ?: SavedEvent(event.id!!, SaveEventMessage.EVENT_SAVE_SUCCESS)
+                    SavedEvent(eventId, SaveEventMessage.EVENT_SAVE_WITH_CAMPAIGN)
+                } ?: SavedEvent(eventId, SaveEventMessage.EVENT_SAVE_SUCCESS)
         }
     }
 
