@@ -16,4 +16,12 @@ class Campaign(
     var properties: Properties? = null,
     @Column("created_at")
     var createdAt: LocalDateTime? = null
-)
+) {
+    /**
+     * Check if the campaign has exactly the same property keys as the given list of keys.
+     */
+    fun allMatchPropertyKeys(keys: List<String>): Boolean {
+        val campaignPropertyKeys = properties?.getKeys() ?: return false
+        return campaignPropertyKeys.size == keys.size && campaignPropertyKeys.containsAll(keys)
+    }
+}
