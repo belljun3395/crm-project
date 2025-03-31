@@ -230,11 +230,10 @@ class PostEventUseCaseTest : BehaviorSpec({
             val campaignName = useCaseIn.campaignName!!
             coEvery { campaignRepository.findCampaignByName(campaignName) } answers { null }
 
-            val exception = shouldThrow<IllegalArgumentException> {
-                postEventUseCase.execute(useCaseIn)
-            }
-            then("should throw exception") {
-                exception.message shouldBe "Campaign not found: $campaignName"
+            val result = postEventUseCase.execute(useCaseIn)
+            then("return PostEventUseCaseOut") {
+                result.id shouldBe eventId
+                result.message shouldBe SaveEventMessage.EVENT_SAVE_BUT_NOT_CAMPAIGN.message
             }
 
             then("find user by externalId") {
