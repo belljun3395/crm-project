@@ -78,7 +78,7 @@ class EventRepositoryCustomImpl(
                 Event(
                     id = it["id"] as Long,
                     name = it["name"] as String,
-                    userId = (it["user_id"] as Int).toLong(),
+                    userId = it["user_id"] as Long,
                     properties = (it["properties"] as String)
                         .let { properties ->
                             objectMapper.readValue(properties, List::class.java).stream()
