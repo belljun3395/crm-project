@@ -1,0 +1,1 @@
+alter table  events drop column external_id;
