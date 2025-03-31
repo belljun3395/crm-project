@@ -50,6 +50,7 @@ class EventController(
             .execute(
                 PostEventUseCaseIn(
                     name = request.name,
+                    campaignName = request.campaignName,
                     externalId = request.externalId,
                     properties = request.properties.map {
                         PostEventPropertyDto(
