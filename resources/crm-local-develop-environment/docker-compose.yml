@@ -45,6 +45,36 @@ services:
     command:
       - --replicaof crm-redis-0 6379
 
+  crm-redis-sentinel-01:
+    container_name: crm-redis-sentinel-01
+    build:
+      context: sentinel
+    ports:
+      - "5001:26379"
+    environment:
+      - REDIS_MASTER_HOST=crm-redis-0
+      - REDIS_MASTER_PORT=6379
+
+  crm-redis-sentinel-02:
+    container_name: crm-redis-sentinel-02
+    build:
+      context: sentinel
+    ports:
+      - "5002:26379"
+    environment:
+      - REDIS_MASTER_HOST=crm-redis-0
+      - REDIS_MASTER_PORT=6379
+
+  crm-redis-sentinel-03:
+    container_name: crm-redis-sentinel-03
+    build:
+      context: sentinel
+    ports:
+      - "5003:26379"
+    environment:
+      - REDIS_MASTER_HOST=crm-redis-0
+      - REDIS_MASTER_PORT=6379
+
   crm-redis-insight:
     image: redislabs/redisinsight:latest
     container_name: crm-redis-insight
