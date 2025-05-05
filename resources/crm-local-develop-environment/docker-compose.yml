@@ -23,11 +23,27 @@ services:
       - ADMINER_DESIGN=nette
       - ADMINER_PLUGINS=tables-filter tinymce
 
-  crm-redis:
+  crm-redis-0:
     image: redis:latest
-    container_name: crm-redis
+    container_name: crm-redis-0
     ports:
       - "16379:6379"
+
+  crm-redis-slave-01:
+    image: redis:latest
+    container_name: crm-redis-slave-01
+    ports:
+      - "16380:6379"
+    command:
+        - --replicaof crm-redis-0 6379
+
+  crm-redis-slave-02:
+    image: redis:latest
+    container_name: crm-redis-slave-02
+    ports:
+      - "16381:6379"
+    command:
+      - --replicaof crm-redis-0 6379
 
   crm-redis-insight:
     image: redislabs/redisinsight:latest
