@@ -23,11 +23,75 @@ services:
       - ADMINER_DESIGN=nette
       - ADMINER_PLUGINS=tables-filter tinymce
 
-  crm-redis:
+  crm-redis-node-0:
     image: redis:latest
-    container_name: crm-redis
+    container_name: crm-redis-node-0
+    volumes:
+      - ./cluster/redis.conf:/usr/local/etc/redis/redis.conf
     ports:
-      - "16379:6379"
+      - "17000:6379"
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+  
+  crm-redis-node-1:
+    image: redis:latest
+    container_name: crm-redis-node-1
+    volumes:
+      - ./cluster/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "17001:6379"
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+  
+  crm-redis-node-2:
+    image: redis:latest
+    container_name: crm-redis-node-2
+    volumes:
+      - ./cluster/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "17002:6379"
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+
+  crm-redis-slave-01:
+    image: redis:latest
+    container_name: crm-redis-slave-01
+    volumes:
+      - ./cluster/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "17003:6379"
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+  
+  crm-redis-slave-11:
+    image: redis:latest
+    container_name: crm-redis-slave-11
+    volumes:
+      - ./cluster/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "17004:6379"
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+  
+  crm-redis-slave-21:
+    image: redis:latest
+    container_name: crm-redis-slave-21
+    volumes:
+      - ./cluster/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "17005:6379"
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+
+  crm-redis-cluster-create:
+    image: redis:latest
+    depends_on:
+      - crm-redis-node-0
+      - crm-redis-node-1
+      - crm-redis-node-2
+      - crm-redis-slave-01
+      - crm-redis-slave-11
+      - crm-redis-slave-21
+    entrypoint: >
+      sh -c "sleep 5 &&
+      echo yes | redis-cli --cluster create
+      crm-redis-node-0:6379 crm-redis-node-1:6379 crm-redis-node-2:6379
+      crm-redis-slave-01:6379 crm-redis-slave-11:6379 crm-redis-slave-21:6379
+      --cluster-replicas 1"
 
   crm-redis-insight:
     image: redislabs/redisinsight:latest
