@@ -10,6 +10,9 @@ import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.repository.query.SearchByPropertyQuery
 import com.manage.crm.event.domain.vo.Properties
 import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.user.domain.User
+import com.manage.crm.user.domain.repository.UserRepository
+import com.manage.crm.user.domain.vo.Json
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -19,11 +22,13 @@ import java.time.LocalDateTime
 
 class SearchEventsUseCaseTest : BehaviorSpec({
     lateinit var eventRepository: EventRepository
+    lateinit var userRepository: UserRepository
     lateinit var searchEventsUseCase: SearchEventsUseCase
 
     beforeContainer {
         eventRepository = mockk()
-        searchEventsUseCase = SearchEventsUseCase(eventRepository)
+        userRepository = mockk()
+        searchEventsUseCase = SearchEventsUseCase(eventRepository, userRepository)
     }
 
     given("SearchEventsUseCase") {
@@ -62,6 +67,21 @@ class SearchEventsUseCaseTest : BehaviorSpec({
                 events
             }
 
+            val userIds = events.mapNotNull { it.userId }.toSet().toList()
+            val users = userIds.map {
+                User.new(
+                    id = it,
+                    externalId = "externalId-$it",
+                    userAttributes = Json("""{}""".trimIndent()),
+                    createdAt = LocalDateTime.now(),
+                    updatedAt = LocalDateTime.now()
+                )
+            }.toList()
+
+            coEvery { userRepository.findAllByIdIn(userIds) } answers {
+                users
+            }
+
             val result = searchEventsUseCase.execute(useCaseIn)
             then("should return SearchEventsUseCaseOut") {
                 result.events.size shouldBe eventSize
@@ -69,6 +89,10 @@ class SearchEventsUseCaseTest : BehaviorSpec({
 
             then("search events with property") {
                 coVerify(exactly = 1) { eventRepository.searchByProperty(any(SearchByPropertyQuery::class)) }
+            }
+
+            then("find all users by events userIds") {
+                coVerify(exactly = 1) { userRepository.findAllByIdIn(userIds) }
             }
         }
 
@@ -118,6 +142,21 @@ class SearchEventsUseCaseTest : BehaviorSpec({
                 events
             }
 
+            val userIds = events.mapNotNull { it.userId }.toSet().toList()
+            val users = userIds.map {
+                User.new(
+                    id = it,
+                    externalId = "externalId-$it",
+                    userAttributes = Json("""{}""".trimIndent()),
+                    createdAt = LocalDateTime.now(),
+                    updatedAt = LocalDateTime.now()
+                )
+            }.toList()
+
+            coEvery { userRepository.findAllByIdIn(userIds) } answers {
+                users
+            }
+
             val result = searchEventsUseCase.execute(useCaseIn)
             then("should return SearchEventsUseCaseOut") {
                 result.events.size shouldBe eventSize
@@ -125,6 +164,10 @@ class SearchEventsUseCaseTest : BehaviorSpec({
 
             then("search events with properties") {
                 coVerify(exactly = 1) { eventRepository.searchByProperties(any()) }
+            }
+
+            then("find all users by events userIds") {
+                coVerify(exactly = 1) { userRepository.findAllByIdIn(userIds) }
             }
         }
 
@@ -150,6 +193,21 @@ class SearchEventsUseCaseTest : BehaviorSpec({
                 events
             }
 
+            val userIds = events.mapNotNull { it.userId }.toSet().toList()
+            val users = userIds.map {
+                User.new(
+                    id = it,
+                    externalId = "externalId-$it",
+                    userAttributes = Json("""{}""".trimIndent()),
+                    createdAt = LocalDateTime.now(),
+                    updatedAt = LocalDateTime.now()
+                )
+            }.toList()
+
+            coEvery { userRepository.findAllByIdIn(userIds) } answers {
+                users
+            }
+
             val result = searchEventsUseCase.execute(useCaseIn)
             then("should return SearchEventsUseCaseOut") {
                 result.events.size shouldBe eventSize
@@ -157,6 +215,10 @@ class SearchEventsUseCaseTest : BehaviorSpec({
 
             then("search events with name") {
                 coVerify(exactly = 1) { eventRepository.findAllByName(any()) }
+            }
+
+            then("find all users by events userIds") {
+                coVerify(exactly = 1) { userRepository.findAllByIdIn(userIds) }
             }
         }
     }
