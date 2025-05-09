@@ -1,0 +1,1 @@
+alter table  scheduled_events add column created_at datetime(6) null;

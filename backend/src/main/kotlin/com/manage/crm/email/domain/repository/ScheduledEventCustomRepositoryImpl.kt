@@ -33,6 +33,7 @@ class ScheduledEventCustomRepositoryImpl(
                     isNotConsumed = it["is_not_consumed"] as Boolean,
                     canceled = it["canceled"] as Boolean,
                     scheduledAt = it["scheduled_at"] as String,
+                    createdAt = it["created_at"] as LocalDateTime
                 )
             }.collectList().awaitFirst()
     }

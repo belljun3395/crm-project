@@ -24,7 +24,9 @@ class ScheduledEvent(
     @Column("canceled")
     var canceled: Boolean = false,
     @Column("scheduled_at")
-    val scheduledAt: String? = null
+    val scheduledAt: String? = null,
+    @CreatedDate
+    var createdAt: LocalDateTime? = null
 ) {
     companion object {
         fun new(
@@ -52,6 +54,7 @@ class ScheduledEvent(
             isNotConsumed: Boolean,
             canceled: Boolean,
             scheduledAt: String,
+            createdAt: LocalDateTime
         ): ScheduledEvent {
             return ScheduledEvent(
                 id = id,
@@ -61,7 +64,8 @@ class ScheduledEvent(
                 completed = completed,
                 isNotConsumed = isNotConsumed,
                 canceled = canceled,
-                scheduledAt = scheduledAt
+                scheduledAt = scheduledAt,
+                createdAt = createdAt
             )
         }
     }
