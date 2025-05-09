@@ -1,5 +1,6 @@
 package com.manage.crm.email.domain
 
+import com.manage.crm.email.domain.vo.Email
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.LastModifiedDate
@@ -14,7 +15,7 @@ class EmailSendHistory(
     @Column("user_id")
     var userId: Long? = null,
     @Column("user_email")
-    var userEmail: String? = null,
+    var userEmail: Email? = null,
     @Column("email_message_id")
     var emailMessageId: String? = null,
     @Column("email_body")
@@ -30,6 +31,16 @@ class EmailSendHistory(
         fun new(
             userId: Long,
             userEmail: String,
+            emailMessageId: String,
+            emailBody: String,
+            sendStatus: String
+        ): EmailSendHistory {
+            return this.new(userId, Email(userEmail), emailMessageId, emailBody, sendStatus)
+        }
+
+        fun new(
+            userId: Long,
+            userEmail: Email,
             emailMessageId: String,
             emailBody: String,
             sendStatus: String
