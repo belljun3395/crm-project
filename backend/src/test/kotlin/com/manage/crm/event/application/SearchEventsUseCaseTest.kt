@@ -46,9 +46,10 @@ class SearchEventsUseCaseTest : BehaviorSpec({
 
             val eventSize = 10
             val events = (1..eventSize).map {
-                Event(
+                Event.new(
                     id = it.toLong(),
                     name = "event$it",
+                    userId = it.toLong(),
                     properties = Properties(
                         listOf(
                             Property("key", "value")
@@ -100,9 +101,10 @@ class SearchEventsUseCaseTest : BehaviorSpec({
 
             val eventSize = 10
             val events = (1..eventSize).map {
-                Event(
+                Event.new(
                     id = it.toLong(),
                     name = "event$it",
+                    userId = it.toLong(),
                     properties = Properties(
                         listOf(
                             Property("key1", "$it"),
@@ -134,9 +136,10 @@ class SearchEventsUseCaseTest : BehaviorSpec({
 
             val eventSize = 10
             val events = (1..eventSize).map {
-                Event(
+                Event.new(
                     id = it.toLong(),
                     name = "event$it",
+                    userId = it.toLong(),
                     properties = Properties(
                         emptyList()
                     ),

@@ -3,7 +3,7 @@ package com.manage.crm.email.application
 import com.manage.crm.email.application.dto.BrowseEmailNotificationSchedulesUseCaseOut
 import com.manage.crm.email.application.dto.EmailNotificationScheduleDto
 import com.manage.crm.email.application.dto.ScheduleTaskView
-import com.manage.crm.email.application.service.ScheduleTaskBrowseService
+import com.manage.crm.email.application.service.ScheduleTaskQueryService
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -13,7 +13,7 @@ import java.time.LocalDateTime
 import kotlin.random.Random
 
 class BrowseEmailNotificationSchedulesUseCaseTest : BehaviorSpec({
-    lateinit var scheduleTaskService: ScheduleTaskBrowseService
+    lateinit var scheduleTaskService: ScheduleTaskQueryService
     lateinit var useCase: BrowseEmailNotificationSchedulesUseCase
 
     beforeContainer {

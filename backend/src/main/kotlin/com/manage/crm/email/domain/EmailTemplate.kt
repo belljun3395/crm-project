@@ -30,6 +30,8 @@ class EmailTemplate(
     var domainEvents: MutableList<PostEmailTemplateEvent> = mutableListOf()
 
     companion object {
+        private const val DEFAULT_VERSION_PLUS_AMOUNT = 0.1f
+
         fun new(templateName: String, subject: String, body: String, variables: Variables): EmailTemplate {
             return EmailTemplate(
                 templateName = templateName,
@@ -38,17 +40,46 @@ class EmailTemplate(
                 variables = variables
             )
         }
+
+        fun new(
+            id: Long,
+            templateName: String,
+            subject: String,
+            body: String,
+            variables: Variables,
+            version: Float,
+            createdAt: LocalDateTime
+        ): EmailTemplate {
+            return EmailTemplate(
+                id = id,
+                templateName = templateName,
+                subject = subject,
+                body = body,
+                variables = variables,
+                version = version,
+                createdAt = createdAt
+            )
+        }
     }
 
+    /**
+     * Check if the template is new.
+     */
     fun isNewTemplate(): Boolean = id == null
 
     // ----------------- Modify Builder -----------------
+    /**
+     * Modify the email template.
+     */
     fun modify(): EmailTemplateModifyBuilder = EmailTemplateModifyBuilder(this)
 
     class EmailTemplateModifyBuilder(
         private val template: EmailTemplate,
         private var isVersionUpdated: Boolean = false
     ) {
+        /**
+         * Finalize the modification and return the modified template.
+         */
         fun done(): EmailTemplate {
             if (!isVersionUpdated) {
                 updateVersion(null)
@@ -56,6 +87,10 @@ class EmailTemplate(
             template.registerModifyEvent()
             return template
         }
+
+        /**
+         * Modify the subject of the email template.
+         */
         fun modifySubject(subject: String?): EmailTemplateModifyBuilder {
             subject?.let {
                 template.subject = subject
@@ -63,6 +98,9 @@ class EmailTemplate(
             return this
         }
 
+        /**
+         * Modify the body of the email template.
+         */
         fun modifyBody(
             body: String,
             variables: Variables
@@ -72,6 +110,9 @@ class EmailTemplate(
             return this
         }
 
+        /**
+         * Update the version of the email template.
+         */
         fun updateVersion(version: Float?): EmailTemplateModifyBuilder {
             version?.let {
                 if (it <= template.version) {
@@ -79,13 +120,16 @@ class EmailTemplate(
                 }
                 this.template.version = it
             } ?: kotlin.run {
-                this.template.version += 0.1f
+                this.template.version += DEFAULT_VERSION_PLUS_AMOUNT
             }
             isVersionUpdated = true
             return this
         }
     }
 
+    /**
+     * Add Post Email Template Event to the domain events list.
+     */
     private fun registerModifyEvent() {
         domainEvents.add(
             PostEmailTemplateEvent(

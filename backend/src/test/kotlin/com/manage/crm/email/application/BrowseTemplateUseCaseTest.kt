@@ -12,6 +12,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.flow.asFlow
+import java.time.LocalDateTime
 
 class BrowseTemplateUseCaseTest : BehaviorSpec({
     lateinit var emailTemplateRepository: EmailTemplateRepository
@@ -25,13 +26,14 @@ class BrowseTemplateUseCaseTest : BehaviorSpec({
     }
 
     fun emailTemplateStubs(size: Int) = (1..size).map { it ->
-        EmailTemplate(
+        EmailTemplate.new(
             id = it.toLong(),
             templateName = "templateName$it",
             subject = "subject$it",
             body = "body$it",
             variables = Variables(),
-            version = 1.0f
+            version = 1.0f,
+            createdAt = LocalDateTime.now()
         )
     }
 
@@ -48,29 +50,32 @@ class BrowseTemplateUseCaseTest : BehaviorSpec({
                     version = 1.0f
                 ),
                 // ----------------- template Id 2 is modified once -----------------
-                EmailTemplateHistory(
+                EmailTemplateHistory.new(
                     id = 2,
                     templateId = 2,
                     subject = "subject2",
                     body = "body2",
                     variables = Variables(),
-                    version = 1.0f
+                    version = 1.0f,
+                    createdAt = LocalDateTime.now()
                 ),
-                EmailTemplateHistory(
+                EmailTemplateHistory.new(
                     id = 3,
                     templateId = 2,
                     subject = "subject2.1",
                     body = "body2.1",
                     variables = Variables(),
-                    version = 1.1f
+                    version = 1.1f,
+                    createdAt = LocalDateTime.now()
                 ),
-                EmailTemplateHistory(
+                EmailTemplateHistory.new(
                     id = 4,
                     templateId = 3,
                     subject = "subject3",
                     body = "body3",
                     variables = Variables(),
-                    version = 1.0f
+                    version = 1.0f,
+                    createdAt = LocalDateTime.now()
                 )
             )
 

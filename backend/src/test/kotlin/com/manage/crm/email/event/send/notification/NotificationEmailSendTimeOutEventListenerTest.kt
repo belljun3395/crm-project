@@ -2,7 +2,7 @@ package com.manage.crm.email.event.send.notification
 
 import com.manage.crm.email.MailEventInvokeSituationTest
 import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
-import com.manage.crm.email.application.service.ScheduleTaskService
+import com.manage.crm.email.application.service.ScheduleTaskAllService
 import com.manage.crm.email.domain.vo.EventId
 import com.manage.crm.email.event.relay.aws.ScheduledEventReverseRelay
 import com.manage.crm.email.event.relay.aws.mapper.ScheduledEventMessageMapper
@@ -22,7 +22,7 @@ import kotlin.test.assertEquals
 
 class NotificationEmailSendTimeOutEventListenerTest(
     @Qualifier("scheduleTaskServicePostEventProcessor")
-    private val scheduleTaskService: ScheduleTaskService,
+    private val scheduleTaskService: ScheduleTaskAllService,
     scheduledEventMessageMapper: ScheduledEventMessageMapper
 ) : MailEventInvokeSituationTest() {
 

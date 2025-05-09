@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.manage.crm.email.application.dto.DeleteTemplateUseCaseIn
 import com.manage.crm.email.application.dto.DeleteTemplateUseCaseOut
-import com.manage.crm.email.application.service.ScheduleTaskService
+import com.manage.crm.email.application.service.ScheduleTaskAllService
 import com.manage.crm.email.domain.ScheduledEvent
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.repository.ScheduledEventRepository
@@ -21,7 +21,7 @@ import java.time.LocalDateTime
 class DeleteTemplateUseCaseTest : BehaviorSpec({
     lateinit var emailTemplateRepository: EmailTemplateRepository
     lateinit var scheduledEventRepository: ScheduledEventRepository
-    lateinit var scheduleTaskService: ScheduleTaskService
+    lateinit var scheduleTaskService: ScheduleTaskAllService
     lateinit var deleteTemplateUseCase: DeleteTemplateUseCase
 
     beforeContainer {
@@ -38,7 +38,7 @@ class DeleteTemplateUseCaseTest : BehaviorSpec({
 
     fun scheduledEventStubs(templateId: Long, size: Int, objectMapper: ObjectMapper) =
         (1..size).map {
-            ScheduledEvent(
+            ScheduledEvent.new(
                 eventId = EventId("eventId$it"),
                 eventClass = NotificationEmailSendTimeOutEvent::class.simpleName!!,
                 eventPayload = objectMapper.writeValueAsString(

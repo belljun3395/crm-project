@@ -22,7 +22,7 @@ class EmailSentEventHandler(
     suspend fun handle(event: EmailSentEvent) {
         transactionalTemplates.writer.executeAndAwait {
             emailSendHistoryRepository.save(
-                EmailSendHistory(
+                EmailSendHistory.new(
                     userId = event.userId,
                     userEmail = event.destination,
                     emailMessageId = event.messageId,

@@ -15,7 +15,7 @@ class UserTest : FeatureSpec({
         }
         """.trimIndent()
     )
-    val user = User(
+    val user = User.new(
         id = id,
         externalId = externalId,
         userAttributes = attributes,

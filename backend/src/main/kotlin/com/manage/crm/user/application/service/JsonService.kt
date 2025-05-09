@@ -9,7 +9,9 @@ import org.springframework.stereotype.Component
 class JsonService(
     private val objectMapper: ObjectMapper
 ) {
-
+    /**
+     * `attribute`를 JSON으로 변환하고, `keys`에 해당하는 키가 포함되어 있는지 확인합니다.
+     */
     fun execute(attribute: String, vararg keys: RequiredUserAttributeKey): Json {
         attribute.let {
             try {

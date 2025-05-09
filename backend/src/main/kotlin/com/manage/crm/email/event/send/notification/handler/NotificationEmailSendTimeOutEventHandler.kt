@@ -24,7 +24,7 @@ class NotificationEmailSendTimeOutEventHandler(
             val scheduledAt = ScheduleType.AWS.name
 
             scheduledEventRepository.save(
-                ScheduledEvent(
+                ScheduledEvent.new(
                     eventId = event.eventId,
                     eventClass = event.javaClass.simpleName,
                     eventPayload = objectMapper.writeValueAsString(event),

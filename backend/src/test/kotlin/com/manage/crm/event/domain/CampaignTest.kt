@@ -9,7 +9,8 @@ class CampaignTest : FeatureSpec({
     feature("Campaign#allMatchPropertyKeys") {
         scenario("all match property keys") {
             // given
-            val campaign = Campaign(
+            val campaign = Campaign.new(
+                name = "testCampaign",
                 properties = Properties(
                     value = listOf(
                         Property("key1", "value1"),
@@ -27,7 +28,8 @@ class CampaignTest : FeatureSpec({
 
         scenario("not all match property keys - same size") {
             // given
-            val campaign = Campaign(
+            val campaign = Campaign.new(
+                name = "testCampaign",
                 properties = Properties(
                     value = listOf(
                         Property("key1", "value1"),
@@ -45,7 +47,8 @@ class CampaignTest : FeatureSpec({
 
         scenario("not all match property keys - different size") {
             // given
-            val campaign = Campaign(
+            val campaign = Campaign.new(
+                name = "testCampaign",
                 properties = Properties(
                     value = listOf(
                         Property("key1", "value1"),
@@ -63,7 +66,8 @@ class CampaignTest : FeatureSpec({
 
         scenario("not all match property keys - empty campaign properties") {
             // given
-            val campaign = Campaign(
+            val campaign = Campaign.new(
+                name = "testCampaign",
                 properties = Properties(
                     value = emptyList()
                 )
@@ -78,7 +82,8 @@ class CampaignTest : FeatureSpec({
 
         scenario("not all match property keys - empty input keys") {
             // given
-            val campaign = Campaign(
+            val campaign = Campaign.new(
+                name = "testCampaign",
                 properties = Properties(
                     value = listOf(
                         Property("key1", "value1"),

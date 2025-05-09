@@ -37,7 +37,7 @@ class EnrollUserUseCase(
                     ?: throw IllegalArgumentException("User not found by id: $id")
             } else {
                 userRepository.save(
-                    User(
+                    User.new(
                         externalId = externalId,
                         userAttributes = userAttributes
                     )

@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
-import java.time.LocalDateTime
 
 class EventRepositoryCustomTest(
     val eventRepository: EventRepository
@@ -33,7 +32,7 @@ class EventRepositoryCustomTest(
                 runTest {
                     // given
                     (1..10).map { it ->
-                        Event(
+                        Event.new(
                             name = "event",
                             userId = it.toLong(),
                             properties = Properties(
@@ -43,8 +42,7 @@ class EventRepositoryCustomTest(
                                         value = "$it"
                                     )
                                 )
-                            ),
-                            createdAt = LocalDateTime.now()
+                            )
                         ).let {
                             eventRepository.save(it)
                         }
@@ -76,7 +74,7 @@ class EventRepositoryCustomTest(
                 runTest {
                     // given
                     (1..10).map { it ->
-                        Event(
+                        Event.new(
                             name = "event",
                             userId = it.toLong(),
                             properties = Properties(
@@ -86,8 +84,7 @@ class EventRepositoryCustomTest(
                                         value = "$it"
                                     )
                                 )
-                            ),
-                            createdAt = LocalDateTime.now()
+                            )
                         ).let {
                             eventRepository.save(it)
                         }
@@ -119,7 +116,7 @@ class EventRepositoryCustomTest(
                 runTest {
                     // given
                     (1..10).map { it ->
-                        Event(
+                        Event.new(
                             name = "event",
                             userId = it.toLong(),
                             properties = Properties(
@@ -129,8 +126,7 @@ class EventRepositoryCustomTest(
                                         value = "$it"
                                     )
                                 )
-                            ),
-                            createdAt = LocalDateTime.now()
+                            )
                         ).let {
                             eventRepository.save(it)
                         }
@@ -155,7 +151,7 @@ class EventRepositoryCustomTest(
                 runTest {
                     // given
                     (1..10).map { it ->
-                        Event(
+                        Event.new(
                             name = "event",
                             userId = it.toLong(),
                             properties = Properties(
@@ -165,8 +161,7 @@ class EventRepositoryCustomTest(
                                         value = "$it"
                                     )
                                 )
-                            ),
-                            createdAt = LocalDateTime.now()
+                            )
                         ).let {
                             eventRepository.save(it)
                         }
@@ -198,7 +193,7 @@ class EventRepositoryCustomTest(
                 runTest {
                     // given
                     (1..10).map { it ->
-                        Event(
+                        Event.new(
                             name = "event",
                             userId = it.toLong(),
                             properties = Properties(
@@ -208,8 +203,7 @@ class EventRepositoryCustomTest(
                                         value = "$it"
                                     )
                                 )
-                            ),
-                            createdAt = LocalDateTime.now()
+                            )
                         ).let {
                             eventRepository.save(it)
                         }
@@ -242,7 +236,7 @@ class EventRepositoryCustomTest(
                 runTest {
                     // given
                     (1..10).map { it ->
-                        Event(
+                        Event.new(
                             name = "event",
                             userId = it.toLong(),
                             properties = Properties(
@@ -252,8 +246,7 @@ class EventRepositoryCustomTest(
                                         value = "$it"
                                     )
                                 )
-                            ),
-                            createdAt = LocalDateTime.now()
+                            )
                         ).let {
                             eventRepository.save(it)
                         }
@@ -289,7 +282,7 @@ class EventRepositoryCustomTest(
                     runTest {
                         // given
                         (1..10).map { it ->
-                            Event(
+                            Event.new(
                                 name = "event",
                                 userId = it.toLong(),
                                 properties = Properties(
@@ -299,8 +292,7 @@ class EventRepositoryCustomTest(
                                             value = "$it"
                                         )
                                     )
-                                ),
-                                createdAt = LocalDateTime.now()
+                                )
                             ).let {
                                 eventRepository.save(it)
                             }
@@ -330,7 +322,7 @@ class EventRepositoryCustomTest(
                     runTest {
                         // given
                         (1..10).map { it ->
-                            Event(
+                            Event.new(
                                 name = "event",
                                 userId = it.toLong(),
                                 properties = Properties(
@@ -340,8 +332,7 @@ class EventRepositoryCustomTest(
                                             value = "$it"
                                         )
                                     )
-                                ),
-                                createdAt = LocalDateTime.now()
+                                )
                             ).let {
                                 eventRepository.save(it)
                             }
@@ -380,7 +371,7 @@ class EventRepositoryCustomTest(
                 runTest {
                     // given
                     (1..10).map { it ->
-                        Event(
+                        Event.new(
                             name = "event",
                             userId = it.toLong(),
                             properties = Properties(
@@ -390,8 +381,7 @@ class EventRepositoryCustomTest(
                                         value = "value$it"
                                     )
                                 )
-                            ),
-                            createdAt = LocalDateTime.now()
+                            )
                         ).let {
                             eventRepository.save(it)
                         }
@@ -423,7 +413,7 @@ class EventRepositoryCustomTest(
                 runTest {
                     // given
                     (1..10).map { it ->
-                        Event(
+                        Event.new(
                             name = "event",
                             userId = it.toLong(),
                             properties = Properties(
@@ -433,8 +423,7 @@ class EventRepositoryCustomTest(
                                         value = "value$it"
                                     )
                                 )
-                            ),
-                            createdAt = LocalDateTime.now()
+                            )
                         ).let {
                             eventRepository.save(it)
                         }
@@ -472,7 +461,7 @@ class EventRepositoryCustomTest(
                 runTest {
                     // given
                     (1..10).map { it ->
-                        Event(
+                        Event.new(
                             name = "event",
                             userId = it.toLong(),
                             properties = Properties(
@@ -482,8 +471,7 @@ class EventRepositoryCustomTest(
                                         value = "value$it"
                                     )
                                 )
-                            ),
-                            createdAt = LocalDateTime.now()
+                            )
                         ).let {
                             eventRepository.save(it)
                         }
@@ -520,7 +508,7 @@ class EventRepositoryCustomTest(
             runTest {
                 // given
                 (1..10).map { it ->
-                    Event(
+                    Event.new(
                         name = "event",
                         userId = it.toLong(),
                         properties = Properties(
@@ -534,8 +522,7 @@ class EventRepositoryCustomTest(
                                     value = "${10 - it}"
                                 )
                             )
-                        ),
-                        createdAt = LocalDateTime.now()
+                        )
                     ).let {
                         eventRepository.save(it)
                     }
@@ -582,7 +569,7 @@ class EventRepositoryCustomTest(
             runTest {
                 // given
                 (1..10).map { it ->
-                    Event(
+                    Event.new(
                         name = "event",
                         userId = it.toLong(),
                         properties = Properties(
@@ -596,8 +583,7 @@ class EventRepositoryCustomTest(
                                     value = "${10 - it}"
                                 )
                             )
-                        ),
-                        createdAt = LocalDateTime.now()
+                        )
                     ).let {
                         eventRepository.save(it)
                     }

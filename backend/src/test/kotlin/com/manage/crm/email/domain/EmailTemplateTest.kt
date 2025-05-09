@@ -29,7 +29,11 @@ class EmailTemplateTest : FeatureSpec({
     feature("EmailTemplate#isNewTemplate") {
         scenario("check if email template is new") {
             // given
-            val emailTemplate = EmailTemplate()
+            val templateName = "templateName"
+            val subject = "subject"
+            val body = "body"
+            val variables = Variables()
+            val emailTemplate = EmailTemplate.new(templateName, subject, body, Variables(variables.value))
 
             // then
             emailTemplate.isNewTemplate() shouldBe true

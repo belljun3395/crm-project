@@ -3,7 +3,7 @@ package com.manage.crm.email.event.send.notification
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
-import com.manage.crm.email.application.service.ScheduleTaskService
+import com.manage.crm.email.application.service.ScheduleTaskAllService
 import com.manage.crm.email.domain.repository.ScheduledEventRepository
 import com.manage.crm.support.LocalDateTimeExtension
 import com.manage.crm.support.parseExpiredTime
@@ -34,7 +34,7 @@ class NotificationEmailSendTimeOutEventRePlayer(
     private val objectMapper: ObjectMapper,
     private val transactionalTemplates: TransactionTemplates,
     @Qualifier("scheduleTaskServicePostEventProcessor")
-    private val scheduleTaskService: ScheduleTaskService
+    private val scheduleTaskService: ScheduleTaskAllService
 ) : ApplicationRunner {
     val log = KotlinLogging.logger {}
 

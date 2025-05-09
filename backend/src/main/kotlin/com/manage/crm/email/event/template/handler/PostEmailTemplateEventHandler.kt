@@ -32,10 +32,10 @@ class PostEmailTemplateEventHandler(
                         ?: throw IllegalArgumentException("EmailTemplate not found by id: $templateId")
 
                 emailTemplateHistoryRepository.save(
-                    EmailTemplateHistory(
+                    EmailTemplateHistory.new(
                         templateId = template.id!!,
-                        subject = template.subject,
-                        body = template.body,
+                        subject = template.subject!!,
+                        body = template.body!!,
                         variables = template.variables,
                         version = template.version
                     )
