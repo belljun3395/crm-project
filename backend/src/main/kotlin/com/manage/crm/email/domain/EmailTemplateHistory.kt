@@ -21,11 +21,13 @@ class EmailTemplateHistory(
     @Column("variables")
     var variables: Variables = Variables(),
     @Column("version")
-    var version: Float = 1.0f,
+    var version: Float? = null,
     @CreatedDate
     var createdAt: LocalDateTime? = null
 ) {
     companion object {
+        private const val INITIAL_VERSION_AMOUNT = 1.0f
+
         fun new(
             templateId: Long,
             subject: String,
