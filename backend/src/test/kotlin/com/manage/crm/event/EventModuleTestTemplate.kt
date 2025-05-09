@@ -1,6 +1,7 @@
 package com.manage.crm.event
 
 import com.manage.crm.config.TestTransactionConfiguration
+import io.awspring.cloud.autoconfigure.sqs.SqsAutoConfiguration
 import org.junit.jupiter.api.DisplayNameGeneration
 import org.junit.jupiter.api.DisplayNameGenerator
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
@@ -10,7 +11,7 @@ import org.springframework.test.context.ActiveProfiles
 
 @ActiveProfiles(value = ["test", "new"])
 @EnableAutoConfiguration(
-    exclude = [FlywayAutoConfiguration::class]
+    exclude = [FlywayAutoConfiguration::class, SqsAutoConfiguration::class]
 )
 @ApplicationModuleTest(
     module = "event",
