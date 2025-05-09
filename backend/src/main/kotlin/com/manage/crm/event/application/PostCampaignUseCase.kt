@@ -27,7 +27,7 @@ class PostCampaignUseCase(
         }
 
         val savedCampaign = campaignRepository.save(
-            Campaign(
+            Campaign.new(
                 name = campaignName,
                 properties = Properties(
                     properties.map { (key, value) ->

@@ -1,5 +1,6 @@
 package com.manage.crm.event.domain
 
+import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
@@ -13,6 +14,18 @@ class CampaignEvents(
     var campaignId: Long? = null,
     @Column("event_id")
     var eventId: Long? = null,
-    @Column("created_at")
+    @CreatedDate
     var createdAt: LocalDateTime? = null
-)
+) {
+    companion object {
+        fun new(
+            campaignId: Long,
+            eventId: Long
+        ): CampaignEvents {
+            return CampaignEvents(
+                campaignId = campaignId,
+                eventId = eventId
+            )
+        }
+    }
+}

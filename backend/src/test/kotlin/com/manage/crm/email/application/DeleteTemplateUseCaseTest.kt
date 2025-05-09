@@ -38,7 +38,7 @@ class DeleteTemplateUseCaseTest : BehaviorSpec({
 
     fun scheduledEventStubs(templateId: Long, size: Int, objectMapper: ObjectMapper) =
         (1..size).map {
-            ScheduledEvent(
+            ScheduledEvent.new(
                 eventId = EventId("eventId$it"),
                 eventClass = NotificationEmailSendTimeOutEvent::class.simpleName!!,
                 eventPayload = objectMapper.writeValueAsString(

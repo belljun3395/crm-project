@@ -104,7 +104,7 @@ class PostEventUseCase(
         properties: List<PostEventPropertyDto>
     ): Event {
         return eventRepository.save(
-            Event(
+            Event.new(
                 name = eventName,
                 userId = userId,
                 properties = Properties(
@@ -128,7 +128,7 @@ class PostEventUseCase(
 
     private suspend fun setCampaignEvent(campaign: Campaign, savedEvent: Event) {
         campaignEventsRepository.save(
-            CampaignEvents(
+            CampaignEvents.new(
                 campaignId = campaign.id!!,
                 eventId = savedEvent.id!!
             )

@@ -12,6 +12,7 @@ import com.manage.crm.event.domain.vo.Properties
 import com.manage.crm.event.domain.vo.Property
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
+import com.manage.crm.user.domain.vo.Json
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -53,15 +54,18 @@ class PostEventUseCaseTest : BehaviorSpec({
                 campaignName = null
             )
 
-            val user = User(
+            val user = User.new(
                 id = 1L,
-                externalId = useCaseIn.externalId
+                externalId = useCaseIn.externalId,
+                userAttributes = Json("""{}""".trimIndent()),
+                createdAt = now(),
+                updatedAt = now()
             )
             coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
 
-            val event = Event(
+            val event = Event.new(
                 name = useCaseIn.name,
-                userId = user.id,
+                userId = user.id!!,
                 properties = Properties(
                     useCaseIn.properties.map {
                         Property(
@@ -111,15 +115,18 @@ class PostEventUseCaseTest : BehaviorSpec({
                 campaignName = "campaign"
             )
 
-            val user = User(
+            val user = User.new(
                 id = 1L,
-                externalId = useCaseIn.externalId
+                externalId = useCaseIn.externalId,
+                userAttributes = Json("""{}""".trimIndent()),
+                createdAt = now(),
+                updatedAt = now()
             )
             coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
 
-            val event = Event(
+            val event = Event.new(
                 name = useCaseIn.name,
-                userId = user.id,
+                userId = user.id!!,
                 properties = Properties(
                     useCaseIn.properties.map {
                         Property(
@@ -139,7 +146,7 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             val campaignName = useCaseIn.campaignName!!
             val campaignId = 1L
-            val campaign = Campaign(
+            val campaign = Campaign.new(
                 id = campaignId,
                 name = campaignName,
                 properties = Properties(
@@ -149,11 +156,12 @@ class PostEventUseCaseTest : BehaviorSpec({
                             value = it.value
                         )
                     }.toList()
-                )
+                ),
+                createdAt = now()
             )
             coEvery { campaignRepository.findCampaignByName(campaignName) } answers { campaign }
 
-            val campaignEvents = CampaignEvents(
+            val campaignEvents = CampaignEvents.new(
                 campaignId = campaignId,
                 eventId = eventId
             )
@@ -200,15 +208,18 @@ class PostEventUseCaseTest : BehaviorSpec({
                 campaignName = "campaign"
             )
 
-            val user = User(
+            val user = User.new(
                 id = 1L,
-                externalId = useCaseIn.externalId
+                externalId = useCaseIn.externalId,
+                userAttributes = Json("""{}""".trimIndent()),
+                createdAt = now(),
+                updatedAt = now()
             )
             coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
 
-            val event = Event(
+            val event = Event.new(
                 name = useCaseIn.name,
-                userId = user.id,
+                userId = user.id!!,
                 properties = Properties(
                     useCaseIn.properties.map {
                         Property(
@@ -270,15 +281,18 @@ class PostEventUseCaseTest : BehaviorSpec({
                 campaignName = "campaign"
             )
 
-            val user = User(
+            val user = User.new(
                 id = 1L,
-                externalId = useCaseIn.externalId
+                externalId = useCaseIn.externalId,
+                userAttributes = Json("""{}""".trimIndent()),
+                createdAt = now(),
+                updatedAt = now()
             )
             coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
 
-            val event = Event(
+            val event = Event.new(
                 name = useCaseIn.name,
-                userId = user.id,
+                userId = user.id!!,
                 properties = Properties(
                     useCaseIn.properties.map {
                         Property(
@@ -304,7 +318,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             )
             val campaignName = useCaseIn.campaignName!!
             val campaignId = 1L
-            val campaign = Campaign(
+            val campaign = Campaign.new(
                 id = campaignId,
                 name = campaignName,
                 properties = Properties(
@@ -314,7 +328,8 @@ class PostEventUseCaseTest : BehaviorSpec({
                             value = it.value
                         )
                     }.toList()
-                )
+                ),
+                createdAt = now()
             )
             coEvery { campaignRepository.findCampaignByName(campaignName) } answers { campaign }
 

@@ -24,7 +24,7 @@ class UserRepositoryCustomImpl(
             .fetch()
             .all()
             .map {
-                User(
+                User.new(
                     id = it["id"] as Long,
                     externalId = it["external_id"] as String,
                     userAttributes = Json(it["user_attributes"] as String),
