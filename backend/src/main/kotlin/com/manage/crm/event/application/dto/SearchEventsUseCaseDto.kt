@@ -27,6 +27,7 @@ data class SearchEventsUseCaseOut(
 data class EventDto(
     val id: Long,
     val name: String,
+    val externalId: String?,
     val properties: List<SearchEventPropertyDto>,
     val createdAt: LocalDateTime
 )
