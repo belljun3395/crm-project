@@ -138,6 +138,10 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
+ktlint {
+    disabledRules.set(setOf("filename"))
+}
+
 openApi {
     customBootRun {
         jvmArgs = listOf("-Dspring.profiles.active=local,new")
