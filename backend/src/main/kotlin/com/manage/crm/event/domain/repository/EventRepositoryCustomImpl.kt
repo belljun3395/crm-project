@@ -75,7 +75,7 @@ class EventRepositoryCustomImpl(
             .fetch()
             .all()
             .map { it ->
-                Event(
+                Event.new(
                     id = it["id"] as Long,
                     name = it["name"] as String,
                     userId = it["user_id"] as Long,

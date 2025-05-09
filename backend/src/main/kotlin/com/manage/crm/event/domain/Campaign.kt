@@ -1,6 +1,7 @@
 package com.manage.crm.event.domain
 
 import com.manage.crm.event.domain.vo.Properties
+import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
@@ -14,9 +15,35 @@ class Campaign(
     var name: String? = null,
     @Column("properties")
     var properties: Properties? = null,
-    @Column("created_at")
+    @CreatedDate
     var createdAt: LocalDateTime? = null
 ) {
+    companion object {
+        fun new(
+            name: String,
+            properties: Properties
+        ): Campaign {
+            return Campaign(
+                name = name,
+                properties = properties
+            )
+        }
+
+        fun new(
+            id: Long?,
+            name: String,
+            properties: Properties,
+            createdAt: LocalDateTime
+        ): Campaign {
+            return Campaign(
+                id = id,
+                name = name,
+                properties = properties,
+                createdAt = createdAt
+            )
+        }
+    }
+
     /**
      * Check if the campaign has exactly the same property keys as the given list of keys.
      */

@@ -1,9 +1,11 @@
 package com.manage.crm.email.domain
 
 import com.manage.crm.email.domain.vo.EventId
+import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+import java.time.LocalDateTime
 
 @Table(name = "scheduled_events")
 class ScheduledEvent(
@@ -24,16 +26,65 @@ class ScheduledEvent(
     @Column("scheduled_at")
     val scheduledAt: String? = null
 ) {
+    companion object {
+        fun new(
+            eventId: EventId,
+            eventClass: String,
+            eventPayload: String,
+            completed: Boolean,
+            scheduledAt: String
+        ): ScheduledEvent {
+            return ScheduledEvent(
+                eventId = eventId,
+                eventClass = eventClass,
+                eventPayload = eventPayload,
+                completed = completed,
+                scheduledAt = scheduledAt
+            )
+        }
+
+        fun new(
+            id: Long,
+            eventId: EventId,
+            eventClass: String,
+            eventPayload: String,
+            completed: Boolean,
+            isNotConsumed: Boolean,
+            canceled: Boolean,
+            scheduledAt: String,
+        ): ScheduledEvent {
+            return ScheduledEvent(
+                id = id,
+                eventId = eventId,
+                eventClass = eventClass,
+                eventPayload = eventPayload,
+                completed = completed,
+                isNotConsumed = isNotConsumed,
+                canceled = canceled,
+                scheduledAt = scheduledAt
+            )
+        }
+    }
+
+    /**
+     * Mark the event as completed.
+     */
     fun complete(): ScheduledEvent {
         completed = true
         return this
     }
 
+    /**
+     * Mark the event as not consumed.
+     */
     fun notConsumed(): ScheduledEvent {
         isNotConsumed = true
         return this
     }
 
+    /**
+     * Mark the event as canceled.
+     */
     fun cancel(): ScheduledEvent {
         completed = true
         isNotConsumed = true

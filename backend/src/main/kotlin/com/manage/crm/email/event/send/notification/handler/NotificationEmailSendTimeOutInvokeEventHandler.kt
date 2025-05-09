@@ -113,7 +113,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
                     ).messageId
 
                 emailSendHistoryRepository.save(
-                    EmailSendHistory(
+                    EmailSendHistory.new(
                         userId = user.id!!,
                         userEmail = email,
                         emailMessageId = emailMessageId,

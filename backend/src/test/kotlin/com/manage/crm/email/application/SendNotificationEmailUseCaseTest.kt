@@ -19,6 +19,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import java.time.LocalDateTime
 
 class SendNotificationEmailUseCaseTest : BehaviorSpec({
     lateinit var emailTemplateRepository: EmailTemplateRepository
@@ -43,7 +44,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
     fun userSubs(size: Int): List<User> =
         (1..size).map {
-            User(
+            User.new(
                 id = it.toLong(),
                 externalId = it.toString(),
                 userAttributes = Json(
@@ -54,7 +55,9 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                         "detail": "{\"age\" : $it}"
                     }
                     """.trimIndent()
-                )
+                ),
+                createdAt = LocalDateTime.now(),
+                updatedAt = LocalDateTime.now()
             )
         }
 
@@ -67,13 +70,14 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             )
 
             coEvery { emailTemplateRepository.findById(useCaseIn.templateId) } answers {
-                EmailTemplate(
+                EmailTemplate.new(
                     id = 1,
                     templateName = "templateName",
                     subject = "subject",
                     body = "body",
                     variables = Variables(),
-                    version = 1.0f
+                    version = 1.0f,
+                    createdAt = LocalDateTime.now()
                 )
             }
 
@@ -120,13 +124,14 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                     useCaseIn.templateVersion!!
                 )
             } answers {
-                EmailTemplateHistory(
+                EmailTemplateHistory.new(
                     id = 1,
                     templateId = 1,
                     subject = "subject",
                     body = "body",
                     variables = Variables(),
-                    version = 1.1f
+                    version = 1.1f,
+                    createdAt = LocalDateTime.now()
                 )
             }
 
@@ -173,13 +178,14 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             )
 
             coEvery { emailTemplateRepository.findById(useCaseIn.templateId) } answers {
-                EmailTemplate(
+                EmailTemplate.new(
                     id = 1,
                     templateName = "templateName",
                     subject = "subject",
                     body = "body",
                     variables = Variables(),
-                    version = 1.0f
+                    version = 1.0f,
+                    createdAt = LocalDateTime.now()
                 )
             }
 
@@ -226,7 +232,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             )
 
             coEvery { emailTemplateRepository.findById(useCaseIn.templateId) } answers {
-                EmailTemplate(
+                EmailTemplate.new(
                     id = 1,
                     templateName = "templateName",
                     subject = "subject",
@@ -243,7 +249,8 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                     variables = Variables(
                         listOf("attribute_email", "attribute_name", "custom_detail_age")
                     ),
-                    version = 1.0f
+                    version = 1.0f,
+                    createdAt = LocalDateTime.now()
                 )
             }
 

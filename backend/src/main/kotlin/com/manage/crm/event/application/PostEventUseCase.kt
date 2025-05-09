@@ -37,6 +37,11 @@ data class SavedEvent(
     constructor(id: Long, message: SaveEventMessage) : this(id, message.message)
 }
 
+/**
+ *  - `savedEvent`: 저장된 이벤트에 대한 정보
+ *      - `id`: 저장된 이벤트의 ID
+ *      - `message`: 이벤트 저장 결과 메시지
+ */
 @Service
 class PostEventUseCase(
     private val eventRepository: EventRepository,
@@ -72,7 +77,7 @@ class PostEventUseCase(
             }
 
             val event = eventDeferred.await()
-            val eventId= requireNotNull(event.id)
+            val eventId = requireNotNull(event.id)
             val campaign = try {
                 campaignDeferred.await()
             } catch (e: CampaignNotFoundException) {
@@ -99,7 +104,7 @@ class PostEventUseCase(
         properties: List<PostEventPropertyDto>
     ): Event {
         return eventRepository.save(
-            Event(
+            Event.new(
                 name = eventName,
                 userId = userId,
                 properties = Properties(
@@ -123,7 +128,7 @@ class PostEventUseCase(
 
     private suspend fun setCampaignEvent(campaign: Campaign, savedEvent: Event) {
         campaignEventsRepository.save(
-            CampaignEvents(
+            CampaignEvents.new(
                 campaignId = campaign.id!!,
                 eventId = savedEvent.id!!
             )

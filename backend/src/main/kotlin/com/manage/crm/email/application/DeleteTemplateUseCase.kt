@@ -2,7 +2,7 @@ package com.manage.crm.email.application
 
 import com.manage.crm.email.application.dto.DeleteTemplateUseCaseIn
 import com.manage.crm.email.application.dto.DeleteTemplateUseCaseOut
-import com.manage.crm.email.application.service.ScheduleTaskService
+import com.manage.crm.email.application.service.ScheduleTaskAllService
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.repository.ScheduledEventRepository
 import org.springframework.beans.factory.annotation.Qualifier
@@ -14,7 +14,7 @@ class DeleteTemplateUseCase(
     private val emailTemplateRepository: EmailTemplateRepository,
     private val scheduledEventRepository: ScheduledEventRepository,
     @Qualifier("scheduleTaskServicePostEventProcessor")
-    private val scheduleTaskService: ScheduleTaskService
+    private val scheduleTaskService: ScheduleTaskAllService
 ) {
     @Transactional
     suspend fun execute(useCaseIn: DeleteTemplateUseCaseIn): DeleteTemplateUseCaseOut {

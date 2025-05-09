@@ -25,4 +25,22 @@ class EmailSendHistory(
     var createdAt: LocalDateTime? = null,
     @LastModifiedDate
     var updatedAt: LocalDateTime? = null
-)
+) {
+    companion object {
+        fun new(
+            userId: Long,
+            userEmail: String,
+            emailMessageId: String,
+            emailBody: String,
+            sendStatus: String
+        ): EmailSendHistory {
+            return EmailSendHistory(
+                userId = userId,
+                userEmail = userEmail,
+                emailMessageId = emailMessageId,
+                emailBody = emailBody,
+                sendStatus = sendStatus
+            )
+        }
+    }
+}

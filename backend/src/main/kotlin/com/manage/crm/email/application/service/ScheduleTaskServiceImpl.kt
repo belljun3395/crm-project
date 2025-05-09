@@ -16,7 +16,7 @@ class ScheduleTaskServiceImpl(
     private val scheduledEventRepository: ScheduledEventRepository,
     private val awsSchedulerService: AwsSchedulerService,
     private val objectMapper: ObjectMapper
-) : ScheduleTaskService, ScheduleTaskBrowseService {
+) : ScheduleTaskAllService {
     val log = KotlinLogging.logger {}
 
     override fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String {
