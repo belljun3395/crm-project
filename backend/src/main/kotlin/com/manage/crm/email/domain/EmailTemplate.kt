@@ -22,7 +22,7 @@ class EmailTemplate(
     @Column("variables")
     var variables: Variables = Variables(),
     @Column("version")
-    var version: Float = 1.0f,
+    var version: Float? = null,
     @CreatedDate
     var createdAt: LocalDateTime? = null
 ) {
@@ -30,6 +30,7 @@ class EmailTemplate(
     var domainEvents: MutableList<PostEmailTemplateEvent> = mutableListOf()
 
     companion object {
+        private const val INITIAL_VERSION_AMOUNT = 1.0f
         private const val DEFAULT_VERSION_PLUS_AMOUNT = 0.1f
 
         fun new(templateName: String, subject: String, body: String, variables: Variables): EmailTemplate {
@@ -37,7 +38,8 @@ class EmailTemplate(
                 templateName = templateName,
                 subject = subject,
                 body = body,
-                variables = variables
+                variables = variables,
+                version = INITIAL_VERSION_AMOUNT
             )
         }
 
@@ -115,12 +117,12 @@ class EmailTemplate(
          */
         fun updateVersion(version: Float?): EmailTemplateModifyBuilder {
             version?.let {
-                if (it <= template.version) {
+                if (it <= template.version!!) {
                     throw IllegalArgumentException("Invalid version: $it")
                 }
                 this.template.version = it
             } ?: kotlin.run {
-                this.template.version += DEFAULT_VERSION_PLUS_AMOUNT
+                this.template.version = this.template.version!!.plus(DEFAULT_VERSION_PLUS_AMOUNT)
             }
             isVersionUpdated = true
             return this
