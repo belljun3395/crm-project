@@ -24,4 +24,42 @@ class EmailTemplateHistory(
     var version: Float = 1.0f,
     @CreatedDate
     var createdAt: LocalDateTime? = null
-)
+) {
+    companion object {
+        fun new(
+            templateId: Long,
+            subject: String,
+            body: String,
+            variables: Variables,
+            version: Float
+        ): EmailTemplateHistory {
+            return EmailTemplateHistory(
+                templateId = templateId,
+                subject = subject,
+                body = body,
+                variables = variables,
+                version = version
+            )
+        }
+
+        fun new(
+            id: Long,
+            templateId: Long,
+            subject: String,
+            body: String,
+            variables: Variables,
+            version: Float,
+            createdAt: LocalDateTime
+        ): EmailTemplateHistory {
+            return EmailTemplateHistory(
+                id = id,
+                templateId = templateId,
+                subject = subject,
+                body = body,
+                variables = variables,
+                version = version,
+                createdAt = createdAt
+            )
+        }
+    }
+}

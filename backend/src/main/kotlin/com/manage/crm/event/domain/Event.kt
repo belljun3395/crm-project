@@ -1,6 +1,7 @@
 package com.manage.crm.event.domain
 
 import com.manage.crm.event.domain.vo.Properties
+import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
@@ -16,9 +17,39 @@ class Event(
     var userId: Long? = null,
     @Column("properties")
     var properties: Properties? = null,
-    @Column("created_at")
+    @CreatedDate
     var createdAt: LocalDateTime? = null
 ) {
+    companion object {
+        fun new(
+            name: String,
+            userId: Long,
+            properties: Properties
+        ): Event {
+            return Event(
+                name = name,
+                userId = userId,
+                properties = properties
+            )
+        }
+
+        fun new(
+            id: Long,
+            name: String,
+            userId: Long,
+            properties: Properties,
+            createdAt: LocalDateTime
+        ): Event {
+            return Event(
+                id = id,
+                name = name,
+                userId = userId,
+                properties = properties,
+                createdAt = createdAt
+            )
+        }
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

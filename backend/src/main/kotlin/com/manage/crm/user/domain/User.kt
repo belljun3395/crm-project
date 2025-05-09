@@ -21,6 +21,37 @@ class User(
     @LastModifiedDate
     var updatedAt: LocalDateTime? = null
 ) {
+    companion object {
+        fun new(
+            externalId: String,
+            userAttributes: Json
+        ): User {
+            return User(
+                externalId = externalId,
+                userAttributes = userAttributes
+            )
+        }
+
+        fun new(
+            id: Long,
+            externalId: String,
+            userAttributes: Json,
+            createdAt: LocalDateTime,
+            updatedAt: LocalDateTime
+        ): User {
+            return User(
+                id = id,
+                externalId = externalId,
+                userAttributes = userAttributes,
+                createdAt = createdAt,
+                updatedAt = updatedAt
+            )
+        }
+    }
+
+    /**
+     * Update user attributes
+     */
     fun updateAttributes(attributes: Json) {
         userAttributes = attributes
     }

@@ -14,6 +14,11 @@ import com.manage.crm.event.domain.vo.Property
 import com.manage.crm.support.out
 import org.springframework.stereotype.Service
 
+/**
+ *  - `events`: `eventName`과 `properties`를 기준으로 `Event`를 검색한 결과
+ *      - `eventName`은 필수 검색 조건
+ *      - `properties`와 `propertyOperations`를 조홥하여 여러 조건의 검색 가능
+ */
 @Service
 class SearchEventsUseCase(
     private val eventRepository: EventRepository

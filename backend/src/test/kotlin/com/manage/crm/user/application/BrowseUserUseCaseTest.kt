@@ -11,6 +11,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.flow.asFlow
+import java.time.LocalDateTime
 import kotlin.random.Random
 
 class BrowseUserUseCaseTest : BehaviorSpec({
@@ -24,7 +25,7 @@ class BrowseUserUseCaseTest : BehaviorSpec({
 
     fun userStubs(size: Int): List<User> =
         (1..size).map {
-            User(
+            User.new(
                 id = it.toLong(),
                 externalId = it.toString(),
                 userAttributes = Json(
@@ -34,7 +35,9 @@ class BrowseUserUseCaseTest : BehaviorSpec({
                         "name": "example$it"
                     }
                     """.trimIndent()
-                )
+                ),
+                createdAt = LocalDateTime.now(),
+                updatedAt = LocalDateTime.now()
             )
         }
 

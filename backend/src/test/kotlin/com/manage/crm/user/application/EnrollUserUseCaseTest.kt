@@ -12,6 +12,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import java.time.LocalDateTime
 
 class EnrollUserUseCaseTest : BehaviorSpec({
     lateinit var userRepository: UserRepository
@@ -43,10 +44,12 @@ class EnrollUserUseCaseTest : BehaviorSpec({
             } answers {
                 userAttributes
             }
-            val expectedUser = User(
+            val expectedUser = User.new(
                 id = 1,
                 externalId = useCaseIn.externalId,
-                userAttributes = userAttributes
+                userAttributes = userAttributes,
+                createdAt = LocalDateTime.now(),
+                updatedAt = LocalDateTime.now()
             )
 
             coEvery { userRepository.save(any()) } answers {
@@ -99,10 +102,12 @@ class EnrollUserUseCaseTest : BehaviorSpec({
                 userUpdateAttributes
             }
 
-            val originUser = User(
+            val originUser = User.new(
                 id = 1,
                 externalId = useCaseIn.externalId,
-                userAttributes = userUpdateAttributes
+                userAttributes = userUpdateAttributes,
+                createdAt = LocalDateTime.now(),
+                updatedAt = LocalDateTime.now()
             )
             coEvery { userRepository.findById(any()) } answers {
                 originUser

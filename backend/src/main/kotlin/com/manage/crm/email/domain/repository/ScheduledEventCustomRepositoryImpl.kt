@@ -5,6 +5,7 @@ import com.manage.crm.email.domain.vo.EventId
 import kotlinx.coroutines.reactive.awaitFirst
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Repository
+import java.time.LocalDateTime
 
 @Repository
 class ScheduledEventCustomRepositoryImpl(
@@ -23,7 +24,7 @@ class ScheduledEventCustomRepositoryImpl(
             .fetch()
             .all()
             .map {
-                ScheduledEvent(
+                ScheduledEvent.new(
                     id = it["id"] as Long,
                     eventId = EventId(it["event_id"] as String),
                     eventClass = it["event_class"] as String,
@@ -31,7 +32,7 @@ class ScheduledEventCustomRepositoryImpl(
                     completed = it["completed"] as Boolean,
                     isNotConsumed = it["is_not_consumed"] as Boolean,
                     canceled = it["canceled"] as Boolean,
-                    scheduledAt = it["scheduled_at"] as String
+                    scheduledAt = it["scheduled_at"] as String,
                 )
             }.collectList().awaitFirst()
     }
