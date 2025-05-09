@@ -20,15 +20,10 @@ jobs:
                     java-version: 17
                     distribution: 'temurin'
 
-            -   name: Install docker-compose
-                run: |
-                    apt-get update && apt-get install -y docker-compose
-
-            -   name: Prepare Test Environment
-                run: |
-                    cd ./scripts
-                    ./local-develop-env-reset
-                    sleep 10
+            - name: Run docker compose
+              uses: hoverkraft-tech/compose-action@v2.0.1
+              with:
+                  compose-file: "./resources/crm-local-develop-environment/docker-compose.yml"
 
             -   name: Validate Tests
                 run: |
