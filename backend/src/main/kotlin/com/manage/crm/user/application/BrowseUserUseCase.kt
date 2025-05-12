@@ -5,6 +5,7 @@ import com.manage.crm.user.application.dto.BrowseUsersUseCaseOut
 import com.manage.crm.user.application.dto.UserDto
 import com.manage.crm.user.domain.repository.UserRepository
 import kotlinx.coroutines.flow.toList
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 
 /**
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service
 class BrowseUserUseCase(
     private val userRepository: UserRepository
 ) {
+    @Cacheable(cacheNames = ["usecase::browseUser"], keyGenerator = "allKeyGenerator")
     suspend fun execute(): BrowseUsersUseCaseOut {
         val users = userRepository.findAll().toList()
 

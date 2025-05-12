@@ -6,10 +6,17 @@ import com.manage.crm.user.application.dto.EnrollUserUseCaseOut
 import com.manage.crm.user.application.service.JsonService
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
+import com.manage.crm.user.domain.service.hash.User2HashMapper
 import com.manage.crm.user.domain.vo.Json
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.reactor.awaitSingleOrNull
+import org.springframework.data.redis.core.ReactiveRedisTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.reactive.TransactionSynchronization
+import org.springframework.transaction.reactive.TransactionSynchronizationManager
+import reactor.core.publisher.Mono
 import java.lang.IllegalArgumentException
 
 /**
@@ -21,8 +28,12 @@ import java.lang.IllegalArgumentException
 @Service
 class EnrollUserUseCase(
     private val userRepository: UserRepository,
-    private val jsonService: JsonService
+    private val jsonService: JsonService,
+    private val redisTemplate: ReactiveRedisTemplate<String, Any>,
+    private val user2HashMapper: User2HashMapper
 ) {
+    val log = KotlinLogging.logger {}
+
     @Transactional
     suspend fun execute(useCaseIn: EnrollUserUseCaseIn): EnrollUserUseCaseOut {
         val id: Long? = useCaseIn.id
@@ -45,6 +56,8 @@ class EnrollUserUseCase(
             }
         }
 
+        registerProcess(updateOrSaveUser)
+
         return out {
             EnrollUserUseCaseOut(
                 id = updateOrSaveUser.id!!,
@@ -52,5 +65,21 @@ class EnrollUserUseCase(
                 userAttributes = updateOrSaveUser.userAttributes?.value!!
             )
         }
+    }
+
+    private suspend fun registerProcess(updateOrSaveUser: User) {
+        TransactionSynchronizationManager.forCurrentTransaction().map { manager ->
+            manager.registerSynchronization(object : TransactionSynchronization {
+                override fun afterCompletion(status: Int): Mono<Void> {
+                    log.debug { "EnrollUserUseCase: afterCompletion" }
+                    val hash = user2HashMapper.toHash(updateOrSaveUser)
+                    redisTemplate.opsForHash<String, Any>()
+                        .putAll("user::${updateOrSaveUser.id}", hash).subscribe {
+                            log.debug { "Redis cache updated for user::${updateOrSaveUser.id}" }
+                        }
+                    return super.afterCompletion(status)
+                }
+            })
+        }.awaitSingleOrNull()
     }
 }
