@@ -50,7 +50,7 @@ class BrowseTemplateUseCase(
                             subject = template.subject!!,
                             body = template.body!!,
                             variables = template.variables.getVariables(),
-                            version = template.version!!,
+                            version = template.version!!.value,
                             createdAt = template.createdAt.toString()
                         ),
                         histories =
@@ -61,7 +61,7 @@ class BrowseTemplateUseCase(
                                 subject = history.subject!!,
                                 body = history.body!!,
                                 variables = history.variables.getVariables(),
-                                version = history.version!!,
+                                version = history.version!!.value,
                                 createdAt = history.createdAt.toString()
                             )
                         } ?: emptyList()

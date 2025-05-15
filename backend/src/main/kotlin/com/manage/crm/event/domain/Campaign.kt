@@ -30,7 +30,7 @@ class Campaign(
         }
 
         fun new(
-            id: Long?,
+            id: Long,
             name: String,
             properties: Properties,
             createdAt: LocalDateTime

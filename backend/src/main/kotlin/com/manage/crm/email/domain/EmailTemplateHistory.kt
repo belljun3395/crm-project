@@ -1,5 +1,6 @@
 package com.manage.crm.email.domain
 
+import com.manage.crm.email.domain.vo.EmailTemplateVersion
 import com.manage.crm.email.domain.vo.Variables
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
@@ -21,7 +22,7 @@ class EmailTemplateHistory(
     @Column("variables")
     var variables: Variables = Variables(),
     @Column("version")
-    var version: Float? = null,
+    var version: EmailTemplateVersion? = null,
     @CreatedDate
     var createdAt: LocalDateTime? = null
 ) {
@@ -34,6 +35,16 @@ class EmailTemplateHistory(
             body: String,
             variables: Variables,
             version: Float
+        ): EmailTemplateHistory {
+            return this.new(templateId, subject, body, variables, EmailTemplateVersion(version))
+        }
+
+        fun new(
+            templateId: Long,
+            subject: String,
+            body: String,
+            variables: Variables,
+            version: EmailTemplateVersion
         ): EmailTemplateHistory {
             return EmailTemplateHistory(
                 templateId = templateId,
@@ -51,6 +62,26 @@ class EmailTemplateHistory(
             body: String,
             variables: Variables,
             version: Float,
+            createdAt: LocalDateTime
+        ): EmailTemplateHistory {
+            return this.new(
+                id = id,
+                templateId = templateId,
+                subject = subject,
+                body = body,
+                variables = variables,
+                version = EmailTemplateVersion(version),
+                createdAt = createdAt
+            )
+        }
+
+        fun new(
+            id: Long,
+            templateId: Long,
+            subject: String,
+            body: String,
+            variables: Variables,
+            version: EmailTemplateVersion,
             createdAt: LocalDateTime
         ): EmailTemplateHistory {
             return EmailTemplateHistory(

@@ -65,7 +65,7 @@ class PostTemplateUseCase(
             PostTemplateUseCaseOut(
                 id = modifiedOrNewTemplate.id!!,
                 templateName = modifiedOrNewTemplate.templateName!!,
-                version = modifiedOrNewTemplate.version
+                version = modifiedOrNewTemplate.version!!.value
             )
         }
     }
