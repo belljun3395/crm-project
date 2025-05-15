@@ -53,7 +53,7 @@ class NotificationEmailSendTimeOutEventRePlayer(
                             objectMapper.readTree(it.eventPayload).let { payload ->
                                 val event =
                                     NotificationEmailSendTimeOutEvent(
-                                        eventId = it.eventId!!,
+                                        eventId = it.eventId,
                                         templateId = payload.templateId(),
                                         templateVersion = payload.templateVersion(),
                                         userIds = payload.userIds(),

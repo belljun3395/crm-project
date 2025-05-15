@@ -48,7 +48,7 @@ class ScheduleTaskServiceImpl(
             .map {
                 // TODO: refactor readValue to readTree
                 val payload = objectMapper.readValue(it.eventPayload, Map::class.java).toMutableMap()
-                payload["eventId"] = it.eventId?.value
+                payload["eventId"] = it.eventId.value
                 payload
             }.map { payload ->
                 ScheduleTaskView(
