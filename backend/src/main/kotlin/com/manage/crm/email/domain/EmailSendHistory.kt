@@ -1,6 +1,7 @@
 package com.manage.crm.email.domain
 
 import com.manage.crm.email.domain.vo.Email
+import com.manage.crm.email.domain.vo.SentEmailStatus
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.LastModifiedDate
@@ -45,6 +46,7 @@ class EmailSendHistory(
             emailBody: String,
             sendStatus: String
         ): EmailSendHistory {
+            require(SentEmailStatus.contains(sendStatus)) { "Invalid send status: $sendStatus" }
             return EmailSendHistory(
                 userId = userId,
                 userEmail = userEmail,
