@@ -22,8 +22,8 @@ class BrowseUserUseCase(
                 users = users.map { user ->
                     UserDto(
                         id = user.id!!,
-                        externalId = user.externalId!!,
-                        userAttributes = user.userAttributes?.value!!
+                        externalId = user.externalId,
+                        userAttributes = user.userAttributes.value
                     )
                 }
             )

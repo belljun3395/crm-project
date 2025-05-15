@@ -46,9 +46,9 @@ class SearchEventsUseCase(
             events.map { it ->
                 EventDto(
                     it.id!!,
-                    it.name!!,
-                    it.userId?.let { users[it]?.externalId },
-                    it.properties!!.value.map { SearchEventPropertyDto(it.key, it.value) }.toList(),
+                    it.name,
+                    it.userId.let { users[it]?.externalId },
+                    it.properties.value.map { SearchEventPropertyDto(it.key, it.value) }.toList(),
                     it.createdAt!!
                 )
             }.toList().let {

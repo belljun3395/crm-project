@@ -46,7 +46,7 @@ class SendNotificationEmailUseCase(
         val targetUsers =
             getTargetUsers(userIds, notificationType).associateBy {
                 objectMapper.readValue(
-                    it.userAttributes?.value,
+                    it.userAttributes.value,
                     Map::class.java
                 )[notificationType] as String
             }
@@ -73,8 +73,8 @@ class SendNotificationEmailUseCase(
                     .findByTemplateIdAndVersion(templateId, templateVersion)
                     ?.let {
                         NotificationEmailTemplatePropertiesModel(
-                            subject = it.subject!!,
-                            body = it.body!!,
+                            subject = it.subject,
+                            body = it.body,
                             variables = it.variables
                         )
                     }
@@ -86,8 +86,8 @@ class SendNotificationEmailUseCase(
                     .findById(templateId)
                     ?.let {
                         NotificationEmailTemplatePropertiesModel(
-                            subject = it.subject!!,
-                            body = it.body!!,
+                            subject = it.subject,
+                            body = it.body,
                             variables = it.variables
                         )
                     }

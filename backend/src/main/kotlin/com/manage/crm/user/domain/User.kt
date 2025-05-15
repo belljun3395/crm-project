@@ -13,9 +13,9 @@ class User(
     @Id
     var id: Long? = null,
     @Column("external_id")
-    var externalId: String? = null,
+    var externalId: String,
     @Column("user_attributes")
-    var userAttributes: Json? = null,
+    var userAttributes: Json,
     @CreatedDate
     var createdAt: LocalDateTime? = null,
     @LastModifiedDate

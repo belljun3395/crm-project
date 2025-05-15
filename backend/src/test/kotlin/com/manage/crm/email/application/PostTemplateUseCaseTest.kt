@@ -6,6 +6,7 @@ import com.manage.crm.email.application.service.EmailTemplateRepositoryEventProc
 import com.manage.crm.email.application.service.HtmlService
 import com.manage.crm.email.domain.EmailTemplate
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
+import com.manage.crm.email.domain.vo.EmailTemplateVersion
 import com.manage.crm.email.domain.vo.Variables
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -70,7 +71,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 result shouldBe PostTemplateUseCaseOut(
                     id = newEmailTemplate.id!!,
                     templateName = newEmailTemplate.templateName!!,
-                    version = newEmailTemplate.version
+                    version = newEmailTemplate.version!!.value
                 )
             }
 
@@ -115,7 +116,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 variables = Variables(emptyList())
             ).apply {
                 id = useCaseIn.id
-                version = 1.0f
+                version = EmailTemplateVersion(1.0f)
             }
             coEvery { emailTemplateRepository.findById(useCaseIn.id!!) } answers { emailTemplate }
 
@@ -126,7 +127,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 variables = Variables(useCaseIn.variables)
             ).apply {
                 id = useCaseIn.id
-                version = useCaseIn.version!!
+                version = EmailTemplateVersion(useCaseIn.version!!)
             }
             coEvery { emailTemplateSaveRepository.save(any(EmailTemplate::class)) } answers { modifiedEmailTemplate }
 
@@ -135,7 +136,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 result shouldBe PostTemplateUseCaseOut(
                     id = emailTemplate.id!!,
                     templateName = emailTemplate.templateName!!,
-                    version = emailTemplate.version
+                    version = emailTemplate.version!!.value
                 )
             }
 
@@ -194,7 +195,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 result shouldBe PostTemplateUseCaseOut(
                     id = newEmailTemplate.id!!,
                     templateName = newEmailTemplate.templateName!!,
-                    version = newEmailTemplate.version
+                    version = newEmailTemplate.version!!.value
                 )
             }
 
@@ -321,7 +322,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 result shouldBe PostTemplateUseCaseOut(
                     id = newEmailTemplate.id!!,
                     templateName = newEmailTemplate.templateName!!,
-                    version = newEmailTemplate.version
+                    version = newEmailTemplate.version!!.value
                 )
             }
 
