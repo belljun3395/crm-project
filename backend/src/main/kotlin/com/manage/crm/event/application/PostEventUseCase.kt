@@ -11,6 +11,7 @@ import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.vo.Properties
 import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.repository.UserRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -58,7 +59,7 @@ class PostEventUseCase(
         val campaignName = useCaseIn.campaignName
 
         val userId = userRepository.findByExternalId(externalId)?.id
-            ?: throw IllegalArgumentException("User not found by externalId: $externalId")
+            ?: throw NotFoundByException("User", "externalId", externalId)
 
         val savedEvent = getSavedEvent(eventName, userId, properties, campaignName)
 
@@ -80,7 +81,7 @@ class PostEventUseCase(
             val eventId = requireNotNull(event.id)
             val campaign = try {
                 campaignDeferred.await()
-            } catch (e: CampaignNotFoundException) {
+            } catch (e: NotFoundByException) {
                 log.warn { "Campaign not found: ${e.message}" }
                 return@supervisorScope SavedEvent(eventId, SaveEventMessage.EVENT_SAVE_BUT_NOT_CAMPAIGN)
             }
@@ -122,7 +123,7 @@ class PostEventUseCase(
     private suspend fun findCampaign(campaignName: String?): Campaign? {
         return campaignName?.let {
             campaignRepository.findCampaignByName(it)
-                ?: throw CampaignNotFoundException("Campaign not found: $it")
+                ?: throw NotFoundByException("Campaign", "name", it)
         }
     }
 

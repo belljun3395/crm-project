@@ -7,6 +7,9 @@ import com.manage.crm.email.application.service.HtmlService
 import com.manage.crm.email.domain.EmailTemplate
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.vo.Variables
+import com.manage.crm.email.exception.VariablesNotMatchException
+import com.manage.crm.support.exception.DuplicateByException
+import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -37,7 +40,7 @@ class PostTemplateUseCase(
                 .let { Variables(it) }
 
             if (bodyVariables.getVariables(false) != variables.getVariables(false)) {
-                throw IllegalArgumentException("Variables do not match: \n${bodyVariables.getVariables(false)} != ${variables.getVariables(false)}")
+                throw VariablesNotMatchException(bodyVariables.getVariables(false), variables.getVariables(false))
             }
             return@run variables
         }
@@ -73,11 +76,11 @@ class PostTemplateUseCase(
     private suspend fun getEmailTemplate(id: Long?, templateName: String): EmailTemplate? {
         return when {
             id != null -> {
-                emailTemplateRepository.findById(id) ?: throw IllegalArgumentException("Email Template not found by id: $id")
+                emailTemplateRepository.findById(id) ?: throw NotFoundByIdException("EmailTemplate", id)
             }
 
             emailTemplateRepository.findByTemplateName(templateName) != null -> {
-                throw IllegalArgumentException("Duplicate template name: $templateName")
+                throw DuplicateByException("EmailTemplate", "templateName", templateName)
             }
 
             else -> null

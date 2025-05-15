@@ -15,6 +15,8 @@ import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.support.VariablesSupport
 import com.manage.crm.email.domain.vo.NotificationType
 import com.manage.crm.email.domain.vo.SentEmailStatus
+import com.manage.crm.support.exception.NotFoundByException
+import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
@@ -78,7 +80,8 @@ class SendNotificationEmailUseCase(
                             variables = it.variables
                         )
                     }
-                    ?: throw IllegalArgumentException("Email Template not found by id and version: $templateId, $templateVersion")
+                    ?: NotFoundByException("EmailTemplate", "templateId", templateId, "version", templateVersion)
+                        .let { throw it } // TODO: Exception Handling
             }
 
             else -> {
@@ -91,7 +94,7 @@ class SendNotificationEmailUseCase(
                             variables = it.variables
                         )
                     }
-                    ?: throw IllegalArgumentException("Email Template not found by id: $templateId")
+                    ?: throw NotFoundByIdException("EmailTemplate", templateId)
             }
         }
     }

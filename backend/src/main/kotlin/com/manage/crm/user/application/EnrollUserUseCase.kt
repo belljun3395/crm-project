@@ -1,5 +1,6 @@
 package com.manage.crm.user.application
 
+import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
 import com.manage.crm.user.application.dto.EnrollUserUseCaseIn
 import com.manage.crm.user.application.dto.EnrollUserUseCaseOut
@@ -10,7 +11,6 @@ import com.manage.crm.user.domain.vo.Json
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.lang.IllegalArgumentException
 
 /**
  * - `userAttributes`
@@ -34,7 +34,7 @@ class EnrollUserUseCase(
                 userRepository
                     .findById(id)
                     ?.apply { updateAttributes(userAttributes) }
-                    ?: throw IllegalArgumentException("User not found by id: $id")
+                    ?: throw NotFoundByIdException("User", id)
             } else {
                 userRepository.save(
                     User.new(

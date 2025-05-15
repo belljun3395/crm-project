@@ -9,6 +9,7 @@ import com.manage.crm.infrastructure.mail.MailSender
 import com.manage.crm.infrastructure.mail.MailTemplateProcessor
 import com.manage.crm.infrastructure.mail.MailTemplateType
 import com.manage.crm.infrastructure.mail.provider.MailSendProvider
+import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.user.domain.repository.UserRepository
 import org.springframework.boot.autoconfigure.mail.MailProperties
 import org.springframework.stereotype.Component
@@ -33,7 +34,7 @@ class MailServiceImpl(
         val emailArgs = args.emailArgs
         return send(emailArgs).let {
             val userId = userRepository.findByEmail(args.to)?.id
-                ?: throw IllegalArgumentException("User not found by email: ${args.to}")
+                ?: throw NotFoundByException("User", "email", args.to)
             SendEmailOutDto(
                 userId = userId,
                 emailBody = args.emailBody,
