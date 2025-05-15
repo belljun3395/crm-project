@@ -7,6 +7,7 @@ import com.manage.crm.event.domain.Campaign
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.vo.Properties
 import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.out
 import org.springframework.stereotype.Service
 
@@ -23,7 +24,7 @@ class PostCampaignUseCase(
         val properties = useCaseIn.properties
 
         if (campaignRepository.existsCampaignsByName(campaignName)) {
-            throw IllegalArgumentException("Campaign already exists with name: $campaignName")
+            throw AlreadyExistsException("Campaign", "name", campaignName)
         }
 
         val savedCampaign = campaignRepository.save(

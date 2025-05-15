@@ -3,6 +3,7 @@ package com.manage.crm.user.application.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.user.domain.vo.Json
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
+import com.manage.crm.user.exception.JsonException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.shouldBe
@@ -52,7 +53,7 @@ class JsonServiceTest : FeatureSpec({
             val keys = arrayOf(RequiredUserAttributeKey.EMAIL)
 
             // when
-            val exception = shouldThrow<IllegalArgumentException> {
+            val exception = shouldThrow<JsonException> {
                 jsonService.execute(attribute, *keys)
             }
 
