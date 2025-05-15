@@ -1,6 +1,7 @@
 package com.manage.crm.email.domain
 
 import com.manage.crm.email.domain.vo.EventId
+import com.manage.crm.email.domain.vo.ScheduleType
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
@@ -36,6 +37,7 @@ class ScheduledEvent(
             completed: Boolean,
             scheduledAt: String
         ): ScheduledEvent {
+            validateScheduledAt(scheduledAt)
             return ScheduledEvent(
                 eventId = eventId,
                 eventClass = eventClass,
@@ -56,6 +58,7 @@ class ScheduledEvent(
             scheduledAt: String,
             createdAt: LocalDateTime
         ): ScheduledEvent {
+            validateScheduledAt(scheduledAt)
             return ScheduledEvent(
                 id = id,
                 eventId = eventId,
@@ -67,6 +70,12 @@ class ScheduledEvent(
                 scheduledAt = scheduledAt,
                 createdAt = createdAt
             )
+        }
+
+        private fun validateScheduledAt(scheduledAt: String) {
+            return require(ScheduleType.contains(scheduledAt)) {
+                "Invalid scheduledAt: $scheduledAt"
+            }
         }
     }
 
