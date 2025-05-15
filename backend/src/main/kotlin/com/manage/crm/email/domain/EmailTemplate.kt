@@ -135,7 +135,7 @@ class EmailTemplate(
          * Update the version of the email template.
          */
         fun updateVersion(version: Float?): EmailTemplateModifyBuilder {
-            val currentVersion = requireNotNull(this.template.version) { "Version must not be null" }
+            val currentVersion = this.template.version
             version?.let {
                 if (!EmailTemplateVersion.isValidUpdateVersion(currentVersion, it)) {
                     throw IllegalArgumentException("Invalid version: $it")
