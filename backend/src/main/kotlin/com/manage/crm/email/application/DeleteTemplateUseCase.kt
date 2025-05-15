@@ -28,7 +28,7 @@ class DeleteTemplateUseCase(
             return DeleteTemplateUseCaseOut(success = false)
         } else {
             schedules.forEach { schedule ->
-                scheduleTaskService.cancel(schedule.eventId!!.value)
+                scheduleTaskService.cancel(schedule.eventId.value)
                 schedule.cancel()
             }
             emailTemplateRepository.deleteById(emailTemplateId)

@@ -89,7 +89,7 @@ class PostEventUseCase(
                 ?.let {
                     val eventProperties = requireNotNull(event.properties) { "Event properties cannot be null" }
                     if (!it.allMatchPropertyKeys(eventProperties.getKeys())) {
-                        log.warn { "Properties mismatch between campaign and event. Campaign: ${it.properties!!.getKeys()}, Event: ${eventProperties.getKeys()}" }
+                        log.warn { "Properties mismatch between campaign and event. Campaign: ${it.properties.getKeys()}, Event: ${eventProperties.getKeys()}" }
                         return@let SavedEvent(eventId, SaveEventMessage.PROPERTIES_MISMATCH)
                     }
                     setCampaignEvent(campaign, event)

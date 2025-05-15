@@ -41,13 +41,14 @@ class BrowseTemplateUseCaseTest : BehaviorSpec({
         `when`("browse templates with histories") {
             val useCaseIn = BrowseTemplateUseCaseIn(withHistory = true)
             fun emailTemplateHistoryStub() = listOf(
-                EmailTemplateHistory(
+                EmailTemplateHistory.new(
                     id = 1,
                     templateId = 1,
                     subject = "subject1",
                     body = "body1",
                     variables = Variables(),
-                    version = 1.0f
+                    version = 1.0f,
+                    createdAt = LocalDateTime.now()
                 ),
                 // ----------------- template Id 2 is modified once -----------------
                 EmailTemplateHistory.new(

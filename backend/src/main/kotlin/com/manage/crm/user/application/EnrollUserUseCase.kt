@@ -48,8 +48,8 @@ class EnrollUserUseCase(
         return out {
             EnrollUserUseCaseOut(
                 id = updateOrSaveUser.id!!,
-                externalId = updateOrSaveUser.externalId!!,
-                userAttributes = updateOrSaveUser.userAttributes?.value!!
+                externalId = updateOrSaveUser.externalId,
+                userAttributes = updateOrSaveUser.userAttributes.value
             )
         }
     }

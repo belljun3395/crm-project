@@ -11,9 +11,9 @@ class CampaignEvents(
     @Id
     var id: Long? = null,
     @Column("campaign_id")
-    var campaignId: Long? = null,
+    var campaignId: Long,
     @Column("event_id")
-    var eventId: Long? = null,
+    var eventId: Long,
     @CreatedDate
     var createdAt: LocalDateTime? = null
 ) {

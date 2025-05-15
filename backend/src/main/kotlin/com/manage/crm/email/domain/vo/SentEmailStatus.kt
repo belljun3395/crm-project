@@ -10,6 +10,7 @@ enum class SentEmailStatus(val code: Byte) {
     ;
 
     companion object {
+        fun contains(value: String) = entries.any { it.name.equals(value, true) }
         fun fromCode(code: Byte): SentEmailStatus? = entries.find { it.code == code }
     }
 }

@@ -12,9 +12,9 @@ class Campaign(
     @Id
     var id: Long? = null,
     @Column("name")
-    var name: String? = null,
+    var name: String,
     @Column("properties")
-    var properties: Properties? = null,
+    var properties: Properties,
     @CreatedDate
     var createdAt: LocalDateTime? = null
 ) {
@@ -30,7 +30,7 @@ class Campaign(
         }
 
         fun new(
-            id: Long?,
+            id: Long,
             name: String,
             properties: Properties,
             createdAt: LocalDateTime

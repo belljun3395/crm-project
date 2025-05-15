@@ -40,8 +40,8 @@ class PostCampaignUseCase(
         return out {
             PostCampaignUseCaseOut(
                 id = savedCampaign.id!!,
-                name = savedCampaign.name!!,
-                properties = savedCampaign.properties!!.value.map {
+                name = savedCampaign.name,
+                properties = savedCampaign.properties.value.map {
                     PostCampaignPropertyDto(
                         key = it.key,
                         value = it.value

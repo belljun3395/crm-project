@@ -22,7 +22,7 @@ class EmailTemplateTest : FeatureSpec({
             emailTemplate.subject shouldBe subject
             emailTemplate.body shouldBe body
             emailTemplate.variables shouldBe variables
-            emailTemplate.version shouldBe 1.0f
+            emailTemplate.version!!.value shouldBe 1.0f
         }
     }
 
@@ -75,7 +75,7 @@ class EmailTemplateTest : FeatureSpec({
 
         scenario("modify email template version") {
             // given
-            val version = 2.0f
+            val version = 1.1f
             val emailTemplate = EmailTemplate.new("templateName", "subject", "body", Variables(variables.value))
             emailTemplate.id = 1
 
@@ -85,7 +85,7 @@ class EmailTemplateTest : FeatureSpec({
                 .done()
 
             // then
-            modifiedTemplate.version shouldBe version
+            modifiedTemplate.version!!.value shouldBe version
         }
 
         scenario("modify email template version under current version") {

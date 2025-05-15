@@ -1,5 +1,6 @@
 package com.manage.crm.email.domain
 
+import com.manage.crm.email.domain.vo.EmailTemplateVersion
 import com.manage.crm.email.domain.vo.Variables
 import com.manage.crm.email.event.template.PostEmailTemplateEvent
 import org.springframework.data.annotation.CreatedDate
@@ -14,15 +15,15 @@ class EmailTemplate(
     @Id
     var id: Long? = null,
     @Column("template_name")
-    var templateName: String? = null,
+    var templateName: String,
     @Column("subject")
-    var subject: String? = null,
+    var subject: String,
     @Column("body")
-    var body: String? = null,
+    var body: String,
     @Column("variables")
-    var variables: Variables = Variables(),
+    var variables: Variables,
     @Column("version")
-    var version: Float = 1.0f,
+    var version: EmailTemplateVersion,
     @CreatedDate
     var createdAt: LocalDateTime? = null
 ) {
@@ -30,14 +31,14 @@ class EmailTemplate(
     var domainEvents: MutableList<PostEmailTemplateEvent> = mutableListOf()
 
     companion object {
-        private const val DEFAULT_VERSION_PLUS_AMOUNT = 0.1f
 
         fun new(templateName: String, subject: String, body: String, variables: Variables): EmailTemplate {
             return EmailTemplate(
                 templateName = templateName,
                 subject = subject,
                 body = body,
-                variables = variables
+                variables = variables,
+                version = EmailTemplateVersion()
             )
         }
 
@@ -48,6 +49,26 @@ class EmailTemplate(
             body: String,
             variables: Variables,
             version: Float,
+            createdAt: LocalDateTime
+        ): EmailTemplate {
+            return EmailTemplate(
+                id = id,
+                templateName = templateName,
+                subject = subject,
+                body = body,
+                variables = variables,
+                version = EmailTemplateVersion(version),
+                createdAt = createdAt
+            )
+        }
+
+        fun new(
+            id: Long,
+            templateName: String,
+            subject: String,
+            body: String,
+            variables: Variables,
+            version: EmailTemplateVersion,
             createdAt: LocalDateTime
         ): EmailTemplate {
             return EmailTemplate(
@@ -114,13 +135,15 @@ class EmailTemplate(
          * Update the version of the email template.
          */
         fun updateVersion(version: Float?): EmailTemplateModifyBuilder {
+            val currentVersion = this.template.version
             version?.let {
-                if (it <= template.version) {
+                if (!EmailTemplateVersion.isValidUpdateVersion(currentVersion, it)) {
                     throw IllegalArgumentException("Invalid version: $it")
                 }
-                this.template.version = it
+                this.template.version = EmailTemplateVersion(it)
             } ?: kotlin.run {
-                this.template.version += DEFAULT_VERSION_PLUS_AMOUNT
+                this.template.version =
+                    EmailTemplateVersion(EmailTemplateVersion.calcNewVersion(currentVersion))
             }
             isVersionUpdated = true
             return this

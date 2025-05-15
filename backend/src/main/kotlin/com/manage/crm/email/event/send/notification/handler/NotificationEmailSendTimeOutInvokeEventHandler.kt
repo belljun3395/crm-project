@@ -59,8 +59,8 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
                             .findByTemplateIdAndVersion(templateId, templateVersion)
                             ?.let {
                                 NotificationEmailTemplatePropertiesModel(
-                                    subject = it.subject!!,
-                                    body = it.body!!,
+                                    subject = it.subject,
+                                    body = it.body,
                                     variables = it.variables
                                 )
                             }
@@ -72,8 +72,8 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
                             .findById(templateId)
                             ?.let {
                                 NotificationEmailTemplatePropertiesModel(
-                                    subject = it.subject!!,
-                                    body = it.body!!,
+                                    subject = it.subject,
+                                    body = it.body,
                                     variables = it.variables
                                 )
                             }
@@ -85,11 +85,11 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
             val users = userRepository.findAllById(userIds)
             users.collect { user ->
                 val email =
-                    user.userAttributes?.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)!!
+                    user.userAttributes.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)
                 val content = if (template.isNoVariables()) {
                     NonContent()
                 } else {
-                    val attributes = user.userAttributes!!
+                    val attributes = user.userAttributes
                     val variables = template.variables
                     variables.getVariables(false)
                         .associate { key ->
