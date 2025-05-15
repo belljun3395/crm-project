@@ -14,21 +14,19 @@ class EmailTemplateHistory(
     @Id
     var id: Long? = null,
     @Column("template_id")
-    var templateId: Long? = null,
+    var templateId: Long,
     @Column("subject")
-    var subject: String? = null,
+    var subject: String,
     @Column("body")
-    var body: String? = null,
+    var body: String,
     @Column("variables")
-    var variables: Variables = Variables(),
+    var variables: Variables,
     @Column("version")
-    var version: EmailTemplateVersion? = null,
+    var version: EmailTemplateVersion,
     @CreatedDate
     var createdAt: LocalDateTime? = null
 ) {
     companion object {
-        private const val INITIAL_VERSION_AMOUNT = 1.0f
-
         fun new(
             templateId: Long,
             subject: String,

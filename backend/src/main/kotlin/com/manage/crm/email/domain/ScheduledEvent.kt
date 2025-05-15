@@ -13,11 +13,11 @@ class ScheduledEvent(
     @Id
     var id: Long? = null,
     @Column("event_id")
-    val eventId: EventId? = null,
+    val eventId: EventId,
     @Column("event_class")
-    val eventClass: String? = null,
+    val eventClass: String,
     @Column("event_payload")
-    val eventPayload: String? = null,
+    val eventPayload: String,
     @Column("completed")
     var completed: Boolean = false,
     @Column("is_not_consumed")
@@ -25,7 +25,7 @@ class ScheduledEvent(
     @Column("canceled")
     var canceled: Boolean = false,
     @Column("scheduled_at")
-    val scheduledAt: String? = null,
+    val scheduledAt: String,
     @CreatedDate
     var createdAt: LocalDateTime? = null
 ) {

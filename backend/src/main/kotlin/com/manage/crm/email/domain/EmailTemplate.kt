@@ -15,15 +15,15 @@ class EmailTemplate(
     @Id
     var id: Long? = null,
     @Column("template_name")
-    var templateName: String? = null,
+    var templateName: String,
     @Column("subject")
-    var subject: String? = null,
+    var subject: String,
     @Column("body")
-    var body: String? = null,
+    var body: String,
     @Column("variables")
-    var variables: Variables = Variables(),
+    var variables: Variables,
     @Column("version")
-    var version: EmailTemplateVersion? = null,
+    var version: EmailTemplateVersion,
     @CreatedDate
     var createdAt: LocalDateTime? = null
 ) {

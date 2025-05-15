@@ -46,22 +46,22 @@ class BrowseTemplateUseCase(
                         template =
                         TemplateDto(
                             id = template.id!!,
-                            templateName = template.templateName!!,
-                            subject = template.subject!!,
-                            body = template.body!!,
+                            templateName = template.templateName,
+                            subject = template.subject,
+                            body = template.body,
                             variables = template.variables.getVariables(),
-                            version = template.version!!.value,
+                            version = template.version.value,
                             createdAt = template.createdAt.toString()
                         ),
                         histories =
                         templateHistories?.map { history ->
                             TemplateHistoryDto(
                                 id = history.id!!,
-                                templateId = history.templateId!!,
-                                subject = history.subject!!,
-                                body = history.body!!,
+                                templateId = history.templateId,
+                                subject = history.subject,
+                                body = history.body,
                                 variables = history.variables.getVariables(),
-                                version = history.version!!.value,
+                                version = history.version.value,
                                 createdAt = history.createdAt.toString()
                             )
                         } ?: emptyList()

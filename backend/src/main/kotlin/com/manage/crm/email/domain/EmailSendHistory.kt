@@ -14,15 +14,15 @@ class EmailSendHistory(
     @Id
     var id: Long? = null,
     @Column("user_id")
-    var userId: Long? = null,
+    var userId: Long,
     @Column("user_email")
-    var userEmail: Email? = null,
+    var userEmail: Email,
     @Column("email_message_id")
-    var emailMessageId: String? = null,
+    var emailMessageId: String,
     @Column("email_body")
-    var emailBody: String? = null,
+    var emailBody: String,
     @Column("send_status")
-    var sendStatus: String? = null,
+    var sendStatus: String,
     @CreatedDate
     var createdAt: LocalDateTime? = null,
     @LastModifiedDate

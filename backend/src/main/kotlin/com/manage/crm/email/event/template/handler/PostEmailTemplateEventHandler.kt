@@ -34,10 +34,10 @@ class PostEmailTemplateEventHandler(
                 emailTemplateHistoryRepository.save(
                     EmailTemplateHistory.new(
                         templateId = template.id!!,
-                        subject = template.subject!!,
-                        body = template.body!!,
+                        subject = template.subject,
+                        body = template.body,
                         variables = template.variables,
-                        version = template.version!!
+                        version = template.version
                     )
                 )
             }
