@@ -8,6 +8,7 @@ import com.manage.crm.email.domain.EmailTemplate
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.vo.EmailTemplateVersion
 import com.manage.crm.email.domain.vo.Variables
+import com.manage.crm.email.exception.VariablesNotMatchException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -235,9 +236,9 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 bodyVariables
             }
 
-            val exception = shouldThrow<IllegalArgumentException> { useCase.execute(useCaseIn) }
+            val exception = shouldThrow<VariablesNotMatchException> { useCase.execute(useCaseIn) }
 
-            then("should throw IllegalArgumentException") {
+            then("should throw VariablesNotMatchException") {
                 exception.message shouldBe "Variables do not match: \n$bodyVariables != ${useCaseIn.variables}"
             }
 
@@ -269,9 +270,9 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 invalidBodyVariables
             }
 
-            val exception = shouldThrow<IllegalArgumentException> { useCase.execute(useCaseIn) }
+            val exception = shouldThrow<VariablesNotMatchException> { useCase.execute(useCaseIn) }
 
-            then("should throw IllegalArgumentException") {
+            then("should throw VariablesNotMatchException") {
                 exception.message shouldBe "Variables do not match: \n$invalidBodyVariables != ${useCaseIn.variables}"
             }
 
