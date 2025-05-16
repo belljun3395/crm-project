@@ -79,9 +79,7 @@ class SendNotificationEmailUseCase(
                             body = it.body,
                             variables = it.variables
                         )
-                    }
-                    ?: NotFoundByException("EmailTemplate", "templateId", templateId, "version", templateVersion)
-                        .let { throw it } // TODO: Exception Handling
+                    } ?: throw NotFoundByException("EmailTemplate", "templateId", templateId, "version", templateVersion)
             }
 
             else -> {

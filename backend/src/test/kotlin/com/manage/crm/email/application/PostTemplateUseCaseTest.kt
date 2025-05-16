@@ -9,6 +9,7 @@ import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.vo.EmailTemplateVersion
 import com.manage.crm.email.domain.vo.Variables
 import com.manage.crm.email.exception.VariablesNotMatchException
+import com.manage.crm.support.exception.DuplicateByException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -341,6 +342,50 @@ class PostTemplateUseCaseTest : BehaviorSpec({
 
             then("save new template and publish event") {
                 coVerify(exactly = 1) { emailTemplateSaveRepository.save(any(EmailTemplate::class)) }
+            }
+        }
+
+        `when`("create new template with duplicate template name") {
+            val useCaseIn = PostTemplateUseCaseIn(
+                id = null,
+                templateName = "templateName",
+                subject = "subject",
+                version = null,
+                body = "body with variable \${attribute_email}",
+                variables = listOf("attribute_email:test@gmail.com")
+            )
+
+            coEvery { htmlService.prettyPrintHtml(useCaseIn.body) } answers {
+                useCaseIn.body
+            }
+
+            coEvery { htmlService.extractVariables(useCaseIn.body) } answers {
+                useCaseIn.variables.map { it.substringBefore(":") }
+            }
+
+            coEvery { emailTemplateRepository.findByTemplateName(useCaseIn.templateName) } answers {
+                throw DuplicateByException("EmailTemplate", "templateName", useCaseIn.templateName)
+            }
+
+            then("should return exception") {
+                val exception = shouldThrow<DuplicateByException> { useCase.execute(useCaseIn) }
+                exception.message shouldBe "Duplicate EmailTemplate by templateName: ${useCaseIn.templateName}"
+            }
+
+            then("pretty useCaseIn.body") {
+                coVerify(exactly = 1) { htmlService.prettyPrintHtml(useCaseIn.body) }
+            }
+
+            then("extract variables") {
+                coVerify(exactly = 1) { htmlService.extractVariables(useCaseIn.body) }
+            }
+
+            then("check if template exists") {
+                coVerify(exactly = 1) { emailTemplateRepository.findByTemplateName(useCaseIn.templateName) }
+            }
+
+            then("not called save new template and publish event") {
+                coVerify(exactly = 0) { emailTemplateSaveRepository.save(any(EmailTemplate::class)) }
             }
         }
     }
