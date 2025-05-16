@@ -19,7 +19,13 @@ fun mdcCoroutineScope(
     context: CoroutineContext = Dispatchers.IO,
     traceId: String = MDC.getCopyOfContextMap()?.get(MDC_KEY_TRACE_ID) ?: ""
 ): CoroutineScope {
-    val contextMap = MDC.getCopyOfContextMap() ?: emptyMap()
-    contextMap.plus(MDC_KEY_TRACE_ID to traceId)
+    val contextMap = MDC.getCopyOfContextMap() ?: emptyMap<String?, String?>()
+        .toMutableMap()
+        .apply {
+            put(
+                MDC_KEY_TRACE_ID,
+                traceId
+            )
+        }
     return CoroutineScope(context + MDCContext(contextMap))
 }
