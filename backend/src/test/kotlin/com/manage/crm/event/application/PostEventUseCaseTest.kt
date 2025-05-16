@@ -10,9 +10,11 @@ import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.vo.Properties
 import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.Json
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -353,6 +355,43 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             then("can't set campaign and event cause property keys not match") {
                 coVerify(exactly = 0) { campaignEventsRepository.save(any(CampaignEvents::class)) }
+            }
+        }
+
+        `when`("post event with not found user") {
+            val useCaseIn = PostEventUseCaseIn(
+                name = "event",
+                externalId = "1",
+                properties = listOf(
+                    PostEventPropertyDto(
+                        key = "key1",
+                        value = "value1"
+                    ),
+                    PostEventPropertyDto(
+                        key = "key2",
+                        value = "value2"
+                    )
+                ),
+                campaignName = null
+            )
+
+            coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers {
+                throw NotFoundByException("User", "externalId", useCaseIn.externalId)
+            }
+
+            then("should throw exception") {
+                val exception = shouldThrow<NotFoundByException> {
+                    postEventUseCase.execute(useCaseIn)
+                }
+                exception.message shouldBe "User not found by externalId: ${useCaseIn.externalId}"
+            }
+
+            then("find user by externalId") {
+                coVerify(exactly = 1) { userRepository.findByExternalId(useCaseIn.externalId) }
+            }
+
+            then("not called save event") {
+                coVerify(exactly = 0) { eventRepository.save(any(Event::class)) }
             }
         }
     }

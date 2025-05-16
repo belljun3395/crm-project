@@ -6,6 +6,7 @@ import com.manage.crm.event.domain.Campaign
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.vo.Properties
 import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.support.exception.AlreadyExistsException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.ints.exactly
@@ -90,7 +91,7 @@ class PostCampaignUseCaseTest : BehaviorSpec({
             coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns true
 
             then("should throw exception") {
-                val exception = shouldThrow<IllegalArgumentException> {
+                val exception = shouldThrow<AlreadyExistsException> {
                     postCampaignUseCase.execute(useCaseIn)
                 }
 
@@ -99,6 +100,10 @@ class PostCampaignUseCaseTest : BehaviorSpec({
 
             then("check campaign name is exists") {
                 coVerify(exactly = 1) { campaignRepository.existsCampaignsByName(useCaseIn.name) }
+            }
+
+            then("not called save campaign") {
+                coVerify(exactly = 0) { campaignRepository.save(any(Campaign::class)) }
             }
         }
     }

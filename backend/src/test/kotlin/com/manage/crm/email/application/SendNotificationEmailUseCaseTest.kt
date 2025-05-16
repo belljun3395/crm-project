@@ -11,9 +11,12 @@ import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.vo.EmailProviderType
 import com.manage.crm.email.domain.vo.Variables
+import com.manage.crm.support.exception.NotFoundByException
+import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.Json
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -102,6 +105,15 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { emailTemplateRepository.findById(useCaseIn.templateId) }
             }
 
+            then("not called template by id and version") {
+                coVerify(exactly = 0) {
+                    emailTemplateHistoryRepository.findByTemplateIdAndVersion(
+                        useCaseIn.templateId,
+                        any(Float::class)
+                    )
+                }
+            }
+
             then("find users") {
                 coVerify(exactly = 1) { userRepository.findAllByIdIn(useCaseIn.userIds) }
             }
@@ -150,6 +162,10 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             then("should return SendNotificationEmailUseCaseOut") {
                 val result = useCase.execute(useCaseIn)
                 result.isSuccess shouldBe true
+            }
+
+            then("not called find template by id") {
+                coVerify(exactly = 0) { emailTemplateRepository.findById(useCaseIn.templateId) }
             }
 
             then("find template by id and version") {
@@ -215,6 +231,15 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { emailTemplateRepository.findById(useCaseIn.templateId) }
             }
 
+            then("not called template by id and version") {
+                coVerify(exactly = 0) {
+                    emailTemplateHistoryRepository.findByTemplateIdAndVersion(
+                        useCaseIn.templateId,
+                        any(Float::class)
+                    )
+                }
+            }
+
             then("find all users which have attribute key") {
                 coVerify(exactly = 1) { userRepository.findAllExistByUserAttributesKey(key) }
             }
@@ -275,12 +300,121 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { emailTemplateRepository.findById(useCaseIn.templateId) }
             }
 
+            then("not called template by id and version") {
+                coVerify(exactly = 0) {
+                    emailTemplateHistoryRepository.findByTemplateIdAndVersion(
+                        useCaseIn.templateId,
+                        any(Float::class)
+                    )
+                }
+            }
+
             then("find users") {
                 coVerify(exactly = 1) { userRepository.findAllByIdIn(useCaseIn.userIds) }
             }
 
             then("send notification email") {
                 coVerify(exactly = 2) { mailService.send(any(SendEmailInDto::class)) }
+            }
+        }
+
+        `when`("send notification but not found by email template id and template version") {
+            val useCaseIn = SendNotificationEmailUseCaseIn(
+                templateId = 1,
+                templateVersion = 1.1f,
+                userIds = listOf(1L, 2L)
+            )
+
+            coEvery {
+                emailTemplateHistoryRepository.findByTemplateIdAndVersion(
+                    useCaseIn.templateId,
+                    useCaseIn.templateVersion!!
+                )
+            } answers {
+                throw NotFoundByException(
+                    "EmailTemplate",
+                    "templateId",
+                    useCaseIn.templateId,
+                    "version",
+                    useCaseIn.templateVersion!!
+                )
+            }
+
+            then("should throw exception") {
+                val exception = shouldThrow<NotFoundByException> {
+                    useCase.execute(useCaseIn)
+                }
+
+                exception.message shouldBe "EmailTemplate not found by templateId and version: ${useCaseIn.templateId}, ${useCaseIn.templateVersion}"
+            }
+
+            then("not called find template by id") {
+                coVerify(exactly = 0) { emailTemplateRepository.findById(useCaseIn.templateId) }
+            }
+
+            then("find template by id and version") {
+                coVerify(exactly = 1) {
+                    emailTemplateHistoryRepository.findByTemplateIdAndVersion(
+                        useCaseIn.templateId,
+                        useCaseIn.templateVersion!!
+                    )
+                }
+            }
+
+            then("not called find users") {
+                coVerify(exactly = 0) { userRepository.findAllByIdIn(useCaseIn.userIds) }
+            }
+
+            then("not called send notification email") {
+                coVerify(exactly = 0) { mailService.send(any(SendEmailInDto::class)) }
+            }
+        }
+
+        `when`("send notification but not found by email template id") {
+            val useCaseIn = SendNotificationEmailUseCaseIn(
+                templateId = 1,
+                templateVersion = null,
+                userIds = listOf(1L, 2L)
+            )
+
+            coEvery { emailTemplateRepository.findById(useCaseIn.templateId) } answers {
+                throw NotFoundByIdException("EmailTemplate", useCaseIn.templateId)
+            }
+
+            then("should throw exception") {
+                val exception = shouldThrow<NotFoundByIdException> {
+                    useCase.execute(useCaseIn)
+                }
+                exception.message shouldBe "EmailTemplate not found by id: ${useCaseIn.templateId}"
+            }
+
+            then("find template by id") {
+                coVerify(exactly = 1) { emailTemplateRepository.findById(useCaseIn.templateId) }
+            }
+
+            then("not called template by id and version") {
+                coVerify(exactly = 0) {
+                    emailTemplateHistoryRepository.findByTemplateIdAndVersion(
+                        useCaseIn.templateId,
+                        any(Float::class)
+                    )
+                }
+            }
+
+            then("not called find users") {
+                coVerify(exactly = 0) { userRepository.findAllByIdIn(useCaseIn.userIds) }
+            }
+
+            then("not called send notification email") {
+                coVerify(exactly = 0) { mailService.send(any(SendEmailInDto::class)) }
+            }
+
+            then("not called find users") {
+                coVerify(exactly = 0) { userRepository.findAllByIdIn(useCaseIn.userIds) }
+            }
+
+            then("not called  send notification email") {
+                coVerify(exactly = 0) { mailService.send(any(SendEmailInDto::class)) }
             }
         }
     }
