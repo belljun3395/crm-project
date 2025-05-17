@@ -1,5 +1,7 @@
 # CRM Project
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/belljun3395/crm-project)
+
 ## 임시 리드미
 
 **!! 아래 스크립트는 루트 디렉토리를 기준으로 합니다 !!**
