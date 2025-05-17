@@ -46,10 +46,8 @@ class RedisConfig {
 
     // ----------------- Reactive -----------------
     @Bean
-    fun reactiveRedisConnectionFactory(): ReactiveRedisConnectionFactory {
-        return LettuceConnectionFactory(
-            RedisStandaloneConfiguration(host, port.toInt())
-        )
+    fun reactiveRedisConnectionFactory(redisConnectionFactory: RedisConnectionFactory): ReactiveRedisConnectionFactory {
+        return redisConnectionFactory as ReactiveRedisConnectionFactory
     }
 
     @Bean
@@ -58,8 +56,8 @@ class RedisConfig {
         val context = builder
             .key(StringRedisSerializer())
             .value(serializer)
+            .hashKey(StringRedisSerializer())
             .hashValue(serializer)
-            .hashKey(serializer)
             .build()
         return ReactiveRedisTemplate(redisConnectionFactory, context)
     }
