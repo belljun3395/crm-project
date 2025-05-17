@@ -5,6 +5,7 @@ import com.manage.crm.event.application.dto.PostEventUseCaseIn
 import com.manage.crm.event.domain.Campaign
 import com.manage.crm.event.domain.CampaignEvents
 import com.manage.crm.event.domain.Event
+import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
@@ -18,6 +19,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
+import io.mockk.coInvoke
 import io.mockk.coVerify
 import io.mockk.mockk
 import java.time.LocalDateTime.now
@@ -26,6 +28,7 @@ class PostEventUseCaseTest : BehaviorSpec({
     lateinit var eventRepository: EventRepository
     lateinit var campaignRepository: CampaignRepository
     lateinit var campaignEventsRepository: CampaignEventsRepository
+    lateinit var campaignCacheManager: CampaignCacheManager
     lateinit var userRepository: UserRepository
     lateinit var postEventUseCase: PostEventUseCase
 
@@ -33,9 +36,10 @@ class PostEventUseCaseTest : BehaviorSpec({
         eventRepository = mockk()
         campaignRepository = mockk()
         campaignEventsRepository = mockk()
+        campaignCacheManager = mockk()
         userRepository = mockk()
         postEventUseCase =
-            PostEventUseCase(eventRepository, campaignRepository, campaignEventsRepository, userRepository)
+            PostEventUseCase(eventRepository, campaignRepository, campaignEventsRepository, campaignCacheManager, userRepository)
     }
 
     given("PostEventUseCase") {
@@ -161,7 +165,16 @@ class PostEventUseCaseTest : BehaviorSpec({
                 ),
                 createdAt = now()
             )
-            coEvery { campaignRepository.findCampaignByName(campaignName) } answers { campaign }
+
+            coEvery {
+                campaignCacheManager.loadAndSaveIfMiss(
+                    eq(Campaign.UNIQUE_FIEDS.NAME),
+                    eq(useCaseIn.campaignName!!),
+                    captureLambda<suspend () -> Campaign?>()
+                )
+            } coAnswers {
+                campaign
+            }
 
             val campaignEvents = CampaignEvents.new(
                 campaignId = campaignId,
@@ -183,12 +196,48 @@ class PostEventUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { eventRepository.save(any(Event::class)) }
             }
 
-            then("find campaign by name") {
-                coVerify(exactly = 1) { campaignRepository.findCampaignByName(campaignName) }
+            then("find campaign by name from cache. this is default") {
+                coVerify(exactly = 1) {
+                    campaignCacheManager.loadAndSaveIfMiss(
+                        Campaign.UNIQUE_FIEDS.NAME,
+                        useCaseIn.campaignName!!,
+                        captureLambda<suspend () -> Campaign?>()
+                    )
+                }
+                coVerify(exactly = 0) { campaignRepository.findCampaignByName(campaignName) }
             }
 
             then("set campaign and event") {
                 coVerify(exactly = 1) { campaignEventsRepository.save(any(CampaignEvents::class)) }
+            }
+
+            `when`("post event with campaign. when campaign is not cached") {
+                coEvery {
+                    campaignCacheManager.loadAndSaveIfMiss(
+                        eq(Campaign.UNIQUE_FIEDS.NAME),
+                        eq(useCaseIn.campaignName!!),
+                        captureLambda<suspend () -> Campaign?>()
+                    )
+                } coAnswers {
+                    lambda<suspend () -> Campaign?>().coInvoke()
+                }
+                coEvery { campaignRepository.findCampaignByName(campaignName) } answers { campaign }
+
+                campaignCacheManager.loadAndSaveIfMiss(Campaign.UNIQUE_FIEDS.NAME, useCaseIn.campaignName!!) {
+                    campaignRepository.findCampaignByName(useCaseIn.campaignName!!)
+                        ?: throw NotFoundByException("Campaign", "name", useCaseIn.campaignName!!)
+                }
+
+                then("try to load campaign from cache and save if miss") {
+                    coVerify(exactly = 1) {
+                        campaignCacheManager.loadAndSaveIfMiss(
+                            Campaign.UNIQUE_FIEDS.NAME,
+                            useCaseIn.campaignName!!,
+                            captureLambda<suspend () -> Campaign?>()
+                        )
+                    }
+                    coVerify(exactly = 1) { campaignRepository.findCampaignByName(campaignName) }
+                }
             }
         }
 
@@ -240,7 +289,19 @@ class PostEventUseCaseTest : BehaviorSpec({
             }
 
             val campaignName = useCaseIn.campaignName!!
-            coEvery { campaignRepository.findCampaignByName(campaignName) } answers { null }
+            coEvery {
+                campaignCacheManager.loadAndSaveIfMiss(
+                    eq(Campaign.UNIQUE_FIEDS.NAME),
+                    eq(useCaseIn.campaignName!!),
+                    captureLambda<suspend () -> Campaign?>()
+                )
+            } coAnswers {
+                lambda<suspend () -> Campaign?>().coInvoke()
+            }
+
+            coEvery { campaignRepository.findCampaignByName(campaignName) } answers {
+                throw NotFoundByException("Campaign", "name", useCaseIn.campaignName!!)
+            }
 
             val result = postEventUseCase.execute(useCaseIn)
             then("return PostEventUseCaseOut") {
@@ -256,7 +317,14 @@ class PostEventUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { eventRepository.save(any(Event::class)) }
             }
 
-            then("find campaign by name") {
+            then("try to load campaign from cache and try to find campaign by name") {
+                coVerify(exactly = 1) {
+                    campaignCacheManager.loadAndSaveIfMiss(
+                        Campaign.UNIQUE_FIEDS.NAME,
+                        useCaseIn.campaignName!!,
+                        captureLambda<suspend () -> Campaign?>()
+                    )
+                }
                 coVerify(exactly = 1) { campaignRepository.findCampaignByName(campaignName) }
             }
 
@@ -333,7 +401,15 @@ class PostEventUseCaseTest : BehaviorSpec({
                 ),
                 createdAt = now()
             )
-            coEvery { campaignRepository.findCampaignByName(campaignName) } answers { campaign }
+            coEvery {
+                campaignCacheManager.loadAndSaveIfMiss(
+                    eq(Campaign.UNIQUE_FIEDS.NAME),
+                    eq(useCaseIn.campaignName!!),
+                    captureLambda<suspend () -> Campaign?>()
+                )
+            } coAnswers {
+                campaign
+            }
 
             val result = postEventUseCase.execute(useCaseIn)
             then("should return PostEventUseCaseOut") {
@@ -349,8 +425,15 @@ class PostEventUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { eventRepository.save(any(Event::class)) }
             }
 
-            then("find campaign by name") {
-                coVerify(exactly = 1) { campaignRepository.findCampaignByName(campaignName) }
+            then("find campaign by name from cache. this is default") {
+                coVerify(exactly = 1) {
+                    campaignCacheManager.loadAndSaveIfMiss(
+                        Campaign.UNIQUE_FIEDS.NAME,
+                        useCaseIn.campaignName!!,
+                        captureLambda<suspend () -> Campaign?>()
+                    )
+                }
+                coVerify(exactly = 0) { campaignRepository.findCampaignByName(campaignName) }
             }
 
             then("can't set campaign and event cause property keys not match") {

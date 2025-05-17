@@ -6,6 +6,7 @@ import com.manage.crm.event.application.dto.PostEventUseCaseOut
 import com.manage.crm.event.domain.Campaign
 import com.manage.crm.event.domain.CampaignEvents
 import com.manage.crm.event.domain.Event
+import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
@@ -48,6 +49,7 @@ class PostEventUseCase(
     private val eventRepository: EventRepository,
     private val campaignRepository: CampaignRepository,
     private val campaignEventsRepository: CampaignEventsRepository,
+    private val campaignCacheManager: CampaignCacheManager,
     private val userRepository: UserRepository
 ) {
     val log = KotlinLogging.logger {}
@@ -121,9 +123,10 @@ class PostEventUseCase(
     }
 
     private suspend fun findCampaign(campaignName: String?): Campaign? {
-        return campaignName?.let {
-            campaignRepository.findCampaignByName(it)
-                ?: throw NotFoundByException("Campaign", "name", it)
+        return campaignName?.let { name ->
+            campaignCacheManager.loadAndSaveIfMiss(Campaign.UNIQUE_FIEDS.NAME, name) {
+                campaignRepository.findCampaignByName(name) ?: throw NotFoundByException("Campaign", "name", name)
+            }
         }
     }
 

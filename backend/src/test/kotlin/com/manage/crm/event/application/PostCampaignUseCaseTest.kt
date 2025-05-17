@@ -3,25 +3,33 @@ package com.manage.crm.event.application
 import com.manage.crm.event.application.dto.PostCampaignPropertyDto
 import com.manage.crm.event.application.dto.PostCampaignUseCaseIn
 import com.manage.crm.event.domain.Campaign
+import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.vo.Properties
 import com.manage.crm.event.domain.vo.Property
 import com.manage.crm.support.exception.AlreadyExistsException
+import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
-import io.kotest.matchers.ints.exactly
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
+import io.mockk.coInvoke
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
 
 class PostCampaignUseCaseTest : BehaviorSpec({
     lateinit var campaignRepository: CampaignRepository
+    lateinit var transactionSynchronizationTemplate: TransactionSynchronizationTemplate
+    lateinit var campaignCacheManager: CampaignCacheManager
     lateinit var postCampaignUseCase: PostCampaignUseCase
 
     beforeContainer {
         campaignRepository = mockk()
-        postCampaignUseCase = PostCampaignUseCase(campaignRepository)
+        transactionSynchronizationTemplate = mockk()
+        campaignCacheManager = mockk()
+        postCampaignUseCase =
+            PostCampaignUseCase(campaignRepository, transactionSynchronizationTemplate, campaignCacheManager)
     }
 
     given("PostCampaignUseCase") {
@@ -60,6 +68,18 @@ class PostCampaignUseCaseTest : BehaviorSpec({
                 }
             }
 
+            coEvery { campaignCacheManager.save(any()) } answers { savedCampaign }
+
+            coEvery {
+                transactionSynchronizationTemplate.afterCompletion(
+                    eq(Dispatchers.IO),
+                    eq("save campaign cache"),
+                    captureLambda<suspend () -> Unit>()
+                )
+            } coAnswers {
+                lambda<suspend () -> Unit>().coInvoke()
+            }
+
             val result = postCampaignUseCase.execute(useCaseIn)
 
             then("should return PostCampaignUseCaseOut") {
@@ -74,6 +94,20 @@ class PostCampaignUseCaseTest : BehaviorSpec({
 
             then("save campaign") {
                 coVerify(exactly = 1) { campaignRepository.save(any()) }
+            }
+
+            then("register transaction synchronization after completion for save campaign cache") {
+                coVerify(exactly = 1) {
+                    transactionSynchronizationTemplate.afterCompletion(
+                        eq(Dispatchers.IO),
+                        eq("save campaign cache"),
+                        captureLambda<suspend () -> Unit>()
+                    )
+                }
+            }
+
+            then("save campaign cache") {
+                coVerify(exactly = 1) { campaignCacheManager.save(any()) }
             }
         }
 
@@ -104,6 +138,20 @@ class PostCampaignUseCaseTest : BehaviorSpec({
 
             then("not called save campaign") {
                 coVerify(exactly = 0) { campaignRepository.save(any(Campaign::class)) }
+            }
+
+            then("not called register transaction synchronization after completion for save campaign cache") {
+                coVerify(exactly = 0) {
+                    transactionSynchronizationTemplate.afterCompletion(
+                        eq(Dispatchers.IO),
+                        eq("save campaign cache"),
+                        captureLambda<suspend () -> Unit>()
+                    )
+                }
+            }
+
+            then("not called save campaign cache") {
+                coVerify(exactly = 0) { campaignCacheManager.save(any()) }
             }
         }
     }
