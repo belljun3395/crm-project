@@ -32,7 +32,7 @@ class Campaign(
         createdAt = createdAt
     )
 
-    object UNIQUE_FIEDS {
+    object UNIQUE_FIELDS {
         const val NAME = "name"
     }
 

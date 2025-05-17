@@ -168,7 +168,7 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             coEvery {
                 campaignCacheManager.loadAndSaveIfMiss(
-                    eq(Campaign.UNIQUE_FIEDS.NAME),
+                    eq(Campaign.UNIQUE_FIELDS.NAME),
                     eq(useCaseIn.campaignName!!),
                     captureLambda<suspend () -> Campaign?>()
                 )
@@ -199,7 +199,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             then("find campaign by name from cache. this is default") {
                 coVerify(exactly = 1) {
                     campaignCacheManager.loadAndSaveIfMiss(
-                        Campaign.UNIQUE_FIEDS.NAME,
+                        Campaign.UNIQUE_FIELDS.NAME,
                         useCaseIn.campaignName!!,
                         captureLambda<suspend () -> Campaign?>()
                     )
@@ -214,7 +214,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             `when`("post event with campaign. when campaign is not cached") {
                 coEvery {
                     campaignCacheManager.loadAndSaveIfMiss(
-                        eq(Campaign.UNIQUE_FIEDS.NAME),
+                        eq(Campaign.UNIQUE_FIELDS.NAME),
                         eq(useCaseIn.campaignName!!),
                         captureLambda<suspend () -> Campaign?>()
                     )
@@ -223,7 +223,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 }
                 coEvery { campaignRepository.findCampaignByName(campaignName) } answers { campaign }
 
-                campaignCacheManager.loadAndSaveIfMiss(Campaign.UNIQUE_FIEDS.NAME, useCaseIn.campaignName!!) {
+                campaignCacheManager.loadAndSaveIfMiss(Campaign.UNIQUE_FIELDS.NAME, useCaseIn.campaignName!!) {
                     campaignRepository.findCampaignByName(useCaseIn.campaignName!!)
                         ?: throw NotFoundByException("Campaign", "name", useCaseIn.campaignName!!)
                 }
@@ -231,7 +231,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 then("try to load campaign from cache and save if miss") {
                     coVerify(exactly = 1) {
                         campaignCacheManager.loadAndSaveIfMiss(
-                            Campaign.UNIQUE_FIEDS.NAME,
+                            Campaign.UNIQUE_FIELDS.NAME,
                             useCaseIn.campaignName!!,
                             captureLambda<suspend () -> Campaign?>()
                         )
@@ -291,7 +291,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             val campaignName = useCaseIn.campaignName!!
             coEvery {
                 campaignCacheManager.loadAndSaveIfMiss(
-                    eq(Campaign.UNIQUE_FIEDS.NAME),
+                    eq(Campaign.UNIQUE_FIELDS.NAME),
                     eq(useCaseIn.campaignName!!),
                     captureLambda<suspend () -> Campaign?>()
                 )
@@ -320,7 +320,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             then("try to load campaign from cache and try to find campaign by name") {
                 coVerify(exactly = 1) {
                     campaignCacheManager.loadAndSaveIfMiss(
-                        Campaign.UNIQUE_FIEDS.NAME,
+                        Campaign.UNIQUE_FIELDS.NAME,
                         useCaseIn.campaignName!!,
                         captureLambda<suspend () -> Campaign?>()
                     )
@@ -403,7 +403,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             )
             coEvery {
                 campaignCacheManager.loadAndSaveIfMiss(
-                    eq(Campaign.UNIQUE_FIEDS.NAME),
+                    eq(Campaign.UNIQUE_FIELDS.NAME),
                     eq(useCaseIn.campaignName!!),
                     captureLambda<suspend () -> Campaign?>()
                 )
@@ -428,7 +428,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             then("find campaign by name from cache. this is default") {
                 coVerify(exactly = 1) {
                     campaignCacheManager.loadAndSaveIfMiss(
-                        Campaign.UNIQUE_FIEDS.NAME,
+                        Campaign.UNIQUE_FIELDS.NAME,
                         useCaseIn.campaignName!!,
                         captureLambda<suspend () -> Campaign?>()
                     )

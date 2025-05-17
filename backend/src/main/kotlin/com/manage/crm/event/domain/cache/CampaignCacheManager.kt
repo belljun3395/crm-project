@@ -61,7 +61,7 @@ class CampaignCacheManager(
 
     private suspend fun saveWithName(campaign: Campaign) {
         redisTemplate.opsForValue()
-            .set("${CAMPAIGN_CACHE_KEY_PREFIX}${Campaign.UNIQUE_FIEDS.NAME}${SPLIT}${campaign.name}", campaign.id!!)
+            .set("${CAMPAIGN_CACHE_KEY_PREFIX}${Campaign.UNIQUE_FIELDS.NAME}${SPLIT}${campaign.name}", campaign.id!!)
             .awaitSingle()
     }
 

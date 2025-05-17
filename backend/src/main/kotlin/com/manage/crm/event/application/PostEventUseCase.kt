@@ -124,7 +124,7 @@ class PostEventUseCase(
 
     private suspend fun findCampaign(campaignName: String?): Campaign? {
         return campaignName?.let { name ->
-            campaignCacheManager.loadAndSaveIfMiss(Campaign.UNIQUE_FIEDS.NAME, name) {
+            campaignCacheManager.loadAndSaveIfMiss(Campaign.UNIQUE_FIELDS.NAME, name) {
                 campaignRepository.findCampaignByName(name) ?: throw NotFoundByException("Campaign", "name", name)
             }
         }
