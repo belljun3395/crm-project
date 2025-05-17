@@ -1,5 +1,7 @@
 package com.manage.crm.event.domain
 
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.manage.crm.event.domain.vo.Properties
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
@@ -7,6 +9,7 @@ import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
 import java.time.LocalDateTime
 
+// TODO add name unique constraint
 @Table("campaigns")
 class Campaign(
     @Id
@@ -18,6 +21,21 @@ class Campaign(
     @CreatedDate
     var createdAt: LocalDateTime? = null
 ) {
+    @JsonCreator private constructor(
+        @JsonProperty("id") id: Long,
+        @JsonProperty("name") name: String,
+        @JsonProperty("createdAt") createdAt: LocalDateTime
+    ) : this(
+        id = id,
+        name = name,
+        properties = Properties(emptyList()),
+        createdAt = createdAt
+    )
+
+    object UNIQUE_FIELDS {
+        const val NAME = "name"
+    }
+
     companion object {
         fun new(
             name: String,

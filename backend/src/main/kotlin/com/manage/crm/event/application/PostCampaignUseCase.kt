@@ -4,12 +4,16 @@ import com.manage.crm.event.application.dto.PostCampaignPropertyDto
 import com.manage.crm.event.application.dto.PostCampaignUseCaseIn
 import com.manage.crm.event.application.dto.PostCampaignUseCaseOut
 import com.manage.crm.event.domain.Campaign
+import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.vo.Properties
 import com.manage.crm.event.domain.vo.Property
 import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.out
+import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
+import kotlinx.coroutines.Dispatchers
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 // TODO: check concurrency issues: existsCampaignsByName and save
 /**
@@ -17,8 +21,11 @@ import org.springframework.stereotype.Service
  */
 @Service
 class PostCampaignUseCase(
-    private val campaignRepository: CampaignRepository
+    private val campaignRepository: CampaignRepository,
+    private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate,
+    private val campaignCacheManager: CampaignCacheManager
 ) {
+    @Transactional
     suspend fun execute(useCaseIn: PostCampaignUseCaseIn): PostCampaignUseCaseOut {
         val campaignName = useCaseIn.name
         val properties = useCaseIn.properties
@@ -37,6 +44,10 @@ class PostCampaignUseCase(
                 )
             )
         )
+
+        transactionSynchronizationTemplate.afterCompletion(Dispatchers.IO, "save campaign cache") {
+            campaignCacheManager.save(savedCampaign)
+        }
 
         return out {
             PostCampaignUseCaseOut(
