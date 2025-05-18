@@ -5,6 +5,7 @@ import com.manage.crm.support.out
 import com.manage.crm.user.application.dto.EnrollUserUseCaseIn
 import com.manage.crm.user.application.dto.EnrollUserUseCaseOut
 import com.manage.crm.user.application.service.JsonService
+import com.manage.crm.user.application.service.UserRepositoryEventProcessor
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.Json
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class EnrollUserUseCase(
     private val userRepository: UserRepository,
+    private val userRepositoryEventProcessor: UserRepositoryEventProcessor,
     private val jsonService: JsonService
 ) {
     @Transactional
@@ -36,7 +38,7 @@ class EnrollUserUseCase(
                     ?.apply { updateAttributes(userAttributes) }
                     ?: throw NotFoundByIdException("User", id)
             } else {
-                userRepository.save(
+                userRepositoryEventProcessor.save(
                     User.new(
                         externalId = externalId,
                         userAttributes = userAttributes
