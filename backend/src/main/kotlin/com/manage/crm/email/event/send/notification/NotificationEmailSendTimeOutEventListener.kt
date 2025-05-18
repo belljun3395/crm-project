@@ -2,7 +2,7 @@ package com.manage.crm.email.event.send.notification
 
 import com.manage.crm.email.event.send.notification.handler.NotificationEmailSendTimeOutEventHandler
 import com.manage.crm.email.event.send.notification.handler.NotificationEmailSendTimeOutInvokeEventHandler
-import com.manage.crm.email.support.EmailCoroutineScope.eventListenerScope
+import com.manage.crm.support.coroutine.eventListenerCoroutineScope
 import com.manage.crm.support.transactional.TransactionTemplates
 import kotlinx.coroutines.launch
 import org.springframework.context.event.EventListener
@@ -17,7 +17,7 @@ class NotificationEmailSendTimeOutEventListener(
 ) {
     @EventListener
     fun onEvent(event: NotificationEmailSendTimeOutEvent) {
-        eventListenerScope().launch {
+        eventListenerCoroutineScope().launch {
             transactionalTemplates.newTxWriter.executeAndAwait {
                 notificationEmailSendTimeOutEventHandler.handle(event)
             }
@@ -26,7 +26,7 @@ class NotificationEmailSendTimeOutEventListener(
 
     @EventListener
     fun onEvent(event: NotificationEmailSendTimeOutInvokeEvent) {
-        eventListenerScope().launch {
+        eventListenerCoroutineScope().launch {
             transactionalTemplates.newTxWriter.executeAndAwait {
                 notificationEmailSendTimeOutInvokeEventHandler.handle(event)
             }
