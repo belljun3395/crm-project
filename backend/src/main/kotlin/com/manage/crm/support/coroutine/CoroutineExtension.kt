@@ -1,8 +1,10 @@
 package com.manage.crm.support.coroutine
 
 import com.manage.crm.support.mdc.MDC_KEY_TRACE_ID
+import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.slf4j.MDCContext
 import kotlinx.coroutines.withContext
 import org.slf4j.MDC
@@ -28,4 +30,17 @@ fun mdcCoroutineScope(
             )
         }
     return CoroutineScope(context + MDCContext(contextMap))
+}
+
+fun eventListenerCoroutineScope(
+    context: CoroutineContext? = null,
+    supervisorJob: CompletableJob? = null,
+    traceId: String = MDC.getCopyOfContextMap()?.get(MDC_KEY_TRACE_ID) ?: ""
+): CoroutineScope {
+    if (context == null && supervisorJob == null) {
+        return mdcCoroutineScope(Dispatchers.IO + SupervisorJob())
+    }
+    val ctx = context ?: Dispatchers.IO
+    val job = supervisorJob ?: SupervisorJob()
+    return mdcCoroutineScope(ctx + job, traceId)
 }
