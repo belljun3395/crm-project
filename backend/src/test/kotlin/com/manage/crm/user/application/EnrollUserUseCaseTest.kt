@@ -3,6 +3,7 @@ package com.manage.crm.user.application
 import com.manage.crm.user.application.dto.EnrollUserUseCaseIn
 import com.manage.crm.user.application.dto.EnrollUserUseCaseOut
 import com.manage.crm.user.application.service.JsonService
+import com.manage.crm.user.application.service.UserRepositoryEventProcessor
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.Json
@@ -16,13 +17,15 @@ import java.time.LocalDateTime
 
 class EnrollUserUseCaseTest : BehaviorSpec({
     lateinit var userRepository: UserRepository
+    lateinit var userRepositoryEventProcessor: UserRepositoryEventProcessor
     lateinit var jsonService: JsonService
     lateinit var useCase: EnrollUserUseCase
 
     beforeContainer {
         userRepository = mockk()
+        userRepositoryEventProcessor = mockk()
         jsonService = mockk()
-        useCase = EnrollUserUseCase(userRepository, jsonService)
+        useCase = EnrollUserUseCase(userRepository, userRepositoryEventProcessor, jsonService)
     }
 
     given("EnrollUserUseCase") {
@@ -52,7 +55,7 @@ class EnrollUserUseCaseTest : BehaviorSpec({
                 updatedAt = LocalDateTime.now()
             )
 
-            coEvery { userRepository.save(any()) } answers {
+            coEvery { userRepositoryEventProcessor.save(any()) } answers {
                 expectedUser
             }
 
@@ -70,9 +73,9 @@ class EnrollUserUseCaseTest : BehaviorSpec({
                 }
             }
 
-            then("save user") {
+            then("save user and process event") {
                 coVerify(exactly = 1) {
-                    userRepository.save(
+                    userRepositoryEventProcessor.save(
                         match {
                             it.externalId == expectedUser.externalId &&
                                 it.userAttributes == expectedUser.userAttributes
