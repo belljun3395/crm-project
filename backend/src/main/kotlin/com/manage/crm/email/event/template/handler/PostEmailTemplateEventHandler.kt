@@ -4,9 +4,8 @@ import com.manage.crm.email.domain.EmailTemplateHistory
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.event.template.PostEmailTemplateEvent
+import com.manage.crm.support.coroutine.mdcCoroutineScope
 import com.manage.crm.support.transactional.TransactionTemplates
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.springframework.stereotype.Component
 import org.springframework.transaction.reactive.executeAndAwait
@@ -17,13 +16,11 @@ class PostEmailTemplateEventHandler(
     private val emailTemplateHistoryRepository: EmailTemplateHistoryRepository,
     private val transactionalTemplates: TransactionTemplates
 ) {
-    private val scope = CoroutineScope(Dispatchers.IO)
-
     /**
      * - Save Email Template History
      */
     suspend fun handle(event: PostEmailTemplateEvent) {
-        scope.launch {
+        mdcCoroutineScope().launch {
             transactionalTemplates.writer.executeAndAwait {
                 val templateId = event.templateId
                 val template =
