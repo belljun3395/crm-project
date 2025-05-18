@@ -53,8 +53,10 @@ class BrowseUserUseCaseTest : BehaviorSpec({
                     users = expectedUsers.map {
                         UserDto(
                             id = it.id!!,
-                            externalId = it.externalId!!,
-                            userAttributes = it.userAttributes?.value!!
+                            externalId = it.externalId,
+                            userAttributes = it.userAttributes.value,
+                            createdAt = it.createdAt!!,
+                            updatedAt = it.updatedAt!!
                         )
                     }
                 )
