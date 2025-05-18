@@ -23,7 +23,9 @@ class BrowseUserUseCase(
                     UserDto(
                         id = user.id!!,
                         externalId = user.externalId,
-                        userAttributes = user.userAttributes.value
+                        userAttributes = user.userAttributes.value,
+                        updatedAt = user.updatedAt!!,
+                        createdAt = user.createdAt!!
                     )
                 }
             )
