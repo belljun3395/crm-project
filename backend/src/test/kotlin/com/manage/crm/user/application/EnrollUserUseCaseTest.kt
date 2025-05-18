@@ -116,6 +116,8 @@ class EnrollUserUseCaseTest : BehaviorSpec({
             originUser.updateAttributes(userUpdateAttributes)
             val expectedUser = originUser
 
+            coEvery { userRepository.save(any()) } returns expectedUser
+
             val result = useCase.execute(useCaseIn)
             then("should return EnrollUserUseCaseOut") {
                 result shouldBe EnrollUserUseCaseOut(
@@ -135,6 +137,11 @@ class EnrollUserUseCaseTest : BehaviorSpec({
             then("find user by id for update") {
                 coVerify(exactly = 1) {
                     userRepository.findById(useCaseIn.id!!)
+                }
+            }
+            then("update user") {
+                coVerify(exactly = 1) {
+                    userRepository.save(any())
                 }
             }
         }
