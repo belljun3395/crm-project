@@ -18,7 +18,9 @@ class UserRepositoryEventProcessor(
     suspend fun save(user: User): User {
         return if (user.isNewUser()) {
             userRepository.save(user).apply {
-                userEventPublisher.publish(NewUserEvent(this.id!!))
+                this.id?.let {
+                    userEventPublisher.publish(NewUserEvent(it))
+                }
             }
         } else {
             userRepository.save(user)
