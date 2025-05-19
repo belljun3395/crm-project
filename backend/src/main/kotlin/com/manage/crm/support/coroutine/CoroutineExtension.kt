@@ -1,7 +1,6 @@
 package com.manage.crm.support.coroutine
 
 import com.manage.crm.support.mdc.MDC_KEY_TRACE_ID
-import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
