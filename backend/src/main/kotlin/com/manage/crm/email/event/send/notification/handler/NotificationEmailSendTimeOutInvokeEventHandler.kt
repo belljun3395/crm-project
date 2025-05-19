@@ -14,12 +14,10 @@ import com.manage.crm.email.domain.repository.ScheduledEventRepository
 import com.manage.crm.email.domain.support.VariablesSupport
 import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
-import com.manage.crm.support.transactional.TransactionTemplates
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
-import org.springframework.transaction.reactive.executeAndAwait
 
 // TODO fix duplicate code @see SendNotificationEmailUseCase
 @Component
@@ -31,8 +29,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
     private val userRepository: UserRepository,
     @Qualifier("mailServiceImpl")
     private val mailService: MailService,
-    private val objectMapper: ObjectMapper,
-    private val transactionalTemplates: TransactionTemplates
+    private val objectMapper: ObjectMapper
 ) {
     /**
      * - Find Invoked Event  and Mark it as completed
@@ -40,88 +37,86 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
      * - Save Email Send History
      */
     suspend fun handle(event: NotificationEmailSendTimeOutInvokeEvent) {
-        transactionalTemplates.writer.executeAndAwait {
-            val scheduledEvent = (
-                scheduledEventRepository
-                    .findByEventIdAndCompletedFalseForUpdate(event.timeOutEventId)
-                    ?.complete()
-                    ?: return@executeAndAwait
-                )
-            scheduledEventRepository.save(scheduledEvent)
+        val scheduledEvent = (
+            scheduledEventRepository
+                .findByEventIdAndCompletedFalseForUpdate(event.timeOutEventId)
+                ?.complete()
+                ?: return
+            )
+        scheduledEventRepository.save(scheduledEvent)
 
-            val templateId = event.templateId
-            val templateVersion = event.templateVersion
-            val userIds = event.userIds
-            val template = run {
-                when {
-                    (templateVersion != null) -> {
-                        emailTemplateHistoryRepository
-                            .findByTemplateIdAndVersion(templateId, templateVersion)
-                            ?.let {
-                                NotificationEmailTemplatePropertiesModel(
-                                    subject = it.subject,
-                                    body = it.body,
-                                    variables = it.variables
-                                )
-                            }
-                            ?: throw IllegalArgumentException("Email Template not found by id and version: $templateId, $templateVersion")
-                    }
-
-                    else -> {
-                        emailTemplateRepository
-                            .findById(templateId)
-                            ?.let {
-                                NotificationEmailTemplatePropertiesModel(
-                                    subject = it.subject,
-                                    body = it.body,
-                                    variables = it.variables
-                                )
-                            }
-                            ?: throw IllegalArgumentException("Email Template not found by id: $templateId")
-                    }
-                }
-            }
-
-            val users = userRepository.findAllById(userIds)
-            users.collect { user ->
-                val email =
-                    user.userAttributes.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)
-                val content = if (template.isNoVariables()) {
-                    NonContent()
-                } else {
-                    val attributes = user.userAttributes
-                    val variables = template.variables
-                    variables.getVariables(false)
-                        .associate { key ->
-                            VariablesSupport.doAssociate(objectMapper, key, attributes, variables)
-                        }.let {
-                            VariablesContent(it)
+        val templateId = event.templateId
+        val templateVersion = event.templateVersion
+        val userIds = event.userIds
+        val template = run {
+            when {
+                (templateVersion != null) -> {
+                    emailTemplateHistoryRepository
+                        .findByTemplateIdAndVersion(templateId, templateVersion)
+                        ?.let {
+                            NotificationEmailTemplatePropertiesModel(
+                                subject = it.subject,
+                                body = it.body,
+                                variables = it.variables
+                            )
                         }
+                        ?: throw IllegalArgumentException("Email Template not found by id and version: $templateId, $templateVersion")
                 }
 
-                val emailMessageId =
-                    mailService.send(
-                        SendEmailInDto(
-                            to = email,
-                            subject = template.subject,
-                            template = template.body,
-                            content = content,
-                            emailBody = template.body,
-                            destination = email,
-                            eventType = SentEmailStatus.SEND
-                        )
-                    ).messageId
-
-                emailSendHistoryRepository.save(
-                    EmailSendHistory.new(
-                        userId = user.id!!,
-                        userEmail = email,
-                        emailMessageId = emailMessageId,
-                        emailBody = template.body,
-                        sendStatus = SentEmailStatus.SEND.name
-                    )
-                )
+                else -> {
+                    emailTemplateRepository
+                        .findById(templateId)
+                        ?.let {
+                            NotificationEmailTemplatePropertiesModel(
+                                subject = it.subject,
+                                body = it.body,
+                                variables = it.variables
+                            )
+                        }
+                        ?: throw IllegalArgumentException("Email Template not found by id: $templateId")
+                }
             }
+        }
+
+        val users = userRepository.findAllById(userIds)
+        users.collect { user ->
+            val email =
+                user.userAttributes.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)
+            val content = if (template.isNoVariables()) {
+                NonContent()
+            } else {
+                val attributes = user.userAttributes
+                val variables = template.variables
+                variables.getVariables(false)
+                    .associate { key ->
+                        VariablesSupport.doAssociate(objectMapper, key, attributes, variables)
+                    }.let {
+                        VariablesContent(it)
+                    }
+            }
+
+            val emailMessageId =
+                mailService.send(
+                    SendEmailInDto(
+                        to = email,
+                        subject = template.subject,
+                        template = template.body,
+                        content = content,
+                        emailBody = template.body,
+                        destination = email,
+                        eventType = SentEmailStatus.SEND
+                    )
+                ).messageId
+
+            emailSendHistoryRepository.save(
+                EmailSendHistory.new(
+                    userId = user.id!!,
+                    userEmail = email,
+                    emailMessageId = emailMessageId,
+                    emailBody = template.body,
+                    sendStatus = SentEmailStatus.SEND.name
+                )
+            )
         }
     }
 }

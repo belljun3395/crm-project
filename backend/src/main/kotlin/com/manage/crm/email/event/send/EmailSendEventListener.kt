@@ -5,7 +5,7 @@ import com.manage.crm.email.event.send.handler.EmailDeliveryDelayEventHandler
 import com.manage.crm.email.event.send.handler.EmailDeliveryEventHandler
 import com.manage.crm.email.event.send.handler.EmailOpenEventHandler
 import com.manage.crm.email.event.send.handler.EmailSentEventHandler
-import com.manage.crm.email.support.EmailCoroutineScope.eventListenerScope
+import com.manage.crm.support.coroutine.eventListenerCoroutineScope
 import com.manage.crm.support.transactional.TransactionTemplates
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
@@ -26,14 +26,32 @@ class EmailSendEventListener(
 
     @EventListener
     fun onEvent(event: EmailSendEvent) {
-        eventListenerScope().launch {
-            transactionalTemplates.newTxWriter.executeAndAwait {
-                when (event) {
-                    is EmailSentEvent -> emailSentEventHandler.handle(event)
-                    is EmailDeliveryEvent -> emailDeliveryEventHandler.handle(event)
-                    is EmailOpenEvent -> emailOpenEventHandler.handle(event)
-                    is EmailClickEvent -> emailClickEventHandler.handle(event)
-                    is EmailDeliveryDelayEvent -> emailDeliveryDelayEventHandler.handle(event)
+        eventListenerCoroutineScope().apply {
+            when (event) {
+                is EmailSentEvent -> launch {
+                    transactionalTemplates.newTxWriter.executeAndAwait {
+                        emailSentEventHandler.handle(event)
+                    }
+                }
+                is EmailDeliveryEvent -> launch {
+                    transactionalTemplates.newTxWriter.executeAndAwait {
+                        emailDeliveryEventHandler.handle(event)
+                    }
+                }
+                is EmailOpenEvent -> launch {
+                    transactionalTemplates.newTxWriter.executeAndAwait {
+                        emailOpenEventHandler.handle(event)
+                    }
+                }
+                is EmailClickEvent -> launch {
+                    transactionalTemplates.newTxWriter.executeAndAwait {
+                        emailClickEventHandler.handle(event)
+                    }
+                }
+                is EmailDeliveryDelayEvent -> launch {
+                    transactionalTemplates.newTxWriter.executeAndAwait {
+                        emailDeliveryDelayEventHandler.handle(event)
+                    }
                 }
             }
         }
