@@ -9,8 +9,17 @@ spring:
         password: root
     data:
         redis:
-            host: localhost
-            port: 16379
+            cluster:
+                connect-ip: localhost
+                max-redirects: 3
+                password: password
+                nodes:
+                    - localhost:7001
+                    - localhost:7002
+                    - localhost:7003
+                    - localhost:7004
+                    - localhost:7005
+                    - localhost:7006
     mail:
         protocol: smtp
         host: smtp.gmail.com

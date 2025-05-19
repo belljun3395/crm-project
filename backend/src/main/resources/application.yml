@@ -9,8 +9,11 @@ spring:
         password: root
     data:
         redis:
-            host: localhost
-            port: 16379
+            cluster:
+                connect-ip: ${REDIS_HOST}
+                max-redirects: ${REDIS_MAX_REDIRECTS}
+                password: ${REDIS_PASSWORD}
+                nodes: ${REDIS_NODES}
     mail:
         protocol: smtp
         host: smtp.gmail.com
