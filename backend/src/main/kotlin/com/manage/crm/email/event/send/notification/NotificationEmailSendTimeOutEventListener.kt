@@ -17,18 +17,22 @@ class NotificationEmailSendTimeOutEventListener(
 ) {
     @EventListener
     fun onEvent(event: NotificationEmailSendTimeOutEvent) {
-        eventListenerCoroutineScope().launch {
-            transactionalTemplates.newTxWriter.executeAndAwait {
-                notificationEmailSendTimeOutEventHandler.handle(event)
+        eventListenerCoroutineScope().apply {
+            launch {
+                transactionalTemplates.newTxWriter.executeAndAwait {
+                    notificationEmailSendTimeOutEventHandler.handle(event)
+                }
             }
         }
     }
 
     @EventListener
     fun onEvent(event: NotificationEmailSendTimeOutInvokeEvent) {
-        eventListenerCoroutineScope().launch {
-            transactionalTemplates.newTxWriter.executeAndAwait {
-                notificationEmailSendTimeOutInvokeEventHandler.handle(event)
+        eventListenerCoroutineScope().apply {
+            launch {
+                transactionalTemplates.newTxWriter.executeAndAwait {
+                    notificationEmailSendTimeOutInvokeEventHandler.handle(event)
+                }
             }
         }
     }

@@ -21,10 +21,14 @@ class EventTemplateTransactionListener(
      */
     @EventListener
     fun handleAfterCompletionEvent(event: EmailTemplateTransactionAfterCompletionEvent) {
-        eventListenerCoroutineScope().launch {
-            transactionalTemplates.newTxWriter.executeAndAwait {
-                when (event) {
-                    is PostEmailTemplateEvent -> postEmailTemplateEventHandler.handle(event)
+        eventListenerCoroutineScope().apply {
+            when (event) {
+                is PostEmailTemplateEvent -> {
+                    launch {
+                        transactionalTemplates.newTxWriter.executeAndAwait {
+                            postEmailTemplateEventHandler.handle(event)
+                        }
+                    }
                 }
             }
         }

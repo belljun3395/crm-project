@@ -15,9 +15,11 @@ class ScheduledEventListener(
 ) {
     @EventListener
     fun onCancelEvent(event: CancelScheduledEvent) {
-        eventListenerCoroutineScope().launch {
-            transactionalTemplates.newTxWriter.executeAndAwait {
-                cancelScheduledEventHandler.handle(event)
+        eventListenerCoroutineScope().apply {
+            launch {
+                transactionalTemplates.newTxWriter.executeAndAwait {
+                    cancelScheduledEventHandler.handle(event)
+                }
             }
         }
     }
