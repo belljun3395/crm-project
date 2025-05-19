@@ -33,14 +33,8 @@ fun mdcCoroutineScope(
 }
 
 fun eventListenerCoroutineScope(
-    context: CoroutineContext? = null,
-    supervisorJob: CompletableJob? = null,
+    context: CoroutineContext = Dispatchers.IO,
     traceId: String = MDC.getCopyOfContextMap()?.get(MDC_KEY_TRACE_ID) ?: ""
 ): CoroutineScope {
-    if (context == null && supervisorJob == null) {
-        return mdcCoroutineScope(Dispatchers.IO + SupervisorJob())
-    }
-    val ctx = context ?: Dispatchers.IO
-    val job = supervisorJob ?: SupervisorJob()
-    return mdcCoroutineScope(ctx + job, traceId)
+    return CoroutineScope(mdcCoroutineScope(context, traceId).coroutineContext + SupervisorJob())
 }

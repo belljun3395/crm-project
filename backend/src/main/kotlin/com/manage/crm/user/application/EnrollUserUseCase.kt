@@ -36,6 +36,7 @@ class EnrollUserUseCase(
                 userRepository
                     .findById(id)
                     ?.apply { updateAttributes(userAttributes) }
+                    ?.apply { userRepository.save(this) }
                     ?: throw NotFoundByIdException("User", id)
             } else {
                 userRepositoryEventProcessor.save(
