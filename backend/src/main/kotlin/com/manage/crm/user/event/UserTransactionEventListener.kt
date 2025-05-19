@@ -20,10 +20,12 @@ class UserTransactionEventListener(
      */
     @EventListener
     fun handleAfterCompletionEvent(event: UserTransactionAfterCompletionEvent) {
-        eventListenerCoroutineScope().launch {
-            transactionalTemplates.newTxWriter.executeAndAwait {
-                when (event) {
-                    is NewUserEvent -> newUserEventHandler.handle(event)
+        eventListenerCoroutineScope().apply {
+            when (event) {
+                is NewUserEvent -> launch {
+                    transactionalTemplates.newTxWriter.executeAndAwait {
+                        newUserEventHandler.handle(event)
+                    }
                 }
             }
         }
