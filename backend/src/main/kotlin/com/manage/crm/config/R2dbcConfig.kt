@@ -4,6 +4,8 @@ import com.manage.crm.email.domain.repository.converter.EmailTemplateVersionRead
 import com.manage.crm.email.domain.repository.converter.EmailTemplateVersionWritingConverter
 import com.manage.crm.email.domain.repository.converter.EventIdReadingConverter
 import com.manage.crm.email.domain.repository.converter.EventIdWritingConverter
+import com.manage.crm.email.domain.repository.converter.UserEmailReadingConverter
+import com.manage.crm.email.domain.repository.converter.UserEmailWritingConverter
 import com.manage.crm.email.domain.repository.converter.VariablesReadingConverter
 import com.manage.crm.email.domain.repository.converter.VariablesWritingConverter
 import com.manage.crm.event.domain.repository.converter.PropertiesReadingConverter
@@ -52,7 +54,9 @@ class R2dbcConfig {
                 PropertiesWritingConverter(),
                 PropertiesReadingConverter(),
                 EmailTemplateVersionReadingConverter(),
-                EmailTemplateVersionWritingConverter()
+                EmailTemplateVersionWritingConverter(),
+                UserEmailReadingConverter(),
+                UserEmailWritingConverter()
             )
         )
     }
