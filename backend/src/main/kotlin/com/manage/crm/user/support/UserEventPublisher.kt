@@ -2,6 +2,7 @@ package com.manage.crm.user.support
 
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
 import com.manage.crm.user.event.NewUserEvent
+import com.manage.crm.user.event.RefreshTotalUsersCommand
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.slf4j.MDCContext
@@ -22,5 +23,9 @@ class UserEventPublisher(
         ) {
             applicationEventPublisher.publishEvent(event)
         }
+    }
+
+    suspend fun publish(event: RefreshTotalUsersCommand) {
+        applicationEventPublisher.publishEvent(event)
     }
 }
