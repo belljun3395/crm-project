@@ -19,7 +19,7 @@ class UserRepositoryEventProcessor(
         return if (user.isNewUser()) {
             userRepository.save(user).apply {
                 this.id?.let {
-                    userEventPublisher.publish(NewUserEvent(it))
+                    userEventPublisher.publishEvent(NewUserEvent(it))
                 }
             }
         } else {
