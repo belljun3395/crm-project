@@ -13,7 +13,6 @@ abstract class UserEventInvokeSituationTest : UserModuleTestTemplate() {
     @MockitoBean
     lateinit var userEventPublisher: UserEventPublisher
 
-
     // ----------------- RefreshTotalUsersCommandHandlerTest -----------------
     @MockitoBean
     lateinit var refreshTotalUsersCommandHandler: RefreshTotalUsersCommandHandler
