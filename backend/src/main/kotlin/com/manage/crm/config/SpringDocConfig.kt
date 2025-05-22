@@ -10,6 +10,7 @@ import org.springdoc.core.utils.SpringDocUtils
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
 import org.springframework.core.env.Environment
 import org.springframework.web.reactive.result.view.RequestContext
 import org.springframework.web.server.WebSession
@@ -23,6 +24,7 @@ import java.util.*
  * [Local Swagger UI](http://localhost:8080/webjars/swagger-ui/index.html)
  */
 @Configuration
+@Profile("!test")
 class SpringDocConfig(
     private val buildProperties: BuildProperties,
     private val environment: Environment
