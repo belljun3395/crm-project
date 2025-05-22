@@ -12,7 +12,6 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.util.zip.GZIPOutputStream
-import kotlin.text.Charsets.UTF_8
 
 class GzipCompressionUtils {
     companion object {
