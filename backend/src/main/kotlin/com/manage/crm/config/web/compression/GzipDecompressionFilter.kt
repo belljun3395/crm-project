@@ -34,9 +34,4 @@ class GzipDecompressionFilter : WebFilter {
             .request(mutatedHttpRequest)
             .build()
     }
-
-    private fun logError(exception: Throwable): Mono<Void?> {
-        log.error(exception) { "Gzip decompressed HTTP request failed" }
-        return Mono.empty()
-    }
 }
