@@ -66,7 +66,7 @@ class CompressionFilter(
                         exchange.response.statusCode = HttpStatus.INTERNAL_SERVER_ERROR
                         exchange.response.writeWith(
                             Mono.just(
-                                exchange.response.bufferFactory().wrap("Compression failed".toByteArray())
+                                exchange.response.bufferFactory().wrap("Compression failed ${ex.message}".toByteArray())
                             )
                         )
                     }
