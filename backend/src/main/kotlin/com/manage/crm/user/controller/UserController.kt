@@ -5,9 +5,11 @@ import com.manage.crm.support.web.ApiResponse
 import com.manage.crm.support.web.ApiResponseGenerator
 import com.manage.crm.user.application.BrowseUserUseCase
 import com.manage.crm.user.application.EnrollUserUseCase
+import com.manage.crm.user.application.GetTotalUserCountUseCase
 import com.manage.crm.user.application.dto.BrowseUsersUseCaseOut
 import com.manage.crm.user.application.dto.EnrollUserUseCaseIn
 import com.manage.crm.user.application.dto.EnrollUserUseCaseOut
+import com.manage.crm.user.application.dto.GetTotalUserCountUseCaseOut
 import com.manage.crm.user.controller.request.EnrollUserRequest
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -24,7 +26,8 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping(value = ["/api/v1/users"])
 class UserController(
     private val browseUsersUseCase: BrowseUserUseCase,
-    private val enrollUserUseCase: EnrollUserUseCase
+    private val enrollUserUseCase: EnrollUserUseCase,
+    private val getTotalUserCountUseCase: GetTotalUserCountUseCase
 ) {
 
     @GetMapping
@@ -46,6 +49,13 @@ class UserController(
                     userAttributes = request.userAttributes
                 )
             )
+            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+    }
+
+    @GetMapping("/count")
+    suspend fun getTotalUserCount(): ApiResponse<ApiResponse.SuccessBody<GetTotalUserCountUseCaseOut>> {
+        return getTotalUserCountUseCase
+            .execute()
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
     }
 }
