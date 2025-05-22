@@ -19,9 +19,8 @@ class GzipCompressionUtils {
         private const val GZIP = "gzip"
         private const val UNKNOWN = "unknown"
 
-        fun getDeflatedBytes(inputStream: InputStream?): ByteArray {
-            val string: String = IOUtils.toString(inputStream, UTF_8)
-            return string.toByteArray()
+        fun readBytes(inputStream: InputStream?): ByteArray {
+            return inputStream?.let { IOUtils.toByteArray(it) } ?: ByteArray(0)
         }
 
         fun compressDataBuffer(dataBufferFactory: DataBufferFactory, bytes: ByteArray): DataBuffer {

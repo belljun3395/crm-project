@@ -22,7 +22,9 @@ class GzipDecompressionFilter : WebFilter {
         val mutatedWebExchange = getMutatedWebExchange(serverWebExchange)
         return webFilterChain
             .filter(mutatedWebExchange)
-            .onErrorResume { exception: Throwable -> this.logError(exception) }
+            .doOnError { ex: Throwable ->
+                log.error(ex) { "Gzip decompressed HTTP request failed" }
+            }
     }
 
     private fun getMutatedWebExchange(serverWebExchange: ServerWebExchange): ServerWebExchange {
@@ -34,7 +36,7 @@ class GzipDecompressionFilter : WebFilter {
     }
 
     private fun logError(exception: Throwable): Mono<Void?> {
-        log.error { "Gzip decompressed HTTP request failed, exception: [{}]".format(exception.message) }
+        log.error(exception) { "Gzip decompressed HTTP request failed" }
         return Mono.empty()
     }
 }

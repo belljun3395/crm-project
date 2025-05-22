@@ -4,6 +4,7 @@ import com.manage.crm.config.web.compression.GzipCompressionUtils.Companion.isGz
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
+import org.springframework.http.HttpStatus
 import org.springframework.util.AntPathMatcher
 import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebFilter
@@ -58,11 +59,22 @@ class CompressionFilter(
             .build()
 
         return chain.filter(decoratedExchange)
-            .onErrorResume { exception: Throwable -> this.logError(exception) }
-    }
-
-    private fun logError(exception: Throwable): Mono<Void> {
-        log.error { "Compressed HTTP response failed, exception: [{}]".format(exception.message) }
-        return Mono.empty()
+            .onErrorResume { ex: Throwable ->
+                when (ex) {
+                    is IllegalCompressionResponseException -> {
+                        log.error { "Compression failed: ${ex.message}" }
+                        exchange.response.statusCode = HttpStatus.INTERNAL_SERVER_ERROR
+                        exchange.response.writeWith(
+                            Mono.just(
+                                exchange.response.bufferFactory().wrap("Compression failed".toByteArray())
+                            )
+                        )
+                    }
+                    else -> {
+                        log.error { "Compression failed: ${ex.message}" }
+                        Mono.error(ex)
+                    }
+                }
+            }
     }
 }

@@ -1,7 +1,7 @@
 package com.manage.crm.config.web.compression
 
 import com.manage.crm.config.web.compression.GzipCompressionUtils.Companion.compressDataBuffer
-import com.manage.crm.config.web.compression.GzipCompressionUtils.Companion.getDeflatedBytes
+import com.manage.crm.config.web.compression.GzipCompressionUtils.Companion.readBytes
 import org.reactivestreams.Publisher
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DefaultDataBufferFactory
@@ -35,7 +35,7 @@ class GzipServerHttpRequest(
     private fun processGzipStream(compressedStream: InputStream, sink: SynchronousSink<DataBuffer>) {
         try {
             GZIPInputStream(compressedStream).use { decompressedStream ->
-                val deflatedBytes = getDeflatedBytes(decompressedStream)
+                val deflatedBytes = readBytes(decompressedStream)
                 val dataBuffer = dataBufferFactory.wrap(deflatedBytes)
                 sink.next(dataBuffer)
             }
@@ -64,9 +64,9 @@ class GzipServerHttpResponse(
                     // Only compress if the response size is greater than the minimum
                     if (allBytes.size < minResponseSize) {
                         // If response is too small, don't compress
-                        headers.remove(HttpHeaders.CONTENT_ENCODING)
                         dataBufferFactory.wrap(allBytes.toByteArray())
                     } else {
+                        delegate.headers.set(HttpHeaders.CONTENT_ENCODING, "gzip")
                         // Compress the response using utility method
                         compressDataBuffer(dataBufferFactory, allBytes.toByteArray())
                     }
@@ -76,4 +76,4 @@ class GzipServerHttpResponse(
     }
 }
 
-class GzipServerHttpObject 
+class GzipServerHttpObject
