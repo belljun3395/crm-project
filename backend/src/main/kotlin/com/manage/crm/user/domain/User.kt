@@ -55,4 +55,11 @@ class User(
     fun updateAttributes(attributes: Json) {
         userAttributes = attributes
     }
+
+    /**
+     * Check if the user is new
+     */
+    fun isNewUser(): Boolean {
+        return id == null
+    }
 }
