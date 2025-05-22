@@ -1,65 +1,10 @@
+# application.yml has only common properties
 spring:
-    main:
-        web-application-type: reactive
-    application:
-        name: crm
-    r2dbc:
-        url: r2dbc:pool:mysql://localhost:13306/crm
-        username: root
-        password: root
-    data:
-        redis:
-            cluster:
-                connect-ip: ${REDIS_HOST}
-                max-redirects: ${REDIS_MAX_REDIRECTS}
-                password: ${REDIS_PASSWORD}
-                nodes: ${REDIS_NODES}
-    mail:
-        protocol: smtp
-        host: smtp.gmail.com
-        port: 587
-        username: ${MAIL_USERNAME}
-        password: ${MAIL_PASSWORD}
-        properties:
-            mail:
-                smtp:
-                    auth: true
-                    debug: true
-                    starttls:
-                        enable: true
-                    EnableSSL:
-                        enable: true
-    aws:
-        region: ap-northeast-2
-        credentials:
-            access-key: ${AWS_ACCESS_KEY}
-            secret-key: ${AWS_SECRET_KEY}
-        mail:
-            configuration-set:
-                default: ${AWS_CONFIGURATION_SET}
-        schedule:
-            role-arn: ${AWS_SCHEDULE_ROLE_ARN}
-            sqs-arn: ${AWS_SCHEDULE_SQS_ARN}
-            group-name: ${AWS_SCHEDULE_GROUP_NAME}
-    flyway:
-        locations: classpath:db/migration/entity
-        sql-migration-suffixes: sql
-        baseline-on-migrate: true
-        baseline-version: 0
-
-springdoc:
-    swagger-ui:
-        operations-sorter: alpha
-    model-and-view-allowed: true
-    packages-to-scan: com.manage.crm
-
-logging:
-    config: classpath:logback-spring.xml
-    level:
-        org.springframework.r2dbc.core: debug
-
-management:
-    endpoints:
-        web:
-            exposure:
-                include: prometheus
+    profiles:
+        group:
+            local:
+                - local
+            prd:
+                - prd
+            dev:
+                - dev
