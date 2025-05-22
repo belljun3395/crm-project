@@ -13,7 +13,7 @@ class UserEventListenerTest(
     private val userService: UserService
 ) : UserEventInvokeSituationTest() {
     @Test
-    fun `get total user count when need to refresh count cause count is old`(scenario: Scenario) {
+    fun `user service is called and need to refresh user total count cause count is too old`(scenario: Scenario) {
         runTest {
             // given
             val oldCount = 10L
