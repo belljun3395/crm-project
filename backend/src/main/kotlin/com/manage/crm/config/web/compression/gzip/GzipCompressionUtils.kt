@@ -27,8 +27,6 @@ class GzipCompressionUtils {
             return containsGzip(serverHttpRequest, CONTENT_ENCODING).also {
                 if (it) {
                     log.debug { "Gzip decompression enabled for request" }
-                } else {
-                    log.debug { "Gzip decompression not enabled for request" }
                 }
             }
         }
@@ -37,8 +35,6 @@ class GzipCompressionUtils {
             return containsGzip(serverHttpRequest, ACCEPT_ENCODING).also {
                 if (it) {
                     log.debug { "Gzip compression enabled for response" }
-                } else {
-                    log.debug { "Gzip compression not enabled for response" }
                 }
             }
         }
