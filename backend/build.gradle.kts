@@ -78,6 +78,9 @@ dependencies {
     testRuntimeOnly("com.mysql:mysql-connector-j")
     testImplementation("com.zaxxer:HikariCP:${DependencyVersion.HIKARI_CP}")
 
+    /** commons-io */
+    implementation("commons-io:commons-io:${DependencyVersion.COMMONS_IO}")
+
     /** flyway */
     implementation("org.flywaydb:flyway-core:${DependencyVersion.FLYWAY}")
     implementation("org.flywaydb:flyway-mysql")
