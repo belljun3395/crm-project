@@ -38,14 +38,14 @@ class GzipServerHttpResponse(
             return super.writeWith(body)
         }
 
-        // Remove any existing Content-Length header to enable chunked transfer
-        delegate.headers.remove(HttpHeaders.CONTENT_LENGTH)
-
         return Mono.defer {
             DataBufferUtils.join(body)
                 .flatMap { joined ->
                     val bytes = readByte(joined)
                     val buffer = if (isResponseSizeValid(bytes.size.toLong())) {
+                        // Remove any existing Content-Length header to enable chunked transfer
+                        delegate.headers.remove(HttpHeaders.CONTENT_LENGTH)
+                        // Set the Content-Encoding header to indicate that the response is compressed
                         delegate.headers[HttpHeaders.CONTENT_ENCODING] = listOf(GZIP)
                         compress(delegate.bufferFactory(), bytes)
                     } else {
