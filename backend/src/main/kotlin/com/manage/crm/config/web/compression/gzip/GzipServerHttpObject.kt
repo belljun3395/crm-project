@@ -8,7 +8,6 @@ import com.manage.crm.config.web.compression.properties.CompressionUrlProperties
 import org.reactivestreams.Publisher
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferUtils
-import org.springframework.http.HttpHeaders
 import org.springframework.http.server.reactive.ServerHttpRequest
 import org.springframework.http.server.reactive.ServerHttpRequestDecorator
 import org.springframework.http.server.reactive.ServerHttpResponse
@@ -43,10 +42,7 @@ class GzipServerHttpResponse(
                 .flatMap { joined ->
                     val bytes = readByte(joined)
                     val buffer = if (isResponseSizeValid(bytes.size.toLong())) {
-                        // Remove any existing Content-Length header to enable chunked transfer
-                        delegate.headers.remove(HttpHeaders.CONTENT_LENGTH)
-                        // Set the Content-Encoding header to indicate that the response is compressed
-                        delegate.headers[HttpHeaders.CONTENT_ENCODING] = listOf(GZIP)
+                        setCompressionHeaders(GZIP)
                         compress(delegate.bufferFactory(), bytes)
                     } else {
                         delegate.bufferFactory().wrap(bytes)
