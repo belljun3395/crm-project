@@ -54,4 +54,8 @@ object DependencyVersion {
 
     /** Logger **/
     const val KOTLIN_LOGGING = "7.0.0"
+
+
+    /** commons-io **/
+    const val COMMONS_IO = "2.19.0"
 }
