@@ -31,7 +31,7 @@ class CompressionConfig {
 
     @Bean
     @ConditionalOnProperty(prefix = "server.decompression.request", name = ["enabled"], havingValue = "true")
-    fun gzipDeCompressionFilter(): GzipDecompressionFilter {
+    fun gzipDecompressionFilter(): GzipDecompressionFilter {
         return GzipDecompressionFilter()
     }
 }
