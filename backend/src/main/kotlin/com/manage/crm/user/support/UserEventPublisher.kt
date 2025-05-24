@@ -17,7 +17,7 @@ class UserEventPublisher(
     val log = KotlinLogging.logger {}
 
     suspend fun publishEvent(event: NewUserEvent) {
-        transactionSynchronizationTemplate.afterCompletion(
+        transactionSynchronizationTemplate.afterCommit(
             Dispatchers.Default + MDCContext(),
             "publish event: $event"
         ) {
