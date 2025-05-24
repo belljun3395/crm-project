@@ -9,14 +9,25 @@ import org.springframework.stereotype.Service
 class UserCacheManager(
     private val redisTemplate: ReactiveRedisTemplate<String, Any>
 ) {
-    val log = KotlinLogging.logger { }
-
     companion object {
+        val log = KotlinLogging.logger { }
+
+        private const val REFRESH_INTERVAL_MS = 1000L * 60 * 60 * 3 // 3 hours
         private const val SPLIT = "::"
         private const val USER_CACHE_KEY = "user"
         const val USER_CACHE_KEY_PREFIX = USER_CACHE_KEY + SPLIT
         const val TOTAL_USER_COUNT_KEY = USER_CACHE_KEY_PREFIX + "total"
         const val TOTAL_USER_COUNT_UPDATED_AT_KEY = TOTAL_USER_COUNT_KEY + SPLIT + "updatedAt"
+
+        fun isTotalUserCountNeedUpdate(totalUserCountUpdatedAt: Long): Boolean {
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - totalUserCountUpdatedAt > REFRESH_INTERVAL_MS) {
+                log.debug { "Total user count need update" }
+                return true
+            }
+            log.debug { "Total user count not need update" }
+            return false
+        }
     }
 
     suspend fun totalUserCount(): Long {
