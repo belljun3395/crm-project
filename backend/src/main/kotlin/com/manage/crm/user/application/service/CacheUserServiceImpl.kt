@@ -11,14 +11,12 @@ class CacheUserServiceImpl(
     private val userEventPublisher: UserEventPublisher
 ) : UserService {
     companion object {
-        private const val REFRESH_INTERVAL_MS = 1000L * 60 * 60 * 3 // 3 hours
     }
 
     override suspend fun getTotalUserCount(): Long {
         val totalUserCount = userCacheManager.totalUserCount()
         val totalUserCountUpdatedAt = userCacheManager.totalUserCountUpdatedAt()
-        val currentTime = System.currentTimeMillis()
-        if (currentTime - totalUserCountUpdatedAt > REFRESH_INTERVAL_MS) {
+        if (UserCacheManager.isTotalUserCountNeedUpdate(totalUserCountUpdatedAt)) {
             userEventPublisher.publishEvent(RefreshTotalUsersCommand(totalUserCount))
         }
         return totalUserCount
