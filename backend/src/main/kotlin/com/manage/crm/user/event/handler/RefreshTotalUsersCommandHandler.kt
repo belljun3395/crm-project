@@ -15,9 +15,17 @@ class RefreshTotalUsersCommandHandler(
 
     suspend fun handle(command: RefreshTotalUsersCommand) {
         val oldTotalUsers = command.oldTotalUsers
-        userRepository.count().let { count ->
-            userCacheManager.saveTotalUserCount(count).let {
-                log.debug { "refresh total users: $oldTotalUsers -> $it" }
+        userCacheManager.refreshTotalUserCountWithLock {
+            // check if the total user count is updated already
+            val totalUserCountUpdatedAt = userCacheManager.totalUserCountUpdatedAt()
+            if (UserCacheManager.isTotalUserCountNeedUpdate(totalUserCountUpdatedAt)) {
+                userRepository.count().let { count ->
+                    userCacheManager.saveTotalUserCount(count).let {
+                        log.debug { "refresh total users: $oldTotalUsers -> $it" }
+                    }
+                }
+            } else {
+                log.debug { "total user count not need update" }
             }
         }
     }

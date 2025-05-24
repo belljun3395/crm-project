@@ -84,4 +84,24 @@ class UserCacheManager(
         }
         return currentTime
     }
+
+    suspend fun executeWithLock(key: String, block: suspend () -> Unit) {
+        val lockKey = "$key::lock"
+        val lock = redisTemplate.opsForValue().setIfAbsent(lockKey, true).awaitSingleOrNull()
+        if (lock == true) {
+            try {
+                block()
+            } finally {
+                redisTemplate.delete(lockKey).awaitSingleOrNull()
+            }
+        } else {
+            log.warn { "Failed to acquire lock for key: $key" }
+        }
+    }
+
+    suspend fun refreshTotalUserCountWithLock(block: suspend () -> Unit) {
+        executeWithLock(TOTAL_USER_COUNT_KEY) {
+            block()
+        }
+    }
 }
