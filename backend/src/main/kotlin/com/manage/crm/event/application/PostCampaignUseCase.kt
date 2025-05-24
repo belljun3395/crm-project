@@ -45,7 +45,7 @@ class PostCampaignUseCase(
             )
         )
 
-        transactionSynchronizationTemplate.afterCompletion(Dispatchers.IO, "save campaign cache") {
+        transactionSynchronizationTemplate.afterCommit(Dispatchers.IO, "save campaign cache") {
             campaignCacheManager.save(savedCampaign)
         }
 
