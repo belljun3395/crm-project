@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.data.redis.core.ReactiveRedisTemplate
 import org.springframework.stereotype.Service
+import java.time.Duration
 
 @Service
 class UserCacheManager(
@@ -85,14 +86,20 @@ class UserCacheManager(
         return currentTime
     }
 
-    suspend fun executeWithLock(key: String, block: suspend () -> Unit) {
+    suspend fun executeWithLock(key: String, ttlSeconds: Long = 10, block: suspend () -> Unit) {
         val lockKey = "$key::lock"
-        val lock = redisTemplate.opsForValue().setIfAbsent(lockKey, true).awaitSingleOrNull()
+        val lockValue = System.currentTimeMillis().toString()
+        val lock = redisTemplate.opsForValue()
+            .setIfAbsent(lockKey, lockValue, Duration.ofSeconds(ttlSeconds))
+            .awaitSingleOrNull()
         if (lock == true) {
             try {
                 block()
             } finally {
-                redisTemplate.delete(lockKey).awaitSingleOrNull()
+                val currentValue = redisTemplate.opsForValue().get(lockKey).awaitSingleOrNull()
+                if (currentValue == lockValue) {
+                    redisTemplate.delete(lockKey).awaitSingleOrNull()
+                }
             }
         } else {
             log.warn { "Failed to acquire lock for key: $key" }
