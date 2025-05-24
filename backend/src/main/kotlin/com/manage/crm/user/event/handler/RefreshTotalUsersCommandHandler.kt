@@ -23,6 +23,7 @@ class RefreshTotalUsersCommandHandler(
                     userCacheManager.saveTotalUserCount(count).let {
                         log.debug { "refresh total users: $oldTotalUsers -> $it" }
                     }
+                    userCacheManager.updateTotalUserCountUpdateAt()
                 }
             } else {
                 log.debug { "total user count not need update" }
