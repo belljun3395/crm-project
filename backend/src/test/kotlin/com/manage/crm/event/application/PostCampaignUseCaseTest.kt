@@ -96,7 +96,7 @@ class PostCampaignUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { campaignRepository.save(any()) }
             }
 
-            then("register transaction synchronization after completion for save campaign cache") {
+            then("register transaction synchronization after commit for save campaign cache") {
                 coVerify(exactly = 1) {
                     transactionSynchronizationTemplate.afterCommit(
                         eq(Dispatchers.IO),
@@ -140,7 +140,7 @@ class PostCampaignUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 0) { campaignRepository.save(any(Campaign::class)) }
             }
 
-            then("not called register transaction synchronization after completion for save campaign cache") {
+            then("not called register transaction synchronization after commit for save campaign cache") {
                 coVerify(exactly = 0) {
                     transactionSynchronizationTemplate.afterCommit(
                         eq(Dispatchers.IO),
