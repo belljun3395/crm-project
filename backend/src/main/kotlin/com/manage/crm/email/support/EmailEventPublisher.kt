@@ -43,7 +43,7 @@ class EmailEventPublisher(
 
     suspend fun publishEvent(events: List<PostEmailTemplateEvent>) {
         events.parMap { event ->
-            transactionSynchronizationTemplate.afterCompletion(
+            transactionSynchronizationTemplate.afterCommit(
                 Dispatchers.IO + MDCContext(),
                 blockDescription = "publish event: $event"
             ) {

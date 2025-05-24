@@ -71,7 +71,7 @@ class PostCampaignUseCaseTest : BehaviorSpec({
             coEvery { campaignCacheManager.save(any()) } answers { savedCampaign }
 
             coEvery {
-                transactionSynchronizationTemplate.afterCompletion(
+                transactionSynchronizationTemplate.afterCommit(
                     eq(Dispatchers.IO),
                     eq("save campaign cache"),
                     captureLambda<suspend () -> Unit>()
@@ -98,7 +98,7 @@ class PostCampaignUseCaseTest : BehaviorSpec({
 
             then("register transaction synchronization after completion for save campaign cache") {
                 coVerify(exactly = 1) {
-                    transactionSynchronizationTemplate.afterCompletion(
+                    transactionSynchronizationTemplate.afterCommit(
                         eq(Dispatchers.IO),
                         eq("save campaign cache"),
                         captureLambda<suspend () -> Unit>()
@@ -142,7 +142,7 @@ class PostCampaignUseCaseTest : BehaviorSpec({
 
             then("not called register transaction synchronization after completion for save campaign cache") {
                 coVerify(exactly = 0) {
-                    transactionSynchronizationTemplate.afterCompletion(
+                    transactionSynchronizationTemplate.afterCommit(
                         eq(Dispatchers.IO),
                         eq("save campaign cache"),
                         captureLambda<suspend () -> Unit>()
