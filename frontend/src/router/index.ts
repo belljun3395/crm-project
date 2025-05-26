@@ -6,22 +6,26 @@ const router = createRouter({
     {
       path: '/users',
       name: 'users',
-      component: () => import('../views/UsersView.vue'),
+      // 도메인 구조에 맞게 경로 수정
+      component: () => import('../domains/user/views/UsersView.vue'),
     },
     {
       path: '/emails',
       name: 'emails',
-      component: () => import('../views/EmailsView.vue'),
+      // 도메인 구조에 맞게 경로 수정
+      component: () => import('../domains/email/views/EmailsView.vue'),
     },
     {
       path: '/email-schedules',
       name: 'email-schedules',
-      component: () => import('../views/EmailSchedulesView.vue'),
+      // 도메인 구조에 맞게 경로 수정
+      component: () => import('../domains/email/views/EmailSchedulesView.vue'),
     },
     {
       path: '/events',
       name: 'events',
-      component: () => import('../views/EventsView.vue'),
+      // 도메인 구조에 맞게 경로 수정
+      component: () => import('../domains/event/views/EventsView.vue'),
     },
   ],
 });

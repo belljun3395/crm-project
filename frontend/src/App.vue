@@ -13,7 +13,8 @@
 </template>
 
 <script setup lang="ts">
-import Sidebar from './components/Sidebar.vue';
+// Sidebar는 shared/components로 이동됨
+import Sidebar from './shared/components/Sidebar.vue';
 // 앱 타이틀을 상수로 분리하여 쉽게 교체 가능하게 함
 const APP_TITLE = 'CRM Admin';
 </script>
