@@ -1,11 +1,12 @@
 package com.manage.crm.email.application
 
 import com.manage.crm.email.application.dto.BrowseTemplateUseCaseIn
-import com.manage.crm.email.domain.EmailTemplate
-import com.manage.crm.email.domain.EmailTemplateHistory
+import com.manage.crm.email.domain.EmailTemplateFixtures
+import com.manage.crm.email.domain.EmailTemplateHistoryFixtures
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
-import com.manage.crm.email.domain.vo.Variables
+import com.manage.crm.email.domain.vo.EmailTemplateVersionFixtures
+import com.manage.crm.email.domain.vo.VariablesFixtures
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -26,58 +27,39 @@ class BrowseTemplateUseCaseTest : BehaviorSpec({
     }
 
     fun emailTemplateStubs(size: Int) = (1..size).map { it ->
-        EmailTemplate.new(
-            id = it.toLong(),
-            templateName = "templateName$it",
-            subject = "subject$it",
-            body = "body$it",
-            variables = Variables(),
-            version = 1.0f,
-            createdAt = LocalDateTime.now()
-        )
+        EmailTemplateFixtures.giveMeOne()
+            .withId(it.toLong())
+            .withVariables(VariablesFixtures.giveMeOne().build())
+            .withVersion(EmailTemplateVersionFixtures.giveMeOne().build())
+            .withCreatedAt(LocalDateTime.now())
+            .build()
     }
 
     given("BrowseTemplateUseCase") {
         `when`("browse templates with histories") {
             val useCaseIn = BrowseTemplateUseCaseIn(withHistory = true)
             fun emailTemplateHistoryStub() = listOf(
-                EmailTemplateHistory.new(
-                    id = 1,
-                    templateId = 1,
-                    subject = "subject1",
-                    body = "body1",
-                    variables = Variables(),
-                    version = 1.0f,
-                    createdAt = LocalDateTime.now()
-                ),
+                EmailTemplateHistoryFixtures.giveMeOne()
+                    .withId(1L)
+                    .withTemplateId(1L)
+                    .withVersion(EmailTemplateVersionFixtures.giveMeOne().withValue(1.0f).build())
+                    .build(),
                 // ----------------- template Id 2 is modified once -----------------
-                EmailTemplateHistory.new(
-                    id = 2,
-                    templateId = 2,
-                    subject = "subject2",
-                    body = "body2",
-                    variables = Variables(),
-                    version = 1.0f,
-                    createdAt = LocalDateTime.now()
-                ),
-                EmailTemplateHistory.new(
-                    id = 3,
-                    templateId = 2,
-                    subject = "subject2.1",
-                    body = "body2.1",
-                    variables = Variables(),
-                    version = 1.1f,
-                    createdAt = LocalDateTime.now()
-                ),
-                EmailTemplateHistory.new(
-                    id = 4,
-                    templateId = 3,
-                    subject = "subject3",
-                    body = "body3",
-                    variables = Variables(),
-                    version = 1.0f,
-                    createdAt = LocalDateTime.now()
-                )
+                EmailTemplateHistoryFixtures.giveMeOne()
+                    .withId(2L)
+                    .withTemplateId(2L)
+                    .withVersion(EmailTemplateVersionFixtures.giveMeOne().withValue(1.0f).build())
+                    .build(),
+                EmailTemplateHistoryFixtures.giveMeOne()
+                    .withId(3L)
+                    .withTemplateId(2L)
+                    .withVersion(EmailTemplateVersionFixtures.giveMeOne().withValue(1.1f).build())
+                    .build(),
+                EmailTemplateHistoryFixtures.giveMeOne()
+                    .withId(4L)
+                    .withTemplateId(3L)
+                    .withVersion(EmailTemplateVersionFixtures.giveMeOne().withValue(1.0f).build())
+                    .build()
             )
 
             val emailTemplateStubSize = 3

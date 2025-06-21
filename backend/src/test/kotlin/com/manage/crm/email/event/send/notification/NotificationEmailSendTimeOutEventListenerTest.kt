@@ -3,7 +3,8 @@ package com.manage.crm.email.event.send.notification
 import com.manage.crm.email.MailEventInvokeSituationTest
 import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
 import com.manage.crm.email.application.service.ScheduleTaskAllService
-import com.manage.crm.email.domain.vo.EventId
+import com.manage.crm.email.domain.EmailTemplateFixtures
+import com.manage.crm.email.domain.vo.EventIdFixtures
 import com.manage.crm.email.event.relay.aws.ScheduledEventReverseRelay
 import com.manage.crm.email.event.relay.aws.mapper.ScheduledEventMessageMapper
 import com.manage.crm.email.support.EmailEventPublisher
@@ -37,12 +38,15 @@ class NotificationEmailSendTimeOutEventListenerTest(
     fun `schedule task service new schedule method is called`(scenario: Scenario) {
         runTest {
             // given
+            val template = EmailTemplateFixtures.giveMeOne().build()
+            val eventId = EventIdFixtures.giveMeOne().build()
             val expiredTime = LocalDateTime.now().plusNanos(1)
+            val userIds = listOf(1L)
             val input = NotificationEmailSendTimeOutEventInput(
-                templateId = 1,
-                templateVersion = 1.0f,
-                userIds = listOf(1L),
-                eventId = EventId("1"),
+                templateId = template.id!!,
+                templateVersion = template.version.value,
+                userIds = userIds,
+                eventId = eventId,
                 expiredTime = expiredTime
             )
             `when`(
@@ -54,10 +58,10 @@ class NotificationEmailSendTimeOutEventListenerTest(
             ).thenReturn(CreateScheduleResponse.builder().scheduleArn("arn").build())
 
             val event = NotificationEmailSendTimeOutEvent(
-                eventId = EventId("1"),
-                templateId = 1,
-                templateVersion = 1.0f,
-                userIds = listOf(1L),
+                eventId = eventId,
+                templateId = template.id!!,
+                templateVersion = template.version.value,
+                userIds = userIds,
                 expiredTime = expiredTime
             )
             doNothing().`when`(emailEventPublisher).publishEvent(event)
@@ -95,11 +99,14 @@ class NotificationEmailSendTimeOutEventListenerTest(
             val acknowledgement = mock(Acknowledgement::class.java)
             doNothing().`when`(acknowledgement).acknowledge()
 
+            val template = EmailTemplateFixtures.giveMeOne().build()
+            val eventId = EventIdFixtures.giveMeOne().build()
+            val userIds = listOf(1L)
             val event = NotificationEmailSendTimeOutInvokeEvent(
-                timeOutEventId = EventId("1"),
-                templateId = 1,
-                templateVersion = 1.0f,
-                userIds = listOf(1L)
+                timeOutEventId = eventId,
+                templateId = template.id!!,
+                templateVersion = template.version.value,
+                userIds = userIds
             )
             doNothing().`when`(scheduledEventReverseRelayEmailEventPublisher).publishEvent(event)
 

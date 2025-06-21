@@ -4,17 +4,19 @@ import com.manage.crm.event.application.dto.PostEventPropertyDto
 import com.manage.crm.event.application.dto.PostEventUseCaseIn
 import com.manage.crm.event.domain.Campaign
 import com.manage.crm.event.domain.CampaignEvents
+import com.manage.crm.event.domain.CampaignFixtures
 import com.manage.crm.event.domain.Event
+import com.manage.crm.event.domain.EventFixtures
+import com.manage.crm.event.domain.PropertiesFixtures
+import com.manage.crm.event.domain.PropertyFixtures
 import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
-import com.manage.crm.event.domain.vo.Properties
-import com.manage.crm.event.domain.vo.Property
 import com.manage.crm.support.exception.NotFoundByException
-import com.manage.crm.user.domain.User
+import com.manage.crm.user.domain.UserFixtures
 import com.manage.crm.user.domain.repository.UserRepository
-import com.manage.crm.user.domain.vo.Json
+import com.manage.crm.user.domain.vo.JsonFixtures
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -22,7 +24,6 @@ import io.mockk.coEvery
 import io.mockk.coInvoke
 import io.mockk.coVerify
 import io.mockk.mockk
-import java.time.LocalDateTime.now
 
 class PostEventUseCaseTest : BehaviorSpec({
     lateinit var eventRepository: EventRepository
@@ -60,37 +61,33 @@ class PostEventUseCaseTest : BehaviorSpec({
                 campaignName = null
             )
 
-            val user = User.new(
-                id = 1L,
-                externalId = useCaseIn.externalId,
-                userAttributes = Json("""{}""".trimIndent()),
-                createdAt = now(),
-                updatedAt = now()
-            )
+            val user = UserFixtures.giveMeOne()
+                .withExternalId(useCaseIn.externalId)
+                .withUserAttributes(JsonFixtures.giveMeOne().withValue("""{}""").build())
+                .build()
             coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
 
-            val event = Event.new(
-                name = useCaseIn.name,
-                userId = user.id!!,
-                properties = Properties(
-                    useCaseIn.properties.map {
-                        Property(
-                            key = it.key,
-                            value = it.value
+            val event = EventFixtures.giveMeOne()
+                .withName(useCaseIn.name)
+                .withUserId(user.id!!)
+                .withProperties(
+                    PropertiesFixtures.giveMeOne()
+                        .withValue(
+                            useCaseIn.properties.map {
+                                PropertyFixtures.giveMeOne()
+                                    .withKey(it.key)
+                                    .withValue(it.value)
+                                    .build()
+                            }
                         )
-                    }.toList()
+                        .build()
                 )
-            )
-            coEvery { eventRepository.save(any(Event::class)) } answers {
-                event.apply {
-                    id = 1
-                    createdAt = now()
-                }
-            }
+                .build()
+            coEvery { eventRepository.save(any(Event::class)) } answers { event }
 
             val result = postEventUseCase.execute(useCaseIn)
             then("should return PostEventUseCaseOut") {
-                result.id shouldBe 1
+                result.id shouldBe event.id
                 result.message shouldBe SaveEventMessage.EVENT_SAVE_SUCCESS.message
             }
 
@@ -121,50 +118,34 @@ class PostEventUseCaseTest : BehaviorSpec({
                 campaignName = "campaign"
             )
 
-            val user = User.new(
-                id = 1L,
-                externalId = useCaseIn.externalId,
-                userAttributes = Json("""{}""".trimIndent()),
-                createdAt = now(),
-                updatedAt = now()
-            )
+            val user = UserFixtures.giveMeOne()
+                .withExternalId(useCaseIn.externalId)
+                .withUserAttributes(JsonFixtures.giveMeOne().withValue("""{}""").build())
+                .build()
             coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
 
-            val event = Event.new(
-                name = useCaseIn.name,
-                userId = user.id!!,
-                properties = Properties(
+            val eventProperties = PropertiesFixtures.giveMeOne()
+                .withValue(
                     useCaseIn.properties.map {
-                        Property(
-                            key = it.key,
-                            value = it.value
-                        )
-                    }.toList()
+                        PropertyFixtures.giveMeOne()
+                            .withKey(it.key)
+                            .withValue(it.value)
+                            .build()
+                    }
                 )
-            )
-            val eventId = 1L
-            coEvery { eventRepository.save(any(Event::class)) } answers {
-                event.apply {
-                    id = eventId
-                    createdAt = now()
-                }
-            }
+                .build()
 
-            val campaignName = useCaseIn.campaignName!!
-            val campaignId = 1L
-            val campaign = Campaign.new(
-                id = campaignId,
-                name = campaignName,
-                properties = Properties(
-                    properties.map {
-                        Property(
-                            key = it.key,
-                            value = it.value
-                        )
-                    }.toList()
-                ),
-                createdAt = now()
-            )
+            val event = EventFixtures.giveMeOne()
+                .withName(useCaseIn.name)
+                .withUserId(user.id!!)
+                .withProperties(eventProperties)
+                .build()
+            coEvery { eventRepository.save(any(Event::class)) } answers { event }
+
+            val campaign = CampaignFixtures.giveMeOne()
+                .withName(useCaseIn.campaignName!!)
+                .withProperties(eventProperties)
+                .build()
 
             coEvery {
                 campaignCacheManager.loadAndSaveIfMiss(
@@ -177,14 +158,14 @@ class PostEventUseCaseTest : BehaviorSpec({
             }
 
             val campaignEvents = CampaignEvents.new(
-                campaignId = campaignId,
-                eventId = eventId
+                campaignId = campaign.id!!,
+                eventId = event.id!!
             )
             coEvery { campaignEventsRepository.save(any(CampaignEvents::class)) } answers { campaignEvents }
 
             val result = postEventUseCase.execute(useCaseIn)
             then("should return PostEventUseCaseOut") {
-                result.id shouldBe eventId
+                result.id shouldBe event.id!!
                 result.message shouldBe SaveEventMessage.EVENT_SAVE_WITH_CAMPAIGN.message
             }
 
@@ -204,7 +185,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                         captureLambda<suspend () -> Campaign?>()
                     )
                 }
-                coVerify(exactly = 0) { campaignRepository.findCampaignByName(campaignName) }
+                coVerify(exactly = 0) { campaignRepository.findCampaignByName(campaign.name) }
             }
 
             then("set campaign and event") {
@@ -221,7 +202,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 } coAnswers {
                     lambda<suspend () -> Campaign?>().coInvoke()
                 }
-                coEvery { campaignRepository.findCampaignByName(campaignName) } answers { campaign }
+                coEvery { campaignRepository.findCampaignByName(campaign.name) } answers { campaign }
 
                 campaignCacheManager.loadAndSaveIfMiss(Campaign.UNIQUE_FIELDS.NAME, useCaseIn.campaignName!!) {
                     campaignRepository.findCampaignByName(useCaseIn.campaignName!!)
@@ -236,7 +217,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                             captureLambda<suspend () -> Campaign?>()
                         )
                     }
-                    coVerify(exactly = 1) { campaignRepository.findCampaignByName(campaignName) }
+                    coVerify(exactly = 1) { campaignRepository.findCampaignByName(campaign.name) }
                 }
             }
         }
@@ -259,34 +240,29 @@ class PostEventUseCaseTest : BehaviorSpec({
                 campaignName = "campaign"
             )
 
-            val user = User.new(
-                id = 1L,
-                externalId = useCaseIn.externalId,
-                userAttributes = Json("""{}""".trimIndent()),
-                createdAt = now(),
-                updatedAt = now()
-            )
+            val user = UserFixtures.giveMeOne()
+                .withExternalId(useCaseIn.externalId)
+                .withUserAttributes(JsonFixtures.giveMeOne().withValue("""{}""").build())
+                .build()
             coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
 
-            val event = Event.new(
-                name = useCaseIn.name,
-                userId = user.id!!,
-                properties = Properties(
-                    useCaseIn.properties.map {
-                        Property(
-                            key = it.key,
-                            value = it.value
+            val event = EventFixtures.giveMeOne()
+                .withName(useCaseIn.name)
+                .withUserId(user.id!!)
+                .withProperties(
+                    PropertiesFixtures.giveMeOne()
+                        .withValue(
+                            useCaseIn.properties.map {
+                                PropertyFixtures.giveMeOne()
+                                    .withKey(it.key)
+                                    .withValue(it.value)
+                                    .build()
+                            }
                         )
-                    }.toList()
+                        .build()
                 )
-            )
-            val eventId = 1L
-            coEvery { eventRepository.save(any(Event::class)) } answers {
-                event.apply {
-                    id = eventId
-                    createdAt = now()
-                }
-            }
+                .build()
+            coEvery { eventRepository.save(any(Event::class)) } answers { event }
 
             val campaignName = useCaseIn.campaignName!!
             coEvery {
@@ -305,7 +281,7 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             val result = postEventUseCase.execute(useCaseIn)
             then("return PostEventUseCaseOut") {
-                result.id shouldBe eventId
+                result.id shouldBe event.id
                 result.message shouldBe SaveEventMessage.EVENT_SAVE_BUT_NOT_CAMPAIGN.message
             }
 
@@ -351,33 +327,30 @@ class PostEventUseCaseTest : BehaviorSpec({
                 campaignName = "campaign"
             )
 
-            val user = User.new(
-                id = 1L,
-                externalId = useCaseIn.externalId,
-                userAttributes = Json("""{}""".trimIndent()),
-                createdAt = now(),
-                updatedAt = now()
-            )
+            val user = UserFixtures.giveMeOne()
+                .withExternalId(useCaseIn.externalId)
+                .withUserAttributes(JsonFixtures.giveMeOne().withValue("""{}""").build())
+                .build()
             coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
 
-            val event = Event.new(
-                name = useCaseIn.name,
-                userId = user.id!!,
-                properties = Properties(
-                    useCaseIn.properties.map {
-                        Property(
-                            key = it.key,
-                            value = it.value
+            val event = EventFixtures.giveMeOne()
+                .withName(useCaseIn.name)
+                .withUserId(user.id!!)
+                .withProperties(
+                    PropertiesFixtures.giveMeOne()
+                        .withValue(
+                            useCaseIn.properties.map {
+                                PropertyFixtures.giveMeOne()
+                                    .withKey(it.key)
+                                    .withValue(it.value)
+                                    .build()
+                            }
                         )
-                    }.toList()
+                        .build()
                 )
-            )
-            val eventId = 1L
+                .build()
             coEvery { eventRepository.save(any(Event::class)) } answers {
-                event.apply {
-                    id = eventId
-                    createdAt = now()
-                }
+                event
             }
 
             val notMatchProperties = listOf(
@@ -386,21 +359,21 @@ class PostEventUseCaseTest : BehaviorSpec({
                     value = "value1"
                 )
             )
-            val campaignName = useCaseIn.campaignName!!
-            val campaignId = 1L
-            val campaign = Campaign.new(
-                id = campaignId,
-                name = campaignName,
-                properties = Properties(
-                    notMatchProperties.map {
-                        Property(
-                            key = it.key,
-                            value = it.value
+            val campaign = CampaignFixtures.giveMeOne()
+                .withName(useCaseIn.campaignName!!)
+                .withProperties(
+                    PropertiesFixtures.giveMeOne()
+                        .withValue(
+                            notMatchProperties.map {
+                                PropertyFixtures.giveMeOne()
+                                    .withKey(it.key)
+                                    .withValue(it.value)
+                                    .build()
+                            }
                         )
-                    }.toList()
-                ),
-                createdAt = now()
-            )
+                        .build()
+                )
+                .build()
             coEvery {
                 campaignCacheManager.loadAndSaveIfMiss(
                     eq(Campaign.UNIQUE_FIELDS.NAME),
@@ -413,7 +386,7 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             val result = postEventUseCase.execute(useCaseIn)
             then("should return PostEventUseCaseOut") {
-                result.id shouldBe eventId
+                result.id shouldBe event.id
                 result.message shouldBe SaveEventMessage.PROPERTIES_MISMATCH.message
             }
 
@@ -433,7 +406,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                         captureLambda<suspend () -> Campaign?>()
                     )
                 }
-                coVerify(exactly = 0) { campaignRepository.findCampaignByName(campaignName) }
+                coVerify(exactly = 0) { campaignRepository.findCampaignByName(campaign.name) }
             }
 
             then("can't set campaign and event cause property keys not match") {

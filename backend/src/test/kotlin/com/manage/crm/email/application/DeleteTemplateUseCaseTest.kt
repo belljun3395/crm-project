@@ -5,18 +5,14 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.manage.crm.email.application.dto.DeleteTemplateUseCaseIn
 import com.manage.crm.email.application.dto.DeleteTemplateUseCaseOut
 import com.manage.crm.email.application.service.ScheduleTaskAllService
-import com.manage.crm.email.domain.ScheduledEvent
+import com.manage.crm.email.domain.ScheduledEventFixtures
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.repository.ScheduledEventRepository
-import com.manage.crm.email.domain.vo.EventId
-import com.manage.crm.email.domain.vo.ScheduleType
-import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutEvent
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import java.time.LocalDateTime
 
 class DeleteTemplateUseCaseTest : BehaviorSpec({
     lateinit var emailTemplateRepository: EmailTemplateRepository
@@ -36,24 +32,8 @@ class DeleteTemplateUseCaseTest : BehaviorSpec({
             )
     }
 
-    fun scheduledEventStubs(templateId: Long, size: Int, objectMapper: ObjectMapper) =
-        (1..size).map {
-            ScheduledEvent.new(
-                eventId = EventId("eventId$it"),
-                eventClass = NotificationEmailSendTimeOutEvent::class.simpleName!!,
-                eventPayload = objectMapper.writeValueAsString(
-                    NotificationEmailSendTimeOutEvent(
-                        eventId = EventId("eventId$it"),
-                        templateId = templateId,
-                        templateVersion = 1.0f,
-                        userIds = listOf(1L),
-                        expiredTime = LocalDateTime.now()
-                    )
-                ),
-                completed = false,
-                scheduledAt = ScheduleType.AWS.name
-            )
-        }
+    fun scheduledEventStubs(size: Int) =
+        (1..size).map { ScheduledEventFixtures.giveMeOne().build() }
 
     given("DeleteTemplateUseCase") {
         val objectMapper = ObjectMapper().apply {
@@ -65,7 +45,7 @@ class DeleteTemplateUseCaseTest : BehaviorSpec({
                 DeleteTemplateUseCaseIn(emailTemplateId = emailTemplateId, forceFlag = true)
 
             val eventSize = 3
-            val schedules = scheduledEventStubs(emailTemplateId, eventSize, objectMapper)
+            val schedules = scheduledEventStubs(eventSize)
             coEvery {
                 scheduledEventRepository.findAllByEmailTemplateIdAndCompletedFalse(
                     emailTemplateId
@@ -104,7 +84,7 @@ class DeleteTemplateUseCaseTest : BehaviorSpec({
                 DeleteTemplateUseCaseIn(emailTemplateId = emailTemplateId, forceFlag = false)
 
             val eventSize = 3
-            val schedules = scheduledEventStubs(emailTemplateId, eventSize, objectMapper)
+            val schedules = scheduledEventStubs(eventSize)
             coEvery {
                 scheduledEventRepository.findAllByEmailTemplateIdAndCompletedFalse(
                     emailTemplateId
