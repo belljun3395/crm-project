@@ -43,7 +43,6 @@ class ScheduledEventFixtures private constructor() {
     companion object {
         fun aScheduledEvent() = ScheduledEventFixtures()
             .withCreatedAt(LocalDateTime.now())
-            .withEventId(EventIdFixtures.anEventId().build())
 
         fun giveMeOne(): ScheduledEventFixtures {
             val randomSuffix = UUID.randomUUID().toString().substring(0, 8)

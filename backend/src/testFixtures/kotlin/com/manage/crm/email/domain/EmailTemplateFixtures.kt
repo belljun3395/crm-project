@@ -37,7 +37,6 @@ class EmailTemplateFixtures private constructor() {
     companion object {
         fun anEmailTemplate() = EmailTemplateFixtures()
             .withCreatedAt(LocalDateTime.now())
-            .withVersion(EmailTemplateVersionFixtures.anEmailTemplateVersion().build())
 
         fun giveMeOne(): EmailTemplateFixtures {
             val randomSuffix = Random.nextInt(1000)
