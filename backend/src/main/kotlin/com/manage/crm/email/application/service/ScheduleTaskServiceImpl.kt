@@ -7,6 +7,7 @@ import com.manage.crm.email.domain.repository.ScheduledEventRepository
 import com.manage.crm.email.domain.vo.EventId
 import com.manage.crm.infrastructure.scheduler.ScheduleName
 import com.manage.crm.infrastructure.scheduler.provider.AwsSchedulerService
+import com.manage.crm.support.asLong
 import com.manage.crm.support.parseISOExpiredTime
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
@@ -53,8 +54,8 @@ class ScheduleTaskServiceImpl(
             }.map { payload ->
                 ScheduleTaskView(
                     taskName = payload["eventId"] as String,
-                    templateId = (payload["templateId"] as Int).toLong(),
-                    userIds = (payload["userIds"] as List<Int>).map { it.toLong() },
+                    templateId = payload["templateId"].asLong(),
+                    userIds = (payload["userIds"] as? List<*>)?.mapNotNull { it.asLong() } ?: emptyList(),
                     expiredTime = (payload["expiredTime"] as String).parseISOExpiredTime()
                 )
             }.toList()
