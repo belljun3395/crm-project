@@ -10,12 +10,12 @@ import kotlin.random.Random
 class EmailSendHistoryFixtures private constructor() {
     private var id: Long = -1L
     private var userId: Long = -1L
-    private lateinit var userEmail: Email
-    private lateinit var emailMessageId: String
-    private lateinit var emailBody: String
-    private lateinit var sendStatus: String
-    private lateinit var createdAt: LocalDateTime
-    private lateinit var updatedAt: LocalDateTime
+    private var userEmail: Email = EmailFixtures.giveMeOne().build()
+    private var emailMessageId: String = UUID.randomUUID().toString()
+    private var emailBody: String = "Default email body"
+    private var sendStatus: String = SentEmailStatus.SEND.name
+    private var createdAt: LocalDateTime = LocalDateTime.now()
+    private var updatedAt: LocalDateTime = LocalDateTime.now()
 
     fun withId(id: Long) = apply { this.id = id }
     fun withUserId(userId: Long) = apply { this.userId = userId }
@@ -39,8 +39,6 @@ class EmailSendHistoryFixtures private constructor() {
 
     companion object {
         fun anEmailSendHistory() = EmailSendHistoryFixtures()
-            .withCreatedAt(LocalDateTime.now())
-            .withUpdatedAt(LocalDateTime.now())
 
         fun giveMeOne(): EmailSendHistoryFixtures {
             val id = Random.nextLong(1, 101)

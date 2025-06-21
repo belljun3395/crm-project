@@ -9,12 +9,12 @@ import kotlin.random.Random
 
 class EmailTemplateFixtures private constructor() {
     private var id: Long = -1L
-    private lateinit var templateName: String
-    private lateinit var subject: String
-    private lateinit var body: String
-    private lateinit var variables: Variables
-    private lateinit var version: EmailTemplateVersion
-    private lateinit var createdAt: LocalDateTime
+    private var templateName: String = "default-template-name"
+    private var subject: String = "Default Subject"
+    private var body: String = "<p>Default Body</p>"
+    private var variables: Variables = VariablesFixtures.aVariables().build()
+    private var version: EmailTemplateVersion = EmailTemplateVersionFixtures.anEmailTemplateVersion().build()
+    private var createdAt: LocalDateTime = LocalDateTime.now()
 
     fun withId(id: Long) = apply { this.id = id }
     fun withTemplateName(templateName: String) = apply { this.templateName = templateName }
@@ -36,7 +36,6 @@ class EmailTemplateFixtures private constructor() {
 
     companion object {
         fun anEmailTemplate() = EmailTemplateFixtures()
-            .withCreatedAt(LocalDateTime.now())
 
         fun giveMeOne(): EmailTemplateFixtures {
             val randomSuffix = Random.nextInt(1000)

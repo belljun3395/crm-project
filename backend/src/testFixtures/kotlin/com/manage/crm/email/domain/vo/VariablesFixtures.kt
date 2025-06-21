@@ -1,7 +1,7 @@
 package com.manage.crm.email.domain.vo
 
 class VariablesFixtures private constructor() {
-    private lateinit var value: List<String>
+    private var value: List<String> = emptyList()
 
     fun withValue(value: List<String>) = apply { this.value = value }
 
@@ -9,7 +9,6 @@ class VariablesFixtures private constructor() {
 
     companion object {
         fun aVariables() = VariablesFixtures()
-            .withValue(emptyList())
 
         fun giveMeOne(): VariablesFixtures {
             val value = emptyList<String>()

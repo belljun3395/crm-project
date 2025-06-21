@@ -10,11 +10,11 @@ import kotlin.random.Random
 class EmailTemplateHistoryFixtures private constructor() {
     private var id: Long = -1L
     private var templateId: Long = 0
-    private lateinit var subject: String
-    private lateinit var body: String
-    private lateinit var variables: Variables
-    private lateinit var version: EmailTemplateVersion
-    private lateinit var createdAt: LocalDateTime
+    private var subject: String = "Default History Subject"
+    private var body: String = "<p>Default History Body</p>"
+    private var variables: Variables = VariablesFixtures.aVariables().build()
+    private var version: EmailTemplateVersion = EmailTemplateVersionFixtures.anEmailTemplateVersion().build()
+    private var createdAt: LocalDateTime = LocalDateTime.now()
 
     fun withId(id: Long) = apply { this.id = id }
     fun withTemplateId(templateId: Long) = apply { this.templateId = templateId }
@@ -36,7 +36,6 @@ class EmailTemplateHistoryFixtures private constructor() {
 
     companion object {
         fun anEmailTemplateHistory() = EmailTemplateHistoryFixtures()
-            .withCreatedAt(LocalDateTime.now())
 
         fun giveMeOne(): EmailTemplateHistoryFixtures {
             val id = Random.nextLong(1, 101)

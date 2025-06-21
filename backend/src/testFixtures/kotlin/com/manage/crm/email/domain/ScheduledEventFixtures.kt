@@ -9,14 +9,14 @@ import kotlin.random.Random
 
 class ScheduledEventFixtures private constructor() {
     private var id: Long = -1L
-    private lateinit var eventId: EventId
-    private lateinit var eventClass: String
-    private lateinit var eventPayload: String
+    private var eventId: EventId = EventIdFixtures.anEventId().build()
+    private var eventClass: String = "com.example.DefaultEvent"
+    private var eventPayload: String = "{}"
     private var completed: Boolean = false
     private var isNotConsumed: Boolean = false
     private var canceled: Boolean = false
-    private lateinit var scheduledAt: String
-    private lateinit var createdAt: LocalDateTime
+    private var scheduledAt: String = ScheduleType.APP.name
+    private var createdAt: LocalDateTime = LocalDateTime.now()
 
     fun withId(id: Long) = apply { this.id = id }
     fun withEventId(eventId: EventId) = apply { this.eventId = eventId }
@@ -42,7 +42,6 @@ class ScheduledEventFixtures private constructor() {
 
     companion object {
         fun aScheduledEvent() = ScheduledEventFixtures()
-            .withCreatedAt(LocalDateTime.now())
 
         fun giveMeOne(): ScheduledEventFixtures {
             val randomSuffix = UUID.randomUUID().toString().substring(0, 8)

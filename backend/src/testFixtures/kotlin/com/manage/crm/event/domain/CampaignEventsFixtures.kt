@@ -7,7 +7,7 @@ class CampaignEventsFixtures private constructor() {
     private var id: Long? = null
     private var campaignId: Long = -1L
     private var eventId: Long = -1L
-    private lateinit var createdAt: LocalDateTime
+    private var createdAt: LocalDateTime = LocalDateTime.now()
 
     fun withId(id: Long?) = apply { this.id = id }
     fun withCampaignId(campaignId: Long) = apply { this.campaignId = campaignId }
@@ -23,7 +23,6 @@ class CampaignEventsFixtures private constructor() {
 
     companion object {
         fun aCampaignEvents() = CampaignEventsFixtures()
-            .withCreatedAt(LocalDateTime.now())
 
         fun giveMeOne(): CampaignEventsFixtures {
             val id = Random.nextLong(1, 101)

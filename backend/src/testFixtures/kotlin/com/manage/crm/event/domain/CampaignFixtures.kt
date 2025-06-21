@@ -6,9 +6,9 @@ import kotlin.random.Random
 
 class CampaignFixtures private constructor() {
     private var id: Long = -1L
-    private lateinit var name: String
-    private lateinit var properties: Properties
-    private lateinit var createdAt: LocalDateTime
+    private var name: String = "default-campaign-name"
+    private var properties: Properties = PropertiesFixtures.giveMeOne().build()
+    private var createdAt: LocalDateTime = LocalDateTime.now()
 
     fun withId(id: Long) = apply { this.id = id }
     fun withName(name: String) = apply { this.name = name }
@@ -24,7 +24,6 @@ class CampaignFixtures private constructor() {
 
     companion object {
         fun aCampaign() = CampaignFixtures()
-            .withCreatedAt(LocalDateTime.now())
 
         fun giveMeOne(): CampaignFixtures {
             val id = Random.nextLong(1, 101)

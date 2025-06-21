@@ -4,7 +4,7 @@ import com.manage.crm.event.domain.vo.Properties
 import com.manage.crm.event.domain.vo.Property
 
 class PropertiesFixtures private constructor() {
-    private lateinit var value: List<Property>
+    private var value: List<Property> = listOf(PropertyFixtures.aProperty().build())
 
     fun withValue(value: List<Property>) = apply { this.value = value }
 

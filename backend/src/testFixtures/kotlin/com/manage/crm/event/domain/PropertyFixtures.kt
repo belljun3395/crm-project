@@ -4,8 +4,8 @@ import com.manage.crm.event.domain.vo.Property
 import java.util.UUID
 
 class PropertyFixtures private constructor() {
-    private lateinit var key: String
-    private lateinit var value: String
+    private var key: String = "default-key"
+    private var value: String = "default-value"
 
     fun withKey(key: String) = apply { this.key = key }
     fun withValue(value: String) = apply { this.value = value }

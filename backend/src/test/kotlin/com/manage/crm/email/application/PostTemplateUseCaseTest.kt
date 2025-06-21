@@ -64,8 +64,8 @@ class PostTemplateUseCaseTest : BehaviorSpec({
             then("should return BrowseEmailNotificationSchedulesUseCaseOut") {
                 result shouldBe PostTemplateUseCaseOut(
                     id = newEmailTemplate.id!!,
-                    templateName = newEmailTemplate.templateName!!,
-                    version = newEmailTemplate.version!!.value
+                    templateName = newEmailTemplate.templateName,
+                    version = newEmailTemplate.version.value
                 )
             }
 
@@ -103,7 +103,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
             coEvery { htmlService.extractVariables(useCaseIn.body) } answers {
                 useCaseIn.variables
             }
-            val emailTemplateFixtures = EmailTemplateFixtures.giveMeOne().withId(useCaseIn.id)
+            val emailTemplateFixtures = EmailTemplateFixtures.giveMeOne().withId(useCaseIn.id!!)
                 .withVersion(EmailTemplateVersionFixtures.giveMeOne().withValue(1.0f).build())
             val emailTemplate = emailTemplateFixtures.build()
             coEvery { emailTemplateRepository.findById(useCaseIn.id!!) } answers { emailTemplate }
@@ -166,8 +166,8 @@ class PostTemplateUseCaseTest : BehaviorSpec({
             then("should return BrowseEmailNotificationSchedulesUseCaseOut") {
                 result shouldBe PostTemplateUseCaseOut(
                     id = newEmailTemplate.id!!,
-                    templateName = newEmailTemplate.templateName!!,
-                    version = newEmailTemplate.version!!.value
+                    templateName = newEmailTemplate.templateName,
+                    version = newEmailTemplate.version.value
                 )
             }
 
@@ -285,8 +285,8 @@ class PostTemplateUseCaseTest : BehaviorSpec({
             then("should return BrowseEmailNotificationSchedulesUseCaseOut") {
                 result shouldBe PostTemplateUseCaseOut(
                     id = newEmailTemplate.id!!,
-                    templateName = newEmailTemplate.templateName!!,
-                    version = newEmailTemplate.version!!.value
+                    templateName = newEmailTemplate.templateName,
+                    version = newEmailTemplate.version.value
                 )
             }
 

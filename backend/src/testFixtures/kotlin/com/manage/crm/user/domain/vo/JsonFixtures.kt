@@ -3,7 +3,7 @@ package com.manage.crm.user.domain.vo
 import kotlin.random.Random
 
 class JsonFixtures private constructor() {
-    private lateinit var value: String
+    private var value: String = "{}"
 
     fun withValue(value: String): JsonFixtures = apply {
         this.value = value

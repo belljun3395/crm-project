@@ -7,10 +7,10 @@ import kotlin.random.Random
 
 class UserFixtures private constructor() {
     private var id: Long = -1L
-    private lateinit var externalId: String
-    private lateinit var userAttributes: Json
-    private lateinit var createdAt: LocalDateTime
-    private lateinit var updatedAt: LocalDateTime
+    private var externalId: String = "default-external-id"
+    private var userAttributes: Json = JsonFixtures.giveMeOne().build()
+    private var createdAt: LocalDateTime = LocalDateTime.now()
+    private var updatedAt: LocalDateTime = LocalDateTime.now()
 
     fun withId(id: Long) = apply { this.id = id }
     fun withExternalId(externalId: String) = apply { this.externalId = externalId }
@@ -28,8 +28,6 @@ class UserFixtures private constructor() {
 
     companion object {
         fun anUser() = UserFixtures()
-            .withCreatedAt(LocalDateTime.now())
-            .withUpdatedAt(LocalDateTime.now())
 
         fun giveMeOne(): UserFixtures {
             val id = Random.nextLong(1, 101)

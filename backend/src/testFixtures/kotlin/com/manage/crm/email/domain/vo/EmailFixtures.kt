@@ -3,7 +3,7 @@ package com.manage.crm.email.domain.vo
 import java.util.UUID
 
 class EmailFixtures private constructor() {
-    private lateinit var value: String
+    private var value: String = "default@example.com"
 
     fun withValue(value: String) = apply { this.value = value }
 
