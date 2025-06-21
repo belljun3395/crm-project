@@ -4,6 +4,9 @@ plugins {
     kotlin("plugin.allopen") version DependencyVersion.KOTLIN
     kotlin("kapt") version DependencyVersion.KOTLIN
 
+    /** test */
+    id("java-test-fixtures")
+
     /** spring */
     id("org.springframework.boot") version DependencyVersion.SPRING_BOOT
     id("io.spring.dependency-management") version DependencyVersion.SPRING_DEPENDENCY_MANAGEMENT
