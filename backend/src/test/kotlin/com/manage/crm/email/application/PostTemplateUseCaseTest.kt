@@ -5,9 +5,9 @@ import com.manage.crm.email.application.dto.PostTemplateUseCaseOut
 import com.manage.crm.email.application.service.EmailTemplateRepositoryEventProcessor
 import com.manage.crm.email.application.service.HtmlService
 import com.manage.crm.email.domain.EmailTemplate
+import com.manage.crm.email.domain.EmailTemplateFixtures
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
-import com.manage.crm.email.domain.vo.EmailTemplateVersion
-import com.manage.crm.email.domain.vo.Variables
+import com.manage.crm.email.domain.vo.EmailTemplateVersionFixtures
 import com.manage.crm.email.exception.VariablesNotMatchException
 import com.manage.crm.support.exception.DuplicateByException
 import io.kotest.assertions.throwables.shouldThrow
@@ -57,15 +57,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 null
             }
 
-            val newEmailTemplate = EmailTemplate.new(
-                templateName = useCaseIn.templateName,
-                subject = useCaseIn.subject!!,
-                body = useCaseIn.body,
-                variables = Variables(useCaseIn.variables)
-            ).apply {
-                // set id after save
-                id = 1
-            }
+            val newEmailTemplate = EmailTemplateFixtures.giveMeOne().withId(1L).build()
             coEvery { emailTemplateSaveRepository.save(any(EmailTemplate::class)) } answers { newEmailTemplate }
 
             val result = useCase.execute(useCaseIn)
@@ -111,34 +103,20 @@ class PostTemplateUseCaseTest : BehaviorSpec({
             coEvery { htmlService.extractVariables(useCaseIn.body) } answers {
                 useCaseIn.variables
             }
-            val emailTemplate = EmailTemplate.new(
-                templateName = useCaseIn.templateName,
-                subject = "subject",
-                body = "body",
-                variables = Variables(emptyList())
-            ).apply {
-                id = useCaseIn.id
-                version = EmailTemplateVersion(1.0f)
-            }
+            val emailTemplateFixtures = EmailTemplateFixtures.giveMeOne().withId(useCaseIn.id)
+                .withVersion(EmailTemplateVersionFixtures.giveMeOne().withValue(1.0f).build())
+            val emailTemplate = emailTemplateFixtures.build()
             coEvery { emailTemplateRepository.findById(useCaseIn.id!!) } answers { emailTemplate }
 
-            val modifiedEmailTemplate = EmailTemplate.new(
-                templateName = useCaseIn.templateName,
-                subject = useCaseIn.subject!!,
-                body = useCaseIn.body,
-                variables = Variables(useCaseIn.variables)
-            ).apply {
-                id = useCaseIn.id
-                version = EmailTemplateVersion(useCaseIn.version!!)
-            }
+            val modifiedEmailTemplate = emailTemplateFixtures.withVersion(EmailTemplateVersionFixtures.giveMeOne().withValue(useCaseIn.version!!).build()).build()
             coEvery { emailTemplateSaveRepository.save(any(EmailTemplate::class)) } answers { modifiedEmailTemplate }
 
             val result = useCase.execute(useCaseIn)
             then("should return BrowseEmailNotificationSchedulesUseCaseOut") {
                 result shouldBe PostTemplateUseCaseOut(
                     id = emailTemplate.id!!,
-                    templateName = emailTemplate.templateName!!,
-                    version = emailTemplate.version!!.value
+                    templateName = emailTemplate.templateName,
+                    version = emailTemplate.version.value
                 )
             }
 
@@ -181,15 +159,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 null
             }
 
-            val newEmailTemplate = EmailTemplate.new(
-                templateName = useCaseIn.templateName,
-                subject = useCaseIn.subject!!,
-                body = useCaseIn.body,
-                variables = Variables(useCaseIn.variables)
-            ).apply {
-                // set id after save
-                id = 1
-            }
+            val newEmailTemplate = EmailTemplateFixtures.giveMeOne().withId(1L).build()
             coEvery { emailTemplateSaveRepository.save(any(EmailTemplate::class)) } answers { newEmailTemplate }
 
             val result = useCase.execute(useCaseIn)
@@ -308,15 +278,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
                 null
             }
 
-            val newEmailTemplate = EmailTemplate.new(
-                templateName = useCaseIn.templateName,
-                subject = useCaseIn.subject!!,
-                body = useCaseIn.body,
-                variables = Variables(useCaseIn.variables)
-            ).apply {
-                // set id after save
-                id = 1
-            }
+            val newEmailTemplate = EmailTemplateFixtures.giveMeOne().withId(1L).build()
             coEvery { emailTemplateSaveRepository.save(any(EmailTemplate::class)) } answers { newEmailTemplate }
 
             val result = useCase.execute(useCaseIn)

@@ -4,13 +4,16 @@ import com.manage.crm.event.application.dto.PropertyAndOperationDto
 import com.manage.crm.event.application.dto.SearchEventPropertyDto
 import com.manage.crm.event.application.dto.SearchEventsUseCaseIn
 import com.manage.crm.event.domain.Event
+import com.manage.crm.event.domain.EventFixtures
 import com.manage.crm.event.domain.JoinOperation
 import com.manage.crm.event.domain.Operation
+import com.manage.crm.event.domain.PropertiesFixtures
+import com.manage.crm.event.domain.PropertyFixtures
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.repository.query.SearchByPropertyQuery
 import com.manage.crm.event.domain.vo.Properties
 import com.manage.crm.event.domain.vo.Property
-import com.manage.crm.user.domain.User
+import com.manage.crm.user.domain.UserFixtures
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.Json
 import io.kotest.core.spec.style.BehaviorSpec
@@ -67,15 +70,13 @@ class SearchEventsUseCaseTest : BehaviorSpec({
                 events
             }
 
-            val userIds = events.mapNotNull { it.userId }.toSet().toList()
+            val userIds = events.map { it.userId }.toSet().toList()
             val users = userIds.map {
-                User.new(
-                    id = it,
-                    externalId = "externalId-$it",
-                    userAttributes = Json("""{}""".trimIndent()),
-                    createdAt = LocalDateTime.now(),
-                    updatedAt = LocalDateTime.now()
-                )
+                UserFixtures.giveMeOne()
+                    .withId(it)
+                    .withExternalId("externalId-$it")
+                    .withUserAttributes(Json("""{}""".trimIndent()))
+                    .build()
             }.toList()
 
             coEvery { userRepository.findAllByIdIn(userIds) } answers {
@@ -125,32 +126,33 @@ class SearchEventsUseCaseTest : BehaviorSpec({
 
             val eventSize = 10
             val events = (1..eventSize).map {
-                Event.new(
-                    id = it.toLong(),
-                    name = "event$it",
-                    userId = it.toLong(),
-                    properties = Properties(
-                        listOf(
-                            Property("key1", "$it"),
-                            Property("key2", "$it")
-                        )
-                    ),
-                    createdAt = LocalDateTime.now()
-                )
+                EventFixtures.giveMeOne()
+                    .withId(it.toLong())
+                    .withName("event$it")
+                    .withUserId(it.toLong())
+                    .withProperties(
+                        PropertiesFixtures.giveMeOne()
+                            .withValue(
+                                listOf(
+                                    PropertyFixtures.giveMeOne().withKey("key1").withValue("value1").build(),
+                                    PropertyFixtures.giveMeOne().withKey("key2").withValue("value2").build()
+                                )
+                            )
+                            .build()
+                    )
+                    .build()
             }
             coEvery { eventRepository.searchByProperties(any()) } answers {
                 events
             }
 
-            val userIds = events.mapNotNull { it.userId }.toSet().toList()
+            val userIds = events.map { it.userId }.toSet().toList()
             val users = userIds.map {
-                User.new(
-                    id = it,
-                    externalId = "externalId-$it",
-                    userAttributes = Json("""{}""".trimIndent()),
-                    createdAt = LocalDateTime.now(),
-                    updatedAt = LocalDateTime.now()
-                )
+                UserFixtures.giveMeOne()
+                    .withId(it)
+                    .withExternalId("externalId-$it")
+                    .withUserAttributes(Json("""{}""".trimIndent()))
+                    .build()
             }.toList()
 
             coEvery { userRepository.findAllByIdIn(userIds) } answers {
@@ -179,29 +181,24 @@ class SearchEventsUseCaseTest : BehaviorSpec({
 
             val eventSize = 10
             val events = (1..eventSize).map {
-                Event.new(
-                    id = it.toLong(),
-                    name = "event$it",
-                    userId = it.toLong(),
-                    properties = Properties(
-                        emptyList()
-                    ),
-                    createdAt = LocalDateTime.now()
-                )
+                EventFixtures.giveMeOne()
+                    .withId(it.toLong())
+                    .withName("event$it")
+                    .withUserId(it.toLong())
+                    .withProperties(PropertiesFixtures.giveMeOne().withValue(emptyList()).build())
+                    .build()
             }
             coEvery { eventRepository.findAllByName(any()) } answers {
                 events
             }
 
-            val userIds = events.mapNotNull { it.userId }.toSet().toList()
+            val userIds = events.map { it.userId }.toSet().toList()
             val users = userIds.map {
-                User.new(
-                    id = it,
-                    externalId = "externalId-$it",
-                    userAttributes = Json("""{}""".trimIndent()),
-                    createdAt = LocalDateTime.now(),
-                    updatedAt = LocalDateTime.now()
-                )
+                UserFixtures.giveMeOne()
+                    .withId(it)
+                    .withExternalId("externalId-$it")
+                    .withUserAttributes(Json("""{}""".trimIndent()))
+                    .build()
             }.toList()
 
             coEvery { userRepository.findAllByIdIn(userIds) } answers {

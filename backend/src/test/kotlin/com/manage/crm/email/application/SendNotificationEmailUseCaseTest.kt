@@ -14,8 +14,9 @@ import com.manage.crm.email.domain.vo.Variables
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.user.domain.User
+import com.manage.crm.user.domain.UserFixtures
 import com.manage.crm.user.domain.repository.UserRepository
-import com.manage.crm.user.domain.vo.Json
+import com.manage.crm.user.domain.vo.JsonFixtures
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -45,24 +46,19 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
         )
     }
 
-    fun userSubs(size: Int): List<User> =
-        (1..size).map {
-            User.new(
-                id = it.toLong(),
-                externalId = it.toString(),
-                userAttributes = Json(
-                    """
+    fun userSubs(size: Int): List<User> = (1..size).map {
+        UserFixtures.giveMeOne().withUserAttributes(
+            JsonFixtures.giveMeOne().withValue(
+                """
                     {
                         "email": "example$it@example.com",
                         "name": "name$it",
                         "detail": "{\"age\" : $it}"
                     }
-                    """.trimIndent()
-                ),
-                createdAt = LocalDateTime.now(),
-                updatedAt = LocalDateTime.now()
-            )
-        }
+                """.trimIndent()
+            ).build()
+        ).build()
+    }
 
     given("SendNotificationEmailUseCase") {
         `when`("send notification with latest template with users") {

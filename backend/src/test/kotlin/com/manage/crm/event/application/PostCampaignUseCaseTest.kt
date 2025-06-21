@@ -3,10 +3,11 @@ package com.manage.crm.event.application
 import com.manage.crm.event.application.dto.PostCampaignPropertyDto
 import com.manage.crm.event.application.dto.PostCampaignUseCaseIn
 import com.manage.crm.event.domain.Campaign
+import com.manage.crm.event.domain.CampaignFixtures
+import com.manage.crm.event.domain.PropertiesFixtures
+import com.manage.crm.event.domain.PropertyFixtures
 import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignRepository
-import com.manage.crm.event.domain.vo.Properties
-import com.manage.crm.event.domain.vo.Property
 import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
 import io.kotest.assertions.throwables.shouldThrow
@@ -50,23 +51,24 @@ class PostCampaignUseCaseTest : BehaviorSpec({
 
             coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
 
-            val savedCampaign = Campaign(
-                name = useCaseIn.name,
-                properties = Properties(
-                    useCaseIn.properties.map {
-                        Property(
-                            key = it.key,
-                            value = it.value
-                        )
-                    }
-                )
-            )
             val savedCampaignId = 1L
-            coEvery { campaignRepository.save(any()) } answers {
-                savedCampaign.apply {
-                    id = savedCampaignId
-                }
-            }
+            val savedCampaign = CampaignFixtures.giveMeOne()
+                .withId(savedCampaignId)
+                .withName(useCaseIn.name)
+                .withProperties(
+                    PropertiesFixtures.giveMeOne()
+                        .withValue(
+                            useCaseIn.properties.map {
+                                PropertyFixtures.giveMeOne()
+                                    .withKey(it.key)
+                                    .withValue(it.value)
+                                    .build()
+                            }
+                        )
+                        .build()
+                )
+                .build()
+            coEvery { campaignRepository.save(any()) } answers { savedCampaign }
 
             coEvery { campaignCacheManager.save(any()) } answers { savedCampaign }
 

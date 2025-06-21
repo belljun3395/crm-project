@@ -2,7 +2,7 @@ package com.manage.crm.email.event.schedule.handler
 
 import com.manage.crm.email.MailEventInvokeSituationTest
 import com.manage.crm.email.application.service.ScheduleTaskServicePostEventProcessor
-import com.manage.crm.email.domain.vo.EventId
+import com.manage.crm.email.domain.vo.EventIdFixtures
 import com.manage.crm.email.event.schedule.CancelScheduledEvent
 import com.manage.crm.infrastructure.scheduler.ScheduleName
 import kotlinx.coroutines.test.runTest
@@ -20,10 +20,10 @@ class ScheduledEventListenerTest(
     fun `schedule task service cancel method is called`(scenario: Scenario) {
         runTest {
             // given
-            val scheduleName = ScheduleName(EventId().value)
+            val scheduleName = ScheduleName(EventIdFixtures.giveMeOne().build().value)
             doNothing().`when`(awsSchedulerService).deleteSchedule(scheduleName)
 
-            val event = CancelScheduledEvent(EventId(scheduleName.value))
+            val event = CancelScheduledEvent(EventIdFixtures.giveMeOne().withValue(scheduleName.value).build())
             doNothing().`when`(emailEventPublisher).publishEvent(event)
 
             // when
