@@ -8,21 +8,21 @@ import java.time.LocalDateTime
 import kotlin.random.Random
 
 class EmailTemplateFixtures private constructor() {
-    private var id: Long? = null
+    private var id: Long = -1L
     private lateinit var templateName: String
     private lateinit var subject: String
     private lateinit var body: String
     private lateinit var variables: Variables
     private lateinit var version: EmailTemplateVersion
-    private var createdAt: LocalDateTime? = null
+    private lateinit var createdAt: LocalDateTime
 
-    fun withId(id: Long?) = apply { this.id = id }
+    fun withId(id: Long) = apply { this.id = id }
     fun withTemplateName(templateName: String) = apply { this.templateName = templateName }
     fun withSubject(subject: String) = apply { this.subject = subject }
     fun withBody(body: String) = apply { this.body = body }
     fun withVariables(variables: Variables) = apply { this.variables = variables }
     fun withVersion(version: EmailTemplateVersion) = apply { this.version = version }
-    fun withCreatedAt(createdAt: LocalDateTime?) = apply { this.createdAt = createdAt }
+    fun withCreatedAt(createdAt: LocalDateTime) = apply { this.createdAt = createdAt }
 
     fun build(): EmailTemplate = EmailTemplate(
         id = id,

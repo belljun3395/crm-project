@@ -5,14 +5,14 @@ import kotlin.random.Random
 
 class CampaignEventsFixtures private constructor() {
     private var id: Long? = null
-    private var campaignId: Long = 0
-    private var eventId: Long = 0
-    private var createdAt: LocalDateTime? = null
+    private var campaignId: Long = -1L
+    private var eventId: Long = -1L
+    private lateinit var createdAt: LocalDateTime
 
     fun withId(id: Long?) = apply { this.id = id }
     fun withCampaignId(campaignId: Long) = apply { this.campaignId = campaignId }
     fun withEventId(eventId: Long) = apply { this.eventId = eventId }
-    fun withCreatedAt(createdAt: LocalDateTime?) = apply { this.createdAt = createdAt }
+    fun withCreatedAt(createdAt: LocalDateTime) = apply { this.createdAt = createdAt }
 
     fun build() = CampaignEvents(
         id = id,

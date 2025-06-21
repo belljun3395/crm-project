@@ -8,7 +8,7 @@ import java.util.*
 import kotlin.random.Random
 
 class ScheduledEventFixtures private constructor() {
-    private var id: Long? = null
+    private var id: Long = -1L
     private lateinit var eventId: EventId
     private lateinit var eventClass: String
     private lateinit var eventPayload: String
@@ -16,9 +16,9 @@ class ScheduledEventFixtures private constructor() {
     private var isNotConsumed: Boolean = false
     private var canceled: Boolean = false
     private lateinit var scheduledAt: String
-    private var createdAt: LocalDateTime? = null
+    private lateinit var createdAt: LocalDateTime
 
-    fun withId(id: Long?) = apply { this.id = id }
+    fun withId(id: Long) = apply { this.id = id }
     fun withEventId(eventId: EventId) = apply { this.eventId = eventId }
     fun withEventClass(eventClass: String) = apply { this.eventClass = eventClass }
     fun withEventPayload(eventPayload: String) = apply { this.eventPayload = eventPayload }
@@ -26,7 +26,7 @@ class ScheduledEventFixtures private constructor() {
     fun withIsNotConsumed(isNotConsumed: Boolean) = apply { this.isNotConsumed = isNotConsumed }
     fun withCanceled(canceled: Boolean) = apply { this.canceled = canceled }
     fun withScheduledAt(scheduledAt: String) = apply { this.scheduledAt = scheduledAt }
-    fun withCreatedAt(createdAt: LocalDateTime?) = apply { this.createdAt = createdAt }
+    fun withCreatedAt(createdAt: LocalDateTime) = apply { this.createdAt = createdAt }
 
     fun build(): ScheduledEvent = ScheduledEvent(
         id = id,
