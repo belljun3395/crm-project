@@ -14,7 +14,7 @@ class JsonFixtures private constructor() {
         fun aJson(): JsonFixtures = JsonFixtures()
 
         fun giveMeOne(): JsonFixtures {
-            val externalId = Random.nextLong(100) + 1
+            val externalId = Random.nextLong(1, 101)
             val value =
                 """
                 {

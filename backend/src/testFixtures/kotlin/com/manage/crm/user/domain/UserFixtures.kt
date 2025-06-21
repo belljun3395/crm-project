@@ -32,8 +32,8 @@ class UserFixtures private constructor() {
             .withUpdatedAt(LocalDateTime.now())
 
         fun giveMeOne(): UserFixtures {
-            val id = Random.nextLong(100) + 1
-            val externalId = Random.nextLong(100) + 1
+            val id = Random.nextLong(1, 101)
+            val externalId = Random.nextLong(1, 101)
             val attributes = JsonFixtures.giveMeOne().withValue(
                 """
                 {

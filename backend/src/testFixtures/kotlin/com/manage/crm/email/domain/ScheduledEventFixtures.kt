@@ -5,6 +5,7 @@ import com.manage.crm.email.domain.vo.EventIdFixtures
 import com.manage.crm.email.domain.vo.ScheduleType
 import java.time.LocalDateTime
 import java.util.*
+import kotlin.random.Random
 
 class ScheduledEventFixtures private constructor() {
     private var id: Long? = null
@@ -46,7 +47,7 @@ class ScheduledEventFixtures private constructor() {
 
         fun giveMeOne(): ScheduledEventFixtures {
             val randomSuffix = UUID.randomUUID().toString().substring(0, 8)
-            val id = kotlin.random.Random.nextLong(100) + 1
+            val id = Random.nextLong(1, 101)
             val eventId = EventIdFixtures.giveMeOne().build()
             val eventClass = "com.example.Event$randomSuffix"
             val eventPayload = """{"data":"$randomSuffix"}"""

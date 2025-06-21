@@ -27,8 +27,8 @@ class CampaignFixtures private constructor() {
             .withCreatedAt(LocalDateTime.now())
 
         fun giveMeOne(): CampaignFixtures {
-            val id = Random.nextLong(100) + 1
-            val name = "campaign_name" + Random.nextInt(100)
+            val id = Random.nextLong(1, 101)
+            val name = "campaign_name" + Random.nextLong(1, 101)
             val properties = PropertiesFixtures.giveMeOne().build()
             return aCampaign()
                 .withId(id)

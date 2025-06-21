@@ -41,7 +41,7 @@ class EmailTemplateFixtures private constructor() {
 
         fun giveMeOne(): EmailTemplateFixtures {
             val randomSuffix = Random.nextInt(1000)
-            val id = Random.nextLong(100) + 1
+            val id = Random.nextLong(1, 101)
             val templateName = "template-$randomSuffix"
             val subject = "Subject $randomSuffix"
             val body = "Body for template $randomSuffix"

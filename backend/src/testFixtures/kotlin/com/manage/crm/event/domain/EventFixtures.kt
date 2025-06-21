@@ -30,9 +30,9 @@ class EventFixtures private constructor() {
             .withCreatedAt(LocalDateTime.now())
 
         fun giveMeOne(): EventFixtures {
-            val id = Random.nextLong(100) + 1
-            val name = "event_name" + Random.nextInt(100) + 1
-            val userId = Random.nextLong(100) + 1
+            val id = Random.nextLong(1, 101)
+            val name = "event_name" + Random.nextLong(1, 101)
+            val userId = Random.nextLong(1, 101)
             val properties = PropertiesFixtures.giveMeOne().build()
             return anEvent()
                 .withId(id)
