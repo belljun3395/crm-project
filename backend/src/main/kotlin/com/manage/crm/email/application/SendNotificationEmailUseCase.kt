@@ -1,18 +1,18 @@
 package com.manage.crm.email.application
 
 import arrow.fx.coroutines.parMap
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.email.application.dto.Content
-import com.manage.crm.email.application.dto.NonContent
 import com.manage.crm.email.application.dto.SendEmailInDto
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseIn
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseOut
-import com.manage.crm.email.application.dto.VariablesContent
+import com.manage.crm.email.application.service.EmailContentService
 import com.manage.crm.email.application.service.MailService
 import com.manage.crm.email.domain.model.NotificationEmailTemplatePropertiesModel
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
-import com.manage.crm.email.domain.support.VariablesSupport
+import com.manage.crm.email.domain.vo.Email
 import com.manage.crm.email.domain.vo.NotificationType
 import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.support.exception.NotFoundByException
@@ -30,6 +30,7 @@ class SendNotificationEmailUseCase(
     private val emailTemplateHistoryRepository: EmailTemplateHistoryRepository,
     @Qualifier("mailServicePostEventProcessor")
     private val mailService: MailService,
+    private val emailContentService: EmailContentService,
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper
 ) {
@@ -38,17 +39,16 @@ class SendNotificationEmailUseCase(
         val templateVersion: Float? = useCaseIn.templateVersion
         val userIds = useCaseIn.userIds
 
-        val notificationType = NotificationType.EMAIL.name.lowercase()
+        val notificationEmailType = NotificationType.EMAIL.name.lowercase()
         val notificationProperties = getEmailNotificationProperties(templateVersion, templateId)
 
-        val targetUsers =
-            getTargetUsers(userIds, notificationType).associateBy {
-                // TODO: refactor String to Email
-                objectMapper.readValue(
-                    it.userAttributes.value,
-                    Map::class.java
-                )[notificationType] as String
+        val targetUsers = getTargetUsers(userIds, notificationEmailType)
+            .mapNotNull { user ->
+                val attributesMap = parseUserAttributes(user) ?: return@mapNotNull null
+                val emailValue = attributesMap[notificationEmailType] as? String ?: return@mapNotNull null
+                Email(emailValue) to user
             }
+            .toMap()
 
         generateNotificationDto(targetUsers, notificationProperties)
             .parMap(Dispatchers.IO, concurrency = 10) {
@@ -114,38 +114,33 @@ class SendNotificationEmailUseCase(
         }
     }
 
-    private fun generateNotificationDto(targetUsers: Map<String, User>, notificationProperties: NotificationEmailTemplatePropertiesModel): List<SendEmailInDto> {
-        return targetUsers.keys
-            .mapNotNull { email ->
-                doGenerateContent(targetUsers, notificationProperties, email)
-                    ?.let { doMapToNotificationDto(email, notificationProperties, it) }
-            }
-            .toList()
-    }
-
-    private fun doGenerateContent(targetUsers: Map<String, User>, notificationProperties: NotificationEmailTemplatePropertiesModel, email: String): Content? {
-        return if (notificationProperties.isNoVariables()) {
-            NonContent()
-        } else {
-            val user = targetUsers[email]
-            val attributes = user?.userAttributes ?: return null
-            val variables = notificationProperties.variables
-            variables.getVariables(false)
-                .associate { key ->
-                    VariablesSupport.doAssociate(objectMapper, key, attributes, variables)
-                }.let {
-                    VariablesContent(it)
-                }
+    private fun parseUserAttributes(user: User): Map<String, Any>? {
+        return try {
+            val typeRef = object : TypeReference<Map<String, Any>>() {}
+            objectMapper.readValue(user.userAttributes.value, typeRef)
+        } catch (e: Exception) {
+            null
         }
     }
 
-    private fun doMapToNotificationDto(email: String, notificationProperties: NotificationEmailTemplatePropertiesModel, content: Content) = SendEmailInDto(
-        to = email,
+    private fun generateNotificationDto(targetUsers: Map<Email, User>, notificationProperties: NotificationEmailTemplatePropertiesModel): List<SendEmailInDto> {
+        val emailContentPairList = mutableListOf<Pair<Email, Content>>()
+        targetUsers.forEach { (email, user) ->
+            val content = emailContentService.genUserEmailContent(user, notificationProperties)
+            emailContentPairList.add(email to content)
+        }
+        return emailContentPairList.map { (email, content) ->
+            doMapToNotificationDto(email, content, notificationProperties)
+        }
+    }
+
+    private fun doMapToNotificationDto(email: Email, content: Content, notificationProperties: NotificationEmailTemplatePropertiesModel) = SendEmailInDto(
+        to = email.value,
         subject = notificationProperties.subject,
         template = notificationProperties.body,
         content = content,
         emailBody = notificationProperties.body,
-        destination = email,
+        destination = email.value,
         eventType = SentEmailStatus.SEND
     )
 }
