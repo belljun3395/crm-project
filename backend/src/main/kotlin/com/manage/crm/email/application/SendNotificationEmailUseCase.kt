@@ -20,6 +20,7 @@ import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
@@ -34,6 +35,8 @@ class SendNotificationEmailUseCase(
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper
 ) {
+    val log = KotlinLogging.logger {  }
+
     suspend fun execute(useCaseIn: SendNotificationEmailUseCaseIn): SendNotificationEmailUseCaseOut {
         val templateId = useCaseIn.templateId
         val templateVersion: Float? = useCaseIn.templateVersion
@@ -119,6 +122,7 @@ class SendNotificationEmailUseCase(
             val typeRef = object : TypeReference<Map<String, Any>>() {}
             objectMapper.readValue(user.userAttributes.value, typeRef)
         } catch (e: Exception) {
+            log.error(e) { "Failed to parse user attributes for userId: ${user.id}" }
             null
         }
     }
