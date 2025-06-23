@@ -2,12 +2,12 @@ package com.manage.crm.user.application.service
 
 interface UserService {
     /**
-     * Get the total user count
+     * 총 사용자 수를 반환합니다.
      */
     suspend fun getTotalUserCount(): Long
 
     /**
-     * Increment the total user count and return the new value
+     * 총 사용자 수를 증가시키고, 업데이트된 총 사용자 수를 반환합니다.
      */
     suspend fun incrementTotalUserCount(): Long
 }

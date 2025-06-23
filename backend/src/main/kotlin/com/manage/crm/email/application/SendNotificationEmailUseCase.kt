@@ -24,10 +24,6 @@ import kotlinx.coroutines.Dispatchers
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 
-/**
- * - `targetUsers`: 요청 받은 이메일 발송 대상 사용자 목록
- *     - 이메일 주소를 키로 사용하여 사용자를 그룹화
- */
 @Service
 class SendNotificationEmailUseCase(
     private val emailTemplateRepository: EmailTemplateRepository,
@@ -47,6 +43,7 @@ class SendNotificationEmailUseCase(
 
         val targetUsers =
             getTargetUsers(userIds, notificationType).associateBy {
+                // TODO: refactor String to Email
                 objectMapper.readValue(
                     it.userAttributes.value,
                     Map::class.java

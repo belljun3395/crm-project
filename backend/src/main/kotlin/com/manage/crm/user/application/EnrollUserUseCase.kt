@@ -13,12 +13,6 @@ import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
-/**
- * - `userAttributes`
- *     - `User`  엔티티의 속성을 JSON 형태로 받는다.
- *     - `email` 속성이 반드시 포함되어야 한다.
- * - `updateOrSaveUser`: `id`가 있으면 `User` 엔티티를 업데이트하고, 없으면 새로운 `User` 엔티티를 저장한다.
- */
 @Service
 class EnrollUserUseCase(
     private val userRepository: UserRepository,

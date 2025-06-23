@@ -11,9 +11,6 @@ import com.manage.crm.support.out
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
 
-/**
- *  - `templateWithHistories`: `withHistory`에 따라 `Template`과 `History`를 조회 후 조합한 결과
- */
 @Service
 class BrowseTemplateUseCase(
     private val emailTemplateRepository: EmailTemplateRepository,

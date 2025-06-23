@@ -21,10 +21,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.supervisorScope
 import org.springframework.stereotype.Service
 
-data class CampaignNotFoundException(
-    override val message: String
-) : IllegalArgumentException(message)
-
 enum class SaveEventMessage(val message: String) {
     EVENT_SAVE_SUCCESS("Event saved successfully"),
     EVENT_SAVE_WITH_CAMPAIGN("Event saved with campaign"),
@@ -39,11 +35,6 @@ data class SavedEvent(
     constructor(id: Long, message: SaveEventMessage) : this(id, message.message)
 }
 
-/**
- *  - `savedEvent`: 저장된 이벤트에 대한 정보
- *      - `id`: 저장된 이벤트의 ID
- *      - `message`: 이벤트 저장 결과 메시지
- */
 @Service
 class PostEventUseCase(
     private val eventRepository: EventRepository,

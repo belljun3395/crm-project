@@ -10,9 +10,6 @@ class CacheUserServiceImpl(
     private val userCacheManager: UserCacheManager,
     private val userEventPublisher: UserEventPublisher
 ) : UserService {
-    companion object {
-    }
-
     override suspend fun getTotalUserCount(): Long {
         val totalUserCount = userCacheManager.totalUserCount()
         val totalUserCountUpdatedAt = userCacheManager.totalUserCountUpdatedAt()

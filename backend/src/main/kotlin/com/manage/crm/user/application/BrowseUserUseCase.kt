@@ -7,9 +7,6 @@ import com.manage.crm.user.domain.repository.UserRepository
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
 
-/**
- * - `users`: 모든 `User` 엔티티를 조회한다.
- */
 @Service
 class BrowseUserUseCase(
     private val userRepository: UserRepository

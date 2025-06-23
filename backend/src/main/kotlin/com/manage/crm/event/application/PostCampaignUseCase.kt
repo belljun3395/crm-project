@@ -16,9 +16,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 // TODO: check concurrency issues: existsCampaignsByName and save
-/**
- *  - `savedCampaign`: 새로 저장한 캠페인
- */
 @Service
 class PostCampaignUseCase(
     private val campaignRepository: CampaignRepository,
