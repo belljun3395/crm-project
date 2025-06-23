@@ -35,7 +35,7 @@ class SendNotificationEmailUseCase(
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper
 ) {
-    val log = KotlinLogging.logger {  }
+    val log = KotlinLogging.logger { }
 
     suspend fun execute(useCaseIn: SendNotificationEmailUseCaseIn): SendNotificationEmailUseCaseOut {
         val templateId = useCaseIn.templateId
@@ -46,11 +46,7 @@ class SendNotificationEmailUseCase(
         val notificationProperties = getEmailNotificationProperties(templateVersion, templateId)
 
         val targetUsers = getTargetUsers(userIds, notificationEmailType)
-            .mapNotNull { user ->
-                val attributesMap = parseUserAttributes(user) ?: return@mapNotNull null
-                val emailValue = attributesMap[notificationEmailType] as? String ?: return@mapNotNull null
-                Email(emailValue) to user
-            }
+            .mapNotNull { user -> extractEmailAndUser(user, notificationEmailType) }
             .toMap()
 
         generateNotificationDto(targetUsers, notificationProperties)
@@ -115,6 +111,12 @@ class SendNotificationEmailUseCase(
                     }
             }
         }
+    }
+
+    private fun extractEmailAndUser(user: User, notificationEmailType: String): Pair<Email, User>? {
+        val attributesMap = parseUserAttributes(user) ?: return null
+        val emailValue = attributesMap[notificationEmailType] as? String ?: return null
+        return Email(emailValue) to user
     }
 
     private fun parseUserAttributes(user: User): Map<String, Any>? {
