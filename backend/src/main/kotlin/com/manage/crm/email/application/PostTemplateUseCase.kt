@@ -14,9 +14,6 @@ import com.manage.crm.support.out
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
-/**
- *  - `modifiedOrNewTemplate`:  요청에 따라 수정한 템플릿이거나 새롭게 생성한 템플릿
- */
 @Service
 class PostTemplateUseCase(
     private val emailTemplateRepository: EmailTemplateRepository,

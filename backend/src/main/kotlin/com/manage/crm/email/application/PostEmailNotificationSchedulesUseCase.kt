@@ -9,9 +9,6 @@ import com.manage.crm.support.out
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 
-/**
- * - `newSchedule`: 새로 등록한 스케쥴 정보
- */
 @Service
 class PostEmailNotificationSchedulesUseCase(
     @Qualifier("scheduleTaskServicePostEventProcessor")
