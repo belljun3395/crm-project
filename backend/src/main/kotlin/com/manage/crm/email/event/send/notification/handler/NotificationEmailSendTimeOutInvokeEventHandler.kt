@@ -1,9 +1,8 @@
 package com.manage.crm.email.event.send.notification.handler
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.manage.crm.email.application.dto.NonContent
 import com.manage.crm.email.application.dto.SendEmailInDto
-import com.manage.crm.email.application.dto.VariablesContent
+import com.manage.crm.email.application.service.EmailContentService
 import com.manage.crm.email.application.service.MailService
 import com.manage.crm.email.domain.EmailSendHistory
 import com.manage.crm.email.domain.model.NotificationEmailTemplatePropertiesModel
@@ -11,7 +10,6 @@ import com.manage.crm.email.domain.repository.EmailSendHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.repository.ScheduledEventRepository
-import com.manage.crm.email.domain.support.VariablesSupport
 import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
 import com.manage.crm.user.domain.repository.UserRepository
@@ -29,6 +27,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
     private val userRepository: UserRepository,
     @Qualifier("mailServiceImpl")
     private val mailService: MailService,
+    private val emailContentService: EmailContentService,
     private val objectMapper: ObjectMapper
 ) {
     /**
@@ -82,19 +81,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
         users.collect { user ->
             val email =
                 user.userAttributes.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)
-            val content = if (template.isNoVariables()) {
-                NonContent()
-            } else {
-                val attributes = user.userAttributes
-                val variables = template.variables
-                variables.getVariables(false)
-                    .associate { key ->
-                        VariablesSupport.doAssociate(objectMapper, key, attributes, variables)
-                    }.let {
-                        VariablesContent(it)
-                    }
-            }
-
+            val content = emailContentService.genUserEmailContent(user, template)
             val emailMessageId =
                 mailService.send(
                     SendEmailInDto(
