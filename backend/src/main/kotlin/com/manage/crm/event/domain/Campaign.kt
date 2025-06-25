@@ -66,7 +66,7 @@ class Campaign(
      * Check if the campaign has exactly the same property keys as the given list of keys.
      */
     fun allMatchPropertyKeys(keys: List<String>): Boolean {
-        val campaignPropertyKeys = properties?.getKeys() ?: return false
+        val campaignPropertyKeys = properties.getKeys()
         return campaignPropertyKeys.size == keys.size && campaignPropertyKeys.containsAll(keys)
     }
 }
