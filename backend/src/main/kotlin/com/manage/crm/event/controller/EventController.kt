@@ -67,14 +67,14 @@ class EventController(
         Parameter(
             name = "where",
             description = """
-                검색 조건을 설정합니다.
-                형식: key&value(&key&value)&operation&joinOperation,...
-                - key(필수): 검색할 이벤트의 속성 키
-                - value(필수): 검색할 이벤트의 속성 값
-                - operation(필수): =, !=, >, >=, <, <=, like, between
-                    - between: 동일한 key로 두 개의 value를 입력
-                - joinOperation(필수): and, or, end(마지막)
-                ex) key1&value1&operation&joinOperation,key2&value2&operation&joinOperation...
+검색 조건을 설정합니다.
+형식: key&value(&key&value)&operation&joinOperation,...
+- key(필수): 검색할 이벤트의 속성 키
+- value(필수): 검색할 이벤트의 속성 값
+- operation(필수): =, !=, >, >=, <, <=, like, between
+    - between: 동일한 key로 두 개의 value를 입력
+- joinOperation(필수): and, or, end(마지막)
+ex) key1&value1&operation&joinOperation,key2&value2&operation&joinOperation...
             """
         )
     )
