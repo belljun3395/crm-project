@@ -9,7 +9,7 @@ import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseIn
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseOut
 import com.manage.crm.email.application.service.EmailContentService
 import com.manage.crm.email.application.service.MailService
-import com.manage.crm.email.domain.model.NotificationEmailTemplatePropertiesModel
+import com.manage.crm.email.domain.model.NotificationEmailTemplateVariablesModel
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.vo.Email
@@ -43,13 +43,13 @@ class SendNotificationEmailUseCase(
         val userIds = useCaseIn.userIds
 
         val notificationEmailType = NotificationType.EMAIL.name.lowercase()
-        val notificationProperties = getEmailNotificationProperties(templateVersion, templateId)
+        val notificationVariables = getEmailNotificationVariables(templateVersion, templateId)
 
         val targetUsers = getTargetUsers(userIds, notificationEmailType)
             .mapNotNull { user -> extractEmailAndUser(user, notificationEmailType) }
             .toMap()
 
-        generateNotificationDto(targetUsers, notificationProperties)
+        generateNotificationDto(targetUsers, notificationVariables)
             .parMap(Dispatchers.IO, concurrency = 10) {
                 mailService.send(it)
             }
@@ -61,16 +61,16 @@ class SendNotificationEmailUseCase(
         }
     }
 
-    private suspend fun getEmailNotificationProperties(
+    private suspend fun getEmailNotificationVariables(
         templateVersion: Float?,
         templateId: Long
-    ): NotificationEmailTemplatePropertiesModel {
+    ): NotificationEmailTemplateVariablesModel {
         return when {
             templateVersion != null -> {
                 emailTemplateHistoryRepository
                     .findByTemplateIdAndVersion(templateId, templateVersion)
                     ?.let {
-                        NotificationEmailTemplatePropertiesModel(
+                        NotificationEmailTemplateVariablesModel(
                             subject = it.subject,
                             body = it.body,
                             variables = it.variables
@@ -82,7 +82,7 @@ class SendNotificationEmailUseCase(
                 emailTemplateRepository
                     .findById(templateId)
                     ?.let {
-                        NotificationEmailTemplatePropertiesModel(
+                        NotificationEmailTemplateVariablesModel(
                             subject = it.subject,
                             body = it.body,
                             variables = it.variables
@@ -129,18 +129,18 @@ class SendNotificationEmailUseCase(
         }
     }
 
-    private fun generateNotificationDto(targetUsers: Map<Email, User>, notificationProperties: NotificationEmailTemplatePropertiesModel): List<SendEmailInDto> {
+    private fun generateNotificationDto(targetUsers: Map<Email, User>, notificationVariables: NotificationEmailTemplateVariablesModel): List<SendEmailInDto> {
         val emailContentPairList = mutableListOf<Pair<Email, Content>>()
         targetUsers.forEach { (email, user) ->
-            val content = emailContentService.genUserEmailContent(user, notificationProperties)
+            val content = emailContentService.genUserEmailContent(user, notificationVariables)
             emailContentPairList.add(email to content)
         }
         return emailContentPairList.map { (email, content) ->
-            doMapToNotificationDto(email, content, notificationProperties)
+            doMapToNotificationDto(email, content, notificationVariables)
         }
     }
 
-    private fun doMapToNotificationDto(email: Email, content: Content, notificationProperties: NotificationEmailTemplatePropertiesModel) = SendEmailInDto(
+    private fun doMapToNotificationDto(email: Email, content: Content, notificationProperties: NotificationEmailTemplateVariablesModel) = SendEmailInDto(
         to = email.value,
         subject = notificationProperties.subject,
         template = notificationProperties.body,

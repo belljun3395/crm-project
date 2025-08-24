@@ -2,7 +2,7 @@ package com.manage.crm.email.domain.model
 
 import com.manage.crm.email.domain.vo.Variables
 
-data class NotificationEmailTemplatePropertiesModel(
+data class NotificationEmailTemplateVariablesModel(
     val subject: String,
     val body: String,
     val variables: Variables

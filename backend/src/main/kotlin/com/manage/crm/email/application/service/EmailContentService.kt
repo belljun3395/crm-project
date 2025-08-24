@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.email.application.dto.Content
 import com.manage.crm.email.application.dto.NonContent
 import com.manage.crm.email.application.dto.VariablesContent
-import com.manage.crm.email.domain.model.NotificationEmailTemplatePropertiesModel
+import com.manage.crm.email.domain.model.NotificationEmailTemplateVariablesModel
 import com.manage.crm.email.domain.support.VariablesSupport
 import com.manage.crm.user.domain.User
 import org.springframework.stereotype.Service
@@ -18,12 +18,12 @@ class EmailContentService(
      *      - 만약 프로퍼티에 변수가 없다면 NonContent를 반환합니다.
      *      - 변수가 있다면 사용자 속성에서 해당 변수를 추출하여 VariablesContent를 반환합니다.
      */
-    fun genUserEmailContent(user: User, notificationProperties: NotificationEmailTemplatePropertiesModel): Content {
-        return if (notificationProperties.isNoVariables()) {
+    fun genUserEmailContent(user: User, notificationVariables: NotificationEmailTemplateVariablesModel): Content {
+        return if (notificationVariables.isNoVariables()) {
             NonContent()
         } else {
             val attributes = user.userAttributes
-            val variables = notificationProperties.variables
+            val variables = notificationVariables.variables
             variables.getVariables(false)
                 .associate { key ->
                     VariablesSupport.doAssociate(objectMapper, key, attributes, variables)

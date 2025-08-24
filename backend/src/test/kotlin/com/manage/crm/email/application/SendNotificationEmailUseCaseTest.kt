@@ -10,7 +10,7 @@ import com.manage.crm.email.application.service.EmailContentService
 import com.manage.crm.email.application.service.MailService
 import com.manage.crm.email.domain.EmailTemplate
 import com.manage.crm.email.domain.EmailTemplateHistory
-import com.manage.crm.email.domain.model.NotificationEmailTemplatePropertiesModel
+import com.manage.crm.email.domain.model.NotificationEmailTemplateVariablesModel
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.support.VariablesSupport
@@ -304,9 +304,9 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             val objectMapper = ObjectMapper()
             coEvery { emailContentService.genUserEmailContent(any(), any()) } answers { it ->
                 val user = it.invocation.args[0] as User
-                val notificationProperties = it.invocation.args[1] as NotificationEmailTemplatePropertiesModel
+                val notificationVariables = it.invocation.args[1] as NotificationEmailTemplateVariablesModel
                 val attributes = user.userAttributes
-                val variables = notificationProperties.variables
+                val variables = notificationVariables.variables
                 variables.getVariables(false)
                     .associate { key ->
                         VariablesSupport.doAssociate(objectMapper, key, attributes, variables)
