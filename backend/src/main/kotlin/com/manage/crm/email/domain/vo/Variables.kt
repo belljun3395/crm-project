@@ -2,30 +2,24 @@ package com.manage.crm.email.domain.vo
 
 /**
  * Variables의 value는 다음과 같은 형태로 저장된다.
- * - "title:hello", "name"
+ * - "type_title:hello", "name"
  *
- * "title:hello"는 key와 default value로 구성되어 있다.
+ * "type_title:hello"는 key, default value로 구성되어 있다.
  *
- * containDefault에서는 key와 default value를 구분하기 위한 delimiter를 사용하여 default value가 있는지 확인한다.
+ * Variables에서 key는 attribute, custom attribute로 구분하기 위해 type을 포함한다.
+ *
+ * containDefault에서는 key, default value를 구분하기 위한 delimiter를 사용하여 default value가 있는지 확인한다.
  */
-private fun String.containDefault(delimiter: String): Boolean {
+private fun String.containDefault(delimiter: String = DELIMITER): Boolean {
     return this.contains(delimiter)
 }
 
-private fun String.extractKey(delimiter: String): String {
+private fun String.extractKey(delimiter: String = DELIMITER): String {
     return this.substringBefore(delimiter)
 }
 
-fun String.getKeyType(): String {
+fun String.getType(): String {
     return this.split(TYPE_DELIMITER)[0] + TYPE_DELIMITER
-}
-
-fun String.getAttributeKey(): String {
-    return this.substringAfter(ATTRIBUTE_TYPE)
-}
-
-fun String.getCustomAttributeKey(): List<String> {
-    return this.substringAfter(CUSTOM_ATTRIBUTE_TYPE).split(TYPE_DELIMITER)
 }
 
 private const val DELIMITER = ":"

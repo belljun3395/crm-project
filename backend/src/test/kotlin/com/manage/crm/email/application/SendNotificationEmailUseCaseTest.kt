@@ -287,12 +287,12 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                             <body>
                                 <a th:text="\$\{attribute_email}"></a>
                                 <a th:text="\$\{attribute_name}"></a>
-                                <a th:text="\$\{custom_detail_age}"></a>
+                                <a th:text="\$\{custom_detailAge}"></a>
                             </body>
                         </html>
                     """.trimIndent(),
                     variables = Variables(
-                        listOf("attribute_email", "attribute_name", "custom_detail_age")
+                        listOf("attribute_email", "attribute_name", "custom_detailAge")
                     ),
                     version = 1.0f,
                     createdAt = LocalDateTime.now()
