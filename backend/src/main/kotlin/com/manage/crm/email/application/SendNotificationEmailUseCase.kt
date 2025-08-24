@@ -49,14 +49,18 @@ class SendNotificationEmailUseCase(
         val templateVersion: Float? = useCaseIn.templateVersion
         val userIds = useCaseIn.userIds
 
-        val campaign = campaignId?.let {
-            campaignRepository.findById(it)
+        val campaign = campaignId?.let { cId ->
+            campaignRepository.findById(cId) ?: run {
+                log.warn { "Campaign not found for campaignId: $cId" }
+                throw NotFoundByIdException("Campaign", cId)
+            }
         }
 
         val notificationEmailType = NotificationType.EMAIL.name.lowercase()
         val notificationVariables = getEmailNotificationVariables(templateVersion, templateId).apply {
-            campaign?.let {
-                if (it.allMatchPropertyKeys(this.variables.value)) {
+            campaign?.let { camp ->
+                if (camp.allMatchPropertyKeys(this.variables.value)) {
+                    log.error { "Campaign properties and Email template variables mismatch for campaignId: ${camp.id}, templateId: $templateId" }
                     throw IllegalStateException("Campaign properties and Email template variables mismatch")
                 }
             }
@@ -66,9 +70,25 @@ class SendNotificationEmailUseCase(
             .mapNotNull { user -> extractEmailAndUser(user, notificationEmailType) }
             .toMap()
 
+        if (targetUsers.isEmpty()) {
+            log.warn { "No target users found for email notification. CampaignId: $campaignId, templateId: $templateId, userIds: $userIds" }
+            return out {
+                SendNotificationEmailUseCaseOut(
+                    isSuccess = false
+                )
+            }
+        }
+
+        log.info { "Sending notification emails to ${targetUsers.size} users. CampaignId: $campaignId, templateId: $templateId" }
+        
         generateNotificationDto(targetUsers, notificationVariables, campaign?.id)
-            .parMap(Dispatchers.IO, concurrency = 10) {
-                mailService.send(it)
+            .parMap(Dispatchers.IO, concurrency = 10) { emailDto ->
+                try {
+                    mailService.send(emailDto)
+                } catch (e: Exception) {
+                    log.error(e) { "Failed to send email to ${emailDto.to}. CampaignId: $campaignId, templateId: $templateId" }
+                    throw e
+                }
             }
 
         return out {
@@ -156,7 +176,7 @@ class SendNotificationEmailUseCase(
             val typeRef = object : TypeReference<Map<String, Any>>() {}
             objectMapper.readValue(user.userAttributes.value, typeRef)
         } catch (e: Exception) {
-            log.error(e) { "Failed to parse user attributes for userId: ${user.id}" }
+            log.error(e) { "Failed to parse user attributes for userId: ${user.id}. UserAttributes: ${user.userAttributes.value}" }
             null
         }
     }
