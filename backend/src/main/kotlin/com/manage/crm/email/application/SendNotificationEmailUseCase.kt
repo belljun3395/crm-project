@@ -118,13 +118,11 @@ class SendNotificationEmailUseCase(
             }
 
             campaignId != null -> {
-                // TODO: 아래 코드 event 에서 구현하여 allUserIdsInCampaign 결과만 받도록 수정
                 val eventIds = campaignEventsRepository.findAllByCampaignId(campaignId).map { it.eventId }
-                val allUserIdsInCampaign = eventsRepository.findAllByIdIn(eventIds).map { it.userId }
-                userIds.filter { allUserIdsInCampaign.contains(it) }
-                    .toList()
-                    .let { it ->
-                        userRepository.findAllByIdIn(it)
+                val allUserIdsInCampaignSet = eventsRepository.findAllByIdIn(eventIds).map { it.userId }.toSet()
+                userIds.filter { allUserIdsInCampaignSet.contains(it) }
+                    .let { filteredUserIds ->
+                        userRepository.findAllByIdIn(filteredUserIds)
                             .filter {
                                 objectMapper.readValue(
                                     it.userAttributes.value,
