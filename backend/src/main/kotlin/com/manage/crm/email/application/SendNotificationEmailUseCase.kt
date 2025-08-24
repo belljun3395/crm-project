@@ -50,10 +50,7 @@ class SendNotificationEmailUseCase(
         val userIds = useCaseIn.userIds
 
         val campaign = campaignId?.let { cId ->
-            campaignRepository.findById(cId) ?: run {
-                log.warn { "Campaign not found for campaignId: $cId" }
-                throw NotFoundByIdException("Campaign", cId)
-            }
+            campaignRepository.findById(cId)
         }
 
         val notificationEmailType = NotificationType.EMAIL.name.lowercase()
