@@ -30,18 +30,17 @@ class EmailContentService(
         return if (notificationVariables.isNoVariables()) {
             NonContent()
         } else {
+            val attributeVariables = mutableMapOf<String, String>()
+
             val userAttributes = user.userAttributes
             val variables = notificationVariables.variables
-            var attributeVariables: Content = VariablesContent(emptyMap())
-            val userAttributeVariables = variables.getVariables(false)
+            val userAttributeMap = variables.getVariables(false)
                 .associate { key ->
                     VariablesSupport.doAssociate(objectMapper, key, userAttributes, variables)
-                }.let {
-                    VariablesContent(it)
                 }
-            attributeVariables = attributeVariables.merge(userAttributeVariables)
+            attributeVariables.putAll(userAttributeMap)
 
-            return campaignId?.let { cId ->
+            campaignId?.let { cId ->
                 val campaignEvents = campaignEventsRepository.findAllByCampaignId(cId)
                 if (campaignEvents.isNotEmpty()) {
                     val eventIds = campaignEvents.map { it.eventId }
@@ -55,16 +54,11 @@ class EmailContentService(
                                 eventVariables[key] = value
                             }
                         }
-                        VariablesContent(eventVariables)
-                    } else {
-                        null
+                        attributeVariables.putAll(eventVariables)
                     }
-                } else {
-                    null
                 }
             }
-                ?.let { attributeVariables.merge(it) }
-                ?: attributeVariables
+            VariablesContent(attributeVariables)
         }
     }
 }
