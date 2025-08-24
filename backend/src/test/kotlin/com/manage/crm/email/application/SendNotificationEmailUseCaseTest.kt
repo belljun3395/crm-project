@@ -247,9 +247,11 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
             val key = "email"
             coEvery { userRepository.findAllExistByUserAttributesKey(key) } answers {
-                userSubs(
-                    useCaseIn.userIds.size
-                )
+                userSubs(2) // Return some users for the test
+            }
+
+            coEvery { emailContentService.genUserEmailContent(any(), any(), any()) } answers {
+                NonContent()
             }
 
             coEvery { mailService.send(any(SendEmailInDto::class)) } answers {
@@ -284,8 +286,12 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { userRepository.findAllExistByUserAttributesKey(key) }
             }
 
-            then("not send notification email") {
-                coVerify(exactly = 0) { mailService.send(any(SendEmailInDto::class)) }
+            then("generate user email content") {
+                coVerify(exactly = 2) { emailContentService.genUserEmailContent(any(), any(), any()) }
+            }
+
+            then("send notification email") {
+                coVerify(exactly = 2) { mailService.send(any(SendEmailInDto::class)) }
             }
         }
 
@@ -326,7 +332,6 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             coEvery { emailContentService.genUserEmailContent(any(), any(), any()) } answers { it ->
                 val user = it.invocation.args[0] as User
                 val notificationVariables = it.invocation.args[1] as NotificationEmailTemplateVariablesModel
-                val campaignId = it.invocation.args[2] as Long?
                 val attributes = user.userAttributes
                 val variables = notificationVariables.variables
                 variables.getVariables(false)
