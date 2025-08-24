@@ -4,6 +4,7 @@ import com.manage.crm.email.domain.vo.EventId
 import java.time.LocalDateTime
 
 open class NotificationEmailSendTimeOutEvent(
+    val campaignId: Long?,
     val eventId: EventId,
     val templateId: Long,
     val templateVersion: Float? = 1.0f,
@@ -12,6 +13,7 @@ open class NotificationEmailSendTimeOutEvent(
 ) {
     companion object {
         fun new(
+            campaignId: Long?,
             templateId: Long,
             userIds: List<Long>,
             expiredTime: LocalDateTime
@@ -21,6 +23,7 @@ open class NotificationEmailSendTimeOutEvent(
             }
 
             return NotificationEmailSendTimeOutEvent(
+                campaignId = campaignId,
                 eventId = EventId(),
                 templateId = templateId,
                 userIds = userIds,
@@ -36,6 +39,7 @@ open class NotificationEmailSendTimeOutEvent(
 
 // ----------------- TimeOutInvokeEvent -----------------
 open class NotificationEmailSendTimeOutInvokeEvent(
+    val campaignId: Long?,
     val timeOutEventId: EventId,
     val templateId: Long,
     val templateVersion: Float?,

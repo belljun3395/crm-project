@@ -86,6 +86,7 @@ class EmailController(
         return sendNotificationEmailUseCase
             .execute(
                 SendNotificationEmailUseCaseIn(
+                    campaignId = request.campaignId,
                     templateId = request.templateId,
                     templateVersion = request.templateVersion,
                     userIds = request.userIds ?: emptyList()
@@ -123,6 +124,7 @@ class EmailController(
         return postEmailNotificationSchedulesUseCase
             .execute(
                 PostEmailNotificationSchedulesUseCaseIn(
+                    campaignId = request.campaignId,
                     templateId = request.templateId,
                     templateVersion = request.templateVersion,
                     userIds = request.userIds,

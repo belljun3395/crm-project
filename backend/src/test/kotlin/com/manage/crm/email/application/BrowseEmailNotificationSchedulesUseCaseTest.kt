@@ -23,6 +23,7 @@ class BrowseEmailNotificationSchedulesUseCaseTest : BehaviorSpec({
 
     fun scheduleTaskViewStubs(size: Int) = (1..size).map { it ->
         ScheduleTaskView(
+            campaignId = it.toLong(),
             taskName = "task$it",
             templateId = it.toLong(),
             userIds = (1..it).map { it.toLong() },

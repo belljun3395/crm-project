@@ -8,6 +8,7 @@ data class BrowseEmailNotificationSchedulesUseCaseOut(
     val schedules: List<EmailNotificationScheduleDto>
 )
 
+// TODO: add campaign information
 data class EmailNotificationScheduleDto(
     val taskName: String,
     val templateId: Long,

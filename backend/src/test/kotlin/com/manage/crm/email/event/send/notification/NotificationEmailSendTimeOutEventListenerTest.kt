@@ -43,6 +43,7 @@ class NotificationEmailSendTimeOutEventListenerTest(
             val expiredTime = LocalDateTime.now().plusNanos(1)
             val userIds = listOf(1L)
             val input = NotificationEmailSendTimeOutEventInput(
+                campaignId = 1L,
                 templateId = template.id!!,
                 templateVersion = template.version.value,
                 userIds = userIds,
@@ -58,6 +59,7 @@ class NotificationEmailSendTimeOutEventListenerTest(
             ).thenReturn(CreateScheduleResponse.builder().scheduleArn("arn").build())
 
             val event = NotificationEmailSendTimeOutEvent(
+                campaignId = 1L,
                 eventId = eventId,
                 templateId = template.id!!,
                 templateVersion = template.version.value,
@@ -103,6 +105,7 @@ class NotificationEmailSendTimeOutEventListenerTest(
             val eventId = EventIdFixtures.giveMeOne().build()
             val userIds = listOf(1L)
             val event = NotificationEmailSendTimeOutInvokeEvent(
+                campaignId = 1L,
                 timeOutEventId = eventId,
                 templateId = template.id!!,
                 templateVersion = template.version.value,

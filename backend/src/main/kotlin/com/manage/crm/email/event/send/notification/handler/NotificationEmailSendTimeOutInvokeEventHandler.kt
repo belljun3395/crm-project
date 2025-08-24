@@ -44,6 +44,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
             )
         scheduledEventRepository.save(scheduledEvent)
 
+        val campaignId = event.campaignId
         val templateId = event.templateId
         val templateVersion = event.templateVersion
         val userIds = event.userIds
@@ -81,7 +82,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
         users.collect { user ->
             val email =
                 user.userAttributes.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)
-            val content = emailContentService.genUserEmailContent(user, template)
+            val content = emailContentService.genUserEmailContent(user, template, campaignId)
             val emailMessageId =
                 mailService.send(
                     SendEmailInDto(

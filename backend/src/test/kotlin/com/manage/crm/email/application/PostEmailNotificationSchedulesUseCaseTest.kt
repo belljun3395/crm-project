@@ -22,6 +22,7 @@ class PostEmailNotificationSchedulesUseCaseTest : BehaviorSpec({
     given("PostEmailNotificationSchedulesUseCase") {
         `when`("post email notification schedules") {
             val useCaseIn = PostEmailNotificationSchedulesUseCaseIn(
+                campaignId = 1L,
                 templateId = 1,
                 templateVersion = 1.0f,
                 userIds = listOf(1, 2, 3),
@@ -30,6 +31,7 @@ class PostEmailNotificationSchedulesUseCaseTest : BehaviorSpec({
 
             val eventId = EventId()
             val input = NotificationEmailSendTimeOutEventInput(
+                campaignId = 1L,
                 templateId = 1,
                 templateVersion = 1.0f,
                 userIds = listOf(1, 2, 3),

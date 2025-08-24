@@ -16,6 +16,14 @@ import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.support.VariablesSupport
 import com.manage.crm.email.domain.vo.EmailProviderType
 import com.manage.crm.email.domain.vo.Variables
+import com.manage.crm.event.domain.Campaign
+import com.manage.crm.event.domain.CampaignEvents
+import com.manage.crm.event.domain.Event
+import com.manage.crm.event.domain.repository.CampaignEventsRepository
+import com.manage.crm.event.domain.repository.CampaignRepository
+import com.manage.crm.event.domain.repository.EventRepository
+import com.manage.crm.event.domain.vo.Properties
+import com.manage.crm.event.domain.vo.Property
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.user.domain.User
@@ -35,6 +43,9 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
     lateinit var emailTemplateHistoryRepository: EmailTemplateHistoryRepository
     lateinit var mailService: MailService
     lateinit var emailContentService: EmailContentService
+    lateinit var campaignRepository: CampaignRepository
+    lateinit var campaignEventsRepository: CampaignEventsRepository
+    lateinit var eventRepository: EventRepository
     lateinit var userRepository: UserRepository
     lateinit var useCase: SendNotificationEmailUseCase
 
@@ -43,12 +54,18 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
         emailTemplateHistoryRepository = mockk()
         mailService = mockk()
         emailContentService = mockk()
+        campaignRepository = mockk()
+        campaignEventsRepository = mockk()
+        eventRepository = mockk()
         userRepository = mockk()
         useCase = SendNotificationEmailUseCase(
             emailTemplateRepository,
             emailTemplateHistoryRepository,
             mailService,
             emailContentService,
+            campaignRepository,
+            campaignEventsRepository,
+            eventRepository,
             userRepository,
             ObjectMapper()
         )
@@ -71,6 +88,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
     given("SendNotificationEmailUseCase") {
         `when`("send notification with latest template with users") {
             val useCaseIn = SendNotificationEmailUseCaseIn(
+                campaignId = null,
                 templateId = 1,
                 templateVersion = null,
                 userIds = listOf(1L, 2L)
@@ -90,7 +108,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
             coEvery { userRepository.findAllByIdIn(useCaseIn.userIds) } answers { userSubs(useCaseIn.userIds.size) }
 
-            coEvery { emailContentService.genUserEmailContent(any(), any()) } answers {
+            coEvery { emailContentService.genUserEmailContent(any(), any(), any()) } answers {
                 NonContent()
             }
 
@@ -127,7 +145,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             }
 
             then("generate user email content") {
-                coVerify(exactly = 2) { emailContentService.genUserEmailContent(any(), any()) }
+                coVerify(exactly = 2) { emailContentService.genUserEmailContent(any(), any(), any()) }
             }
 
             then("send notification email") {
@@ -137,6 +155,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
         `when`("send notification with specific template version with users") {
             val useCaseIn = SendNotificationEmailUseCaseIn(
+                campaignId = null,
                 templateId = 1,
                 templateVersion = 1.1f,
                 userIds = listOf(1L, 2L)
@@ -161,7 +180,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
             coEvery { userRepository.findAllByIdIn(useCaseIn.userIds) } answers { userSubs(useCaseIn.userIds.size) }
 
-            coEvery { emailContentService.genUserEmailContent(any(), any()) } answers {
+            coEvery { emailContentService.genUserEmailContent(any(), any(), any()) } answers {
                 NonContent()
             }
 
@@ -198,7 +217,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             }
 
             then("generate user email content") {
-                coVerify(exactly = 2) { emailContentService.genUserEmailContent(any(), any()) }
+                coVerify(exactly = 2) { emailContentService.genUserEmailContent(any(), any(), any()) }
             }
 
             then("send notification email") {
@@ -208,6 +227,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
         `when`("send notification to all users") {
             val useCaseIn = SendNotificationEmailUseCaseIn(
+                campaignId = null,
                 templateId = 1,
                 templateVersion = null,
                 userIds = emptyList()
@@ -271,6 +291,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
         `when`("send notification with variable template") {
             val useCaseIn = SendNotificationEmailUseCaseIn(
+                campaignId = null,
                 templateId = 1,
                 templateVersion = null,
                 userIds = listOf(1L, 2L)
@@ -302,9 +323,10 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             coEvery { userRepository.findAllByIdIn(useCaseIn.userIds) } answers { userSubs(useCaseIn.userIds.size) }
 
             val objectMapper = ObjectMapper()
-            coEvery { emailContentService.genUserEmailContent(any(), any()) } answers { it ->
+            coEvery { emailContentService.genUserEmailContent(any(), any(), any()) } answers { it ->
                 val user = it.invocation.args[0] as User
                 val notificationVariables = it.invocation.args[1] as NotificationEmailTemplateVariablesModel
+                val campaignId = it.invocation.args[2] as Long?
                 val attributes = user.userAttributes
                 val variables = notificationVariables.variables
                 variables.getVariables(false)
@@ -348,7 +370,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             }
 
             then("generate user email content") {
-                coVerify(exactly = 2) { emailContentService.genUserEmailContent(any(), any()) }
+                coVerify(exactly = 2) { emailContentService.genUserEmailContent(any(), any(), any()) }
             }
 
             then("send notification email") {
@@ -358,6 +380,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
         `when`("send notification but not found by email template id and template version") {
             val useCaseIn = SendNotificationEmailUseCaseIn(
+                campaignId = null,
                 templateId = 1,
                 templateVersion = 1.1f,
                 userIds = listOf(1L, 2L)
@@ -410,6 +433,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
         `when`("send notification but not found by email template id") {
             val useCaseIn = SendNotificationEmailUseCaseIn(
+                campaignId = null,
                 templateId = 1,
                 templateVersion = null,
                 userIds = listOf(1L, 2L)
@@ -453,6 +477,124 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
             then("not called  send notification email") {
                 coVerify(exactly = 0) { mailService.send(any(SendEmailInDto::class)) }
+            }
+        }
+
+        `when`("send notification with campaign") {
+            val campaignId = 1L
+            val useCaseIn = SendNotificationEmailUseCaseIn(
+                campaignId = campaignId,
+                templateId = 1,
+                templateVersion = null,
+                userIds = listOf(1L, 2L)
+            )
+
+            val campaign = Campaign.new(
+                campaignId,
+                "Test Campaign",
+                Properties(listOf(Property("campaignProp", "campaignValue"))),
+                LocalDateTime.now()
+            )
+
+            val campaignEvents = listOf(
+                CampaignEvents.new(
+                    campaignId = campaignId,
+                    eventId = 10L
+                ),
+                CampaignEvents.new(
+                    campaignId = campaignId,
+                    eventId = 11L
+                )
+            )
+
+            val events = listOf(
+                Event.new(
+                    10L,
+                    "Event1",
+                    1L,
+                    Properties(listOf(Property("eventProp", "eventValue1"))),
+                    LocalDateTime.now()
+                ),
+                Event.new(
+                    11L,
+                    "Event2",
+                    2L,
+                    Properties(listOf(Property("eventProp", "eventValue2"))),
+                    LocalDateTime.now()
+                )
+            )
+
+            coEvery { campaignRepository.findById(campaignId) } returns campaign
+            coEvery { campaignEventsRepository.findAllByCampaignId(campaignId) } returns campaignEvents
+            coEvery { eventRepository.findAllByIdIn(listOf(10L, 11L)) } returns events
+
+            coEvery { emailTemplateRepository.findById(useCaseIn.templateId) } answers {
+                EmailTemplate.new(
+                    id = 1,
+                    templateName = "templateName",
+                    subject = "subject",
+                    body = "body",
+                    variables = Variables(),
+                    version = 1.0f,
+                    createdAt = LocalDateTime.now()
+                )
+            }
+
+            val usersInCampaign = userSubs(2).map { user ->
+                when (user.id) {
+                    1L -> user
+                    2L -> user
+                    else -> user
+                }
+            }
+            coEvery { userRepository.findAllByIdIn(listOf(1L, 2L)) } returns usersInCampaign
+
+            coEvery { emailContentService.genUserEmailContent(any(), any(), any()) } answers {
+                NonContent()
+            }
+
+            coEvery { mailService.send(any(SendEmailInDto::class)) } answers {
+                SendEmailOutDto(
+                    userId = 1L,
+                    emailBody = "emailBody",
+                    messageId = "messageId",
+                    destination = "destination",
+                    provider = EmailProviderType.JAVA
+                )
+            }
+
+            val result = useCase.execute(useCaseIn)
+
+            then("should return SendNotificationEmailUseCaseOut") {
+                result.isSuccess shouldBe true
+            }
+
+            then("find campaign by id") {
+                coVerify(exactly = 1) { campaignRepository.findById(campaignId) }
+            }
+
+            then("find campaign events") {
+                coVerify(exactly = 1) { campaignEventsRepository.findAllByCampaignId(campaignId) }
+            }
+
+            then("find events by id list") {
+                coVerify(exactly = 1) { eventRepository.findAllByIdIn(listOf(10L, 11L)) }
+            }
+
+            then("find template by id") {
+                coVerify(exactly = 1) { emailTemplateRepository.findById(useCaseIn.templateId) }
+            }
+
+            then("find users") {
+                coVerify(exactly = 1) { userRepository.findAllByIdIn(listOf(1L, 2L)) }
+            }
+
+            then("generate user email content with campaign") {
+                coVerify(exactly = 2) { emailContentService.genUserEmailContent(any(), any(), campaignId) }
+            }
+
+            then("send notification email") {
+                coVerify(exactly = 2) { mailService.send(any(SendEmailInDto::class)) }
             }
         }
     }

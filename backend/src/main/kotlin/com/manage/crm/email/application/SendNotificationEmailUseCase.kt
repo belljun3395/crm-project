@@ -15,6 +15,9 @@ import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.vo.Email
 import com.manage.crm.email.domain.vo.NotificationType
 import com.manage.crm.email.domain.vo.SentEmailStatus
+import com.manage.crm.event.domain.repository.CampaignEventsRepository
+import com.manage.crm.event.domain.repository.CampaignRepository
+import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
@@ -32,24 +35,39 @@ class SendNotificationEmailUseCase(
     @Qualifier("mailServicePostEventProcessor")
     private val mailService: MailService,
     private val emailContentService: EmailContentService,
+    private val campaignRepository: CampaignRepository,
+    private val campaignEventsRepository: CampaignEventsRepository,
+    private val eventsRepository: EventRepository,
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper
 ) {
     val log = KotlinLogging.logger { }
 
     suspend fun execute(useCaseIn: SendNotificationEmailUseCaseIn): SendNotificationEmailUseCaseOut {
+        val campaignId: Long? = useCaseIn.campaignId
         val templateId = useCaseIn.templateId
         val templateVersion: Float? = useCaseIn.templateVersion
         val userIds = useCaseIn.userIds
 
-        val notificationEmailType = NotificationType.EMAIL.name.lowercase()
-        val notificationVariables = getEmailNotificationVariables(templateVersion, templateId)
+        val campaign = campaignId?.let {
+            campaignRepository.findById(it)
+        }
 
-        val targetUsers = getTargetUsers(userIds, notificationEmailType)
+        val notificationEmailType = NotificationType.EMAIL.name.lowercase()
+        val notificationVariables = getEmailNotificationVariables(templateVersion, templateId).apply {
+            campaign?.let {
+                if (it.allMatchPropertyKeys(this.variables.value)) {
+                    throw IllegalStateException("Campaign properties and Email template variables mismatch")
+                }
+            }
+        }
+
+        // TODO: get users who participate in the campaign or all users if campaignId is null
+        val targetUsers = getTargetUsers(userIds, notificationEmailType, campaign?.id)
             .mapNotNull { user -> extractEmailAndUser(user, notificationEmailType) }
             .toMap()
 
-        generateNotificationDto(targetUsers, notificationVariables)
+        generateNotificationDto(targetUsers, notificationVariables, campaign?.id)
             .parMap(Dispatchers.IO, concurrency = 10) {
                 mailService.send(it)
             }
@@ -93,11 +111,27 @@ class SendNotificationEmailUseCase(
         }
     }
 
-    private suspend fun getTargetUsers(userIds: List<Long>, sendType: String): List<User> {
+    private suspend fun getTargetUsers(userIds: List<Long>, sendType: String, campaignId: Long?): List<User> {
         return when {
             userIds.isEmpty() -> {
                 userRepository
                     .findAllExistByUserAttributesKey(sendType)
+            }
+
+            campaignId != null -> {
+                val eventIds = campaignEventsRepository.findAllByCampaignId(campaignId).map { it.eventId }
+                val allUserIdsInCampaign = eventsRepository.findAllByIdIn(eventIds).map { it.userId }
+                userIds.filter { allUserIdsInCampaign.contains(it) }
+                    .toList()
+                    .let { it ->
+                        userRepository.findAllByIdIn(it)
+                            .filter {
+                                objectMapper.readValue(
+                                    it.userAttributes.value,
+                                    Map::class.java
+                                )[sendType] != null
+                            }
+                    }
             }
 
             else -> {
@@ -105,7 +139,7 @@ class SendNotificationEmailUseCase(
                     .findAllByIdIn(userIds)
                     .filter {
                         objectMapper.readValue(
-                            it.userAttributes?.value,
+                            it.userAttributes.value,
                             Map::class.java
                         )[sendType] != null
                     }
@@ -129,10 +163,10 @@ class SendNotificationEmailUseCase(
         }
     }
 
-    private fun generateNotificationDto(targetUsers: Map<Email, User>, notificationVariables: NotificationEmailTemplateVariablesModel): List<SendEmailInDto> {
+    private suspend fun generateNotificationDto(targetUsers: Map<Email, User>, notificationVariables: NotificationEmailTemplateVariablesModel, campaignId: Long?): List<SendEmailInDto> {
         val emailContentPairList = mutableListOf<Pair<Email, Content>>()
         targetUsers.forEach { (email, user) ->
-            val content = emailContentService.genUserEmailContent(user, notificationVariables)
+            val content = emailContentService.genUserEmailContent(user, notificationVariables, campaignId)
             emailContentPairList.add(email to content)
         }
         return emailContentPairList.map { (email, content) ->
@@ -140,12 +174,12 @@ class SendNotificationEmailUseCase(
         }
     }
 
-    private fun doMapToNotificationDto(email: Email, content: Content, notificationProperties: NotificationEmailTemplateVariablesModel) = SendEmailInDto(
+    private fun doMapToNotificationDto(email: Email, content: Content, notificationVariables: NotificationEmailTemplateVariablesModel) = SendEmailInDto(
         to = email.value,
-        subject = notificationProperties.subject,
-        template = notificationProperties.body,
+        subject = notificationVariables.subject,
+        template = notificationVariables.body,
         content = content,
-        emailBody = notificationProperties.body,
+        emailBody = notificationVariables.body,
         destination = email.value,
         eventType = SentEmailStatus.SEND
     )

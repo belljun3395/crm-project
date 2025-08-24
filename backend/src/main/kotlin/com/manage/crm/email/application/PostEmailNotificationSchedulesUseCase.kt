@@ -16,6 +16,7 @@ class PostEmailNotificationSchedulesUseCase(
 ) {
 
     suspend fun execute(useCaseIn: PostEmailNotificationSchedulesUseCaseIn): PostEmailNotificationSchedulesUseCaseOut {
+        val campaignId = useCaseIn.campaignId
         val templateId = useCaseIn.templateId
         val templateVersion = useCaseIn.templateVersion
         val userIds = useCaseIn.userIds
@@ -24,6 +25,7 @@ class PostEmailNotificationSchedulesUseCase(
         val eventId = EventId()
         val newSchedule = scheduleTaskService.newSchedule(
             NotificationEmailSendTimeOutEventInput(
+                campaignId,
                 templateId = templateId,
                 templateVersion = templateVersion,
                 userIds = userIds,

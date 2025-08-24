@@ -7,6 +7,28 @@ import com.manage.crm.infrastructure.mail.SendMailArgs
 abstract class Content {
     abstract fun getKeys(): List<String>
     abstract fun getValue(key: String): String
+    fun merge(content: Content): Content {
+        val originKeys = this.getKeys()
+        val newKeys = content.getKeys()
+        if (originKeys.isEmpty() && newKeys.isEmpty()) {
+            return NonContent()
+        }
+
+        val combinedKeys = (originKeys + newKeys).distinct()
+        val combinedContent = mutableMapOf<String, String>()
+        combinedKeys.forEach { key ->
+            // newKeys priority over originKeys because this method is used to merge new content into existing content
+            val value = when {
+                newKeys.contains(key) -> content.getValue(key)
+                originKeys.contains(key) -> this.getValue(key)
+                else -> null
+            }
+            if (value != null) {
+                combinedContent[key] = value
+            }
+        }
+        return VariablesContent(combinedContent)
+    }
 }
 class NonContent : Content() {
     override fun getKeys(): List<String> = emptyList()

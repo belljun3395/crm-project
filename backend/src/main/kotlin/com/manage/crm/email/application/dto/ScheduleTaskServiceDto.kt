@@ -5,6 +5,7 @@ import com.manage.crm.infrastructure.scheduler.ScheduleInfo
 import java.time.LocalDateTime
 
 data class ScheduleTaskView(
+    val campaignId: Long?,
     val taskName: String,
     val templateId: Long,
     val userIds: List<Long>,
@@ -12,6 +13,7 @@ data class ScheduleTaskView(
 )
 
 data class NotificationEmailSendTimeOutEventInput(
+    val campaignId: Long?,
     val templateId: Long,
     val templateVersion: Float?,
     val userIds: List<Long>,

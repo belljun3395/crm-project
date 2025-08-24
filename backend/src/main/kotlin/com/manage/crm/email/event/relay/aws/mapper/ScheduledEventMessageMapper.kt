@@ -6,6 +6,7 @@ import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOut
 import org.springframework.stereotype.Component
 
 data class ScheduledEventMessage(
+    val campaignId: Long?,
     val templateId: Long,
     val templateVersion: Float?,
     val userIds: List<Long>,
@@ -18,12 +19,14 @@ class ScheduledEventMessageMapper(
 ) {
     fun map(message: String): ScheduledEventMessage {
         objectMapper.readTree(message).let { jsonNode ->
+            val campaignId = jsonNode.get("eventId")?.asLong()
             val templateId = jsonNode["templateId"].asLong()
             val templateVersion = jsonNode["templateVersion"]?.asDouble()?.toFloat()?.let { if (it == 0.0f) null else it }
             val userIds = jsonNode["userIds"].map { it.asLong() }
             val eventId = jsonNode["eventId"].asText()
 
             return ScheduledEventMessage(
+                campaignId,
                 templateId = templateId,
                 templateVersion = templateVersion,
                 userIds = userIds,
@@ -34,6 +37,7 @@ class ScheduledEventMessageMapper(
 
     fun toEvent(message: ScheduledEventMessage): NotificationEmailSendTimeOutInvokeEvent {
         return NotificationEmailSendTimeOutInvokeEvent(
+            campaignId = message.campaignId,
             timeOutEventId = EventId(message.eventId),
             templateId = message.templateId,
             templateVersion = message.templateVersion,

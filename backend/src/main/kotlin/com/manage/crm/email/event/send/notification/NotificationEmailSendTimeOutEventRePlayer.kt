@@ -19,6 +19,8 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.springframework.transaction.reactive.executeAndAwait
 
+fun JsonNode.campaignId() = this["campaignId"]?.asLong()
+
 fun JsonNode.templateId() = this["templateId"].asLong()
 
 fun JsonNode.templateVersion() = (this["templateVersion"].asDouble()).toFloat()
@@ -53,6 +55,7 @@ class NotificationEmailSendTimeOutEventRePlayer(
                             objectMapper.readTree(it.eventPayload).let { payload ->
                                 val event =
                                     NotificationEmailSendTimeOutEvent(
+                                        campaignId = payload.campaignId(),
                                         eventId = it.eventId,
                                         templateId = payload.templateId(),
                                         templateVersion = payload.templateVersion(),
@@ -68,6 +71,7 @@ class NotificationEmailSendTimeOutEventRePlayer(
                                     replayedEventsLogBuffer.appendLine("  - eventId: ${event.eventId} expiredTime: ${event.expiredTime}")
                                     val notificationEmailSendTimeOutEventInput =
                                         NotificationEmailSendTimeOutEventInput(
+                                            campaignId = event.campaignId,
                                             templateId = event.templateId,
                                             templateVersion = event.templateVersion,
                                             userIds = event.userIds,
