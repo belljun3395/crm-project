@@ -70,7 +70,7 @@ class EmailContentServiceTest : BehaviorSpec({
 
         `when`("generating email content with campaign") {
             val campaignId = 1L
-            val variables = Variables(listOf("attribute_email"))
+            val variables = Variables(listOf("attribute_email", "attribute_eventProp1", "attribute_eventProp2"))
             val notificationVariables = NotificationEmailTemplateVariablesModel("Subject", "Body", variables)
 
             val campaignEvents = listOf(
