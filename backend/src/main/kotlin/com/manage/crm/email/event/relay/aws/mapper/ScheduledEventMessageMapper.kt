@@ -19,11 +19,11 @@ class ScheduledEventMessageMapper(
 ) {
     fun map(message: String): ScheduledEventMessage {
         objectMapper.readTree(message).let { jsonNode ->
-            val campaignId = jsonNode.get("eventId")?.asLong()
-            val templateId = jsonNode["templateId"].asLong()
+            val campaignId = jsonNode.get("campaignId")?.asLong()
+            val templateId = jsonNode["templateId"]?.asLong() ?: throw IllegalArgumentException("templateId is required")
             val templateVersion = jsonNode["templateVersion"]?.asDouble()?.toFloat()?.let { if (it == 0.0f) null else it }
-            val userIds = jsonNode["userIds"].map { it.asLong() }
-            val eventId = jsonNode["eventId"].asText()
+            val userIds = jsonNode["userIds"]?.map { it.asLong() } ?: emptyList()
+            val eventId = jsonNode["eventId"]?.asText() ?: throw IllegalArgumentException("eventId is required")
 
             return ScheduledEventMessage(
                 campaignId,

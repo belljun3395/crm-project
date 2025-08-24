@@ -14,6 +14,8 @@ import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.flow.catch
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 
@@ -30,6 +32,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
     private val emailContentService: EmailContentService,
     private val objectMapper: ObjectMapper
 ) {
+    private val log = KotlinLogging.logger {}
     /**
      * - Find Invoked Event  and Mark it as completed
      * - Send Email to Users
@@ -79,32 +82,58 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
         }
 
         val users = userRepository.findAllById(userIds)
-        users.collect { user ->
-            val email =
-                user.userAttributes.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)
-            val content = emailContentService.genUserEmailContent(user, template, campaignId)
-            val emailMessageId =
-                mailService.send(
-                    SendEmailInDto(
-                        to = email,
-                        subject = template.subject,
-                        template = template.body,
-                        content = content,
-                        emailBody = template.body,
-                        destination = email,
-                        eventType = SentEmailStatus.SEND
-                    )
-                ).messageId
+        users
+            .catch { exception ->
+                log.error(exception) { "Failed to fetch users for userIds: $userIds, campaignId: $campaignId, templateId: $templateId" }
+            }
+            .collect { user ->
+                try {
+                    val email =
+                        user.userAttributes.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)
+                    val content = emailContentService.genUserEmailContent(user, template, campaignId)
+                    val emailMessageId =
+                        mailService.send(
+                            SendEmailInDto(
+                                to = email,
+                                subject = template.subject,
+                                template = template.body,
+                                content = content,
+                                emailBody = template.body,
+                                destination = email,
+                                eventType = SentEmailStatus.SEND
+                            )
+                        ).messageId
 
-            emailSendHistoryRepository.save(
-                EmailSendHistory.new(
-                    userId = user.id!!,
-                    userEmail = email,
-                    emailMessageId = emailMessageId,
-                    emailBody = template.body,
-                    sendStatus = SentEmailStatus.SEND.name
-                )
-            )
-        }
+                    emailSendHistoryRepository.save(
+                        EmailSendHistory.new(
+                            userId = user.id!!,
+                            userEmail = email,
+                            emailMessageId = emailMessageId,
+                            emailBody = template.body,
+                            sendStatus = SentEmailStatus.SEND.name
+                        )
+                    )
+                    
+                    log.debug { "Successfully sent email to user ${user.id}, email: $email, messageId: $emailMessageId" }
+                } catch (exception: Exception) {
+                    log.error(exception) { "Failed to send email to user ${user.id}, campaignId: $campaignId, templateId: $templateId" }
+                    
+                    // Save failed email send history
+                    try {
+                        val email = user.userAttributes.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)
+                        emailSendHistoryRepository.save(
+                            EmailSendHistory.new(
+                                userId = user.id!!,
+                                userEmail = email,
+                                emailMessageId = null,
+                                emailBody = template.body,
+                                sendStatus = SentEmailStatus.FAILED.name
+                            )
+                        )
+                    } catch (historyException: Exception) {
+                        log.error(historyException) { "Failed to save email send history for failed email to user ${user.id}" }
+                    }
+                }
+            }
     }
 }
