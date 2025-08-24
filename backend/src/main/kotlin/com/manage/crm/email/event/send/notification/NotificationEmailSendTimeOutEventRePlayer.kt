@@ -19,7 +19,14 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.springframework.transaction.reactive.executeAndAwait
 
-fun JsonNode.campaignId() = this["campaignId"]?.asLong()
+fun JsonNode.campaignId(): Long? {
+    val campaignIdNode = this["campaignId"] ?: return null
+    return when {
+        campaignIdNode.isIntegralNumber -> campaignIdNode.asLong()
+        campaignIdNode.isTextual -> campaignIdNode.asText().toLongOrNull()
+        else -> null
+    }
+}
 
 fun JsonNode.templateId() = this["templateId"].asLong()
 
