@@ -54,7 +54,7 @@ class SendNotificationEmailUseCase(
         val notificationEmailType = NotificationType.EMAIL.name.lowercase()
         val notificationVariables = getEmailNotificationVariables(templateVersion, templateId).apply {
             campaign?.let { camp ->
-                if (camp.allMatchPropertyKeys(this.variables.value)) {
+                if (!camp.allMatchPropertyKeys(this.variables.value)) {
                     log.error { "Campaign properties and Email template variables mismatch for campaignId: ${camp.id}, templateId: $templateId" }
                     throw IllegalStateException("Campaign properties and Email template variables mismatch")
                 }
