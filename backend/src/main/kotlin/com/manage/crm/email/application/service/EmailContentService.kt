@@ -30,24 +30,38 @@ class EmailContentService(
         return if (notificationVariables.isNoVariables()) {
             NonContent()
         } else {
-            val attributeVariables = mutableMapOf<String, String>()
-
-            // User attribute variables
+            // Start with user attribute variables
             val userAttributes = user.userAttributes
             val variables = notificationVariables.variables
             val userAttributeMap = variables.getVariables(false)
                 .associate { key ->
                     VariablesSupport.doAssociate(objectMapper, key, userAttributes, variables)
                 }
-            attributeVariables.putAll(userAttributeMap)
 
-            // Campaign event variables (with priority over user variables)
-            campaignId?.let { cId ->
+            // Merge with campaign event variables (event variables take priority)
+            val finalVariables = campaignId?.let { cId ->
                 val eventVariables = getCampaignEventVariables(cId)
-                attributeVariables.putAll(eventVariables)
-            }
+                // Create whitelisted event variables based on template variables
+                val allowedEventVariables = filterEventVariablesByWhitelist(eventVariables, variables)
+                userAttributeMap + allowedEventVariables // Event variables override user variables
+            } ?: userAttributeMap
             
-            VariablesContent(attributeVariables)
+            VariablesContent(finalVariables)
+        }
+    }
+
+    private fun filterEventVariablesByWhitelist(eventVariables: Map<String, String>, templateVariables: Variables): Map<String, String> {
+        val allowedKeys = templateVariables.getVariables(false).map { key ->
+            // Extract the actual key from the template variable format
+            when {
+                key.startsWith("attribute_") -> key.substringAfter("attribute_")
+                key.startsWith("custom_") -> key.substringAfter("custom_").substringBefore("_")
+                else -> key
+            }
+        }.toSet()
+        
+        return eventVariables.filterKeys { key ->
+            allowedKeys.contains(key)
         }
     }
 
