@@ -5,10 +5,8 @@ import com.manage.crm.email.application.dto.NonContent
 import com.manage.crm.email.application.dto.VariablesContent
 import com.manage.crm.email.domain.model.NotificationEmailTemplateVariablesModel
 import com.manage.crm.email.domain.vo.Variables
-import com.manage.crm.event.domain.CampaignEvents
 import com.manage.crm.event.domain.Event
-import com.manage.crm.event.domain.repository.CampaignEventsRepository
-import com.manage.crm.event.domain.repository.EventRepository
+import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.event.domain.vo.Properties
 import com.manage.crm.event.domain.vo.Property
 import com.manage.crm.user.domain.UserFixtures
@@ -21,16 +19,14 @@ import io.mockk.mockk
 import java.time.LocalDateTime
 
 class EmailContentServiceTest : BehaviorSpec({
-    lateinit var campaignEventsRepository: CampaignEventsRepository
-    lateinit var eventRepository: EventRepository
+    lateinit var campaignEventsService: CampaignEventsService
     lateinit var objectMapper: ObjectMapper
     lateinit var emailContentService: EmailContentService
 
     beforeContainer {
-        campaignEventsRepository = mockk()
-        eventRepository = mockk()
+        campaignEventsService = mockk()
         objectMapper = ObjectMapper()
-        emailContentService = EmailContentService(objectMapper, campaignEventsRepository, eventRepository)
+        emailContentService = EmailContentService(objectMapper, campaignEventsService)
     }
 
     given("EmailContentService") {
@@ -73,11 +69,6 @@ class EmailContentServiceTest : BehaviorSpec({
             val variables = Variables(listOf("attribute_email", "attribute_eventProp1", "attribute_eventProp2"))
             val notificationVariables = NotificationEmailTemplateVariablesModel("Subject", "Body", variables)
 
-            val campaignEvents = listOf(
-                CampaignEvents.new(campaignId = campaignId, eventId = 10L),
-                CampaignEvents.new(campaignId = campaignId, eventId = 11L)
-            )
-
             val events = listOf(
                 Event.new(
                     10L,
@@ -95,8 +86,7 @@ class EmailContentServiceTest : BehaviorSpec({
                 )
             )
 
-            coEvery { campaignEventsRepository.findAllByCampaignId(campaignId) } returns campaignEvents
-            coEvery { eventRepository.findAllByIdIn(listOf(10L, 11L)) } returns events
+            coEvery { campaignEventsService.findAllEventsByCampaignId(campaignId) } returns events
 
             val result = emailContentService.genUserEmailContent(user, notificationVariables, campaignId)
 
@@ -114,7 +104,7 @@ class EmailContentServiceTest : BehaviorSpec({
             val variables = Variables(listOf("attribute_email"))
             val notificationVariables = NotificationEmailTemplateVariablesModel("Subject", "Body", variables)
 
-            coEvery { campaignEventsRepository.findAllByCampaignId(campaignId) } returns emptyList()
+            coEvery { campaignEventsService.findAllEventsByCampaignId(campaignId) } returns emptyList()
 
             val result = emailContentService.genUserEmailContent(user, notificationVariables, campaignId)
 
@@ -131,12 +121,7 @@ class EmailContentServiceTest : BehaviorSpec({
             val variables = Variables(listOf("attribute_email"))
             val notificationVariables = NotificationEmailTemplateVariablesModel("Subject", "Body", variables)
 
-            val campaignEvents = listOf(
-                CampaignEvents.new(campaignId = campaignId, eventId = 10L)
-            )
-
-            coEvery { campaignEventsRepository.findAllByCampaignId(campaignId) } returns campaignEvents
-            coEvery { eventRepository.findAllByIdIn(listOf(10L)) } returns emptyList()
+            coEvery { campaignEventsService.findAllEventsByCampaignId(campaignId) } returns emptyList()
 
             val result = emailContentService.genUserEmailContent(user, notificationVariables, campaignId)
 

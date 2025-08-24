@@ -15,9 +15,8 @@ import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.vo.Email
 import com.manage.crm.email.domain.vo.NotificationType
 import com.manage.crm.email.domain.vo.SentEmailStatus
-import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.CampaignRepository
-import com.manage.crm.event.domain.repository.EventRepository
+import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
@@ -36,8 +35,7 @@ class SendNotificationEmailUseCase(
     private val mailService: MailService,
     private val emailContentService: EmailContentService,
     private val campaignRepository: CampaignRepository,
-    private val campaignEventsRepository: CampaignEventsRepository,
-    private val eventsRepository: EventRepository,
+    private val campaignEventsService: CampaignEventsService,
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper
 ) {
@@ -130,8 +128,7 @@ class SendNotificationEmailUseCase(
     private suspend fun getTargetUsers(userIds: List<Long>, sendType: String, campaignId: Long?): List<User> {
         return when {
             campaignId != null -> {
-                val eventIds = campaignEventsRepository.findAllByCampaignId(campaignId).map { it.eventId }
-                val allUserIdsInCampaignSet = eventsRepository.findAllByIdIn(eventIds).map { it.userId }.toSet()
+                val allUserIdsInCampaignSet = campaignEventsService.getAllEventUserIdsByCampaignId(campaignId)
                 userIds.filter { allUserIdsInCampaignSet.contains(it) }
                     .let { filteredUserIds ->
                         userRepository.findAllByIdIn(filteredUserIds)

@@ -7,16 +7,14 @@ import com.manage.crm.email.application.dto.VariablesContent
 import com.manage.crm.email.domain.model.NotificationEmailTemplateVariablesModel
 import com.manage.crm.email.domain.support.VariablesSupport
 import com.manage.crm.email.domain.vo.Variables
-import com.manage.crm.event.domain.repository.CampaignEventsRepository
-import com.manage.crm.event.domain.repository.EventRepository
+import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.user.domain.User
 import org.springframework.stereotype.Service
 
 @Service
 class EmailContentService(
     private val objectMapper: ObjectMapper,
-    private val campaignEventsRepository: CampaignEventsRepository,
-    private val eventRepository: EventRepository
+    private val campaignEventsService: CampaignEventsService
 ) {
     /**
      *  - 알림 프로퍼티와 사용자 정보를 기반으로 이메일 콘텐츠를 생성합니다.
@@ -67,11 +65,7 @@ class EmailContentService(
     }
 
     suspend fun getCampaignEventVariables(campaignId: Long): Map<String, String> {
-        val campaignEvents = campaignEventsRepository.findAllByCampaignId(campaignId)
-        if (campaignEvents.isEmpty()) return emptyMap()
-
-        val eventIds = campaignEvents.map { it.eventId }
-        val events = eventRepository.findAllByIdIn(eventIds)
+        val events = campaignEventsService.findAllEventsByCampaignId(campaignId)
         if (events.isEmpty()) return emptyMap()
 
         val eventVariables = mutableMapOf<String, String>()

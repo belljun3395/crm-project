@@ -17,12 +17,9 @@ import com.manage.crm.email.domain.support.VariablesSupport
 import com.manage.crm.email.domain.vo.EmailProviderType
 import com.manage.crm.email.domain.vo.Variables
 import com.manage.crm.event.domain.Campaign
-import com.manage.crm.event.domain.CampaignEvents
-import com.manage.crm.event.domain.Event
-import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.CampaignRepository
-import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.vo.Properties
+import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.event.domain.vo.Property
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.exception.NotFoundByIdException
@@ -44,8 +41,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
     lateinit var mailService: MailService
     lateinit var emailContentService: EmailContentService
     lateinit var campaignRepository: CampaignRepository
-    lateinit var campaignEventsRepository: CampaignEventsRepository
-    lateinit var eventRepository: EventRepository
+    lateinit var campaignEventsService: CampaignEventsService
     lateinit var userRepository: UserRepository
     lateinit var useCase: SendNotificationEmailUseCase
 
@@ -55,8 +51,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
         mailService = mockk()
         emailContentService = mockk()
         campaignRepository = mockk()
-        campaignEventsRepository = mockk()
-        eventRepository = mockk()
+        campaignEventsService = mockk()
         userRepository = mockk()
         useCase = SendNotificationEmailUseCase(
             emailTemplateRepository,
@@ -64,8 +59,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             mailService,
             emailContentService,
             campaignRepository,
-            campaignEventsRepository,
-            eventRepository,
+            campaignEventsService,
             userRepository,
             ObjectMapper()
         )
@@ -501,37 +495,9 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                 LocalDateTime.now()
             )
 
-            val campaignEvents = listOf(
-                CampaignEvents.new(
-                    campaignId = campaignId,
-                    eventId = 10L
-                ),
-                CampaignEvents.new(
-                    campaignId = campaignId,
-                    eventId = 11L
-                )
-            )
-
-            val events = listOf(
-                Event.new(
-                    10L,
-                    "Event1",
-                    1L,
-                    Properties(listOf(Property("eventProp", "eventValue1"))),
-                    LocalDateTime.now()
-                ),
-                Event.new(
-                    11L,
-                    "Event2",
-                    2L,
-                    Properties(listOf(Property("eventProp", "eventValue2"))),
-                    LocalDateTime.now()
-                )
-            )
 
             coEvery { campaignRepository.findById(campaignId) } returns campaign
-            coEvery { campaignEventsRepository.findAllByCampaignId(campaignId) } returns campaignEvents
-            coEvery { eventRepository.findAllByIdIn(listOf(10L, 11L)) } returns events
+            coEvery { campaignEventsService.getAllEventUserIdsByCampaignId(campaignId) } returns setOf(1L, 2L)
 
             coEvery { emailTemplateRepository.findById(useCaseIn.templateId) } answers {
                 EmailTemplate.new(
@@ -578,12 +544,8 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { campaignRepository.findById(campaignId) }
             }
 
-            then("find campaign events") {
-                coVerify(exactly = 1) { campaignEventsRepository.findAllByCampaignId(campaignId) }
-            }
-
-            then("find events by id list") {
-                coVerify(exactly = 1) { eventRepository.findAllByIdIn(listOf(10L, 11L)) }
+            then("get user ids by campaign id") {
+                coVerify(exactly = 1) { campaignEventsService.getAllEventUserIdsByCampaignId(campaignId) }
             }
 
             then("find template by id") {
