@@ -32,6 +32,7 @@ class EmailContentService(
         } else {
             val attributeVariables = mutableMapOf<String, String>()
 
+            // User attribute variables
             val userAttributes = user.userAttributes
             val variables = notificationVariables.variables
             val userAttributeMap = variables.getVariables(false)
@@ -40,25 +41,33 @@ class EmailContentService(
                 }
             attributeVariables.putAll(userAttributeMap)
 
+            // Campaign event variables (with priority over user variables)
             campaignId?.let { cId ->
-                val campaignEvents = campaignEventsRepository.findAllByCampaignId(cId)
-                if (campaignEvents.isNotEmpty()) {
-                    val eventIds = campaignEvents.map { it.eventId }
-                    val events = eventRepository.findAllByIdIn(eventIds)
-                    if (events.isNotEmpty()) {
-                        val eventVariables = mutableMapOf<String, String>()
-                        events.forEach { event ->
-                            val keys = event.properties.getKeys()
-                            for (key in keys) {
-                                val value = event.properties.getValue(key)
-                                eventVariables[key] = value
-                            }
-                        }
-                        attributeVariables.putAll(eventVariables)
-                    }
-                }
+                val eventVariables = getCampaignEventVariables(cId)
+                attributeVariables.putAll(eventVariables)
             }
+            
             VariablesContent(attributeVariables)
         }
+    }
+
+    suspend fun getCampaignEventVariables(campaignId: Long): Map<String, String> {
+        val campaignEvents = campaignEventsRepository.findAllByCampaignId(campaignId)
+        if (campaignEvents.isEmpty()) return emptyMap()
+        
+        val eventIds = campaignEvents.map { it.eventId }
+        val events = eventRepository.findAllByIdIn(eventIds)
+        if (events.isEmpty()) return emptyMap()
+        
+        val eventVariables = mutableMapOf<String, String>()
+        events.forEach { event ->
+            val keys = event.properties.getKeys()
+            for (key in keys) {
+                val value = event.properties.getValue(key)
+                // Event variables override user variables for the same key
+                eventVariables[key] = value
+            }
+        }
+        return eventVariables
     }
 }
