@@ -45,12 +45,12 @@ data class Variables(
     private fun checkValueContainType() {
         value.forEach {
             if (!(it.contains(ATTRIBUTE_TYPE) || it.contains(CUSTOM_ATTRIBUTE_TYPE))) {
-                throw IllegalArgumentException("Value need to contain $ATTRIBUTE_TYPE")
+                throw IllegalArgumentException("Value need to contain $TYPE_DELIMITER for distinguish variable type.")
             }
 
             if (it.contains(CUSTOM_ATTRIBUTE_TYPE)) {
-                if (it.split(TYPE_DELIMITER).size <= 2) {
-                    throw IllegalArgumentException("Custom attribute format is invalid.")
+                if (it.split(TYPE_DELIMITER).size > 2) {
+                    throw IllegalArgumentException("Custom type format is invalid.")
                 }
             }
         }
