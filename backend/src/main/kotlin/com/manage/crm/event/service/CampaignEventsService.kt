@@ -10,7 +10,7 @@ class CampaignEventsService(
 ) {
     suspend fun findAllEventsByCampaignId(campaignId: Long): List<Event> {
         val eventIds = campaignEventsRepository.findAllByCampaignId(campaignId).map { it.eventId }
-        return eventsRepository.findAllByIdIn(eventIds)
+        return eventsRepository.findAllByIdInSafe(eventIds)
     }
 
     suspend fun getAllEventUserIdsByCampaignId(campaignId: Long): Set<Long> {
