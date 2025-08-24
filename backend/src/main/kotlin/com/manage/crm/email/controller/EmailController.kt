@@ -28,6 +28,7 @@ import com.manage.crm.email.domain.vo.EventId
 import com.manage.crm.support.web.ApiResponse
 import com.manage.crm.support.web.ApiResponseGenerator
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -63,7 +64,7 @@ class EmailController(
 
     @PostMapping(value = ["/templates"])
     suspend fun postEmailTemplate(
-        @RequestBody request: PostTemplateRequest
+        @Valid @RequestBody request: PostTemplateRequest
     ): ApiResponse<ApiResponse.SuccessBody<PostTemplateUseCaseOut>> {
         return postTemplateUseCase
             .execute(
@@ -81,7 +82,7 @@ class EmailController(
 
     @PostMapping(value = ["/send/notifications"])
     suspend fun sendNotificationEmail(
-        @RequestBody request: SendNotificationEmailRequest
+        @Valid @RequestBody request: SendNotificationEmailRequest
     ): ApiResponse<ApiResponse.SuccessBody<SendNotificationEmailUseCaseOut>> {
         return sendNotificationEmailUseCase
             .execute(
@@ -119,7 +120,7 @@ class EmailController(
 
     @PostMapping(value = ["/schedules/notifications/email"])
     suspend fun postEmailNotificationSchedule(
-        @RequestBody request: PostNotificationEmailRequest
+        @Valid @RequestBody request: PostNotificationEmailRequest
     ): ApiResponse<ApiResponse.SuccessBody<PostEmailNotificationSchedulesUseCaseOut>> {
         return postEmailNotificationSchedulesUseCase
             .execute(
