@@ -20,21 +20,50 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.reactive.executeAndAwait
 
 fun JsonNode.campaignId(): Long? {
-    val campaignIdNode = this["campaignId"] ?: return null
+    val node = this.get("campaignId") ?: return null
     return when {
-        campaignIdNode.isIntegralNumber -> campaignIdNode.asLong()
-        campaignIdNode.isTextual -> campaignIdNode.asText().toLongOrNull()
+        node.isIntegralNumber -> node.longValue()
+        node.isTextual -> node.asText().toLongOrNull()
         else -> null
     }
 }
 
-fun JsonNode.templateId() = this["templateId"].asLong()
+fun JsonNode.templateId(): Long {
+    val node = this.get("templateId") ?: throw IllegalArgumentException("templateId is required")
+    return when {
+        node.isIntegralNumber -> node.longValue()
+        node.isTextual -> node.asText().toLongOrNull() ?: throw IllegalArgumentException("Invalid templateId format")
+        else -> throw IllegalArgumentException("Invalid templateId type")
+    }
+}
 
-fun JsonNode.templateVersion() = (this["templateVersion"].asDouble()).toFloat()
+fun JsonNode.templateVersion(): Float {
+    val node = this.get("templateVersion") ?: throw IllegalArgumentException("templateVersion is required")
+    return when {
+        node.isNumber -> node.floatValue()
+        node.isTextual -> node.asText().toFloatOrNull() ?: throw IllegalArgumentException("Invalid templateVersion format")
+        else -> throw IllegalArgumentException("Invalid templateVersion type")
+    }
+}
 
-fun JsonNode.userIds() = this["userIds"].map { it.asLong() }
+fun JsonNode.userIds(): List<Long> {
+    val node = this.get("userIds") ?: throw IllegalArgumentException("userIds is required")
+    return if (node.isArray) {
+        node.mapNotNull { userIdNode ->
+            when {
+                userIdNode.isIntegralNumber -> userIdNode.longValue()
+                userIdNode.isTextual -> userIdNode.asText().toLongOrNull()
+                else -> null
+            }
+        }
+    } else {
+        throw IllegalArgumentException("userIds must be an array")
+    }
+}
 
-fun JsonNode.expiredTime() = LocalDateTimeExtension().parseExpiredTime(this["expiredTime"].asText())
+fun JsonNode.expiredTime() = LocalDateTimeExtension().parseExpiredTime(
+    this.get("expiredTime")?.asText() ?: throw IllegalArgumentException("expiredTime is required")
+)
 
 @Profile("!test")
 @Component
