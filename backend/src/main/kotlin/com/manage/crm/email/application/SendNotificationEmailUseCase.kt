@@ -129,11 +129,6 @@ class SendNotificationEmailUseCase(
 
     private suspend fun getTargetUsers(userIds: List<Long>, sendType: String, campaignId: Long?): List<User> {
         return when {
-            userIds.isEmpty() -> {
-                userRepository
-                    .findAllExistByUserAttributesKey(sendType)
-            }
-
             campaignId != null -> {
                 val eventIds = campaignEventsRepository.findAllByCampaignId(campaignId).map { it.eventId }
                 val allUserIdsInCampaignSet = eventsRepository.findAllByIdIn(eventIds).map { it.userId }.toSet()
@@ -147,6 +142,11 @@ class SendNotificationEmailUseCase(
                                 )[sendType] != null
                             }
                     }
+            }
+
+            userIds.isEmpty() -> {
+                userRepository
+                    .findAllExistByUserAttributesKey(sendType)
             }
 
             else -> {
