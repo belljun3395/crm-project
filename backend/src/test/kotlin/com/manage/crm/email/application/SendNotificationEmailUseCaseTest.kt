@@ -19,8 +19,8 @@ import com.manage.crm.email.domain.vo.Variables
 import com.manage.crm.event.domain.Campaign
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.vo.Properties
-import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.user.domain.User
@@ -494,7 +494,6 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                 Properties(listOf(Property("campaignProp", "campaignValue"))),
                 LocalDateTime.now()
             )
-
 
             coEvery { campaignRepository.findById(campaignId) } returns campaign
             coEvery { campaignEventsService.getAllEventUserIdsByCampaignId(campaignId) } returns setOf(1L, 2L)

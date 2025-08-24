@@ -6,9 +6,9 @@ import com.manage.crm.email.application.dto.VariablesContent
 import com.manage.crm.email.domain.model.NotificationEmailTemplateVariablesModel
 import com.manage.crm.email.domain.vo.Variables
 import com.manage.crm.event.domain.Event
-import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.event.domain.vo.Properties
 import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.user.domain.UserFixtures
 import com.manage.crm.user.domain.vo.JsonFixtures
 import io.kotest.core.spec.style.BehaviorSpec
