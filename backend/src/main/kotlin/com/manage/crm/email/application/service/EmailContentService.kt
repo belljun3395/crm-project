@@ -6,6 +6,7 @@ import com.manage.crm.email.application.dto.NonContent
 import com.manage.crm.email.application.dto.VariablesContent
 import com.manage.crm.email.domain.model.NotificationEmailTemplateVariablesModel
 import com.manage.crm.email.domain.support.VariablesSupport
+import com.manage.crm.email.domain.vo.Variables
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.user.domain.User
