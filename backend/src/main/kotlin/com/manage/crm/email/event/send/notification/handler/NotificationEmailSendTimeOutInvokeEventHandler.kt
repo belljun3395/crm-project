@@ -33,6 +33,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
     private val objectMapper: ObjectMapper
 ) {
     private val log = KotlinLogging.logger {}
+
     /**
      * - Find Invoked Event  and Mark it as completed
      * - Send Email to Users
@@ -113,11 +114,11 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
                             sendStatus = SentEmailStatus.SEND.name
                         )
                     )
-                    
+
                     log.debug { "Successfully sent email to user ${user.id}, email: $email, messageId: $emailMessageId" }
                 } catch (exception: Exception) {
                     log.error(exception) { "Failed to send email to user ${user.id}, campaignId: $campaignId, templateId: $templateId" }
-                    
+
                     // Save failed email send history
                     try {
                         val email = user.userAttributes.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)
