@@ -62,7 +62,6 @@ class SendNotificationEmailUseCase(
             }
         }
 
-        // TODO: get users who participate in the campaign or all users if campaignId is null
         val targetUsers = getTargetUsers(userIds, notificationEmailType, campaign?.id)
             .mapNotNull { user -> extractEmailAndUser(user, notificationEmailType) }
             .toMap()
@@ -119,6 +118,7 @@ class SendNotificationEmailUseCase(
             }
 
             campaignId != null -> {
+                // TODO: 아래 코드 event 에서 구현하여 allUserIdsInCampaign 결과만 받도록 수정
                 val eventIds = campaignEventsRepository.findAllByCampaignId(campaignId).map { it.eventId }
                 val allUserIdsInCampaign = eventsRepository.findAllByIdIn(eventIds).map { it.userId }
                 userIds.filter { allUserIdsInCampaign.contains(it) }
