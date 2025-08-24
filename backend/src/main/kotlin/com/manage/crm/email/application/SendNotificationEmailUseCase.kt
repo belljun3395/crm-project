@@ -162,12 +162,8 @@ class SendNotificationEmailUseCase(
     }
 
     private suspend fun generateNotificationDto(targetUsers: Map<Email, User>, notificationVariables: NotificationEmailTemplateVariablesModel, campaignId: Long?): List<SendEmailInDto> {
-        val emailContentPairList = mutableListOf<Pair<Email, Content>>()
-        targetUsers.forEach { (email, user) ->
+        return targetUsers.toList().parMap(Dispatchers.IO) { (email, user) ->
             val content = emailContentService.genUserEmailContent(user, notificationVariables, campaignId)
-            emailContentPairList.add(email to content)
-        }
-        return emailContentPairList.map { (email, content) ->
             doMapToNotificationDto(email, content, notificationVariables)
         }
     }
