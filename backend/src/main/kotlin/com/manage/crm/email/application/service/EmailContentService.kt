@@ -46,7 +46,7 @@ class EmailContentService(
                 val allowedEventVariables = filterEventVariablesByWhitelist(eventVariables, variables)
                 userAttributeMap + allowedEventVariables // Event variables override user variables
             } ?: userAttributeMap
-            
+
             VariablesContent(finalVariables)
         }
     }
@@ -60,7 +60,7 @@ class EmailContentService(
                 else -> key
             }
         }.toSet()
-        
+
         return eventVariables.filterKeys { key ->
             allowedKeys.contains(key)
         }
@@ -69,11 +69,11 @@ class EmailContentService(
     suspend fun getCampaignEventVariables(campaignId: Long): Map<String, String> {
         val campaignEvents = campaignEventsRepository.findAllByCampaignId(campaignId)
         if (campaignEvents.isEmpty()) return emptyMap()
-        
+
         val eventIds = campaignEvents.map { it.eventId }
         val events = eventRepository.findAllByIdIn(eventIds)
         if (events.isEmpty()) return emptyMap()
-        
+
         val eventVariables = mutableMapOf<String, String>()
         events.forEach { event ->
             val keys = event.properties.getKeys()

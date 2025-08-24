@@ -64,7 +64,8 @@ class EmailController(
 
     @PostMapping(value = ["/templates"])
     suspend fun postEmailTemplate(
-        @Valid @RequestBody request: PostTemplateRequest
+        @Valid @RequestBody
+        request: PostTemplateRequest
     ): ApiResponse<ApiResponse.SuccessBody<PostTemplateUseCaseOut>> {
         return postTemplateUseCase
             .execute(
@@ -82,7 +83,8 @@ class EmailController(
 
     @PostMapping(value = ["/send/notifications"])
     suspend fun sendNotificationEmail(
-        @Valid @RequestBody request: SendNotificationEmailRequest
+        @Valid @RequestBody
+        request: SendNotificationEmailRequest
     ): ApiResponse<ApiResponse.SuccessBody<SendNotificationEmailUseCaseOut>> {
         return sendNotificationEmailUseCase
             .execute(
@@ -120,7 +122,8 @@ class EmailController(
 
     @PostMapping(value = ["/schedules/notifications/email"])
     suspend fun postEmailNotificationSchedule(
-        @Valid @RequestBody request: PostNotificationEmailRequest
+        @Valid @RequestBody
+        request: PostNotificationEmailRequest
     ): ApiResponse<ApiResponse.SuccessBody<PostEmailNotificationSchedulesUseCaseOut>> {
         return postEmailNotificationSchedulesUseCase
             .execute(

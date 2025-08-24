@@ -77,7 +77,7 @@ class SendNotificationEmailUseCase(
         }
 
         log.info { "Sending notification emails to ${targetUsers.size} users. CampaignId: $campaignId, templateId: $templateId" }
-        
+
         generateNotificationDto(targetUsers, notificationVariables, campaign?.id)
             .parMap(Dispatchers.IO, concurrency = 10) { emailDto ->
                 try {
