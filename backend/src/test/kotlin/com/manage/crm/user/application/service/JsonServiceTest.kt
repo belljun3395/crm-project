@@ -1,7 +1,6 @@
 package com.manage.crm.user.application.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.manage.crm.user.domain.vo.Json
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
 import com.manage.crm.user.exception.JsonException
 import io.kotest.assertions.throwables.shouldThrow
@@ -26,7 +25,7 @@ class JsonServiceTest : FeatureSpec({
             val result = jsonService.execute(attribute, *keys)
 
             // then
-            result shouldBe Json(attribute)
+            result shouldBe attribute
         }
 
         scenario("attribute is not JSON format") {

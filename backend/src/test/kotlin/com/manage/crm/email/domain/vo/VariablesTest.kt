@@ -5,28 +5,6 @@ import io.kotest.matchers.shouldBe
 
 class VariablesTest : FeatureSpec({
 
-    feature("Variables#_checkValueContainType") {
-        scenario("throw exception when value does not contain attribute type") {
-            // when
-            val exception = runCatching {
-                Variables("title:hello", "name")
-            }.exceptionOrNull()
-
-            // then
-            exception shouldBe IllegalArgumentException("Value need to contain _ for distinguish variable type.")
-        }
-
-        scenario("throw exception when custom attribute format is invalid") {
-            // when
-            val exception = runCatching {
-                Variables("custom_title_hello", "custom_name_test")
-            }.exceptionOrNull()
-
-            // then
-            exception shouldBe IllegalArgumentException("Custom type format is invalid.")
-        }
-    }
-
     feature(("Variables#isEmpty")) {
         scenario("check if variables is empty") {
             // given
@@ -38,137 +16,143 @@ class VariablesTest : FeatureSpec({
     }
 
     feature("Variables#getVariables") {
-        scenario("get attribute variables") {
+        scenario("get all variables") {
             // given
-            val variables = Variables("attribute_title:hello", "attribute_name")
+            val userVariable = UserVariable("title", "hello")
+            val campaignVariable = CampaignVariable("name")
+            val variables = Variables(listOf(userVariable, campaignVariable))
 
             // when
             val result = variables.getVariables()
 
             // then
-            result shouldBe listOf("attribute_title:hello", "attribute_name")
+            result shouldBe listOf(userVariable, campaignVariable)
         }
 
-        scenario("get custom variables") {
+        scenario("get user variables only") {
             // given
-            val variables = Variables("custom_title:hello", "custom_name")
+            val userVariable = UserVariable("title", "hello")
+            val campaignVariable = CampaignVariable("name")
+            val variables = Variables(listOf(userVariable, campaignVariable))
 
             // when
-            val result = variables.getVariables()
+            val result = variables.getVariables(USER_TYPE)
 
             // then
-            result shouldBe listOf("custom_title:hello", "custom_name")
+            result shouldBe listOf(userVariable)
         }
 
-        scenario("get variables without default") {
+        scenario("get campaign variables only") {
             // given
-            val variables = Variables("attribute_title:hello", "attribute_name")
+            val userVariable = UserVariable("title", "hello")
+            val campaignVariable = CampaignVariable("name")
+            val variables = Variables(listOf(userVariable, campaignVariable))
 
             // when
-            val result = variables.getVariables(withDefault = false)
+            val result = variables.getVariables(CAMPAIGN_TYPE)
 
             // then
-            result shouldBe listOf("attribute_title", "attribute_name")
-        }
-
-        scenario("get custom variables without default") {
-            // given
-            val variables = Variables("custom_title:hello", "custom_name")
-
-            // when
-            val result = variables.getVariables(withDefault = false)
-
-            // then
-            result shouldBe listOf("custom_title", "custom_name")
+            result shouldBe listOf(campaignVariable)
         }
     }
 
     feature("Variables#findVariable") {
-        scenario("get attribute  variable") {
+        scenario("get user variable") {
             // given
-            val variables = Variables("attribute_title:hello", "attribute_name")
+            val userVariable = UserVariable("title", "hello")
+            val variables = Variables(listOf(userVariable, UserVariable("name")))
 
             // when
-            val result = variables.findVariable("attribute_title")
+            val result = variables.findVariable("title")
 
             // then
-            result shouldBe "attribute_title:hello"
+            result shouldBe userVariable
         }
 
-        scenario("get custom  variable") {
+        scenario("get campaign variable") {
             // given
-            val variables = Variables("custom_title:hello", "custom_name")
+            val campaignVariable = CampaignVariable("title", "hello")
+            val variables = Variables(listOf(campaignVariable, CampaignVariable("name")))
 
             // when
-            val result = variables.findVariable("custom_title")
+            val result = variables.findVariable("title")
 
             // then
-            result shouldBe "custom_title:hello"
+            result shouldBe campaignVariable
         }
 
-        scenario("get attribute variable without default") {
+        scenario("get variable that does not exist") {
             // given
-            val variables = Variables("attribute_title:hello", "attribute_name")
+            val variables = Variables(listOf(UserVariable("title", "hello")))
 
             // when
-            val result = variables.findVariable("attribute_title", withDefault = false)
+            val result = variables.findVariable("nonexistent")
 
             // then
-            result shouldBe "attribute_title"
-        }
-
-        scenario("get custom variable without default") {
-            // given
-            val variables = Variables("custom_title:hello", "custom_name")
-
-            // when
-            val result = variables.findVariable("custom_title", withDefault = false)
-
-            // then
-            result shouldBe "custom_title"
+            result shouldBe null
         }
     }
 
     feature("Variables#findVariableDefault") {
-        scenario("get attribute variable default") {
+        scenario("get user variable default") {
             // given
-            val variables = Variables("attribute_title:hello", "attribute_name")
+            val variables = Variables(
+                listOf(
+                    UserVariable("title", "hello"),
+                    UserVariable("name")
+                )
+            )
 
             // when
-            val result = variables.findVariableDefault("attribute_title")
+            val result = variables.findVariableDefault("title")
 
             // then
             result shouldBe "hello"
         }
 
-        scenario("get custom variable default") {
+        scenario("get campaign variable default") {
             // given
-            val variables = Variables("custom_title:hello", "custom_name")
+            val variables = Variables(
+                listOf(
+                    CampaignVariable("title", "hello"),
+                    CampaignVariable("name")
+                )
+            )
 
             // when
-            val result = variables.findVariableDefault("custom_title")
+            val result = variables.findVariableDefault("title")
 
             // then
             result shouldBe "hello"
         }
 
-        scenario("get attribute variable default which does not have default value") {
+        scenario("get user variable default which does not have default value") {
             // given
-            val variables = Variables("attribute_title:hello", "attribute_name")
+            val variables = Variables(
+                listOf(
+                    UserVariable("title", "hello"),
+                    UserVariable("name")
+                )
+            )
 
             // when
-            val result = variables.findVariableDefault("attribute_name")
+            val result = variables.findVariableDefault("name")
 
             // then
             result shouldBe null
         }
 
-        scenario("get custom variable default which does not have default value") {
+        scenario("get campaign variable default which does not have default value") {
             // given
-            val variables = Variables("custom_title:hello", "custom_name")
+            val variables = Variables(
+                listOf(
+                    CampaignVariable("title", "hello"),
+                    CampaignVariable("name")
+                )
+            )
 
             // when
-            val result = variables.findVariableDefault("custom_name")
+            val result = variables.findVariableDefault("name")
 
             // then
             result shouldBe null
