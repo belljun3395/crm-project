@@ -1,7 +1,7 @@
 package com.manage.crm.user.domain
 
-import com.manage.crm.user.domain.vo.UserAttributesFixtures
 import com.manage.crm.user.domain.vo.UserAttributes
+import com.manage.crm.user.domain.vo.UserAttributesFixtures
 import java.time.LocalDateTime
 import kotlin.random.Random
 
