@@ -8,8 +8,8 @@ import com.manage.crm.user.application.service.JsonService
 import com.manage.crm.user.application.service.UserRepositoryEventProcessor
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
-import com.manage.crm.user.domain.vo.Json
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
+import com.manage.crm.user.domain.vo.UserAttributes
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -23,7 +23,9 @@ class EnrollUserUseCase(
     suspend fun execute(useCaseIn: EnrollUserUseCaseIn): EnrollUserUseCaseOut {
         val id: Long? = useCaseIn.id
         val externalId: String = useCaseIn.externalId
-        val userAttributes: Json = useCaseIn.userAttributes.let { jsonService.execute(it, RequiredUserAttributeKey.EMAIL) }
+        val userAttributes: UserAttributes = useCaseIn.userAttributes
+            .let { jsonService.execute(it, RequiredUserAttributeKey.EMAIL) }
+            .let { UserAttributes(it) }
 
         val updateOrSaveUser = run {
             if (id != null) {
