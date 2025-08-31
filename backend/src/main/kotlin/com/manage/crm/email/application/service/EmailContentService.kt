@@ -56,7 +56,7 @@ class EmailContentService(
     suspend fun getCampaignEventProperties(campaignId: Long, userId: Long): Properties? {
         try {
             val events = campaignEventsService.findAllEventsByCampaignIdAndUserId(campaignId, userId)
-            return events.sortedBy { it.id }.first().properties
+            return events.sortedBy { it.id }.firstOrNull()?.properties
         } catch (e: Exception) {
             log.error(e) { "Failed to get campaign event variables for campaignId: $campaignId" }
             return null
