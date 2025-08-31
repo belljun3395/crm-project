@@ -5,7 +5,7 @@ import com.manage.crm.email.application.dto.SendEmailInDto
 import com.manage.crm.email.application.service.EmailContentService
 import com.manage.crm.email.application.service.MailService
 import com.manage.crm.email.domain.EmailSendHistory
-import com.manage.crm.email.domain.model.NotificationEmailTemplatePropertiesModel
+import com.manage.crm.email.domain.model.NotificationEmailTemplateVariablesModel
 import com.manage.crm.email.domain.repository.EmailSendHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
@@ -53,7 +53,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
                     emailTemplateHistoryRepository
                         .findByTemplateIdAndVersion(templateId, templateVersion)
                         ?.let {
-                            NotificationEmailTemplatePropertiesModel(
+                            NotificationEmailTemplateVariablesModel(
                                 subject = it.subject,
                                 body = it.body,
                                 variables = it.variables
@@ -66,7 +66,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
                     emailTemplateRepository
                         .findById(templateId)
                         ?.let {
-                            NotificationEmailTemplatePropertiesModel(
+                            NotificationEmailTemplateVariablesModel(
                                 subject = it.subject,
                                 body = it.body,
                                 variables = it.variables
@@ -81,7 +81,8 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
         users.collect { user ->
             val email =
                 user.userAttributes.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)
-            val content = emailContentService.genUserEmailContent(user, template)
+            // TODO check if notification need to send to user filter by campaign
+            val content = emailContentService.genUserEmailContent(user, template, null) ?: return@collect
             val emailMessageId =
                 mailService.send(
                     SendEmailInDto(
