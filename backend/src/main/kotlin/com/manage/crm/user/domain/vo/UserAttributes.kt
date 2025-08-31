@@ -2,7 +2,7 @@ package com.manage.crm.user.domain.vo
 
 import com.fasterxml.jackson.databind.ObjectMapper
 
-data class Json(
+data class UserAttributes(
     val value: String
 ) {
     fun isExist(key: String, objectMapper: ObjectMapper): Boolean {
