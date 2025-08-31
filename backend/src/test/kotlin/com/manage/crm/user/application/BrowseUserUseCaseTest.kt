@@ -4,7 +4,7 @@ import com.manage.crm.user.application.dto.BrowseUsersUseCaseOut
 import com.manage.crm.user.application.dto.UserDto
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
-import com.manage.crm.user.domain.vo.Json
+import com.manage.crm.user.domain.vo.UserAttributes
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -28,7 +28,7 @@ class BrowseUserUseCaseTest : BehaviorSpec({
             User.new(
                 id = it.toLong(),
                 externalId = it.toString(),
-                userAttributes = Json(
+                userAttributes = UserAttributes(
                     """
                     {
                         "email": "example$it@example.com",
