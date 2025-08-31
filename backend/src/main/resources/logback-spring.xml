@@ -55,4 +55,12 @@
             <appender-ref ref="LOKI"/>
         </root>
     </springProfile>
+
+    <springProfile name="test">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+        <logger name="com.manage.crm.integration" level="DEBUG"/>
+        <logger name="org.springframework.web.reactive.function.client" level="DEBUG"/>
+    </springProfile>
 </configuration>

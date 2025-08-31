@@ -130,6 +130,11 @@ dependencies {
     testImplementation("io.kotest.extensions:kotest-extensions-allure:${DependencyVersion.KOTEST_EXTENSION}")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${DependencyVersion.COROUTINE_TEST}")
 
+    /** testcontainers */
+    testImplementation("org.testcontainers:junit-jupiter:1.19.8")
+    testImplementation("org.testcontainers:mysql:1.19.8")
+    testImplementation("org.testcontainers:testcontainers:1.19.8")
+
     /** logger */
     implementation("io.github.oshai:kotlin-logging-jvm:${DependencyVersion.KOTLIN_LOGGING}")
 }

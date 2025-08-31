@@ -52,6 +52,7 @@ spring:
         sql-migration-suffixes: sql
         baseline-on-migrate: true
         baseline-version: 0
+        validate-on-migrate: false
     # ----- Only for test profile -----
     datasource:
         jdbcUrl: jdbc:mysql://localhost:13306/test
