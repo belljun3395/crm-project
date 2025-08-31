@@ -67,10 +67,10 @@ class Event(
 
     override fun hashCode(): Int {
         var result = id?.hashCode() ?: 0
-        result = 31 * result + (name?.hashCode() ?: 0)
-        result = 31 * result + (userId?.hashCode() ?: 0)
-        result = 31 * result + (properties?.hashCode() ?: 0)
-        result = 31 * result + (createdAt?.hashCode() ?: 0)
+        result = 31 * result + name.hashCode()
+        result = 31 * result + userId.hashCode()
+        result = 31 * result + properties.hashCode()
+        result = (31 * result) + (createdAt?.hashCode() ?: 0)
         return result
     }
 }
