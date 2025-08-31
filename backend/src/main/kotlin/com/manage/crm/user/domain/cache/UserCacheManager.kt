@@ -34,18 +34,38 @@ class UserCacheManager(
     suspend fun totalUserCount(): Long {
         return redisTemplate.opsForValue()
             .get(TOTAL_USER_COUNT_KEY)
-            .awaitSingleOrNull() as Long? ?: run {
+            .awaitSingleOrNull()?.let { value ->
+                when (value) {
+                    is Long -> value
+                    is Int -> value.toLong()
+                    is Number -> value.toLong()
+                    else -> {
+                        log.warn { "Unexpected type for total user count: ${value::class}" }
+                        0L
+                    }
+                }
+            } ?: run {
             log.warn { "Failed to get total user count" }
-            return 0L
+            0L
         }
     }
 
     suspend fun totalUserCountUpdatedAt(): Long {
         return redisTemplate.opsForValue()
             .get(TOTAL_USER_COUNT_UPDATED_AT_KEY)
-            .awaitSingleOrNull() as Long? ?: run {
-            log.warn { "Failed to get total user count" }
-            return 0L
+            .awaitSingleOrNull()?.let { value ->
+                when (value) {
+                    is Long -> value
+                    is Int -> value.toLong()
+                    is Number -> value.toLong()
+                    else -> {
+                        log.warn { "Unexpected type for total user count updated at: ${value::class}" }
+                        0L
+                    }
+                }
+            } ?: run {
+            log.warn { "Failed to get total user count updated at" }
+            0L
         }
     }
 
