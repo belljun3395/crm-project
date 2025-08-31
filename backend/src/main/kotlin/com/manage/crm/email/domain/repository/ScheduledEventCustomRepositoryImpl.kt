@@ -13,7 +13,7 @@ class ScheduledEventCustomRepositoryImpl(
 ) : ScheduledEventCustomRepository {
     override suspend fun findAllByEmailTemplateIdAndCompletedFalse(templateId: Long): List<ScheduledEvent> {
         var selectQuery = """
-            SELECT * FROM SCHEDULED_EVENTS
+            SELECT * FROM scheduled_events
         """.trimIndent()
         val whereClause = mutableListOf<String>()
         whereClause.add("event_payload LIKE '%\"templateId\":$templateId%'")
