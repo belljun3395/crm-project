@@ -164,7 +164,7 @@ class SendNotificationEmailUseCase(
                     .findAllByIdIn(userIds)
                     .filter {
                         objectMapper.readValue(
-                            it.userAttributes?.value,
+                            it.userAttributes.value,
                             Map::class.java
                         )[sendType] != null
                     }
