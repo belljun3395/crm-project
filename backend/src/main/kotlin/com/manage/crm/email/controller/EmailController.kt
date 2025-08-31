@@ -88,7 +88,8 @@ class EmailController(
                 SendNotificationEmailUseCaseIn(
                     templateId = request.templateId,
                     templateVersion = request.templateVersion,
-                    userIds = request.userIds ?: emptyList()
+                    userIds = request.userIds ?: emptyList(),
+                    campaignId = request.campaignId
                 )
             )
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
