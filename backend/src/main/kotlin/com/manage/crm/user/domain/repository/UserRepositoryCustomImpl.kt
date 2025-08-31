@@ -14,7 +14,7 @@ class UserRepositoryCustomImpl(
 
     override suspend fun findByEmail(email: String): User? {
         var selectQuery = """
-            SELECT * FROM USERS
+            SELECT * FROM users
         """.trimIndent()
         val whereClause = mutableListOf<String>()
         whereClause.add("user_attributes LIKE '%\"email\": \"$email\"%'")
