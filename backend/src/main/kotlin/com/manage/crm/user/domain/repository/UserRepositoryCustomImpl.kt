@@ -1,7 +1,7 @@
 package com.manage.crm.user.domain.repository
 
 import com.manage.crm.user.domain.User
-import com.manage.crm.user.domain.vo.Json
+import com.manage.crm.user.domain.vo.UserAttributes
 import kotlinx.coroutines.reactive.awaitFirst
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Repository
@@ -27,7 +27,7 @@ class UserRepositoryCustomImpl(
                 User.new(
                     id = it["id"] as Long,
                     externalId = it["external_id"] as String,
-                    userAttributes = Json(it["user_attributes"] as String),
+                    userAttributes = UserAttributes(it["user_attributes"] as String),
                     createdAt = it["created_at"] as LocalDateTime,
                     updatedAt = it["updated_at"] as LocalDateTime
                 )
