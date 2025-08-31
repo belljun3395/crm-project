@@ -1,6 +1,6 @@
 package com.manage.crm.user.domain
 
-import com.manage.crm.user.domain.vo.Json
+import com.manage.crm.user.domain.vo.UserAttributes
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.LastModifiedDate
@@ -15,7 +15,7 @@ class User(
     @Column("external_id")
     var externalId: String,
     @Column("user_attributes")
-    var userAttributes: Json,
+    var userAttributes: UserAttributes,
     @CreatedDate
     var createdAt: LocalDateTime? = null,
     @LastModifiedDate
@@ -24,7 +24,7 @@ class User(
     companion object {
         fun new(
             externalId: String,
-            userAttributes: Json
+            userAttributes: UserAttributes
         ): User {
             return User(
                 externalId = externalId,
@@ -35,7 +35,7 @@ class User(
         fun new(
             id: Long,
             externalId: String,
-            userAttributes: Json,
+            userAttributes: UserAttributes,
             createdAt: LocalDateTime,
             updatedAt: LocalDateTime
         ): User {
@@ -52,7 +52,7 @@ class User(
     /**
      * Update user attributes
      */
-    fun updateAttributes(attributes: Json) {
+    fun updateAttributes(attributes: UserAttributes) {
         userAttributes = attributes
     }
 
