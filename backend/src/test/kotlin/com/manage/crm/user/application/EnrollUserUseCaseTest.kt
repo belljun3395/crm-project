@@ -6,8 +6,8 @@ import com.manage.crm.user.application.service.JsonService
 import com.manage.crm.user.application.service.UserRepositoryEventProcessor
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
-import com.manage.crm.user.domain.vo.Json
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
+import com.manage.crm.user.domain.vo.UserAttributes
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -41,11 +41,11 @@ class EnrollUserUseCaseTest : BehaviorSpec({
                 """.trimIndent()
             )
 
-            val userAttributes = Json(useCaseIn.userAttributes)
+            val userAttributes = UserAttributes(useCaseIn.userAttributes)
             coEvery {
                 jsonService.execute(useCaseIn.userAttributes, RequiredUserAttributeKey.EMAIL)
             } answers {
-                userAttributes
+                useCaseIn.userAttributes
             }
             val expectedUser = User.new(
                 id = 1,
@@ -98,11 +98,11 @@ class EnrollUserUseCaseTest : BehaviorSpec({
                 """.trimIndent()
             )
 
-            val userUpdateAttributes = Json(useCaseIn.userAttributes)
+            val userUpdateAttributes = UserAttributes(useCaseIn.userAttributes)
             coEvery {
                 jsonService.execute(useCaseIn.userAttributes, RequiredUserAttributeKey.EMAIL)
             } answers {
-                userUpdateAttributes
+                useCaseIn.userAttributes
             }
 
             val originUser = User.new(

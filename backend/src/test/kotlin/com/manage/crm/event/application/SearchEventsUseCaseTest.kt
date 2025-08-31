@@ -15,7 +15,7 @@ import com.manage.crm.event.domain.vo.Properties
 import com.manage.crm.event.domain.vo.Property
 import com.manage.crm.user.domain.UserFixtures
 import com.manage.crm.user.domain.repository.UserRepository
-import com.manage.crm.user.domain.vo.Json
+import com.manage.crm.user.domain.vo.UserAttributes
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -75,7 +75,7 @@ class SearchEventsUseCaseTest : BehaviorSpec({
                 UserFixtures.giveMeOne()
                     .withId(it)
                     .withExternalId("externalId-$it")
-                    .withUserAttributes(Json("""{}""".trimIndent()))
+                    .withUserAttributes(UserAttributes("""{}""".trimIndent()))
                     .build()
             }.toList()
 
@@ -151,7 +151,7 @@ class SearchEventsUseCaseTest : BehaviorSpec({
                 UserFixtures.giveMeOne()
                     .withId(it)
                     .withExternalId("externalId-$it")
-                    .withUserAttributes(Json("""{}""".trimIndent()))
+                    .withUserAttributes(UserAttributes("""{}""".trimIndent()))
                     .build()
             }.toList()
 
@@ -197,7 +197,7 @@ class SearchEventsUseCaseTest : BehaviorSpec({
                 UserFixtures.giveMeOne()
                     .withId(it)
                     .withExternalId("externalId-$it")
-                    .withUserAttributes(Json("""{}""".trimIndent()))
+                    .withUserAttributes(UserAttributes("""{}""".trimIndent()))
                     .build()
             }.toList()
 

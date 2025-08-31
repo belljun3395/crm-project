@@ -1,6 +1,6 @@
 package com.manage.crm.user.domain
 
-import com.manage.crm.user.domain.vo.Json
+import com.manage.crm.user.domain.vo.UserAttributes
 import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
@@ -8,7 +8,7 @@ import java.time.LocalDateTime
 class UserTest : FeatureSpec({
     val id = 1L
     val externalId = "1"
-    val attributes = Json(
+    val attributes = UserAttributes(
         """
         {
             "email": "example@example.com"
@@ -26,7 +26,7 @@ class UserTest : FeatureSpec({
     feature("User#updateAttributes") {
         scenario("update user attributes") {
             // given
-            val newAttributes = Json(
+            val newAttributes = UserAttributes(
                 """
                 {
                     "email": "new@example.com"

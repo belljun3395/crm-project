@@ -2,18 +2,18 @@ package com.manage.crm.user.domain.vo
 
 import kotlin.random.Random
 
-class JsonFixtures private constructor() {
+class UserAttributesFixtures private constructor() {
     private var value: String = "{}"
 
-    fun withValue(value: String): JsonFixtures = apply {
+    fun withValue(value: String): UserAttributesFixtures = apply {
         this.value = value
     }
-    fun build(): Json = Json(value)
+    fun build(): UserAttributes = UserAttributes(value)
 
     companion object {
-        fun aJson(): JsonFixtures = JsonFixtures()
+        fun aJson(): UserAttributesFixtures = UserAttributesFixtures()
 
-        fun giveMeOne(): JsonFixtures {
+        fun giveMeOne(): UserAttributesFixtures {
             val externalId = Random.nextLong(1, 101)
             val value =
                 """

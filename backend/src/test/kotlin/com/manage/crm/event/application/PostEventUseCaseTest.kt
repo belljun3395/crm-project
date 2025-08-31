@@ -16,7 +16,7 @@ import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.user.domain.UserFixtures
 import com.manage.crm.user.domain.repository.UserRepository
-import com.manage.crm.user.domain.vo.JsonFixtures
+import com.manage.crm.user.domain.vo.UserAttributesFixtures
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -63,7 +63,7 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             val user = UserFixtures.giveMeOne()
                 .withExternalId(useCaseIn.externalId)
-                .withUserAttributes(JsonFixtures.giveMeOne().withValue("""{}""").build())
+                .withUserAttributes(UserAttributesFixtures.giveMeOne().withValue("""{}""").build())
                 .build()
             coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
 
@@ -120,7 +120,7 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             val user = UserFixtures.giveMeOne()
                 .withExternalId(useCaseIn.externalId)
-                .withUserAttributes(JsonFixtures.giveMeOne().withValue("""{}""").build())
+                .withUserAttributes(UserAttributesFixtures.giveMeOne().withValue("""{}""").build())
                 .build()
             coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
 
@@ -242,7 +242,7 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             val user = UserFixtures.giveMeOne()
                 .withExternalId(useCaseIn.externalId)
-                .withUserAttributes(JsonFixtures.giveMeOne().withValue("""{}""").build())
+                .withUserAttributes(UserAttributesFixtures.giveMeOne().withValue("""{}""").build())
                 .build()
             coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
 
@@ -329,7 +329,7 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             val user = UserFixtures.giveMeOne()
                 .withExternalId(useCaseIn.externalId)
-                .withUserAttributes(JsonFixtures.giveMeOne().withValue("""{}""").build())
+                .withUserAttributes(UserAttributesFixtures.giveMeOne().withValue("""{}""").build())
                 .build()
             coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
 

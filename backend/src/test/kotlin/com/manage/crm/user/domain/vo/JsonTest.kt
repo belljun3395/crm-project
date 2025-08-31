@@ -6,7 +6,7 @@ import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.shouldBe
 
 class JsonTest : FeatureSpec({
-    val json = Json(
+    val userAttributes = UserAttributes(
         """
                 {
                     "email": "example@example.com",
@@ -22,7 +22,7 @@ class JsonTest : FeatureSpec({
             val objectMapper = ObjectMapper()
 
             // when
-            val result = json.isExist(key, objectMapper)
+            val result = userAttributes.isExist(key, objectMapper)
 
             // then
             result shouldBe true
@@ -34,7 +34,7 @@ class JsonTest : FeatureSpec({
             val objectMapper = ObjectMapper()
 
             // when
-            val result = json.isExist(key, objectMapper)
+            val result = userAttributes.isExist(key, objectMapper)
 
             // then
             result shouldBe false
@@ -46,7 +46,7 @@ class JsonTest : FeatureSpec({
             val objectMapper = ObjectMapper()
 
             // when
-            val result = json.isExist(keys, objectMapper)
+            val result = userAttributes.isExist(keys, objectMapper)
 
             // then
             result shouldBe true
@@ -58,7 +58,7 @@ class JsonTest : FeatureSpec({
             val objectMapper = ObjectMapper()
 
             // when
-            val result = json.isExist(keys, objectMapper)
+            val result = userAttributes.isExist(keys, objectMapper)
 
             // then
             result shouldBe false
@@ -72,7 +72,7 @@ class JsonTest : FeatureSpec({
             val objectMapper = ObjectMapper()
 
             // when
-            val result = json.getValue(key, objectMapper)
+            val result = userAttributes.getValue(key, objectMapper)
 
             // then
             result shouldBe "example@example.com"
@@ -84,7 +84,7 @@ class JsonTest : FeatureSpec({
             val objectMapper = ObjectMapper()
 
             // when
-            val result = json.getValue(key, objectMapper)
+            val result = userAttributes.getValue(key, objectMapper)
 
             // then
             result shouldBe "male"
@@ -97,7 +97,7 @@ class JsonTest : FeatureSpec({
 
             // when
             val exception = shouldThrow<NullPointerException> {
-                json.getValue(key, objectMapper)
+                userAttributes.getValue(key, objectMapper)
             }
 
             // then
@@ -110,7 +110,7 @@ class JsonTest : FeatureSpec({
             val objectMapper = ObjectMapper()
 
             // when
-            val result = json.getValue(keys, objectMapper)
+            val result = userAttributes.getValue(keys, objectMapper)
 
             // then
             result shouldBe "20"
@@ -123,7 +123,7 @@ class JsonTest : FeatureSpec({
 
             // when
             val exception = shouldThrow<IllegalArgumentException> {
-                json.getValue(keys, objectMapper)
+                userAttributes.getValue(keys, objectMapper)
             }
 
             // then
