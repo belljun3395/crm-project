@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param
 interface UserRepository : CoroutineCrudRepository<User, Long>, UserRepositoryCustom {
     @Query(
         """
-            SELECT * FROM USERS WHERE USERS.USER_ATTRIBUTES LIKE '%'||:key||'%'
+            SELECT * FROM users WHERE users.USER_ATTRIBUTES LIKE '%'||:key||'%'
         """
     )
     suspend fun findAllExistByUserAttributesKey(@Param("key") key: String? = "email"): List<User>
