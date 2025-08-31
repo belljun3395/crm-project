@@ -6,7 +6,7 @@ import com.manage.crm.email.application.service.EmailTemplateRepositoryEventProc
 import com.manage.crm.email.application.service.HtmlService
 import com.manage.crm.email.domain.EmailTemplate
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
-import com.manage.crm.email.domain.vo.Variables
+import com.manage.crm.email.domain.support.stringListToVariables
 import com.manage.crm.email.exception.VariablesNotMatchException
 import com.manage.crm.support.exception.DuplicateByException
 import com.manage.crm.support.exception.NotFoundByIdException
@@ -29,15 +29,16 @@ class PostTemplateUseCase(
         val version: Float? = useCaseIn.version
         val body = htmlService.prettyPrintHtml(useCaseIn.body)
         val variables = run {
-            val bodyVariables = htmlService.extractVariables(body).sorted().let { Variables(it) }
+            val bodyVariables = htmlService.extractVariables(body)
+                .sorted().stringListToVariables()
+
             val variables = useCaseIn.variables
                 .filterNot { it.isBlank() }
                 .filterNot { it.isEmpty() }
-                .sorted()
-                .let { Variables(it) }
+                .sorted().stringListToVariables()
 
-            if (bodyVariables.getVariables(false) != variables.getVariables(false)) {
-                throw VariablesNotMatchException(bodyVariables.getVariables(false), variables.getVariables(false))
+            if (bodyVariables.getVariables() != variables.getVariables()) {
+                throw VariablesNotMatchException(bodyVariables.getDisplayVariables(), variables.getDisplayVariables())
             }
             return@run variables
         }

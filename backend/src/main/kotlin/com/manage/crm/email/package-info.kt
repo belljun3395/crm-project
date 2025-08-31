@@ -7,7 +7,8 @@ import org.springframework.modulith.ApplicationModule
     allowedDependencies = [
         "support",
         "infrastructure",
-        "user"
+        "user",
+        "event"
     ]
 )
 class Metadata

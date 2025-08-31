@@ -1,8 +1,13 @@
 package com.manage.crm.email.domain.support
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.manage.crm.email.domain.vo.CampaignVariable
+import com.manage.crm.email.domain.vo.UserVariable
 import com.manage.crm.email.domain.vo.Variables
-import com.manage.crm.user.domain.vo.Json
+import com.manage.crm.event.domain.vo.Properties
+import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.user.domain.vo.UserAttributes
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.shouldBe
 
@@ -10,120 +15,76 @@ class VariablesSupportTest : FeatureSpec({
 
     val objectMapper = ObjectMapper()
 
-    feature("VariablesSupport#doAssociate") {
+    feature("VariablesSupport#associateUserAttribute") {
         scenario("associate with attribute key that exists in attributes") {
             // given
-            val key = "attribute_name"
-            val attributes = Json("""{"attribute_name": "John Doe"}""")
-            val variables = Variables("attribute_name:defaultName")
+            val userVariable = UserVariable("name")
+            val attributes = UserAttributes("""{"name": "John Doe"}""")
 
             // when
-            val result = VariablesSupport.doAssociate(objectMapper, key, attributes, variables)
+            val result = VariablesSupport.associateUserAttribute(attributes, listOf(userVariable), objectMapper)
+            val resultPair = userVariable.keyWithType() to result[userVariable.keyWithType()]!!
 
             // then
-            result shouldBe ("attribute_name" to "John Doe")
+            resultPair shouldBe ("user_name" to "John Doe")
         }
 
-        scenario("associate with attribute key that does not exist in attributes") {
+        scenario("associateUserAttribute with attribute key that does not exist in attributes") {
             // given
-            val key = "attribute_name"
-            val attributes = Json("""{"attribute_email": "john@example.com"}""")
-            val variables = Variables("attribute_name:defaultName")
+            val userVariable = UserVariable("name")
+            val attributes = UserAttributes("""{"email": "john@example.com"}""")
 
-            // when
-            val result = VariablesSupport.doAssociate(objectMapper, key, attributes, variables)
-
-            // then
-            result shouldBe ("attribute_name" to "defaultName")
-        }
-
-        scenario("associate with custom attribute key that exists in attributes") {
-            // given
-            val key = "custom_title"
-            val attributes = Json("""{"custom_title": "Manager"}""")
-            val variables = Variables("custom_title:defaultTitle")
-
-            // when
-            val result = VariablesSupport.doAssociate(objectMapper, key, attributes, variables)
-
-            // then
-            result shouldBe ("custom_title" to "Manager")
-        }
-
-        scenario("associate with custom attribute key that does not exist in attributes") {
-            // given
-            val key = "custom_title"
-            val attributes = Json("""{"custom_name": "John Doe"}""")
-            val variables = Variables("custom_title:defaultTitle")
-
-            // when
-            val result = VariablesSupport.doAssociate(objectMapper, key, attributes, variables)
-
-            // then
-            result shouldBe ("custom_title" to "defaultTitle")
-        }
-
-        scenario("associate with key that has no default value in variables") {
-            // given
-            val key = "attribute_name"
-            val attributes = Json("""{"attribute_email": "john@example.com"}""")
-            val variables = Variables("attribute_email:defaultEmail")
-
-            // when
-            val result = VariablesSupport.doAssociate(objectMapper, key, attributes, variables)
-
-            // then
-            result shouldBe ("attribute_name" to "")
+            // when & then
+            shouldThrow<IllegalArgumentException> {
+                VariablesSupport.associateUserAttribute(attributes, listOf(userVariable), objectMapper)
+            }
         }
     }
 
-    feature("VariablesSupport#variablesAllMatchedWithKey") {
-        scenario("all variables are matched with keys") {
+    feature("VariablesSupport#associateCampaignEventProperty") {
+        scenario("associate with property key that exists in campaign properties") {
             // given
-            val variables = Variables("attribute_name:John", "custom_title:Manager")
-            val keys = setOf("attribute_name", "custom_title")
+            val campaignVariable = CampaignVariable("eventCount")
+            val properties = Properties(listOf(Property("eventCount", "10")))
 
             // when
-            val result = VariablesSupport.variablesAllMatchedWithKey(variables, keys)
+            val result = VariablesSupport.associateCampaignEventProperty(properties, Variables(listOf(campaignVariable)))
 
             // then
-            result shouldBe true
+            result[campaignVariable.keyWithType()] shouldBe "10"
         }
 
-        scenario("some variables are not matched with keys") {
+        scenario("associate with property key that does not exist in campaign properties") {
             // given
-            val variables = Variables("attribute_name:John", "custom_title:Manager", "attribute_email:test@test.com")
-            val keys = setOf("attribute_name", "custom_title")
+            val campaignVariable = CampaignVariable("eventCount")
+            val properties = Properties(listOf(Property("totalCount", "5")))
 
             // when
-            val result = VariablesSupport.variablesAllMatchedWithKey(variables, keys)
+            val result = VariablesSupport.associateCampaignEventProperty(properties, Variables(listOf(campaignVariable)))
 
             // then
-            result shouldBe false
+            result.isEmpty() shouldBe true
         }
 
-        scenario("empty variables should return false") {
+        scenario("associate with multiple campaign properties") {
             // given
-            val variables = Variables()
-            val keys = setOf("attribute_name", "custom_title")
+            val campaignVariables = listOf(
+                CampaignVariable("eventCount"),
+                CampaignVariable("totalRevenue")
+            )
+            val properties = Properties(
+                listOf(
+                    Property("eventCount", "10"),
+                    Property("totalRevenue", "1000.50")
+                )
+            )
 
             // when
-            val result = VariablesSupport.variablesAllMatchedWithKey(variables, keys)
+            val result = VariablesSupport.associateCampaignEventProperty(properties, Variables(campaignVariables))
 
             // then
-            result shouldBe false
-        }
-
-        scenario("empty keys should return false when variables exist") {
-            // given
-            val variables = Variables("attribute_name:John")
-            val keys = emptySet<String>()
-
-            // when
-            val result = VariablesSupport.variablesAllMatchedWithKey(variables, keys)
-
-            // then
-            result shouldBe false
+            result["campaign_eventCount"] shouldBe "10"
+            result["campaign_totalRevenue"] shouldBe "1000.50"
         }
     }
 })

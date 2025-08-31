@@ -9,12 +9,14 @@ import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseIn
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseOut
 import com.manage.crm.email.application.service.EmailContentService
 import com.manage.crm.email.application.service.MailService
-import com.manage.crm.email.domain.model.NotificationEmailTemplatePropertiesModel
+import com.manage.crm.email.domain.model.NotificationEmailTemplateVariablesModel
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.vo.Email
 import com.manage.crm.email.domain.vo.NotificationType
 import com.manage.crm.email.domain.vo.SentEmailStatus
+import com.manage.crm.event.domain.repository.CampaignRepository
+import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
@@ -32,26 +34,56 @@ class SendNotificationEmailUseCase(
     @Qualifier("mailServicePostEventProcessor")
     private val mailService: MailService,
     private val emailContentService: EmailContentService,
+    private val campaignEventsService: CampaignEventsService,
+    private val campaignRepository: CampaignRepository,
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper
 ) {
     val log = KotlinLogging.logger { }
 
     suspend fun execute(useCaseIn: SendNotificationEmailUseCaseIn): SendNotificationEmailUseCaseOut {
+        val campaignId = useCaseIn.campaignId
         val templateId = useCaseIn.templateId
         val templateVersion: Float? = useCaseIn.templateVersion
         val userIds = useCaseIn.userIds
 
-        val notificationEmailType = NotificationType.EMAIL.name.lowercase()
-        val notificationProperties = getEmailNotificationProperties(templateVersion, templateId)
+        val campaign = campaignId?.let { cId ->
+            campaignRepository.findById(cId)
+        }
 
-        val targetUsers = getTargetUsers(userIds, notificationEmailType)
+        val notificationVariables = getEmailNotificationVariables(templateVersion, templateId).apply {
+            if (campaign != null) {
+                if (!campaign.allMatchPropertyKeys(this.getCampaignVariables().map { it.key })) {
+                    log.error { "Campaign properties and Email template variables mismatch for campaignId: ${campaign.id}, templateId: $templateId" }
+                    throw IllegalArgumentException("Email template variables do not match campaign properties")
+                }
+            }
+        }
+
+        val notificationEmailType = NotificationType.EMAIL.name.lowercase()
+        val targetUsers = getTargetUsers(userIds, notificationEmailType, campaign?.id)
             .mapNotNull { user -> extractEmailAndUser(user, notificationEmailType) }
             .toMap()
 
-        generateNotificationDto(targetUsers, notificationProperties)
-            .parMap(Dispatchers.IO, concurrency = 10) {
-                mailService.send(it)
+        if (targetUsers.isEmpty()) {
+            log.warn { "No target users found for email notification. CampaignId: $campaignId, templateId: $templateId, userIds: $userIds" }
+            return out {
+                SendNotificationEmailUseCaseOut(
+                    isSuccess = false
+                )
+            }
+        }
+
+        log.info { "Sending notification emails to ${targetUsers.size} users. CampaignId: $campaignId, templateId: $templateId" }
+
+        generateNotificationDto(targetUsers, notificationVariables, campaign?.id).mapNotNull { it }
+            .parMap(Dispatchers.IO, concurrency = 10) { emailDto ->
+                try {
+                    mailService.send(emailDto)
+                } catch (e: Exception) {
+                    log.error(e) { "Failed to send email to ${emailDto.to}. CampaignId: $campaignId, templateId: $templateId" }
+                    throw e
+                }
             }
 
         return out {
@@ -61,16 +93,16 @@ class SendNotificationEmailUseCase(
         }
     }
 
-    private suspend fun getEmailNotificationProperties(
+    private suspend fun getEmailNotificationVariables(
         templateVersion: Float?,
         templateId: Long
-    ): NotificationEmailTemplatePropertiesModel {
+    ): NotificationEmailTemplateVariablesModel {
         return when {
             templateVersion != null -> {
                 emailTemplateHistoryRepository
                     .findByTemplateIdAndVersion(templateId, templateVersion)
                     ?.let {
-                        NotificationEmailTemplatePropertiesModel(
+                        NotificationEmailTemplateVariablesModel(
                             subject = it.subject,
                             body = it.body,
                             variables = it.variables
@@ -82,7 +114,7 @@ class SendNotificationEmailUseCase(
                 emailTemplateRepository
                     .findById(templateId)
                     ?.let {
-                        NotificationEmailTemplatePropertiesModel(
+                        NotificationEmailTemplateVariablesModel(
                             subject = it.subject,
                             body = it.body,
                             variables = it.variables
@@ -93,8 +125,35 @@ class SendNotificationEmailUseCase(
         }
     }
 
-    private suspend fun getTargetUsers(userIds: List<Long>, sendType: String): List<User> {
+    private suspend fun getTargetUsers(userIds: List<Long>, sendType: String, campaignId: Long?): List<User> {
         return when {
+            campaignId != null && !userIds.isEmpty() -> {
+                val allUserIdsInCampaign =
+                    campaignEventsService.findAllEventsByCampaignIdAndUserId(campaignId).map { it.userId }.toSet()
+                userIds.filter { allUserIdsInCampaign.contains(it) }
+                    .let { filteredUserIds ->
+                        userRepository.findAllByIdIn(filteredUserIds)
+                            .filter {
+                                objectMapper.readValue(
+                                    it.userAttributes.value,
+                                    Map::class.java
+                                )[sendType] != null
+                            }
+                    }
+            }
+
+            campaignId != null && userIds.isEmpty() -> {
+                val allUserIdsInCampaign =
+                    campaignEventsService.findAllEventsByCampaignIdAndUserId(campaignId).map { it.userId }.toSet()
+                userRepository.findAllByIdIn(allUserIdsInCampaign.toList())
+                    .filter {
+                        objectMapper.readValue(
+                            it.userAttributes.value,
+                            Map::class.java
+                        )[sendType] != null
+                    }
+            }
+
             userIds.isEmpty() -> {
                 userRepository
                     .findAllExistByUserAttributesKey(sendType)
@@ -129,24 +188,28 @@ class SendNotificationEmailUseCase(
         }
     }
 
-    private fun generateNotificationDto(targetUsers: Map<Email, User>, notificationProperties: NotificationEmailTemplatePropertiesModel): List<SendEmailInDto> {
-        val emailContentPairList = mutableListOf<Pair<Email, Content>>()
-        targetUsers.forEach { (email, user) ->
-            val content = emailContentService.genUserEmailContent(user, notificationProperties)
-            emailContentPairList.add(email to content)
-        }
-        return emailContentPairList.map { (email, content) ->
-            doMapToNotificationDto(email, content, notificationProperties)
+    private suspend fun generateNotificationDto(targetUsers: Map<Email, User>, notificationVariables: NotificationEmailTemplateVariablesModel, campaignId: Long?): List<SendEmailInDto?> {
+        return targetUsers.toList().parMap(Dispatchers.IO) { (email, user) ->
+            val content = emailContentService.genUserEmailContent(user, notificationVariables, campaignId)
+            doMapToNotificationDto(email, content, notificationVariables)
         }
     }
 
-    private fun doMapToNotificationDto(email: Email, content: Content, notificationProperties: NotificationEmailTemplatePropertiesModel) = SendEmailInDto(
-        to = email.value,
-        subject = notificationProperties.subject,
-        template = notificationProperties.body,
-        content = content,
-        emailBody = notificationProperties.body,
-        destination = email.value,
-        eventType = SentEmailStatus.SEND
-    )
+    private fun doMapToNotificationDto(
+        email: Email,
+        content: Content?,
+        notificationProperties: NotificationEmailTemplateVariablesModel
+    ): SendEmailInDto? {
+        return content?.let {
+            SendEmailInDto(
+                to = email.value,
+                subject = notificationProperties.subject,
+                template = notificationProperties.body,
+                content = content,
+                emailBody = notificationProperties.body,
+                destination = email.value,
+                eventType = SentEmailStatus.SEND
+            )
+        }
+    }
 }
