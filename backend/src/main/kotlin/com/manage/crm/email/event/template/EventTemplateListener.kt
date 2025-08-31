@@ -8,9 +8,8 @@ import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.reactive.executeAndAwait
 
-// TODO fix naming
 @Component
-class EventTemplateTransactionListener(
+class EventTemplateListener(
     private val postEmailTemplateEventHandler: PostEmailTemplateEventHandler,
     private val transactionalTemplates: TransactionTemplates
 ) {
@@ -20,7 +19,7 @@ class EventTemplateTransactionListener(
      * @see com.manage.crm.email.support.EmailEventPublisher.publishEvent
      */
     @EventListener
-    fun handleAfterCompletionEvent(event: EmailTemplateTransactionAfterCompletionEvent) {
+    fun onAfterCompletionEvent(event: EmailTemplateTransactionAfterCompletionEvent) {
         eventListenerCoroutineScope().apply {
             when (event) {
                 is PostEmailTemplateEvent -> {
