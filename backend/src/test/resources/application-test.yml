@@ -37,21 +37,23 @@ spring:
                         enable: true
     aws:
         region: ap-northeast-2
+        endpoint-url: http://localhost:4566  # LocalStack endpoint for testing
         credentials:
-            access-key: thisisaccesskey
-            secret-key: thisissecretkey
+            access-key: test
+            secret-key: test
         mail:
             configuration-set:
-                default: thisisconfigurationset
+                default: test-configuration-set
         schedule:
-            role-arn: thisisrolearn
-            sqs-arn: thisissqsarn
-            group-name: thisisgroupname
+            role-arn: arn:aws:iam::000000000000:role/LocalEventBridgeSchedulerRole
+            sqs-arn: arn:aws:sqs:ap-northeast-2:000000000000:test_sqs
+            group-name: test-schedule-group
     flyway:
         locations: classpath:db/migration/entity
         sql-migration-suffixes: sql
         baseline-on-migrate: true
         baseline-version: 0
+        validate-on-migrate: false
     # ----- Only for test profile -----
     datasource:
         jdbcUrl: jdbc:mysql://localhost:13306/test
@@ -66,4 +68,11 @@ springdoc:
 
 logging:
     level:
+        root: INFO
         org.springframework.r2dbc.core: debug
+        org.springframework.web.reactive: debug
+        com.manage.crm: debug
+        com.amazonaws: debug
+        org.testcontainers: debug
+        # LocalStack specific logging
+        localstack: debug
