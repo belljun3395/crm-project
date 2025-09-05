@@ -23,6 +23,9 @@ class SchedulerConfig {
     @Value("\${spring.aws.region}")
     val region: String? = null
 
+    @Value("\${spring.aws.endpoint-url:#{null}}")
+    val endpointUrl: String? = null
+
     @Bean(name = [SCHEDULER_CLIENT])
     fun awsSchedulerClient(
         awsCredentials: AWSCredentials
@@ -35,7 +38,7 @@ class SchedulerConfig {
                 .retryStrategy(RetryMode.STANDARD)
                 .build()
 
-        return SchedulerClient
+        val clientBuilder = SchedulerClient
             .builder()
             .region(Region.of(region))
             .overrideConfiguration(overrideConfig)
@@ -44,6 +47,13 @@ class SchedulerConfig {
                     override fun accessKeyId(): String = awsCredentials.awsAccessKeyId
                     override fun secretAccessKey(): String = awsCredentials.awsSecretKey
                 }
-            }).build()
+            })
+
+        // Configure endpoint URL for LocalStack
+        endpointUrl?.let { url ->
+            clientBuilder.endpointOverride(java.net.URI.create(url))
+        }
+
+        return clientBuilder.build()
     }
 }

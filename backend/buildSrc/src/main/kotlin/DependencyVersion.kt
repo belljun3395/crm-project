@@ -52,6 +52,9 @@ object DependencyVersion {
     const val KOTEST_EXTENSION = "1.3.0"
     const val COROUTINE_TEST = "1.8.0"
 
+    /** testcontainers **/
+    const val TESTCONTAINERS = "1.19.8"
+
     /** Logger **/
     const val KOTLIN_LOGGING = "7.0.0"
 
