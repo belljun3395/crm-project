@@ -3,10 +3,10 @@ package com.manage.crm.email.controller
 
 import com.manage.crm.email.controller.request.PostTemplateRequest
 import com.manage.crm.email.controller.request.SendNotificationEmailRequest
-import com.manage.crm.event.controller.request.PostCampaignRequest
 import com.manage.crm.event.controller.request.PostCampaignPropertyDto
-import com.manage.crm.event.controller.request.PostEventRequest
+import com.manage.crm.event.controller.request.PostCampaignRequest
 import com.manage.crm.event.controller.request.PostEventPropertyDto
+import com.manage.crm.event.controller.request.PostEventRequest
 import com.manage.crm.integration.AbstractIntegrationTest
 import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Tag
@@ -294,7 +294,7 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
                 // NOTE: This test currently fails due to campaign creation endpoint returning 500 errors
                 // The same issue exists in EventControllerIntegrationTest, indicating a broader backend issue
                 // TODO: Fix campaign creation endpoint (/api/v1/events/campaign) to resolve this test failure
-                
+
                 // given - create campaign, user, event, and template
                 val campaignName = "premium_campaign_${System.currentTimeMillis()}"
                 val campaignId = createTestCampaign(name = campaignName)
