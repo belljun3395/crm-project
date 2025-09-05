@@ -23,9 +23,12 @@ class MessageConfig {
     @Value("\${spring.aws.region}")
     val region: String? = null
 
+    @Value("\${spring.aws.endpoint-url:#{null}}")
+    val endpointUrl: String? = null
+
     @Bean(SQS_ASYNC_CLIENT)
-    fun sqsAsyncClient(awsCredentials: AWSCredentials): SqsAsyncClient =
-        SqsAsyncClient
+    fun sqsAsyncClient(awsCredentials: AWSCredentials): SqsAsyncClient {
+        val clientBuilder = SqsAsyncClient
             .builder()
             .credentialsProvider {
                 object : AwsCredentials {
@@ -34,7 +37,14 @@ class MessageConfig {
                 }
             }
             .region(Region.of(region))
-            .build()
+
+        // Configure endpoint URL for LocalStack
+        endpointUrl?.let { url ->
+            clientBuilder.endpointOverride(java.net.URI.create(url))
+        }
+
+        return clientBuilder.build()
+    }
 
     @Bean(SQS_LISTENER_CONTAINER_FACTORY)
     fun defaultSqsListenerContainerFactory(awsCredentials: AWSCredentials): SqsMessageListenerContainerFactory<Any> =

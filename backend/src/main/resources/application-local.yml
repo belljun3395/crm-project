@@ -37,16 +37,17 @@ spring:
                         enable: true
     aws:
         region: ap-northeast-2
+        endpoint-url: http://localhost:4566  # LocalStack endpoint for local development
         credentials:
-            access-key: thisisaccesskey
-            secret-key: thisissecretkey
+            access-key: test  # LocalStack test credentials
+            secret-key: test
         mail:
             configuration-set:
-                default: thisisconfigurationset
+                default: local-configuration-set
         schedule:
-            role-arn: thisisrolearn
-            sqs-arn: thisissqsarn
-            group-name: thisisgroupname
+            role-arn: arn:aws:iam::000000000000:role/LocalEventBridgeSchedulerRole
+            sqs-arn: arn:aws:sqs:ap-northeast-2:000000000000:ses_sqs
+            group-name: local-schedule-group
     flyway:
         locations: classpath:db/migration/entity
         sql-migration-suffixes: sql

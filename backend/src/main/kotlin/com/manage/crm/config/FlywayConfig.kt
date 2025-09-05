@@ -24,7 +24,7 @@ class FlywayConfig {
     @Bean(name = [FLYWAY])
     fun flyway(configuration: org.flywaydb.core.api.configuration.Configuration?): Flyway = Flyway(configuration)
 
-    @Profile("!new")
+    @Profile("!new & !test")
     @Bean(name = [FLYWAY_VALIDATE_INITIALIZER])
     fun flywayValidateInitializer(flyway: Flyway?): FlywayMigrationInitializer =
         FlywayMigrationInitializer(flyway) { obj: Flyway -> obj.validate() }

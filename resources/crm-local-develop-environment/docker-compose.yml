@@ -99,3 +99,28 @@ services:
         image: redislabs/redisinsight:latest
         container_name: crm-redis-insight
         network_mode: "service:crm-redis-cluster"
+
+    crm-localstack:
+        container_name: crm-localstack
+        image: localstack/localstack:3.8
+        ports:
+            - "4566:4566"
+            - "4510-4559:4510-4559"
+        environment:
+            - SERVICES=ses,sqs,events,scheduler
+            - DEBUG=1
+            - DOCKER_HOST=unix:///var/run/docker.sock
+            - START_WEB=1
+            - LEGACY_DIRECTORIES=1
+            - AWS_DEFAULT_REGION=ap-northeast-2
+            - AWS_ACCESS_KEY_ID=test
+            - AWS_SECRET_ACCESS_KEY=test
+        volumes:
+            - "./localstack-init:/etc/localstack/init/ready.d"
+            - "/var/run/docker.sock:/var/run/docker.sock"
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:4566/health"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 10s

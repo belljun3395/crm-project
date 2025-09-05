@@ -2,6 +2,7 @@ package com.manage.crm.infrastructure.mail.config
 
 import com.amazonaws.auth.AWSCredentials
 import com.amazonaws.auth.AWSStaticCredentialsProvider
+import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClientBuilder
 import org.springframework.beans.factory.annotation.Value
@@ -94,13 +95,21 @@ class MailConfig {
     @Value("\${spring.aws.region}")
     val region: String? = null
 
+    @Value("\${spring.aws.endpoint-url:#{null}}")
+    val endpointUrl: String? = null
+
     @Bean(name = [AWS_EMAIL_SENDER])
     fun awsEmailSender(awsCredentials: AWSCredentials): AmazonSimpleEmailService {
         val awsStaticCredentialsProvider = AWSStaticCredentialsProvider(awsCredentials)
-        return AmazonSimpleEmailServiceClientBuilder
+        val clientBuilder = AmazonSimpleEmailServiceClientBuilder
             .standard()
             .withCredentials(awsStaticCredentialsProvider)
-            .withRegion(region)
-            .build()
+
+        // Configure endpoint URL for LocalStack or use region for AWS
+        endpointUrl?.let {
+            clientBuilder.withEndpointConfiguration(AwsClientBuilder.EndpointConfiguration(endpointUrl, region))
+        } ?: clientBuilder.withRegion(region)
+
+        return clientBuilder.build()
     }
 }
