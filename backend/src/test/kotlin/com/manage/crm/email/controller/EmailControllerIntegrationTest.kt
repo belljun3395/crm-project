@@ -102,7 +102,7 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
     private fun extractIdFromResponse(responseBody: String?): Long {
         val body = responseBody ?: error("응답 본문이 null입니다.")
         val node = objectMapper.readTree(body)
-        return node["id"]?.asLong() ?: error("응답에 id 필드가 없습니다: $body")
+        return node["id"]?.asLong() ?: node["data"]["id"]?.asLong() ?: error("응답에서 ID를 찾을 수 없습니다. 본문: $body")
     }
 
     private fun assertSchedulerResponse(response: WebTestClient.ResponseSpec) {
