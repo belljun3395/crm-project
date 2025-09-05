@@ -47,7 +47,7 @@ spring:
         schedule:
             role-arn: arn:aws:iam::000000000000:role/LocalEventBridgeSchedulerRole
             sqs-arn: arn:aws:sqs:ap-northeast-2:000000000000:ses_sqs
-            group-name: crm-local-schedule-group
+            group-name: local-schedule-group
     flyway:
         locations: classpath:db/migration/entity
         sql-migration-suffixes: sql
