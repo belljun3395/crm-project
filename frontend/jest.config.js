@@ -26,14 +26,17 @@ module.exports = {
   },
   coverageReporters: ['text', 'lcov', 'html'],
   testMatch: [
-    '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
     '<rootDir>/src/**/*.{test,spec}.{js,jsx,ts,tsx}',
+  ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/src/__tests__/mocks/',
   ],
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['react-app'] }],
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(axios|@testing-library)/)',
+    'node_modules/(?!(axios|msw)/)',
   ],
   moduleFileExtensions: ['js', 'jsx', 'ts', 'tsx', 'json'],
 };

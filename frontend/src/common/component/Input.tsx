@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 interface InputProps {
   type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search' | 'date' | 'datetime-local';
@@ -6,6 +6,7 @@ interface InputProps {
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   disabled?: boolean;
+  readOnly?: boolean;
   error?: string;
   label?: string;
   required?: boolean;
@@ -19,12 +20,15 @@ export const Input: React.FC<InputProps> = ({
   onChange,
   placeholder,
   disabled = false,
+  readOnly = false,
   error,
   label,
   required = false,
   className = '',
   id,
 }) => {
+  const autoId = useId();
+  const inputId = id || autoId;
   const inputClasses = `
     w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors
     ${error 
@@ -38,23 +42,25 @@ export const Input: React.FC<InputProps> = ({
   return (
     <div className="w-full">
       {label && (
-        <label htmlFor={id} className="block text-sm font-medium text-gray-300 mb-2">
+        <label htmlFor={inputId} className="block text-sm font-medium text-gray-300 mb-2">
           {label}
           {required && <span className="text-red-400 ml-1">*</span>}
         </label>
       )}
       <input
-        id={id}
+        id={inputId}
         type={type}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
         disabled={disabled}
+        readOnly={readOnly}
         required={required}
+        aria-invalid={error ? 'true' : undefined}
         className={inputClasses}
       />
       {error && (
-        <p className="mt-1 text-sm text-red-400">{error}</p>
+        <p className="mt-1 text-sm text-red-500">{error}</p>
       )}
     </div>
   );

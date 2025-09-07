@@ -39,7 +39,8 @@ describe('Input', () => {
     expect(screen.getByRole('textbox')).toHaveAttribute('type', 'email');
 
     rerender(<Input type="password" />);
-    expect(screen.getByLabelText(/password/i)).toHaveAttribute('type', 'password');
+    const passwordInput = document.querySelector('input[type="password"]');
+    expect(passwordInput).toHaveAttribute('type', 'password');
 
     rerender(<Input type="number" />);
     expect(screen.getByRole('spinbutton')).toHaveAttribute('type', 'number');

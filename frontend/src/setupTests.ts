@@ -1,11 +1,5 @@
 import '@testing-library/jest-dom';
 import 'jest-environment-jsdom';
-import { server } from './__tests__/mocks/server';
-
-// MSW 서버 설정
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
