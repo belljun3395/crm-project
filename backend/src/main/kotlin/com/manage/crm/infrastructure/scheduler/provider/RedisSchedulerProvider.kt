@@ -98,7 +98,7 @@ class RedisSchedulerProvider(
             expiredTaskIds.mapNotNull { taskId ->
                 val taskDataKey = "$TASK_DATA_PREFIX$taskId"
                 val taskDataJson = redisTemplate.opsForValue().get(taskDataKey) as? String
-                taskDataJson?.let { 
+                taskDataJson?.let {
                     try {
                         objectMapper.readValue(it, RedisScheduledTask::class.java)
                     } catch (ex: Exception) {
@@ -122,17 +122,17 @@ class RedisSchedulerProvider(
         if (taskIds.isEmpty()) return 0
 
         var removedCount = 0L
-        
+
         taskIds.forEach { taskId ->
             try {
                 val taskDataKey = "$TASK_DATA_PREFIX$taskId"
-                
+
                 // 1. Sorted Set에서 제거
                 val removedFromZSet = redisTemplate.opsForZSet().remove(SCHEDULED_TASKS_KEY, taskId)
-                
+
                 // 2. 작업 데이터 삭제 (ZSet에서 제거되었는지와 관계없이 항상 시도)
                 redisTemplate.delete(taskDataKey)
-                
+
                 if (removedFromZSet != null && removedFromZSet > 0) {
                     removedCount++
                     log.debug { "Removed schedule: $taskId" }
@@ -141,7 +141,7 @@ class RedisSchedulerProvider(
                 log.warn(ex) { "Failed to remove schedule: $taskId" }
             }
         }
-        
+
         log.debug { "Batch removed $removedCount schedules out of ${taskIds.size}" }
         return removedCount
     }
