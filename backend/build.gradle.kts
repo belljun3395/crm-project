@@ -103,6 +103,10 @@ dependencies {
     implementation("software.amazon.awssdk:scheduler:${DependencyVersion.SCHEDULER}")
     implementation("com.amazonaws:aws-java-sdk-ses:${DependencyVersion.AWS_SES}")
 
+    /** kafka */
+    implementation("org.springframework.kafka:spring-kafka:${DependencyVersion.SPRING_KAFKA}")
+    testImplementation("org.springframework.kafka:spring-kafka-test:${DependencyVersion.SPRING_KAFKA}")
+
     /** docs */
     runtimeOnly("com.github.therapi:therapi-runtime-javadoc-scribe:${DependencyVersion.JAVADOC_SCRIBE}")
     kapt("com.github.therapi:therapi-runtime-javadoc-scribe:${DependencyVersion.JAVADOC_SCRIBE}")

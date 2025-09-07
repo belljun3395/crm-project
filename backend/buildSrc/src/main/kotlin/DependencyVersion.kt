@@ -29,6 +29,9 @@ object DependencyVersion {
     const val AWS_SQS = "3.0.1"
     const val SCHEDULER = "2.29.45"
     const val AWS_SES = "1.12.765"
+    
+    /** kafka */
+    const val SPRING_KAFKA = "3.3.1"
 
     /** jmolecules */
     const val JMOLECULES = "0.24.1"
