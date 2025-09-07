@@ -9,6 +9,9 @@ interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   className?: string;
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  'aria-current'?: boolean | 'page' | 'step' | 'location' | 'date' | 'time';
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -20,6 +23,9 @@ export const Button: React.FC<ButtonProps> = ({
   disabled = false,
   loading = false,
   className = '',
+  'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
+  'aria-current': ariaCurrent,
 }) => {
   const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
   
@@ -51,9 +57,13 @@ export const Button: React.FC<ButtonProps> = ({
       onClick={onClick}
       disabled={disabled || loading}
       className={classes}
+      aria-label={ariaLabel}
+      aria-describedby={ariaDescribedBy}
+      aria-current={ariaCurrent}
+      aria-busy={loading}
     >
       {loading && (
-        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" aria-hidden="true">
           <circle
             className="opacity-25"
             cx="12"
@@ -69,6 +79,9 @@ export const Button: React.FC<ButtonProps> = ({
           />
         </svg>
       )}
+      {loading ? (
+        <span className="sr-only">Loading...</span>
+      ) : null}
       {children}
     </button>
   );

@@ -97,9 +97,15 @@ describe('Input', () => {
     expect(label.getAttribute('for')).toBe(input.getAttribute('id'));
   });
 
-  it('error가 있을 때 aria-invalid가 설정된다', () => {
+  it('error가 있을 때 aria-invalid와 aria-describedby가 설정된다', () => {
     render(<Input error="This field is required" />);
-    expect(screen.getByRole('textbox')).toHaveAttribute('aria-invalid', 'true');
+    const input = screen.getByRole('textbox');
+    const errorMessage = screen.getByText('This field is required');
+    
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+    expect(input).toHaveAttribute('aria-describedby');
+    expect(errorMessage).toHaveAttribute('role', 'alert');
+    expect(input.getAttribute('aria-describedby')).toBe(errorMessage.getAttribute('id'));
   });
 
   it('label과 error가 함께 렌더링된다', () => {

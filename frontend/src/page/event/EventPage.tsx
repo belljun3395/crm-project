@@ -5,7 +5,7 @@ import { useEvents } from 'shared/hook';
 import type { EventFormData } from 'shared/type';
 
 export const EventPage: React.FC = () => {
-  const { events, loading, createEvent } = useEvents();
+  const { events, loading, error, createEvent } = useEvents();
   const { value: isModalOpen, setTrue: openModal, setFalse: closeModal } = useToggle();
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<EventFormData>({
@@ -46,6 +46,20 @@ export const EventPage: React.FC = () => {
           New Event
         </Button>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="rounded-lg bg-red-900/50 border border-red-700 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <span className="text-red-400">⚠️</span>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-300">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 검색 */}
       <div className="relative">
@@ -130,19 +144,19 @@ export const EventPage: React.FC = () => {
           <div className="grid grid-cols-2 gap-2">
             <Input
               label="Property Key"
-              value={formData.properties[0].key}
+              value={formData.properties[0]?.key || ''}
               onChange={(e) => setFormData({
                 ...formData, 
-                properties: [{...formData.properties[0], key: e.target.value}]
+                properties: [{...(formData.properties[0] || { key: '', value: '' }), key: e.target.value}]
               })}
               placeholder="Property key"
             />
             <Input
               label="Property Value"
-              value={formData.properties[0].value}
+              value={formData.properties[0]?.value || ''}
               onChange={(e) => setFormData({
                 ...formData, 
-                properties: [{...formData.properties[0], value: e.target.value}]
+                properties: [{...(formData.properties[0] || { key: '', value: '' }), value: e.target.value}]
               })}
               placeholder="Property value"
             />

@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { Button } from './Button';
 
@@ -41,41 +42,46 @@ describe('Button', () => {
     expect(screen.getByRole('button')).toHaveClass('px-6', 'py-3', 'text-base');
   });
 
-  it('disabled 상태가 올바르게 동작한다', () => {
+  it('disabled 상태가 올바르게 동작한다', async () => {
     const handleClick = jest.fn();
+    const user = userEvent.setup();
     render(<Button disabled onClick={handleClick}>Disabled Button</Button>);
     
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
     expect(button).toHaveClass('opacity-50', 'cursor-not-allowed');
     
-    fireEvent.click(button);
+    await user.click(button);
     expect(handleClick).not.toHaveBeenCalled();
   });
 
-  it('loading 상태가 올바르게 동작한다', () => {
+  it('loading 상태가 올바르게 동작한다', async () => {
     const handleClick = jest.fn();
+    const user = userEvent.setup();
     render(<Button loading onClick={handleClick}>Loading Button</Button>);
     
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
     expect(button).toHaveClass('opacity-50', 'cursor-not-allowed');
     expect(screen.getByRole('button')).toHaveTextContent('Loading Button');
+    expect(button).toHaveAttribute('aria-busy', 'true');
     
     // 스피너가 렌더링되는지 확인
     const spinner = button.querySelector('svg');
     expect(spinner).toBeInTheDocument();
     expect(spinner).toHaveClass('animate-spin');
+    expect(spinner).toHaveAttribute('aria-hidden', 'true');
     
-    fireEvent.click(button);
+    await user.click(button);
     expect(handleClick).not.toHaveBeenCalled();
   });
 
-  it('onClick 핸들러가 올바르게 호출된다', () => {
+  it('onClick 핸들러가 올바르게 호출된다', async () => {
     const handleClick = jest.fn();
+    const user = userEvent.setup();
     render(<Button onClick={handleClick}>Clickable Button</Button>);
     
-    fireEvent.click(screen.getByRole('button'));
+    await user.click(screen.getByRole('button'));
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
 

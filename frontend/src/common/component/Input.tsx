@@ -29,6 +29,7 @@ export const Input: React.FC<InputProps> = ({
 }) => {
   const autoId = useId();
   const inputId = id || autoId;
+  const errorId = error ? `${inputId}-error` : undefined;
   const inputClasses = `
     w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors
     ${error 
@@ -56,11 +57,14 @@ export const Input: React.FC<InputProps> = ({
         disabled={disabled}
         readOnly={readOnly}
         required={required}
-        aria-invalid={error ? 'true' : undefined}
+        aria-invalid={error ? 'true' : 'false'}
+        aria-describedby={errorId}
         className={inputClasses}
       />
       {error && (
-        <p className="mt-1 text-sm text-red-500">{error}</p>
+        <p id={errorId} className="mt-1 text-sm text-red-500" role="alert">
+          {error}
+        </p>
       )}
     </div>
   );

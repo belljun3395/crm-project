@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { eventAPI } from 'shared/api';
 import type { Event, CreateEventRequest, CreateCampaignRequest } from 'shared/type';
 
@@ -6,20 +6,38 @@ export const useEvents = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // 이벤트 검색
   const searchEvents = useCallback(async (eventName: string, where: string) => {
+    // Cancel previous request if still pending
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    
     setLoading(true);
     setError(null);
     try {
       const data = await eventAPI.searchEvents(eventName, where);
-      setEvents(data);
-      return data;
+      if (!abortController.signal.aborted) {
+        setEvents(data);
+        return data;
+      }
+      return [];
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to search events');
+      if (!abortController.signal.aborted) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to search events';
+        setError(errorMessage);
+        console.error('Failed to search events:', err);
+      }
       return [];
     } finally {
-      setLoading(false);
+      if (!abortController.signal.aborted) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -35,7 +53,9 @@ export const useEvents = () => {
       }
       return false;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create event');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create event';
+      setError(errorMessage);
+      console.error('Failed to create event:', err);
       return false;
     } finally {
       setLoading(false);
@@ -53,11 +73,22 @@ export const useEvents = () => {
       }
       return false;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create campaign');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create campaign';
+      setError(errorMessage);
+      console.error('Failed to create campaign:', err);
       return false;
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, []);
 
   return {

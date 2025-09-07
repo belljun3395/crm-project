@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { userAPI } from 'shared/api';
 import type { User, CreateUserRequest } from 'shared/type';
 
@@ -7,18 +7,35 @@ export const useUsers = () => {
   const [userCount, setUserCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // 사용자 목록 조회
   const fetchUsers = useCallback(async () => {
+    // Cancel previous request if still pending
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    
     setLoading(true);
     setError(null);
     try {
       const data = await userAPI.getUsers();
-      setUsers(data);
+      if (!abortController.signal.aborted) {
+        setUsers(data);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch users');
+      if (!abortController.signal.aborted) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch users';
+        setError(errorMessage);
+        console.error('Failed to fetch users:', err);
+      }
     } finally {
-      setLoading(false);
+      if (!abortController.signal.aborted) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -28,7 +45,8 @@ export const useUsers = () => {
       const count = await userAPI.getUserCount();
       setUserCount(count);
     } catch (err) {
-      console.error('Failed to fetch user count:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch user count';
+      console.error('Failed to fetch user count:', errorMessage);
     }
   }, []);
 
@@ -45,11 +63,22 @@ export const useUsers = () => {
       }
       return false;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to enroll user');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to enroll user';
+      setError(errorMessage);
+      console.error('Failed to enroll user:', err);
       return false;
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, []);
 
   // 초기 데이터 로드

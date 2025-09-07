@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
 import { Input } from './Input';
 
 const meta = {
@@ -33,7 +32,7 @@ const meta = {
       description: '에러 메시지를 표시합니다.',
     },
   },
-  args: { onChange: fn() },
+  args: { onChange: () => {} },
 } satisfies Meta<typeof Input>;
 
 export default meta;
@@ -103,6 +102,9 @@ export const Number: Story = {
 };
 
 export const FormExample: Story = {
+  args: {
+    placeholder: 'Example input',
+  },
   render: () => (
     <div className="space-y-4 w-80">
       <Input 
@@ -144,6 +146,9 @@ export const FormExample: Story = {
 };
 
 export const ValidationStates: Story = {
+  args: {
+    placeholder: 'Validation example',
+  },
   render: () => (
     <div className="space-y-4 w-80">
       <Input 

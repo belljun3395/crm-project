@@ -5,7 +5,7 @@ import { useUsers } from 'shared/hook';
 import type { UserFormData } from 'shared/type';
 
 export const UserPage: React.FC = () => {
-  const { users, loading, enrollUser } = useUsers();
+  const { users, loading, error, enrollUser } = useUsers();
   const { value: isModalOpen, setTrue: openModal, setFalse: closeModal } = useToggle();
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<UserFormData>({
@@ -39,6 +39,20 @@ export const UserPage: React.FC = () => {
           Enroll User
         </Button>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="rounded-lg bg-red-900/50 border border-red-700 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <span className="text-red-400">⚠️</span>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-300">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 검색 */}
       <div className="relative">

@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
 import { Button } from './Button';
 
 const meta = {
@@ -39,7 +38,7 @@ const meta = {
       description: 'HTML button의 type 속성입니다.',
     },
   },
-  args: { onClick: fn() },
+  args: { onClick: () => {} },
 } satisfies Meta<typeof Button>;
 
 export default meta;
@@ -102,6 +101,9 @@ export const Loading: Story = {
 };
 
 export const AllVariants: Story = {
+  args: {
+    children: 'Button',
+  },
   render: () => (
     <div className="flex gap-4 flex-wrap">
       <Button variant="primary">Primary</Button>
@@ -119,6 +121,9 @@ export const AllVariants: Story = {
 };
 
 export const AllSizes: Story = {
+  args: {
+    children: 'Button',
+  },
   render: () => (
     <div className="flex gap-4 items-center flex-wrap">
       <Button size="sm">Small</Button>
@@ -136,6 +141,9 @@ export const AllSizes: Story = {
 };
 
 export const States: Story = {
+  args: {
+    children: 'Button',
+  },
   render: () => (
     <div className="flex gap-4 flex-wrap">
       <Button>Normal</Button>
