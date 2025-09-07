@@ -14,7 +14,6 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
 import io.mockk.verify
-import io.mockk.verifyOrder
 import java.time.LocalDateTime
 
 class RedisScheduleMonitoringServiceTest : BehaviorSpec({
@@ -67,7 +66,7 @@ class RedisScheduleMonitoringServiceTest : BehaviorSpec({
                 scheduledAt = LocalDateTime.now().minusMinutes(3),
                 createdAt = LocalDateTime.now().minusHours(1)
             )
-            
+
             val executeSlot = slot<List<String>>()
 
             every { redisSchedulerProvider.getExpiredSchedules() } returns listOf(expiredTask1, expiredTask2)
@@ -76,21 +75,17 @@ class RedisScheduleMonitoringServiceTest : BehaviorSpec({
 
             Then("it should execute all expired tasks") {
                 monitoringService.processExpiredSchedules()
-                
+
                 // processExpiredSchedules()는 비동기로 코루틴을 실행하므로 즉시 완료되지 않음
                 // 하지만 테스트에서는 동기적으로 검증할 수 있는 부분만 확인
                 verify { redisSchedulerProvider.getExpiredSchedules() }
-                
+
                 // 비동기 작업이 시작되었는지 확인하기 위해 잠시 대기
                 Thread.sleep(200)
-                
+
                 // 각 태스크가 실행되었는지 확인 (순서는 보장되지 않을 수 있음)
-                verify(atLeast = 1) { 
-                    scheduledTaskExecutor.executeScheduledTask("expired-task-1", expiredTask1.scheduleInfo) 
-                }
-                verify(atLeast = 1) { 
-                    scheduledTaskExecutor.executeScheduledTask("expired-task-2", expiredTask2.scheduleInfo) 
-                }
+                verify(atLeast = 1) { scheduledTaskExecutor.executeScheduledTask("expired-task-1", expiredTask1.scheduleInfo) }
+                verify(atLeast = 1) { scheduledTaskExecutor.executeScheduledTask("expired-task-2", expiredTask2.scheduleInfo) }
             }
         }
 
@@ -118,7 +113,7 @@ class RedisScheduleMonitoringServiceTest : BehaviorSpec({
                 Thread.sleep(200)
 
                 verify { redisSchedulerProvider.getExpiredSchedules() }
-                verify(atLeast = 1) { 
+                verify(atLeast = 1) {
                     scheduledTaskExecutor.executeScheduledTask("failed-task", expiredTask.scheduleInfo)
                 }
                 // 실패한 경우 removeSchedulesAtomically가 호출되지 않아야 함
@@ -148,10 +143,10 @@ class RedisScheduleMonitoringServiceTest : BehaviorSpec({
                 verify { redisSchedulerProvider.browseSchedule() }
             }
         }
-        
+
         When("provider type is checked") {
             every { redisSchedulerProvider.getProviderType() } returns "redis-kafka"
-            
+
             Then("it should be redis-kafka") {
                 redisSchedulerProvider.getProviderType() shouldBe "redis-kafka"
             }

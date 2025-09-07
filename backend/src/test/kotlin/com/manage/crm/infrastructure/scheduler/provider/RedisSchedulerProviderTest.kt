@@ -26,7 +26,7 @@ class RedisSchedulerProviderTest : BehaviorSpec({
     val redisTemplate = mockk<RedisTemplate<String, Any>>()
     val zSetOperations = mockk<ZSetOperations<String, Any>>()
     val valueOperations = mockk<ValueOperations<String, Any>>()
-    
+
     // ObjectMapper에 필요한 모듈 추가
     val objectMapper = ObjectMapper().apply {
         registerKotlinModule()
@@ -64,7 +64,7 @@ class RedisSchedulerProviderTest : BehaviorSpec({
                 val expectedScore = scheduleTime.toEpochSecond(ZoneOffset.UTC).toDouble()
                 verify { zSetOperations.add("scheduled:tasks", "test-task", expectedScore) }
                 verify { valueOperations.set("scheduled:task:test-task", any()) }
-                
+
                 // JSON 직렬화가 올바른지 확인
                 val savedJson = jsonSlot.captured
                 val savedTask = objectMapper.readValue(savedJson, RedisScheduledTask::class.java)
@@ -102,7 +102,7 @@ class RedisSchedulerProviderTest : BehaviorSpec({
 
         When("getting expired schedules") {
             val expiredTaskIds = setOf("expired-task-1", "expired-task-2")
-            
+
             // 실제 구조와 맞는 JSON 데이터 생성
             val scheduleInfo = NotificationEmailSendTimeOutEventInput(
                 templateId = 1L,
@@ -119,7 +119,7 @@ class RedisSchedulerProviderTest : BehaviorSpec({
             )
             val taskDataJson = objectMapper.writeValueAsString(redisTask)
 
-            // 현재 시간보다 이전의 모든 태스크를 반환하도록 mock 설정 
+            // 현재 시간보다 이전의 모든 태스크를 반환하도록 mock 설정
             every { zSetOperations.rangeByScore("scheduled:tasks", 0.0, any<Double>()) } returns expiredTaskIds
             every { valueOperations.get("scheduled:task:expired-task-1") } returns taskDataJson
             every { valueOperations.get("scheduled:task:expired-task-2") } returns null
@@ -132,7 +132,7 @@ class RedisSchedulerProviderTest : BehaviorSpec({
                 firstResult.taskId shouldBe "expired-task-1"
                 firstResult.scheduledAt shouldBe LocalDateTime.of(2024, 12, 31, 12, 0, 0)
                 firstResult.createdAt shouldBe LocalDateTime.of(2024, 12, 31, 11, 0, 0)
-                
+
                 // scheduleInfo가 올바른 타입인지 확인
                 firstResult.scheduleInfo.shouldBeInstanceOf<NotificationEmailSendTimeOutEventInput>()
                 val deserializedInput = firstResult.scheduleInfo as NotificationEmailSendTimeOutEventInput
@@ -176,10 +176,10 @@ class RedisSchedulerProviderTest : BehaviorSpec({
                 exception.cause?.message shouldBe "Redis connection failed"
             }
         }
-        
+
         When("atomically removing schedules") {
             val taskIds = listOf("task-1", "task-2")
-            
+
             every { zSetOperations.remove("scheduled:tasks", "task-1") } returns 1L
             every { zSetOperations.remove("scheduled:tasks", "task-2") } returns 1L
             every { redisTemplate.delete("scheduled:task:task-1") } returns true
@@ -187,7 +187,7 @@ class RedisSchedulerProviderTest : BehaviorSpec({
 
             Then("it should remove schedules one by one") {
                 val result = redisSchedulerProvider.removeSchedulesAtomically(taskIds)
-                
+
                 result shouldBe 2L
                 verify { zSetOperations.remove("scheduled:tasks", "task-1") }
                 verify { zSetOperations.remove("scheduled:tasks", "task-2") }
@@ -195,12 +195,12 @@ class RedisSchedulerProviderTest : BehaviorSpec({
                 verify { redisTemplate.delete("scheduled:task:task-2") }
             }
         }
-        
+
         When("atomically removing empty task list") {
             Then("it should return zero without Redis call") {
                 // 빈 리스트에 대해서는 early return되므로 Redis 호출이 없어야 함
                 val result = redisSchedulerProvider.removeSchedulesAtomically(emptyList())
-                
+
                 result shouldBe 0L
                 // 이 경우에는 Redis operations가 호출되지 않으므로 verify 없이 결과만 확인
             }
