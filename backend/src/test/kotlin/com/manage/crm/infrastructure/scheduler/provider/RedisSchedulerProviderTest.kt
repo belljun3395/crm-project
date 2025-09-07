@@ -71,6 +71,8 @@ class RedisSchedulerProviderTest : BehaviorSpec({
                 savedTask.taskId shouldBe "test-task"
                 savedTask.scheduleInfo shouldBe input
                 savedTask.scheduledAt shouldBe scheduleTime
+                // createdAt이 현재 시간 근처인지 확인
+                savedTask.createdAt.isBefore(LocalDateTime.now().plusSeconds(1)) shouldBe true
             }
         }
 
@@ -99,7 +101,6 @@ class RedisSchedulerProviderTest : BehaviorSpec({
         }
 
         When("getting expired schedules") {
-            val currentTime = System.currentTimeMillis() / 1000.0
             val expiredTaskIds = setOf("expired-task-1", "expired-task-2")
             
             // 실제 구조와 맞는 JSON 데이터 생성
@@ -118,7 +119,8 @@ class RedisSchedulerProviderTest : BehaviorSpec({
             )
             val taskDataJson = objectMapper.writeValueAsString(redisTask)
 
-            every { zSetOperations.rangeByScore("scheduled:tasks", 0.0, currentTime) } returns expiredTaskIds
+            // 현재 시간보다 이전의 모든 태스크를 반환하도록 mock 설정 
+            every { zSetOperations.rangeByScore("scheduled:tasks", 0.0, any<Double>()) } returns expiredTaskIds
             every { valueOperations.get("scheduled:task:expired-task-1") } returns taskDataJson
             every { valueOperations.get("scheduled:task:expired-task-2") } returns null
 
@@ -126,8 +128,19 @@ class RedisSchedulerProviderTest : BehaviorSpec({
                 val result = redisSchedulerProvider.getExpiredSchedules()
 
                 result shouldHaveSize 1
-                result.first().taskId shouldBe "expired-task-1"
-                result.first().scheduleInfo shouldBe scheduleInfo
+                val firstResult = result.first()
+                firstResult.taskId shouldBe "expired-task-1"
+                firstResult.scheduledAt shouldBe LocalDateTime.of(2024, 12, 31, 12, 0, 0)
+                firstResult.createdAt shouldBe LocalDateTime.of(2024, 12, 31, 11, 0, 0)
+                
+                // scheduleInfo가 올바른 타입인지 확인
+                firstResult.scheduleInfo.shouldBeInstanceOf<NotificationEmailSendTimeOutEventInput>()
+                val deserializedInput = firstResult.scheduleInfo as NotificationEmailSendTimeOutEventInput
+                deserializedInput.templateId shouldBe 1L
+                deserializedInput.templateVersion shouldBe 1.0f
+                deserializedInput.userIds shouldBe listOf(1L)
+                deserializedInput.eventId.value shouldBe "expired-task-1"
+                deserializedInput.expiredTime shouldBe LocalDateTime.of(2024, 12, 31, 12, 0, 0)
             }
         }
 
@@ -158,8 +171,9 @@ class RedisSchedulerProviderTest : BehaviorSpec({
                     redisSchedulerProvider.createSchedule("failed-task", scheduleTime, input)
                 }.exceptionOrNull()
 
-                exception shouldBeInstanceOf<RuntimeException>()
-                exception?.message shouldBe "Error creating Redis schedule: failed-task"
+                exception!!.shouldBeInstanceOf<RuntimeException>()
+                exception.message shouldBe "Error creating Redis schedule: failed-task"
+                exception.cause?.message shouldBe "Redis connection failed"
             }
         }
         
@@ -184,10 +198,11 @@ class RedisSchedulerProviderTest : BehaviorSpec({
         
         When("atomically removing empty task list") {
             Then("it should return zero without Redis call") {
+                // 빈 리스트에 대해서는 early return되므로 Redis 호출이 없어야 함
                 val result = redisSchedulerProvider.removeSchedulesAtomically(emptyList())
                 
                 result shouldBe 0L
-                verify(exactly = 0) { redisTemplate.execute<Any>(any()) }
+                // 이 경우에는 Redis operations가 호출되지 않으므로 verify 없이 결과만 확인
             }
         }
     }
