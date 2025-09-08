@@ -6,33 +6,25 @@ import com.manage.crm.infrastructure.scheduler.ScheduleInfo
 import com.manage.crm.infrastructure.scheduler.ScheduleName
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 /**
- * Redis 기반 스케줄러 제공자
- * Redis Sorted Set을 사용하여 스케줄을 관리합니다.
+ * `Redis` 기반 스케줄러 제공자
+ * `Redis Sorted Set`을 사용하여 스케줄을 관리합니다.
  */
 @Component
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class RedisSchedulerProvider(
-    private val redisTemplate: RedisTemplate<String, Any>,
+    private val redisSchedulerService: RedisSchedulerService,
     private val objectMapper: ObjectMapper
 ) : SchedulerProvider {
-
     private val log = KotlinLogging.logger {}
-
-    companion object {
-        private const val SCHEDULED_TASKS_KEY = "scheduled:tasks"
-        private const val TASK_DATA_PREFIX = "scheduled:task:"
-    }
 
     override fun createSchedule(name: String, schedule: LocalDateTime, input: ScheduleInfo): String {
         try {
             val score = schedule.toEpochSecond(ZoneOffset.UTC).toDouble()
-            val taskDataKey = "$TASK_DATA_PREFIX$name"
             val taskData = RedisScheduledTask(
                 taskId = name,
                 scheduleInfo = input,
@@ -40,11 +32,8 @@ class RedisSchedulerProvider(
                 createdAt = LocalDateTime.now()
             )
 
-            // 1. 작업 데이터를 별도 키에 저장
-            redisTemplate.opsForValue().set(taskDataKey, objectMapper.writeValueAsString(taskData))
-
-            // 2. Sorted Set에 실행 시간과 작업 ID 저장
-            redisTemplate.opsForZSet().add(SCHEDULED_TASKS_KEY, name, score)
+            redisSchedulerService.setTaskData(name, objectMapper.writeValueAsString(taskData))
+            redisSchedulerService.addTaskToScheduledTasks(name, score)
 
             log.info { "Successfully created Redis schedule: $name at $schedule (score: $score)" }
             return name
@@ -56,9 +45,7 @@ class RedisSchedulerProvider(
 
     override fun browseSchedule(): List<ScheduleName> {
         return try {
-            val allTasks = redisTemplate.opsForZSet().range(SCHEDULED_TASKS_KEY, 0, -1)
-                ?: emptySet()
-
+            val allTasks = redisSchedulerService.browseAllTasksInScheduledTasks()
             allTasks.map { ScheduleName(it as String) }
         } catch (ex: Exception) {
             log.error(ex) { "Error browsing Redis schedules" }
@@ -68,13 +55,8 @@ class RedisSchedulerProvider(
 
     override fun deleteSchedule(scheduleName: ScheduleName) {
         try {
-            val taskDataKey = "$TASK_DATA_PREFIX${scheduleName.value}"
-
-            // 1. Sorted Set에서 제거
-            redisTemplate.opsForZSet().remove(SCHEDULED_TASKS_KEY, scheduleName.value)
-
-            // 2. 작업 데이터 삭제
-            redisTemplate.delete(taskDataKey)
+            redisSchedulerService.removeTaskInScheduledTasks(scheduleName.value)
+            redisSchedulerService.removeTaskData(scheduleName.value)
 
             log.info { "Successfully deleted Redis schedule: ${scheduleName.value}" }
         } catch (ex: Exception) {
@@ -92,18 +74,16 @@ class RedisSchedulerProvider(
     fun getExpiredSchedules(): List<RedisScheduledTask> {
         return try {
             val currentTime = System.currentTimeMillis() / 1000.0
-            val expiredTaskIds = redisTemplate.opsForZSet()
-                .rangeByScore(SCHEDULED_TASKS_KEY, 0.0, currentTime) ?: emptySet()
+            val expiredTaskIds = redisSchedulerService.browseDueTaskIdsInScheduledTasks(currentTime)
 
             expiredTaskIds.mapNotNull { taskId ->
-                val taskDataKey = "$TASK_DATA_PREFIX$taskId"
-                val taskDataJson = redisTemplate.opsForValue().get(taskDataKey) as? String
+                val taskDataJson = redisSchedulerService.getTaskData(taskId.toString())
                 taskDataJson?.let {
                     try {
                         objectMapper.readValue(it, RedisScheduledTask::class.java)
                     } catch (ex: Exception) {
                         log.warn(ex) { "Failed to deserialize task data for $taskId, removing corrupted data" }
-                        redisTemplate.delete(taskDataKey)
+                        redisSchedulerService.removeTaskData(taskId.toString())
                         null
                     }
                 }
@@ -125,15 +105,10 @@ class RedisSchedulerProvider(
 
         taskIds.forEach { taskId ->
             try {
-                val taskDataKey = "$TASK_DATA_PREFIX$taskId"
+                val removedFromZSet = redisSchedulerService.removeTaskIdFromScheduledTasks(taskId)
+                redisSchedulerService.removeTaskData(taskId)
 
-                // 1. Sorted Set에서 제거
-                val removedFromZSet = redisTemplate.opsForZSet().remove(SCHEDULED_TASKS_KEY, taskId)
-
-                // 2. 작업 데이터 삭제 (ZSet에서 제거되었는지와 관계없이 항상 시도)
-                redisTemplate.delete(taskDataKey)
-
-                if (removedFromZSet != null && removedFromZSet > 0) {
+                if (removedFromZSet > 0) {
                     removedCount++
                     log.debug { "Removed schedule: $taskId" }
                 }
@@ -148,8 +123,8 @@ class RedisSchedulerProvider(
 }
 
 /**
- * Redis에 저장되는 스케줄 작업 정보
- * Jackson의 다형성 처리를 위해 타입 정보를 포함합니다.
+ * `Redis`에 저장되는 스케줄 작업 정보
+ * `Jackson`의 다형성 처리를 위해 타입 정보를 포함합니다.
  */
 data class RedisScheduledTask(
     val taskId: String,
