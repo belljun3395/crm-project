@@ -1,19 +1,13 @@
 package com.manage.crm.infrastructure.scheduler.service
 
-import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
-import com.manage.crm.email.domain.vo.EventId
 import com.manage.crm.infrastructure.scheduler.executor.ScheduledTaskExecutor
-import com.manage.crm.infrastructure.scheduler.provider.RedisScheduledTask
 import com.manage.crm.infrastructure.scheduler.provider.RedisSchedulerProvider
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
 import io.mockk.verify
-import java.time.LocalDateTime
 
 class RedisScheduleMonitoringServiceTest : BehaviorSpec({
 
@@ -30,7 +24,7 @@ class RedisScheduleMonitoringServiceTest : BehaviorSpec({
         When("processing expired schedules with no expired tasks") {
             Then("it should do nothing") {
                 every { redisSchedulerProvider.getExpiredSchedules() } returns emptyList()
-                
+
                 monitoringService.processExpiredSchedules()
 
                 verify { redisSchedulerProvider.getExpiredSchedules() }
@@ -42,7 +36,7 @@ class RedisScheduleMonitoringServiceTest : BehaviorSpec({
         When("logging scheduler status") {
             Then("it should log the current schedule count") {
                 every { redisSchedulerProvider.browseSchedule() } returns emptyList()
-                
+
                 monitoringService.logSchedulerStatus()
 
                 verify { redisSchedulerProvider.browseSchedule() }
@@ -52,7 +46,7 @@ class RedisScheduleMonitoringServiceTest : BehaviorSpec({
         When("browsing schedules fails during status logging") {
             Then("it should handle the failure gracefully") {
                 every { redisSchedulerProvider.browseSchedule() } throws RuntimeException("Redis connection failed")
-                
+
                 // 예외가 발생해도 서비스는 계속 실행되어야 하고 예외를 던지지 않아야 함
                 var exceptionThrown: Exception? = null
                 try {
@@ -70,9 +64,9 @@ class RedisScheduleMonitoringServiceTest : BehaviorSpec({
         When("provider type is checked") {
             Then("it should return redis-kafka") {
                 every { redisSchedulerProvider.getProviderType() } returns "redis-kafka"
-                
+
                 redisSchedulerProvider.getProviderType() shouldBe "redis-kafka"
-                
+
                 verify { redisSchedulerProvider.getProviderType() }
             }
         }

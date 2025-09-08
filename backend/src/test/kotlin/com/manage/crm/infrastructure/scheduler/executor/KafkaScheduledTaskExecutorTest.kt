@@ -112,12 +112,12 @@ class KafkaScheduledTaskExecutorTest : BehaviorSpec({
                 kafkaExecutor.executeScheduledTask("validation-task", input)
 
                 val capturedMessage = messageSlot.captured
-                
+
                 // 메시지 내용 상세 검증
                 capturedMessage.taskId shouldBe "validation-task"
                 capturedMessage.scheduleInfo shouldBe input
                 capturedMessage.executedAt shouldNotBe 0L
-                
+
                 // scheduleInfo의 모든 필드 검증 (실제 데이터 무결성 확인)
                 val scheduleInfo = capturedMessage.scheduleInfo as NotificationEmailSendTimeOutEventInput
                 scheduleInfo.templateId shouldBe 999L
