@@ -6,6 +6,7 @@ export const useUsers = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [userCount, setUserCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -52,7 +53,7 @@ export const useUsers = () => {
 
   // 사용자 등록
   const enrollUser = useCallback(async (userData: CreateUserRequest): Promise<boolean> => {
-    setLoading(true);
+    setEnrolling(true);
     setError(null);
     try {
       const newUser = await userAPI.enrollUser(userData);
@@ -68,7 +69,7 @@ export const useUsers = () => {
       console.error('Failed to enroll user:', err);
       return false;
     } finally {
-      setLoading(false);
+      setEnrolling(false);
     }
   }, []);
 
@@ -91,6 +92,7 @@ export const useUsers = () => {
     users,
     userCount,
     loading,
+    enrolling,
     error,
     fetchUsers,
     fetchUserCount,
