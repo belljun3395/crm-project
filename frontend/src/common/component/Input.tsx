@@ -3,6 +3,7 @@ import React, { useId } from 'react';
 interface InputProps {
   type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search' | 'date' | 'datetime-local';
   value?: string;
+  defaultValue?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   disabled?: boolean;
@@ -17,6 +18,7 @@ interface InputProps {
 export const Input: React.FC<InputProps> = ({
   type = 'text',
   value,
+  defaultValue,
   onChange,
   placeholder,
   disabled = false,
@@ -52,6 +54,7 @@ export const Input: React.FC<InputProps> = ({
         id={inputId}
         type={type}
         value={value}
+        defaultValue={defaultValue}
         onChange={onChange}
         placeholder={placeholder}
         disabled={disabled}

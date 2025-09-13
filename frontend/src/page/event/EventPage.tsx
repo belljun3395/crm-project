@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, Input, Modal } from 'common/component';
 import { useToggle } from 'common/hook';
 import { useEvents } from 'shared/hook';
 import type { EventFormData } from 'shared/type';
 
 export const EventPage: React.FC = () => {
-  const { events, loading, error, createEvent } = useEvents();
+  const { events, loading, error, createEvent, searchEvents } = useEvents();
   const { value: isModalOpen, setTrue: openModal, setFalse: closeModal } = useToggle();
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<EventFormData>({
@@ -14,6 +14,12 @@ export const EventPage: React.FC = () => {
     externalId: '',
     properties: [{ key: '', value: '' }]
   });
+
+  // 초기 데이터 로드
+  useEffect(() => {
+    // 전체 이벤트 조회 (빈 문자열로 검색)
+    searchEvents('', '');
+  }, [searchEvents]);
 
   // 검색 필터링
   const filteredEvents = events.filter(event => 
@@ -24,7 +30,7 @@ export const EventPage: React.FC = () => {
   // 폼 제출
   const handleSubmit = async () => {
     if (!formData.name || !formData.externalId) return;
-    
+
     const success = await createEvent(formData);
     if (success) {
       setFormData({
@@ -34,6 +40,8 @@ export const EventPage: React.FC = () => {
         properties: [{ key: '', value: '' }]
       });
       closeModal();
+      // 이벤트 생성 후 목록 새로고침
+      searchEvents('', '');
     }
   };
 

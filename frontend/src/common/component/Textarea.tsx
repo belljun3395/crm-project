@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 interface TextareaProps {
   value?: string;
+  defaultValue?: string;
   onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   placeholder?: string;
   disabled?: boolean;
@@ -15,6 +16,7 @@ interface TextareaProps {
 
 export const Textarea: React.FC<TextareaProps> = ({
   value,
+  defaultValue,
   onChange,
   placeholder,
   disabled = false,
@@ -25,6 +27,9 @@ export const Textarea: React.FC<TextareaProps> = ({
   className = '',
   id,
 }) => {
+  const generatedId = useId();
+  const textareaId = id ?? generatedId;
+  const errorId = `${textareaId}-error`;
   const textareaClasses = `
     w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors resize-vertical
     ${error 
@@ -38,23 +43,26 @@ export const Textarea: React.FC<TextareaProps> = ({
   return (
     <div className="w-full">
       {label && (
-        <label htmlFor={id} className="block text-sm font-medium text-gray-300 mb-2">
+        <label htmlFor={textareaId} className="block text-sm font-medium text-gray-300 mb-2">
           {label}
           {required && <span className="text-red-400 ml-1">*</span>}
         </label>
       )}
       <textarea
-        id={id}
+        id={textareaId}
         value={value}
+        defaultValue={defaultValue}
         onChange={onChange}
         placeholder={placeholder}
         disabled={disabled}
         required={required}
         rows={rows}
         className={textareaClasses}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? errorId : undefined}
       />
       {error && (
-        <p className="mt-1 text-sm text-red-400">{error}</p>
+        <p id={errorId} className="mt-1 text-sm text-red-400">{error}</p>
       )}
     </div>
   );

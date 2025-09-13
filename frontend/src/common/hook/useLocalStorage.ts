@@ -1,7 +1,20 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+
+// SSR 환경에서 localStorage 사용 가능 여부 확인
+const isLocalStorageAvailable = () => {
+  try {
+    return typeof window !== 'undefined' && window.localStorage !== null;
+  } catch {
+    return false;
+  }
+};
 
 export const useLocalStorage = <T>(key: string, initialValue: T) => {
   const [storedValue, setStoredValue] = useState<T>(() => {
+    if (!isLocalStorageAvailable()) {
+      return initialValue;
+    }
+
     try {
       const item = window.localStorage.getItem(key);
       return item ? JSON.parse(item) : initialValue;
@@ -11,7 +24,25 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
     }
   });
 
+  // SSR 시 초기값과 클라이언트 값의 불일치 해결
+  useEffect(() => {
+    if (!isLocalStorageAvailable()) return;
+
+    try {
+      const item = window.localStorage.getItem(key);
+      const parsedItem = item ? JSON.parse(item) : initialValue;
+      setStoredValue(parsedItem);
+    } catch (error) {
+      console.error(`Error syncing localStorage key "${key}":`, error);
+    }
+  }, [key, initialValue]);
+
   const setValue = useCallback((value: T | ((val: T) => T)) => {
+    if (!isLocalStorageAvailable()) {
+      setStoredValue(value instanceof Function ? value(storedValue) : value);
+      return;
+    }
+
     try {
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
@@ -22,6 +53,11 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
   }, [key, storedValue]);
 
   const removeValue = useCallback(() => {
+    if (!isLocalStorageAvailable()) {
+      setStoredValue(initialValue);
+      return;
+    }
+
     try {
       window.localStorage.removeItem(key);
       setStoredValue(initialValue);

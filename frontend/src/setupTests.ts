@@ -1,5 +1,4 @@
 import '@testing-library/jest-dom';
-import 'jest-environment-jsdom';
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {

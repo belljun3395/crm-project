@@ -1,11 +1,13 @@
 module.exports = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^shared/(.*)$': '<rootDir>/src/shared/$1',
     '^common/(.*)$': '<rootDir>/src/common/$1',
     '^page/(.*)$': '<rootDir>/src/page/$1',
     '^__tests__/(.*)$': '<rootDir>/src/__tests__/$1',
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '\\.(svg|png|jpe?g|gif|webp|avif)$': '<rootDir>/src/__tests__/mocks/fileMock.js'
   },
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',

@@ -43,7 +43,8 @@ export const emailScheduleAPI = {
   // 이메일 스케줄 취소
   async cancelEmailSchedule(scheduleId: string): Promise<boolean> {
     try {
-      await crmApi.delete(`/emails/schedules/notifications/email/${scheduleId}`);
+      const encodedScheduleId = encodeURIComponent(scheduleId);
+      await crmApi.delete(`/emails/schedules/notifications/email/${encodedScheduleId}`);
       return true;
     } catch (error) {
       console.error('Error canceling email schedule:', error);
