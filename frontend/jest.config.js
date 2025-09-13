@@ -7,7 +7,7 @@ module.exports = {
     '^page/(.*)$': '<rootDir>/src/page/$1',
     '^__tests__/(.*)$': '<rootDir>/src/__tests__/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-    '\\.(svg|png|jpe?g|gif|webp|avif)$': '<rootDir>/src/__tests__/mocks/fileMock.js'
+    '\\.(svg|png|jpe?g|gif|webp|avif)$': '<rootDir>/src/test-utils/fileMock.js'
   },
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
@@ -16,6 +16,7 @@ module.exports = {
     '!src/reportWebVitals.ts',
     '!src/**/*.stories.{js,jsx,ts,tsx}',
     '!src/__tests__/**',
+    '!src/test-utils/**',
     '!src/**/index.{js,ts}', // 단순 re-export 파일들 제외
   ],
   coverageThreshold: {

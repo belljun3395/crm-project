@@ -1,8 +1,9 @@
+import React from 'react';
 import type { Preview } from '@storybook/react';
 import '../src/index.css';
 
 // 다크모드 토글을 위한 데코레이터
-const withThemeProvider = (Story, context) => {
+const withThemeProvider = (Story: React.ComponentType, context: any) => {
   const theme = context.globals.theme || 'dark';
 
   return (
