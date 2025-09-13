@@ -1,9 +1,6 @@
 import React, { useId } from 'react';
 
-interface TextareaProps {
-  value?: string;
-  defaultValue?: string;
-  onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+type BaseTextareaProps = {
   placeholder?: string;
   disabled?: boolean;
   error?: string;
@@ -12,7 +9,21 @@ interface TextareaProps {
   rows?: number;
   className?: string;
   id?: string;
-}
+};
+
+type ControlledTextareaProps = BaseTextareaProps & {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  defaultValue?: never;
+};
+
+type UncontrolledTextareaProps = BaseTextareaProps & {
+  value?: never;
+  onChange?: never;
+  defaultValue?: string;
+};
+
+type TextareaProps = ControlledTextareaProps | UncontrolledTextareaProps;
 
 export const Textarea: React.FC<TextareaProps> = ({
   value,

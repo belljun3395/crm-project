@@ -1,10 +1,7 @@
 import React, { useId } from 'react';
 
-interface InputProps {
+type BaseInputProps = {
   type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search' | 'date' | 'datetime-local';
-  value?: string;
-  defaultValue?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   disabled?: boolean;
   readOnly?: boolean;
@@ -13,7 +10,21 @@ interface InputProps {
   required?: boolean;
   className?: string;
   id?: string;
-}
+};
+
+type ControlledInputProps = BaseInputProps & {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  defaultValue?: never;
+};
+
+type UncontrolledInputProps = BaseInputProps & {
+  value?: never;
+  onChange?: never;
+  defaultValue?: string;
+};
+
+type InputProps = ControlledInputProps | UncontrolledInputProps;
 
 export const Input: React.FC<InputProps> = ({
   type = 'text',

@@ -20,17 +20,26 @@ export const Modal: React.FC<ModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      // 스크롤 잠금
+      // 기존 overflow 값 저장
+      const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
-      // ESC 키로 닫기
+
+      // ESC 키로 닫기 (Escape와 Esc 모두 지원)
       const handleEscape = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
+        if (e.key === 'Escape' || e.key === 'Esc') {
           onClose();
         }
       };
       document.addEventListener('keydown', handleEscape);
+
+      // 포커스 관리
+      const modal = document.querySelector('[role="dialog"]') as HTMLElement;
+      if (modal) {
+        modal.focus();
+      }
+
       return () => {
-        document.body.style.overflow = 'unset';
+        document.body.style.overflow = originalOverflow;
         document.removeEventListener('keydown', handleEscape);
       };
     }
@@ -55,12 +64,15 @@ export const Modal: React.FC<ModalProps> = ({
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
       onClick={handleBackdropClick}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={title ? titleId : undefined}
-      aria-describedby={contentId}
     >
-      <div className={`bg-gray-900 rounded-xl p-6 w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}>
+      <div
+        className={`bg-gray-900 rounded-xl p-6 w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        aria-describedby={contentId}
+        tabIndex={-1}
+      >
         {title && (
           <div className="flex items-center justify-between mb-4">
             <h2 id={titleId} className="text-xl font-bold text-white">{title}</h2>
