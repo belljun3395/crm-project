@@ -34,23 +34,27 @@ export const useLocalStorage = <T>(key: string, initialValue: T) => {
       setStoredValue(parsedItem);
     } catch (error) {
       console.error(`Error syncing localStorage key "${key}":`, error);
+      // 파싱 오류 시 초기값으로 폴백
+      setStoredValue(initialValue);
     }
   }, [key, initialValue]);
 
   const setValue = useCallback((value: T | ((val: T) => T)) => {
     if (!isLocalStorageAvailable()) {
-      setStoredValue(value instanceof Function ? value(storedValue) : value);
+      setStoredValue(prevValue => value instanceof Function ? value(prevValue) : value);
       return;
     }
 
     try {
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
-      setStoredValue(valueToStore);
-      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      setStoredValue(prevValue => {
+        const valueToStore = value instanceof Function ? value(prevValue) : value;
+        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        return valueToStore;
+      });
     } catch (error) {
       console.error(`Error setting localStorage key "${key}":`, error);
     }
-  }, [key, storedValue]);
+  }, [key]);
 
   const removeValue = useCallback(() => {
     if (!isLocalStorageAvailable()) {

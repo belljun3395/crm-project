@@ -5,7 +5,7 @@ import { useUsers } from 'shared/hook';
 import type { UserFormData } from 'shared/type';
 
 export const UserPage: React.FC = () => {
-  const { users, loading, error, enrollUser } = useUsers();
+  const { users, loading, enrolling, error, enrollUser } = useUsers();
   const { value: isModalOpen, setTrue: openModal, setFalse: closeModal } = useToggle();
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<UserFormData>({
@@ -13,11 +13,13 @@ export const UserPage: React.FC = () => {
     userAttributes: ''
   });
 
-  // 검색 필터링
-  const filteredUsers = users.filter(user => 
-    user.externalId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.userAttributes.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // 검색 필터링 (NPE 방지)
+  const filteredUsers = users.filter(user => {
+    const searchLower = searchTerm.toLowerCase();
+    const externalId = user.externalId?.toLowerCase() || '';
+    const userAttributes = user.userAttributes?.toLowerCase() || '';
+    return externalId.includes(searchLower) || userAttributes.includes(searchLower);
+  });
 
   // 폼 제출
   const handleSubmit = async () => {
@@ -127,7 +129,7 @@ export const UserPage: React.FC = () => {
             required
           />
           <div className="flex gap-3 pt-4">
-            <Button onClick={handleSubmit} loading={loading} className="flex-1">
+            <Button onClick={handleSubmit} loading={enrolling} className="flex-1">
               Enroll
             </Button>
             <Button onClick={closeModal} variant="secondary" className="flex-1">

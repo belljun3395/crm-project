@@ -31,7 +31,7 @@ export const Textarea: React.FC<TextareaProps> = ({
   const textareaId = id ?? generatedId;
   const errorId = `${textareaId}-error`;
   const textareaClasses = `
-    w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors resize-vertical
+    w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors resize-y
     ${error 
       ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
       : 'border-gray-700 bg-gray-800 text-white focus:ring-[#22c55e] focus:border-[#22c55e]'
