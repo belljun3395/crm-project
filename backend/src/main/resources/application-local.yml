@@ -3,6 +3,10 @@ spring:
         web-application-type: reactive
     application:
         name: crm
+    kafka:
+        bootstrap-servers: localhost:9092
+        consumer:
+            group-id: crm-scheduler-group
     r2dbc:
         url: r2dbc:pool:mysql://localhost:13306/crm
         username: root
@@ -52,7 +56,10 @@ spring:
         locations: classpath:db/migration/entity
         sql-migration-suffixes: sql
         baseline-on-migrate: true
-        baseline-version: 0
+
+# 스케줄러 제공자 설정
+scheduler:
+    provider: aws  # aws (기본값) 또는 redis-kafka
 
 springdoc:
     swagger-ui:

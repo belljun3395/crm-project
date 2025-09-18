@@ -46,6 +46,14 @@ spring:
         sql-migration-suffixes: sql
         baseline-on-migrate: true
         baseline-version: 0
+    kafka:
+        bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+        consumer:
+            group-id: crm-scheduler-group
+
+# 스케줄러 제공자 설정
+scheduler:
+    provider: ${SCHEDULER_PROVIDER:aws}  # aws (기본값) 또는 redis-kafka
 
 springdoc:
     swagger-ui:
