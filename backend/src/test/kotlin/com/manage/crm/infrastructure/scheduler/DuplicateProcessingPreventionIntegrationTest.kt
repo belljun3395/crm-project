@@ -1,9 +1,8 @@
 package com.manage.crm.infrastructure.scheduler
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.infrastructure.scheduler.executor.KafkaScheduledTaskExecutor
 import com.manage.crm.infrastructure.scheduler.provider.RedisSchedulerProvider
-import com.manage.crm.infrastructure.scheduler.provider.RedisSchedulerService
+import com.manage.crm.infrastructure.scheduler.provider.RedisScheduledTask
 import com.manage.crm.infrastructure.scheduler.service.RedisScheduleMonitoringService
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -14,7 +13,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.support.SendResult
 import org.springframework.test.context.TestPropertySource
@@ -32,53 +30,66 @@ class DuplicateProcessingPreventionIntegrationTest : BehaviorSpec() {
         Given("A Redis scheduler with atomic operations") {
 
             When("multiple monitoring services try to process the same expired tasks") {
-                val redisTemplate = mockk<RedisTemplate<String, Any>>()
+                val redisSchedulerProvider = mockk<RedisSchedulerProvider>()
                 val kafkaTemplate = mockk<KafkaTemplate<String, Any>>()
-                val objectMapper = ObjectMapper()
 
-                val redisSchedulerService = RedisSchedulerService(redisTemplate, objectMapper)
-                val redisSchedulerProvider = RedisSchedulerProvider(redisSchedulerService, objectMapper)
                 val kafkaExecutor = KafkaScheduledTaskExecutor(kafkaTemplate)
 
                 val processedTasks = AtomicInteger(0)
-                val duplicateProcessAttempts = AtomicInteger(0)
 
-                // Mock Redis atomic operation to return tasks only once
-                val expiredTaskIds = setOf("task1", "task2", "task3")
+                // Create test task objects
+                val task1 = RedisScheduledTask(
+                    taskId = "task1",
+                    scheduleInfo = com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput(
+                        templateId = 1L,
+                        templateVersion = 1.0f,
+                        userIds = listOf(1L, 2L, 3L),
+                        eventId = com.manage.crm.email.domain.vo.EventId("test-event-1"),
+                        expiredTime = java.time.LocalDateTime.of(2025, 1, 1, 12, 0, 0)
+                    ),
+                    scheduledAt = java.time.LocalDateTime.of(2025, 1, 1, 12, 0, 0),
+                    createdAt = java.time.LocalDateTime.of(2025, 1, 1, 11, 0, 0)
+                )
+
+                val task2 = RedisScheduledTask(
+                    taskId = "task2",
+                    scheduleInfo = com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput(
+                        templateId = 2L,
+                        templateVersion = 1.0f,
+                        userIds = listOf(4L, 5L, 6L),
+                        eventId = com.manage.crm.email.domain.vo.EventId("test-event-2"),
+                        expiredTime = java.time.LocalDateTime.of(2025, 1, 1, 12, 0, 0)
+                    ),
+                    scheduledAt = java.time.LocalDateTime.of(2025, 1, 1, 12, 0, 0),
+                    createdAt = java.time.LocalDateTime.of(2025, 1, 1, 11, 0, 0)
+                )
+
+                val task3 = RedisScheduledTask(
+                    taskId = "task3",
+                    scheduleInfo = com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput(
+                        templateId = 3L,
+                        templateVersion = 1.0f,
+                        userIds = listOf(7L, 8L, 9L),
+                        eventId = com.manage.crm.email.domain.vo.EventId("test-event-3"),
+                        expiredTime = java.time.LocalDateTime.of(2025, 1, 1, 12, 0, 0)
+                    ),
+                    scheduledAt = java.time.LocalDateTime.of(2025, 1, 1, 12, 0, 0),
+                    createdAt = java.time.LocalDateTime.of(2025, 1, 1, 11, 0, 0)
+                )
+
+                val expiredTasks = listOf(task1, task2, task3)
                 var atomicCallCount = 0
 
-                every { 
-                    redisTemplate.execute(
-                        any<org.springframework.data.redis.core.script.RedisScript<List<*>>>(),
-                        any<List<String>>(),
-                        *anyVararg<String>()
-                    )
+                every {
+                    redisSchedulerProvider.getAndRemoveExpiredSchedules()
                 } answers {
                     atomicCallCount++
                     if (atomicCallCount == 1) {
-                        expiredTaskIds.toList() // 첫 번째 호출에서만 작업 반환
+                        expiredTasks // 첫 번째 호출에서만 작업 반환
                     } else {
-                        emptyList<String>() // 이후 호출에서는 빈 집합 반환 (이미 제거됨)
+                        emptyList() // 이후 호출에서는 빈 리스트 반환 (이미 제거됨)
                     }
                 }
-
-                // Mock task data retrieval
-                every { redisTemplate.opsForValue().get(any<String>()) } returns """
-                    {
-                        "taskId": "test-task",
-                        "scheduleInfo": {
-                            "templateId": 1,
-                            "templateVersion": 1.0,
-                            "userIds": [1, 2, 3],
-                            "eventId": {"value": "test-event"},
-                            "expiredTime": "2025-01-01T12:00:00"
-                        },
-                        "scheduledAt": "2025-01-01T12:00:00",
-                        "createdAt": "2025-01-01T11:00:00"
-                    }
-                """.trimIndent()
-
-                every { redisTemplate.delete(any<String>()) } returns true
 
                 // Mock successful Kafka sending
                 val mockSendResult = mockk<SendResult<String, Any>>()
@@ -110,12 +121,8 @@ class DuplicateProcessingPreventionIntegrationTest : BehaviorSpec() {
                     }
 
                     // 원자적 연산이 정확히 2번 호출되었는지 확인 (각 서비스마다 1번씩)
-                    verify(exactly = 2) { 
-                        redisTemplate.execute(
-                            any<org.springframework.data.redis.core.script.RedisScript<List<*>>>(),
-                            any<List<String>>(),
-                            *anyVararg<String>()
-                        )
+                    verify(exactly = 2) {
+                        redisSchedulerProvider.getAndRemoveExpiredSchedules()
                     }
 
                     // 실제 처리된 작업 수는 3개여야 함 (중복 처리 없음)
@@ -124,64 +131,53 @@ class DuplicateProcessingPreventionIntegrationTest : BehaviorSpec() {
             }
 
             When("Kafka send fails and task needs to be rescheduled") {
-                val redisTemplate = mockk<RedisTemplate<String, Any>>()
+                val redisSchedulerProvider = mockk<RedisSchedulerProvider>()
                 val kafkaTemplate = mockk<KafkaTemplate<String, Any>>()
-                val objectMapper = ObjectMapper()
 
-                val redisSchedulerService = RedisSchedulerService(redisTemplate, objectMapper)
-                val redisSchedulerProvider = RedisSchedulerProvider(redisSchedulerService, objectMapper)
                 val kafkaExecutor = KafkaScheduledTaskExecutor(kafkaTemplate)
                 val monitoringService = RedisScheduleMonitoringService(redisSchedulerProvider, kafkaExecutor)
 
                 val rescheduleCount = AtomicInteger(0)
 
+                // Create failed task
+                val failedTask = RedisScheduledTask(
+                    taskId = "failed-task",
+                    scheduleInfo = com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput(
+                        templateId = 1L,
+                        templateVersion = 1.0f,
+                        userIds = listOf(1L),
+                        eventId = com.manage.crm.email.domain.vo.EventId("failed-event"),
+                        expiredTime = java.time.LocalDateTime.of(2025, 1, 1, 12, 0, 0)
+                    ),
+                    scheduledAt = java.time.LocalDateTime.of(2025, 1, 1, 12, 0, 0),
+                    createdAt = java.time.LocalDateTime.of(2025, 1, 1, 11, 0, 0)
+                )
+
                 // Mock atomic operation to return one failed task
-                every { 
-                    redisTemplate.execute(
-                        any<org.springframework.data.redis.core.script.RedisScript<List<*>>>(),
-                        any<List<String>>(),
-                        *anyVararg<String>()
-                    )
-                } returns listOf("failed-task")
-
-                // Mock task data
-                every { redisTemplate.opsForValue().get(any<String>()) } returns """
-                    {
-                        "taskId": "failed-task",
-                        "scheduleInfo": {
-                            "templateId": 1,
-                            "templateVersion": 1.0,
-                            "userIds": [1],
-                            "eventId": {"value": "failed-event"},
-                            "expiredTime": "2025-01-01T12:00:00"
-                        },
-                        "scheduledAt": "2025-01-01T12:00:00",
-                        "createdAt": "2025-01-01T11:00:00"
-                    }
-                """.trimIndent()
-
-                every { redisTemplate.delete(any<String>()) } returns true
+                every {
+                    redisSchedulerProvider.getAndRemoveExpiredSchedules()
+                } returns listOf(failedTask)
 
                 // Mock Kafka failure
                 every { kafkaTemplate.send(any<String>(), any<String>(), any()) } throws RuntimeException("Kafka unavailable")
 
                 // Mock rescheduling
-                every { redisTemplate.opsForZSet().add(any<String>(), any<String>(), any<Double>()) } answers {
+                every { redisSchedulerProvider.createSchedule(any<String>(), any<java.time.LocalDateTime>(), any()) } answers {
                     rescheduleCount.incrementAndGet()
-                    true
+                    "rescheduled-task-${System.currentTimeMillis()}"
                 }
-                every { redisTemplate.opsForValue().set(any<String>(), any<String>()) } returns Unit
 
                 Then("failed task should be rescheduled") {
-                    monitoringService.processExpiredSchedules()
+                    runBlocking {
+                        monitoringService.processExpiredSchedules()
+
+                        // 비동기 작업 완료까지 대기
+                        delay(2000)
+                    }
 
                     // 원자적 조회가 호출되었는지 확인
-                    verify { 
-                        redisTemplate.execute(
-                            any<org.springframework.data.redis.core.script.RedisScript<List<*>>>(),
-                            any<List<String>>(),
-                            *anyVararg<String>()
-                        )
+                    verify {
+                        redisSchedulerProvider.getAndRemoveExpiredSchedules()
                     }
 
                     // Kafka 전송 시도가 있었는지 확인
@@ -189,7 +185,7 @@ class DuplicateProcessingPreventionIntegrationTest : BehaviorSpec() {
 
                     // 재스케줄링이 발생했는지 확인
                     rescheduleCount.get() shouldBe 1
-                    verify { redisTemplate.opsForZSet().add(any<String>(), any<String>(), any<Double>()) }
+                    verify { redisSchedulerProvider.createSchedule(any<String>(), any<java.time.LocalDateTime>(), any()) }
                 }
             }
         }
