@@ -95,6 +95,35 @@ class RedisSchedulerProvider(
     }
 
     /**
+     * 현재 시간보다 이전에 실행되어야 하는 스케줄들을 원자적으로 조회하고 제거합니다.
+     * Race Condition을 방지하기 위해 Lua 스크립트를 사용합니다.
+     */
+    fun getAndRemoveExpiredSchedules(): List<RedisScheduledTask> {
+        return try {
+            val currentTime = System.currentTimeMillis() / 1000.0
+            val expiredTaskIds = redisSchedulerService.getAndRemoveExpiredSchedules(currentTime)
+
+            expiredTaskIds.mapNotNull { taskId ->
+                val taskDataJson = redisSchedulerService.getTaskData(taskId)
+                taskDataJson?.let {
+                    try {
+                        val task = objectMapper.readValue(it, RedisScheduledTask::class.java)
+                        redisSchedulerService.removeTaskData(taskId)
+                        task
+                    } catch (ex: Exception) {
+                        log.warn(ex) { "Failed to deserialize task data for $taskId, removing corrupted data" }
+                        redisSchedulerService.removeTaskData(taskId)
+                        null
+                    }
+                }
+            }
+        } catch (ex: Exception) {
+            log.error(ex) { "Error getting and removing expired schedules" }
+            emptyList()
+        }
+    }
+
+    /**
      * 여러 스케줄을 일괄 제거합니다.
      * 단순하지만 안정적인 접근 방식을 사용합니다.
      */

@@ -23,13 +23,30 @@ class RedisScheduleMonitoringServiceTest : BehaviorSpec({
 
         When("processing expired schedules with no expired tasks") {
             Then("it should do nothing") {
-                every { redisSchedulerProvider.getExpiredSchedules() } returns emptyList()
+                every { redisSchedulerProvider.getAndRemoveExpiredSchedules() } returns emptyList()
 
                 monitoringService.processExpiredSchedules()
 
-                verify { redisSchedulerProvider.getExpiredSchedules() }
+                verify { redisSchedulerProvider.getAndRemoveExpiredSchedules() }
                 verify(exactly = 0) { scheduledTaskExecutor.executeScheduledTask(any(), any()) }
-                verify(exactly = 0) { redisSchedulerProvider.removeSchedulesAtomically(any()) }
+            }
+        }
+
+        When("processing expired schedules with tasks that fail") {
+            Then("it should reschedule failed tasks") {
+                val mockTask = mockk<com.manage.crm.infrastructure.scheduler.provider.RedisScheduledTask>()
+                every { mockTask.taskId } returns "failed-task-123"
+                every { mockTask.scheduleInfo } returns mockk()
+
+                every { redisSchedulerProvider.getAndRemoveExpiredSchedules() } returns listOf(mockTask)
+                every { scheduledTaskExecutor.executeScheduledTask(any(), any()) } throws RuntimeException("Kafka failed")
+                every { redisSchedulerProvider.createSchedule(any(), any(), any()) } returns "retry-task-id"
+
+                monitoringService.processExpiredSchedules()
+
+                verify { redisSchedulerProvider.getAndRemoveExpiredSchedules() }
+                verify { scheduledTaskExecutor.executeScheduledTask("failed-task-123", any()) }
+                verify { redisSchedulerProvider.createSchedule(match { it.contains("failed-task-123_retry") }, any(), any()) }
             }
         }
 

@@ -33,7 +33,8 @@ class RedisSchedulerProviderTest : BehaviorSpec({
         registerModule(JavaTimeModule())
     }
 
-    val redisSchedulerProvider = RedisSchedulerProvider(redisTemplate, objectMapper)
+    val redisSchedulerService = RedisSchedulerService(redisTemplate, objectMapper)
+    val redisSchedulerProvider = RedisSchedulerProvider(redisSchedulerService, objectMapper)
 
     beforeEach {
         every { redisTemplate.opsForZSet() } returns zSetOperations

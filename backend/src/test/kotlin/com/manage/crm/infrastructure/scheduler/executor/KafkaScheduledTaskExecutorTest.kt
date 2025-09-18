@@ -45,7 +45,7 @@ class KafkaScheduledTaskExecutorTest : BehaviorSpec({
 
             completableFuture.complete(mockSendResult)
 
-            Then("it should send message to Kafka topic") {
+            Then("it should send message to Kafka topic synchronously") {
                 kafkaExecutor.executeScheduledTask("test-task-123", input)
 
                 verify { kafkaTemplate.send(any<String>(), any<String>(), any<ScheduledTaskMessage>()) }
@@ -55,6 +55,32 @@ class KafkaScheduledTaskExecutorTest : BehaviorSpec({
                 messageSlot.captured.taskId shouldBe "test-task-123"
                 messageSlot.captured.scheduleInfo shouldBe input
                 messageSlot.captured.executedAt shouldNotBe 0L
+            }
+        }
+
+        When("Kafka send operation times out") {
+            val input = NotificationEmailSendTimeOutEventInput(
+                templateId = 1L,
+                templateVersion = 1.0f,
+                userIds = listOf(1L),
+                eventId = EventId("timeout-event"),
+                expiredTime = LocalDateTime.now().plusHours(1)
+            )
+
+            val completableFuture = CompletableFuture<SendResult<String, Any>>()
+            every { kafkaTemplate.send(any<String>(), any<String>(), any<ScheduledTaskMessage>()) } returns completableFuture
+
+            Then("it should timeout and throw exception") {
+                var thrownException: Exception? = null
+                try {
+                    kafkaExecutor.executeScheduledTask("timeout-task", input)
+                } catch (e: Exception) {
+                    thrownException = e
+                }
+
+                thrownException shouldNotBe null
+                val exception = thrownException as RuntimeException
+                exception.message shouldBe "Error executing scheduled task: timeout-task"
             }
         }
 

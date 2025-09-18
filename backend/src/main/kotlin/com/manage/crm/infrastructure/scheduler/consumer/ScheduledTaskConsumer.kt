@@ -55,8 +55,8 @@ class ScheduledTaskConsumer {
             log.info { "Successfully processed and acknowledged scheduled task: ${message.taskId}" }
         } catch (ex: Exception) {
             log.error(ex) { "Error processing scheduled task: ${message.taskId}" }
-            // 에러 발생 시 acknowledge하지 않음으로써 메시지가 재처리되도록 함
-            // 필요에 따라 DLQ(Dead Letter Queue) 전송 로직 추가 가능
+            // 에러 발생 시 `acknowledge`하지 않음으로써 메시지가 재처리되도록 함
+            // TODO: implement DLQ handling
         }
     }
 

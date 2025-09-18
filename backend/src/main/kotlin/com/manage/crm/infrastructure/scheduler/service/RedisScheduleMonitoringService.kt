@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 
 /**
  * Redis 기반 스케줄 모니터링 서비스
@@ -31,7 +32,8 @@ class RedisScheduleMonitoringService(
     @Scheduled(fixedDelay = 1000)
     fun processExpiredSchedules() {
         try {
-            val expiredTasks = redisSchedulerProvider.getExpiredSchedules()
+            // 원자적으로 만료된 작업을 조회하고 제거
+            val expiredTasks = redisSchedulerProvider.getAndRemoveExpiredSchedules()
 
             if (expiredTasks.isEmpty()) {
                 return
@@ -43,21 +45,35 @@ class RedisScheduleMonitoringService(
             expiredTasks.forEach { task ->
                 coroutineScope.launch {
                     try {
-                        // Kafka로 작업 실행 요청
+                        // Kafka로 작업 실행 요청 (동기 처리)
                         scheduledTaskExecutor.executeScheduledTask(task.taskId, task.scheduleInfo)
 
-                        // 성공적으로 전송된 작업은 Redis에서 제거
-                        redisSchedulerProvider.removeSchedulesAtomically(listOf(task.taskId))
-
-                        log.info { "Successfully processed and removed scheduled task: ${task.taskId}" }
+                        log.info { "Successfully processed scheduled task: ${task.taskId}" }
                     } catch (ex: Exception) {
-                        log.error(ex) { "Failed to process scheduled task: ${task.taskId}. Will retry in next cycle." }
-                        // 실패한 작업은 Redis에 남겨두어 다음 사이클에서 재시도
+                        log.error(ex) { "Failed to process scheduled task: ${task.taskId}. Scheduling retry." }
+                        // 실패한 작업은 1분 후 재스케줄링
+                        rescheduleFailedTask(task)
                     }
                 }
             }
         } catch (ex: Exception) {
             log.error(ex) { "Error during scheduled task processing cycle" }
+        }
+    }
+
+    /**
+     * 실패한 작업을 재스케줄링합니다.
+     * 1분 후에 다시 실행되도록 스케줄링합니다.
+     */
+    private fun rescheduleFailedTask(task: com.manage.crm.infrastructure.scheduler.provider.RedisScheduledTask) {
+        try {
+            val retryTime = LocalDateTime.now().plusMinutes(1)
+            val newTaskId = "${task.taskId}_retry_${System.currentTimeMillis()}"
+
+            redisSchedulerProvider.createSchedule(newTaskId, retryTime, task.scheduleInfo)
+            log.info { "Rescheduled failed task ${task.taskId} as $newTaskId at $retryTime" }
+        } catch (ex: Exception) {
+            log.error(ex) { "Failed to reschedule task: ${task.taskId}" }
         }
     }
 

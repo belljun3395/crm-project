@@ -2,6 +2,7 @@ package com.manage.crm.infrastructure.scheduler.provider
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.data.redis.core.script.DefaultRedisScript
 import org.springframework.stereotype.Service
 
 @Service
@@ -51,5 +52,35 @@ class RedisSchedulerService(
 
     fun removeTaskIdFromScheduledTasks(key: String): Long {
         return redisTemplate.opsForZSet().remove(SCHEDULED_TASKS_KEY, key) ?: 0
+    }
+
+    /**
+     * 만료된 스케줄을 원자적으로 조회하고 제거합니다.
+     * Lua 스크립트를 사용하여 Race Condition을 방지합니다.
+     */
+    fun getAndRemoveExpiredSchedules(currentTime: Double): Set<String> {
+        val luaScript = """
+            local expiredTasks = redis.call('ZRANGEBYSCORE', KEYS[1], '-inf', ARGV[1])
+            if #expiredTasks > 0 then
+                redis.call('ZREM', KEYS[1], unpack(expiredTasks))
+            end
+            return expiredTasks
+        """
+
+        val script = DefaultRedisScript<List<*>>().apply {
+            setScriptText(luaScript)
+            setResultType(List::class.java)
+        }
+        
+        val keys = listOf(SCHEDULED_TASKS_KEY)
+        val args = arrayOf(currentTime.toString())
+
+        val result = redisTemplate.execute(script, keys, *args)
+
+        @Suppress("UNCHECKED_CAST")
+        return when (result) {
+            is List<*> -> result.mapNotNull { item: Any? -> item?.toString() }.toSet()
+            else -> emptySet()
+        }
     }
 }

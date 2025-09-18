@@ -6,6 +6,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Component
+import java.util.concurrent.TimeUnit
 
 /**
  * Kafka를 이용한 스케줄된 작업 실행자
@@ -27,15 +28,11 @@ class KafkaScheduledTaskExecutor(
                 executedAt = System.currentTimeMillis()
             )
 
-            kafkaTemplate.send(KafkaConfig.SCHEDULED_TASKS_TOPIC, taskId, message)
-                .whenComplete { result, ex ->
-                    if (ex == null) {
-                        log.info { "Successfully sent scheduled task $taskId to Kafka. Offset: ${result.recordMetadata.offset()}" }
-                    } else {
-                        log.error(ex) { "Failed to send scheduled task $taskId to Kafka" }
-                        throw RuntimeException("Failed to send scheduled task to Kafka", ex)
-                    }
-                }
+            // 동기식 Kafka 전송으로 변경하여 중복 처리 방지
+            val future = kafkaTemplate.send(KafkaConfig.SCHEDULED_TASKS_TOPIC, taskId, message)
+            val result = future.get(3, TimeUnit.SECONDS) // 3초 타임아웃 설정
+
+            log.info { "Successfully sent scheduled task $taskId to Kafka. Offset: ${result.recordMetadata.offset()}" }
         } catch (ex: Exception) {
             log.error(ex) { "Error executing scheduled task $taskId" }
             throw RuntimeException("Error executing scheduled task: $taskId", ex)
