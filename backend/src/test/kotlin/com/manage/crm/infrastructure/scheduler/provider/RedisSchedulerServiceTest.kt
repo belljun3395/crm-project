@@ -23,7 +23,7 @@ class RedisSchedulerServiceTest : BehaviorSpec({
             val currentTime = System.currentTimeMillis() / 1000.0
             val expiredTaskIds = listOf("task1", "task2", "task3")
 
-            every { 
+            every {
                 redisTemplate.execute(
                     any<org.springframework.data.redis.core.script.RedisScript<List<*>>>(),
                     any<List<String>>(),
@@ -35,7 +35,7 @@ class RedisSchedulerServiceTest : BehaviorSpec({
                 val result = redisSchedulerService.getAndRemoveExpiredSchedules(currentTime)
 
                 result shouldBe setOf("task1", "task2", "task3")
-                verify { 
+                verify {
                     redisTemplate.execute(
                         any<org.springframework.data.redis.core.script.RedisScript<List<*>>>(),
                         any<List<String>>(),
@@ -48,7 +48,7 @@ class RedisSchedulerServiceTest : BehaviorSpec({
         When("getting and removing expired schedules with no results") {
             val currentTime = System.currentTimeMillis() / 1000.0
 
-            every { 
+            every {
                 redisTemplate.execute(
                     any<org.springframework.data.redis.core.script.RedisScript<List<*>>>(),
                     any<List<String>>(),
@@ -60,7 +60,7 @@ class RedisSchedulerServiceTest : BehaviorSpec({
                 val result = redisSchedulerService.getAndRemoveExpiredSchedules(currentTime)
 
                 result.shouldBeEmpty()
-                verify { 
+                verify {
                     redisTemplate.execute(
                         any<org.springframework.data.redis.core.script.RedisScript<List<*>>>(),
                         any<List<String>>(),
@@ -73,7 +73,7 @@ class RedisSchedulerServiceTest : BehaviorSpec({
         When("Lua script execution returns null") {
             val currentTime = System.currentTimeMillis() / 1000.0
 
-            every { 
+            every {
                 redisTemplate.execute(
                     any<org.springframework.data.redis.core.script.RedisScript<List<*>>>(),
                     any<List<String>>(),

@@ -71,7 +71,7 @@ class RedisSchedulerService(
             setScriptText(luaScript)
             setResultType(List::class.java)
         }
-        
+
         val keys = listOf(SCHEDULED_TASKS_KEY)
         val args = arrayOf(currentTime.toString())
 
