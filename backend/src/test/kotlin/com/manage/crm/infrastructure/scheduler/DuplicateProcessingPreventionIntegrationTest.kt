@@ -1,6 +1,7 @@
 package com.manage.crm.infrastructure.scheduler
 
 import com.manage.crm.infrastructure.scheduler.executor.KafkaScheduledTaskExecutor
+import com.manage.crm.infrastructure.scheduler.executor.ScheduledTaskMessage
 import com.manage.crm.infrastructure.scheduler.provider.RedisScheduledTask
 import com.manage.crm.infrastructure.scheduler.provider.RedisSchedulerProvider
 import com.manage.crm.infrastructure.scheduler.service.RedisScheduleMonitoringService
@@ -31,7 +32,7 @@ class DuplicateProcessingPreventionIntegrationTest : BehaviorSpec() {
 
             When("multiple monitoring services try to process the same expired tasks") {
                 val redisSchedulerProvider = mockk<RedisSchedulerProvider>()
-                val kafkaTemplate = mockk<KafkaTemplate<String, Any>>()
+                val kafkaTemplate = mockk<KafkaTemplate<String, ScheduledTaskMessage>>()
 
                 val kafkaExecutor = KafkaScheduledTaskExecutor(kafkaTemplate)
 
@@ -92,7 +93,7 @@ class DuplicateProcessingPreventionIntegrationTest : BehaviorSpec() {
                 }
 
                 // Mock successful Kafka sending
-                val mockSendResult = mockk<SendResult<String, Any>>()
+                val mockSendResult = mockk<SendResult<String, ScheduledTaskMessage>>()
                 val mockRecordMetadata = mockk<org.apache.kafka.clients.producer.RecordMetadata>()
                 every { mockSendResult.recordMetadata } returns mockRecordMetadata
                 every { mockRecordMetadata.offset() } returns 123L
@@ -132,7 +133,7 @@ class DuplicateProcessingPreventionIntegrationTest : BehaviorSpec() {
 
             When("Kafka send fails and task needs to be rescheduled") {
                 val redisSchedulerProvider = mockk<RedisSchedulerProvider>()
-                val kafkaTemplate = mockk<KafkaTemplate<String, Any>>()
+                val kafkaTemplate = mockk<KafkaTemplate<String, ScheduledTaskMessage>>()
 
                 val kafkaExecutor = KafkaScheduledTaskExecutor(kafkaTemplate)
                 val monitoringService = RedisScheduleMonitoringService(redisSchedulerProvider, kafkaExecutor)
