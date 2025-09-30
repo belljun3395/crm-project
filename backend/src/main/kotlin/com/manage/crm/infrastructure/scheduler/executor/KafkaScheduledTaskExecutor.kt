@@ -3,10 +3,10 @@ package com.manage.crm.infrastructure.scheduler.executor
 import com.manage.crm.infrastructure.message.config.KafkaConfig
 import com.manage.crm.infrastructure.scheduler.ScheduleInfo
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Component
-import java.util.concurrent.TimeUnit
 
 /**
  * Kafka를 이용한 스케줄된 작업 실행자
@@ -15,7 +15,8 @@ import java.util.concurrent.TimeUnit
 @Component
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class KafkaScheduledTaskExecutor(
-    private val kafkaTemplate: KafkaTemplate<String, Any>
+    @Qualifier("scheduledTaskKafkaTemplate")
+    private val kafkaTemplate: KafkaTemplate<String, ScheduledTaskMessage>
 ) : ScheduledTaskExecutor {
 
     private val log = KotlinLogging.logger {}
@@ -28,11 +29,16 @@ class KafkaScheduledTaskExecutor(
                 executedAt = System.currentTimeMillis()
             )
 
-            // 동기식 Kafka 전송으로 변경하여 중복 처리 방지
-            val future = kafkaTemplate.send(KafkaConfig.SCHEDULED_TASKS_TOPIC, taskId, message)
-            val result = future.get(3, TimeUnit.SECONDS) // 3초 타임아웃 설정
-
-            log.info { "Successfully sent scheduled task $taskId to Kafka. Offset: ${result.recordMetadata.offset()}" }
+            kafkaTemplate.send(KafkaConfig.SCHEDULED_TASKS_TOPIC, taskId, message)
+                .whenComplete { result, ex ->
+                    if (ex == null) {
+                        log.info { "Successfully sent scheduled task $taskId to Kafka. Offset: ${result.recordMetadata.offset()}" }
+                    } else {
+                        log.error(ex) { "Failed to send scheduled task $taskId to Kafka" }
+                        // 비동기 실패는 예외 전파 대신 로깅으로 처리
+                        // TODO: 메트릭 추가 - meterRegistry.counter("scheduler.kafka.send.fail").increment()
+                    }
+                }
         } catch (ex: Exception) {
             log.error(ex) { "Error executing scheduled task $taskId" }
             throw RuntimeException("Error executing scheduled task: $taskId", ex)
