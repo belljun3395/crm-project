@@ -57,10 +57,6 @@ class RedisKafkaSchedulerIntegrationTest : AbstractIntegrationTest() {
             val allSchedules = redisSchedulerProvider.browseSchedule()
             allSchedules.any { it.value == eventId.value } shouldBe true
 
-            // 스케줄 목록 조회 확인
-            val scheduleViews = scheduleTaskService.browseScheduledTasksView()
-            // 실제 데이터베이스에 이벤트가 저장되어야 조회되므로, 이 테스트에서는 스킵하거나 별도 설정 필요
-
             // When: 스케줄 취소
             scheduleTaskService.cancel(eventId.value)
 
@@ -68,9 +64,11 @@ class RedisKafkaSchedulerIntegrationTest : AbstractIntegrationTest() {
             val schedulesAfterCancel = redisSchedulerProvider.browseSchedule()
             schedulesAfterCancel.none { it.value == eventId.value } shouldBe true
         }
+    }
 
-        @Test
-        fun `should handle schedule rescheduling`(): Unit = runBlocking {
+    @Test
+    fun `should handle schedule rescheduling`() {
+        runBlocking {
             // Given: 원본 스케줄 생성
             val originalTime = LocalDateTime.now().plusMinutes(5)
             val eventId = EventId(UUID.randomUUID().toString())
@@ -100,43 +98,45 @@ class RedisKafkaSchedulerIntegrationTest : AbstractIntegrationTest() {
             // 정리
             scheduleTaskService.cancel(eventId.value)
         }
+    }
 
-        @Test
-        fun `should process expired schedules automatically`() {
-            runBlocking {
-                // Given: 이미 만료된 시간으로 스케줄 생성
-                val expiredTime = LocalDateTime.now().minusSeconds(30)
-                val eventId = EventId(UUID.randomUUID().toString())
-                val input = NotificationEmailSendTimeOutEventInput(
-                    templateId = 300L,
-                    templateVersion = 1.0f,
-                    userIds = listOf(100L),
-                    eventId = eventId,
-                    expiredTime = expiredTime
-                )
+    @Test
+    fun `should process expired schedules automatically`() {
+        runBlocking {
+            // Given: 이미 만료된 시간으로 스케줄 생성
+            val expiredTime = LocalDateTime.now().minusSeconds(30)
+            val eventId = EventId(UUID.randomUUID().toString())
+            val input = NotificationEmailSendTimeOutEventInput(
+                templateId = 300L,
+                templateVersion = 1.0f,
+                userIds = listOf(100L),
+                eventId = eventId,
+                expiredTime = expiredTime
+            )
 
-                // Redis에 직접 만료된 스케줄 생성
-                redisSchedulerProvider.createSchedule(eventId.value, expiredTime, input)
+            // Redis에 직접 만료된 스케줄 생성
+            redisSchedulerProvider.createSchedule(eventId.value, expiredTime, input)
 
-                // 스케줄이 생성되었는지 확인
-                val schedulesBeforeProcessing = redisSchedulerProvider.browseSchedule()
-                schedulesBeforeProcessing.any { it.value == eventId.value } shouldBe true
+            // 스케줄이 생성되었는지 확인
+            val schedulesBeforeProcessing = redisSchedulerProvider.browseSchedule()
+            schedulesBeforeProcessing.any { it.value == eventId.value } shouldBe true
 
-                // When: 만료된 스케줄 처리 대기 (모니터링 서비스가 자동으로 처리)
-                // 실제 환경에서는 1초마다 폴링하지만, 테스트에서는 수동으로 확인
-                delay(2000) // 2초 대기
+            // When: 만료된 스케줄 처리 대기 (모니터링 서비스가 자동으로 처리)
+            // 실제 환경에서는 1초마다 폴링하지만, 테스트에서는 수동으로 확인
+            delay(2000) // 2초 대기
 
-                // Then: 만료된 스케줄이 Redis에서 제거되었는지 확인
-                val schedulesAfterProcessing = redisSchedulerProvider.browseSchedule()
-                schedulesAfterProcessing.none { it.value == eventId.value } shouldBe true
+            // Then: 만료된 스케줄이 Redis에서 제거되었는지 확인
+            val schedulesAfterProcessing = redisSchedulerProvider.browseSchedule()
+            schedulesAfterProcessing.none { it.value == eventId.value } shouldBe true
 
-                // Note: 실제 Kafka 메시지 처리까지 확인하려면 추가적인 Consumer 테스트나
-                // TestContainers를 이용한 Kafka 통합 테스트가 필요합니다.
-            }
+            // Note: 실제 Kafka 메시지 처리까지 확인하려면 추가적인 Consumer 테스트나
+            // TestContainers를 이용한 Kafka 통합 테스트가 필요합니다.
         }
+    }
 
-        @Test
-        fun `should handle multiple concurrent schedules`(): Unit = runBlocking {
+    @Test
+    fun `should handle multiple concurrent schedules`() {
+        runBlocking {
             // Given: 여러 개의 스케줄 동시 생성
             val scheduleCount = 10
             val eventIds = mutableListOf<EventId>()
