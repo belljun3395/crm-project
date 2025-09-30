@@ -101,35 +101,37 @@ class RedisKafkaSchedulerIntegrationTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `should process expired schedules automatically`(): Unit = runBlocking {
-        // Given: 이미 만료된 시간으로 스케줄 생성
-        val expiredTime = LocalDateTime.now().minusSeconds(30)
-        val eventId = EventId(UUID.randomUUID().toString())
-        val input = NotificationEmailSendTimeOutEventInput(
-            templateId = 300L,
-            templateVersion = 1.0f,
-            userIds = listOf(100L),
-            eventId = eventId,
-            expiredTime = expiredTime
-        )
+    fun `should process expired schedules automatically`() {
+        runBlocking {
+            // Given: 이미 만료된 시간으로 스케줄 생성
+            val expiredTime = LocalDateTime.now().minusSeconds(30)
+            val eventId = EventId(UUID.randomUUID().toString())
+            val input = NotificationEmailSendTimeOutEventInput(
+                templateId = 300L,
+                templateVersion = 1.0f,
+                userIds = listOf(100L),
+                eventId = eventId,
+                expiredTime = expiredTime
+            )
 
-        // Redis에 직접 만료된 스케줄 생성
-        redisSchedulerProvider.createSchedule(eventId.value, expiredTime, input)
+            // Redis에 직접 만료된 스케줄 생성
+            redisSchedulerProvider.createSchedule(eventId.value, expiredTime, input)
 
-        // 스케줄이 생성되었는지 확인
-        val schedulesBeforeProcessing = redisSchedulerProvider.browseSchedule()
-        schedulesBeforeProcessing.any { it.value == eventId.value } shouldBe true
+            // 스케줄이 생성되었는지 확인
+            val schedulesBeforeProcessing = redisSchedulerProvider.browseSchedule()
+            schedulesBeforeProcessing.any { it.value == eventId.value } shouldBe true
 
-        // When: 만료된 스케줄 처리 대기 (모니터링 서비스가 자동으로 처리)
-        // 실제 환경에서는 1초마다 폴링하지만, 테스트에서는 수동으로 확인
-        delay(2000) // 2초 대기
+            // When: 만료된 스케줄 처리 대기 (모니터링 서비스가 자동으로 처리)
+            // 실제 환경에서는 1초마다 폴링하지만, 테스트에서는 수동으로 확인
+            delay(2000) // 2초 대기
 
-        // Then: 만료된 스케줄이 Redis에서 제거되었는지 확인
-        val schedulesAfterProcessing = redisSchedulerProvider.browseSchedule()
-        schedulesAfterProcessing.none { it.value == eventId.value } shouldBe true
+            // Then: 만료된 스케줄이 Redis에서 제거되었는지 확인
+            val schedulesAfterProcessing = redisSchedulerProvider.browseSchedule()
+            schedulesAfterProcessing.none { it.value == eventId.value } shouldBe true
 
-        // Note: 실제 Kafka 메시지 처리까지 확인하려면 추가적인 Consumer 테스트나
-        // TestContainers를 이용한 Kafka 통합 테스트가 필요합니다.
+            // Note: 실제 Kafka 메시지 처리까지 확인하려면 추가적인 Consumer 테스트나
+            // TestContainers를 이용한 Kafka 통합 테스트가 필요합니다.
+        }
     }
 
     @Test
