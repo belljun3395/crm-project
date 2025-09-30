@@ -3,13 +3,18 @@ package com.manage.crm.infrastructure.scheduler.service
 import com.manage.crm.infrastructure.scheduler.executor.ScheduledTaskExecutor
 import com.manage.crm.infrastructure.scheduler.provider.RedisSchedulerProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.annotation.PreDestroy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
-import java.time.LocalDateTime
 
 /**
  * Redis 기반 스케줄 모니터링 서비스
@@ -23,7 +28,8 @@ class RedisScheduleMonitoringService(
 ) {
 
     private val log = KotlinLogging.logger {}
-    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val job = SupervisorJob()
+    private val coroutineScope = CoroutineScope(job + Dispatchers.IO)
 
     /**
      * 매 1초마다 만료된 스케줄을 확인하고 실행합니다.
@@ -32,8 +38,7 @@ class RedisScheduleMonitoringService(
     @Scheduled(fixedDelay = 1000)
     fun processExpiredSchedules() {
         try {
-            // 원자적으로 만료된 작업을 조회하고 제거
-            val expiredTasks = redisSchedulerProvider.getAndRemoveExpiredSchedules()
+            val expiredTasks = redisSchedulerProvider.getExpiredSchedules()
 
             if (expiredTasks.isEmpty()) {
                 return
@@ -41,39 +46,36 @@ class RedisScheduleMonitoringService(
 
             log.info { "Found ${expiredTasks.size} expired schedule(s) to process" }
 
-            // 각 만료된 작업을 병렬로 처리
-            expiredTasks.forEach { task ->
-                coroutineScope.launch {
-                    try {
-                        // Kafka로 작업 실행 요청 (동기 처리)
-                        scheduledTaskExecutor.executeScheduledTask(task.taskId, task.scheduleInfo)
+            // 구조화된 동시성으로 작업 처리 및 배치 삭제
+            val successIds = mutableListOf<String>()
+            coroutineScope.launch {
+                kotlinx.coroutines.coroutineScope {
+                    val semaphore = Semaphore(permits = 8) // 최대 8개 작업 동시 처리
+                    expiredTasks.map { task ->
+                        async {
+                            semaphore.withPermit {
+                                try {
+                                    scheduledTaskExecutor.executeScheduledTask(task.taskId, task.scheduleInfo)
+                                    synchronized(successIds) {
+                                        successIds.add(task.taskId)
+                                    }
+                                    log.debug { "Executed scheduled task: ${task.taskId}" }
+                                } catch (ex: Exception) {
+                                    log.error(ex) { "Failed to process scheduled task: ${task.taskId}. Will retry in next cycle." }
+                                }
+                            }
+                        }
+                    }.awaitAll()
+                }
 
-                        log.info { "Successfully processed scheduled task: ${task.taskId}" }
-                    } catch (ex: Exception) {
-                        log.error(ex) { "Failed to process scheduled task: ${task.taskId}. Scheduling retry." }
-                        // 실패한 작업은 1분 후 재스케줄링
-                        rescheduleFailedTask(task)
-                    }
+                // 성공한 작업들을 배치로 삭제
+                if (successIds.isNotEmpty()) {
+                    redisSchedulerProvider.removeSchedulesAtomically(successIds)
+                    log.info { "Removed ${successIds.size} scheduled task(s) from Redis" }
                 }
             }
         } catch (ex: Exception) {
             log.error(ex) { "Error during scheduled task processing cycle" }
-        }
-    }
-
-    /**
-     * 실패한 작업을 재스케줄링합니다.
-     * 1분 후에 다시 실행되도록 스케줄링합니다.
-     */
-    private fun rescheduleFailedTask(task: com.manage.crm.infrastructure.scheduler.provider.RedisScheduledTask) {
-        try {
-            val retryTime = LocalDateTime.now().plusMinutes(1)
-            val newTaskId = "${task.taskId}_retry_${System.currentTimeMillis()}"
-
-            redisSchedulerProvider.createSchedule(newTaskId, retryTime, task.scheduleInfo)
-            log.info { "Rescheduled failed task ${task.taskId} as $newTaskId at $retryTime" }
-        } catch (ex: Exception) {
-            log.error(ex) { "Failed to reschedule task: ${task.taskId}" }
         }
     }
 
@@ -89,5 +91,14 @@ class RedisScheduleMonitoringService(
         } catch (ex: Exception) {
             log.warn(ex) { "Failed to get scheduler status" }
         }
+    }
+
+    /**
+     * 서비스 종료 시 코루틴 스코프를 정리합니다.
+     */
+    @PreDestroy
+    fun shutdown() {
+        job.cancel()
+        log.info { "RedisScheduleMonitoringService shutdown - coroutine scope cancelled" }
     }
 }
