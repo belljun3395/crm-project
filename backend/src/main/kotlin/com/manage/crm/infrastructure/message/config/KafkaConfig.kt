@@ -68,6 +68,13 @@ class KafkaConfig(
     @Bean
     fun kafkaTemplate(): KafkaTemplate<String, Any> = KafkaTemplate(producerFactory())
 
+    @Bean
+    fun scheduledTaskKafkaTemplate(): KafkaTemplate<String, com.manage.crm.infrastructure.scheduler.executor.ScheduledTaskMessage> {
+        val factory = DefaultKafkaProducerFactory<String, com.manage.crm.infrastructure.scheduler.executor.ScheduledTaskMessage>(producerConfigs())
+        factory.setValueSerializer(JsonSerializer(objectMapper))
+        return KafkaTemplate(factory)
+    }
+
     // Consumer Configuration
     @Bean
     fun consumerConfigs(): Map<String, Any> = mapOf(
