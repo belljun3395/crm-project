@@ -24,7 +24,7 @@ locals {
 }
 
 module "networking" {
-  source = "../../../modules/networking"
+  source = "../../modules/networking"
 
   name                 = var.cluster_name
   vpc_cidr             = var.vpc_cidr
@@ -36,7 +36,7 @@ module "networking" {
 }
 
 module "eks" {
-  source = "../../../modules/eks"
+  source = "../../modules/eks"
 
   cluster_name                          = var.cluster_name
   cluster_version                       = var.cluster_version
@@ -57,14 +57,14 @@ module "eks" {
 }
 
 module "ecr" {
-  source = "../../../modules/ecr"
+  source = "../../modules/ecr"
 
   repository_name = var.ecr_repository_name
   tags            = local.common_tags
 }
 
 module "app_secret" {
-  source = "../../../modules/aws-secrets-manager"
+  source = "../../modules/aws-secrets-manager"
 
   secret_name             = local.secrets_manager_secret_name
   description             = local.secrets_manager_description
@@ -76,7 +76,7 @@ module "app_secret" {
 
 # Database (PostgreSQL)
 module "rds" {
-  source = "../../../modules/rds"
+  source = "../../modules/rds"
 
   count = var.enable_rds ? 1 : 0
 
@@ -87,9 +87,9 @@ module "rds" {
   allocated_storage       = var.rds_allocated_storage
   storage_encrypted       = var.rds_storage_encrypted
   kms_key_id              = var.rds_kms_key_id
-  database_name           = var.rds_database_name
-  master_username         = var.rds_master_username
-  master_password         = var.rds_master_password
+  db_name                 = var.rds_database_name
+  username                = var.rds_master_username
+  password                = var.rds_master_password
   vpc_id                  = module.networking.vpc_id
   subnet_ids              = module.networking.private_subnet_ids
   allowed_cidr_blocks     = var.rds_allowed_cidr_blocks
@@ -102,7 +102,7 @@ module "rds" {
 
 # Cache (Redis)
 module "elasticache" {
-  source = "../../../modules/elasticache"
+  source = "../../modules/elasticache"
 
   count = var.enable_elasticache ? 1 : 0
 

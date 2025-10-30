@@ -75,3 +75,25 @@ output "elasticache_port" {
   description = "ElastiCache port"
   value       = var.enable_elasticache ? module.elasticache[0].port : null
 }
+
+# ALB Outputs
+output "alb_dns_name" {
+  description = "ALB DNS name"
+  value       = aws_lb.main.dns_name
+}
+
+output "alb_zone_id" {
+  description = "ALB zone ID"
+  value       = aws_lb.main.zone_id
+}
+
+output "alb_arn" {
+  description = "ALB ARN"
+  value       = aws_lb.main.arn
+}
+
+# VPN Outputs
+output "vpn_gateway_id" {
+  description = "VPN Gateway ID"
+  value       = var.enable_vpn ? module.vpn_to_gcp[0].aws_vpn_gateway_id : null
+}

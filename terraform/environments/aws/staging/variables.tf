@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "environment" {
   description = "Environment name used for tagging."
   type        = string
-  default     = "dev"
+  default     = "staging"
 }
 
 variable "project" {
@@ -19,7 +19,7 @@ variable "project" {
 variable "cluster_name" {
   description = "EKS cluster name. Also used as prefix for networking resources."
   type        = string
-  default     = "crm-dev"
+  default     = "crm-staging"
 }
 
 variable "vpc_cidr" {
@@ -79,25 +79,25 @@ variable "cluster_enabled_log_types" {
 variable "node_group_instance_types" {
   description = "Instance types for the default node group."
   type        = list(string)
-  default     = ["t3.medium"]
+  default     = ["t3.large"]
 }
 
 variable "node_group_desired_capacity" {
   description = "Desired node count."
   type        = number
-  default     = 2
+  default     = 3
 }
 
 variable "node_group_min_size" {
   description = "Minimum node count."
   type        = number
-  default     = 1
+  default     = 2
 }
 
 variable "node_group_max_size" {
   description = "Maximum node count."
   type        = number
-  default     = 3
+  default     = 5
 }
 
 variable "node_group_capacity_type" {
@@ -173,7 +173,7 @@ variable "additional_secret_values" {
 variable "enable_rds" {
   description = "Enable RDS PostgreSQL database"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "rds_engine_version" {
@@ -185,13 +185,13 @@ variable "rds_engine_version" {
 variable "rds_instance_class" {
   description = "RDS instance class"
   type        = string
-  default     = "db.t3.micro"
+  default     = "db.t3.small"
 }
 
 variable "rds_allocated_storage" {
   description = "Allocated storage in GB"
   type        = number
-  default     = 20
+  default     = 50
 }
 
 variable "rds_storage_encrypted" {
@@ -234,32 +234,32 @@ variable "rds_allowed_cidr_blocks" {
 variable "rds_multi_az" {
   description = "Enable Multi-AZ deployment"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "rds_backup_retention_period" {
   description = "Backup retention period in days"
   type        = number
-  default     = 7
+  default     = 14
 }
 
 variable "rds_skip_final_snapshot" {
   description = "Skip final snapshot on deletion"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "rds_deletion_protection" {
   description = "Enable deletion protection"
   type        = bool
-  default     = false
+  default     = true
 }
 
 # ElastiCache Variables
 variable "enable_elasticache" {
   description = "Enable ElastiCache Redis cluster"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "elasticache_engine_version" {
@@ -271,7 +271,7 @@ variable "elasticache_engine_version" {
 variable "elasticache_node_type" {
   description = "ElastiCache node type"
   type        = string
-  default     = "cache.t3.micro"
+  default     = "cache.t3.small"
 }
 
 variable "elasticache_num_cache_clusters" {
@@ -314,7 +314,7 @@ variable "elasticache_at_rest_encryption_enabled" {
 variable "elasticache_snapshot_retention_limit" {
   description = "Number of days to retain snapshots"
   type        = number
-  default     = 7
+  default     = 14
 }
 
 variable "elasticache_automatic_failover_enabled" {

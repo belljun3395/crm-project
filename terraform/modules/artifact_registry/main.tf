@@ -9,7 +9,7 @@ terraform {
 }
 
 locals {
-  docker_endpoint = "${var.location}-docker.pkg.dev/${var.project_id}/${var.repository_id}"
+  docker_endpoint          = "${var.location}-docker.pkg.dev/${var.project_id}/${var.repository_id}"
   effective_repository_url = var.format == "DOCKER" ? local.docker_endpoint : google_artifact_registry_repository.this.name
 }
 

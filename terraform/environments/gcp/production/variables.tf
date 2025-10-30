@@ -18,7 +18,7 @@ variable "zones" {
 variable "network_name" {
   description = "Name of the VPC network."
   type        = string
-  default     = "crm-dev"
+  default     = "crm-prod"
 }
 
 variable "subnet_ip_cidr_range" {
@@ -42,19 +42,19 @@ variable "subnet_secondary_services_cidr" {
 variable "ip_range_pods_name" {
   description = "Name of the secondary range for pods."
   type        = string
-  default     = "crm-dev-pods"
+  default     = "crm-prod-pods"
 }
 
 variable "ip_range_services_name" {
   description = "Name of the secondary range for services."
   type        = string
-  default     = "crm-dev-services"
+  default     = "crm-prod-services"
 }
 
 variable "cluster_name" {
   description = "Name of the GKE cluster."
   type        = string
-  default     = "crm-dev-gke"
+  default     = "crm-prod-gke"
 }
 
 variable "cluster_release_channel" {
@@ -98,31 +98,31 @@ variable "master_authorized_networks" {
 variable "node_pool_machine_type" {
   description = "Machine type for the default node pool."
   type        = string
-  default     = "e2-standard-4"
+  default     = "n2-standard-16"
 }
 
 variable "node_pool_disk_size_gb" {
   description = "Disk size for the nodes in GB."
   type        = number
-  default     = 100
+  default     = 200
 }
 
 variable "node_pool_min_count" {
   description = "Minimum node count."
   type        = number
-  default     = 1
+  default     = 3
 }
 
 variable "node_pool_max_count" {
   description = "Maximum node count."
   type        = number
-  default     = 3
+  default     = 10
 }
 
 variable "node_pool_initial_count" {
   description = "Initial node count."
   type        = number
-  default     = 1
+  default     = 5
 }
 
 variable "artifact_registry_location" {
@@ -148,7 +148,7 @@ variable "labels" {
   type        = map(string)
   default = {
     project     = "crm"
-    environment = "dev"
+    environment = "production"
     managed_by  = "terraform"
   }
 }
@@ -157,13 +157,13 @@ variable "labels" {
 variable "enable_secret_manager" {
   description = "Enable GCP Secret Manager"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "secret_manager_secret_id" {
   description = "Secret ID for Secret Manager"
   type        = string
-  default     = "crm-dev-application"
+  default     = "crm-prod-application"
 }
 
 variable "secret_manager_secret_data" {
@@ -183,13 +183,13 @@ variable "secret_manager_replication" {
 variable "enable_cloud_sql" {
   description = "Enable Cloud SQL PostgreSQL database"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "cloud_sql_instance_name" {
   description = "Cloud SQL instance name"
   type        = string
-  default     = "crm-dev-postgres"
+  default     = "crm-prod-postgres"
 }
 
 variable "cloud_sql_database_version" {
@@ -201,13 +201,13 @@ variable "cloud_sql_database_version" {
 variable "cloud_sql_tier" {
   description = "Machine tier for Cloud SQL"
   type        = string
-  default     = "db-f1-micro"
+  default     = "db-custom-4-15360"
 }
 
 variable "cloud_sql_disk_size" {
   description = "Disk size in GB"
   type        = number
-  default     = 10
+  default     = 100
 }
 
 variable "cloud_sql_disk_type" {
@@ -219,7 +219,7 @@ variable "cloud_sql_disk_type" {
 variable "cloud_sql_availability_type" {
   description = "Availability type (REGIONAL or ZONAL)"
   type        = string
-  default     = "ZONAL"
+  default     = "REGIONAL"
 }
 
 variable "cloud_sql_database_name" {
@@ -271,38 +271,38 @@ variable "cloud_sql_point_in_time_recovery_enabled" {
 variable "cloud_sql_deletion_protection" {
   description = "Enable deletion protection"
   type        = bool
-  default     = false
+  default     = true
 }
 
 # Memorystore Variables
 variable "enable_memorystore" {
   description = "Enable Memorystore Redis instance"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "memorystore_instance_id" {
   description = "Memorystore instance ID"
   type        = string
-  default     = "crm-dev-redis"
+  default     = "crm-prod-redis"
 }
 
 variable "memorystore_display_name" {
   description = "Display name for Memorystore instance"
   type        = string
-  default     = "CRM Dev Redis"
+  default     = "CRM Production Redis"
 }
 
 variable "memorystore_tier" {
   description = "Service tier (BASIC or STANDARD_HA)"
   type        = string
-  default     = "BASIC"
+  default     = "STANDARD_HA"
 }
 
 variable "memorystore_memory_size_gb" {
   description = "Memory size in GB"
   type        = number
-  default     = 1
+  default     = 5
 }
 
 variable "memorystore_redis_version" {
@@ -314,7 +314,7 @@ variable "memorystore_redis_version" {
 variable "memorystore_replica_count" {
   description = "Number of replicas"
   type        = number
-  default     = 0
+  default     = 2
 }
 
 variable "memorystore_auth_enabled" {
@@ -332,7 +332,7 @@ variable "memorystore_transit_encryption_mode" {
 variable "memorystore_persistence_mode" {
   description = "Persistence mode (DISABLED or RDB)"
   type        = string
-  default     = "DISABLED"
+  default     = "RDB"
 }
 
 variable "memorystore_rdb_snapshot_period" {

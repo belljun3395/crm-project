@@ -1,10 +1,16 @@
 terraform {
-  backend "remote" {
-    hostname     = "app.terraform.io"
-    organization = "REPLACE_WITH_YOUR_ORG"
+  # Remote backend for production use
+  # backend "remote" {
+  #   hostname     = "app.terraform.io"
+  #   organization = "jongjun-org"
+  #
+  #   workspaces {
+  #     name = "jongjun-aws"
+  #   }
+  # }
 
-    workspaces {
-      name = "crm-dev"
-    }
+  # Local backend for development and validation
+  backend "local" {
+    path = "terraform.tfstate"
   }
 }
