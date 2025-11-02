@@ -1,20 +1,45 @@
 package com.manage.crm.config
 
+import com.amazonaws.auth.AWSCredentials
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.core.env.Environment
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sns.SnsClient
+import java.net.URI
 
 @Configuration
-class AwsClientConfig(
-    private val env: Environment
-) {
-    @Bean
-    fun snsClient(): SnsClient {
-        val region = env.getProperty("AWS_REGION") ?: "ap-northeast-2"
-        return SnsClient.builder()
+class AwsClientConfig {
+    companion object {
+        const val SNS_CLIENT = "snsClient"
+    }
+
+    @Value("\${spring.aws.region}")
+    val region: String? = null
+
+    @Value("\${spring.aws.endpoint-url:#{null}}")
+    val endpointUrl: String? = null
+
+    @Bean(name = [SNS_CLIENT])
+    fun snsClient(awsCredentials: AWSCredentials): SnsClient {
+        val builder = SnsClient.builder()
             .region(Region.of(region))
-            .build()
+            .credentialsProvider(
+                StaticCredentialsProvider.create(
+                    AwsBasicCredentials.create(
+                        awsCredentials.awsAccessKeyId,
+                        awsCredentials.awsSecretKey
+                    )
+                )
+            )
+
+        // Configure endpoint URL for LocalStack
+        endpointUrl?.let { url ->
+            builder.endpointOverride(URI.create(url))
+        }
+
+        return builder.build()
     }
 }

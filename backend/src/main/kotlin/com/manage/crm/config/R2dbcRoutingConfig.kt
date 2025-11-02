@@ -1,10 +1,11 @@
 package com.manage.crm.config
 
+import io.r2dbc.spi.ConnectionFactories
 import io.r2dbc.spi.ConnectionFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
-import org.springframework.core.env.Environment
 import org.springframework.r2dbc.connection.lookup.AbstractRoutingConnectionFactory
 import org.springframework.transaction.reactive.TransactionSynchronizationManager
 import reactor.core.publisher.Mono
@@ -14,36 +15,26 @@ enum class DataSourceType {
     REPLICA
 }
 
-object DataSourceContextHolder {
-    private val context = ThreadLocal<DataSourceType>()
-
-    fun set(type: DataSourceType) {
-        context.set(type)
-    }
-
-    fun get(): DataSourceType? {
-        return context.get()
-    }
-
-    fun clear() {
-        context.remove()
-    }
-}
-
 @Configuration
-class R2dbcRoutingConfig(private val env: Environment) {
+class R2dbcRoutingConfig {
+
+    @Value("\${spring.r2dbc.routing.master-url}")
+    val masterDatabaseUrl: String? = null
+
+    @Value("\${spring.r2dbc.routing.replica-url}")
+    val replicaDatabaseUrl: String? = null
 
     @Bean
     fun masterConnectionFactory(): ConnectionFactory {
-        val url = env.getProperty("MASTER_DATABASE_URL")
-            ?: throw IllegalStateException("MASTER_DATABASE_URL environment variable not set")
+        val url = masterDatabaseUrl
+            ?: throw IllegalStateException("spring.r2dbc.routing.master-url property not set")
         return ConnectionFactoryFactory.fromUrl(url)
     }
 
     @Bean
     fun replicaConnectionFactory(): ConnectionFactory {
-        val url = env.getProperty("REPLICA_DATABASE_URL")
-            ?: throw IllegalStateException("REPLICA_DATABASE_URL environment variable not set")
+        val url = replicaDatabaseUrl
+            ?: throw IllegalStateException("spring.r2dbc.routing.replica-url property not set")
         return ConnectionFactoryFactory.fromUrl(url)
     }
 
@@ -57,8 +48,8 @@ class R2dbcRoutingConfig(private val env: Environment) {
             override fun determineCurrentLookupKey(): Mono<Any> {
                 return TransactionSynchronizationManager
                     .forCurrentTransaction()
-                    .map { m: org.springframework.transaction.reactive.TransactionSynchronizationManager ->
-                        if (m.isCurrentTransactionReadOnly()) DataSourceType.REPLICA else DataSourceType.MASTER
+                    .map { m: TransactionSynchronizationManager ->
+                        if (m.isCurrentTransactionReadOnly) DataSourceType.REPLICA else DataSourceType.MASTER
                     }
                     .onErrorResume { Mono.just(DataSourceType.MASTER) }
                     .defaultIfEmpty(DataSourceType.MASTER)
@@ -85,7 +76,7 @@ class R2dbcRoutingConfig(private val env: Environment) {
             // For mysql, it might be something like:
             // return io.r2dbc.mysql.MysqlConnectionFactory.from(io.r2dbc.mysql.MysqlConnectionConfiguration.builder()...)
             // For simplicity, using generic get for now. Ensure r2dbc-pool is in classpath.
-            return io.r2dbc.spi.ConnectionFactories.get(url)
+            return ConnectionFactories.get(url)
         }
     }
 }
