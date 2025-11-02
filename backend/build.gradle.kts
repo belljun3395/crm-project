@@ -102,9 +102,10 @@ dependencies {
 
     /** aws */
     implementation("io.awspring.cloud:spring-cloud-aws-starter-sqs:${DependencyVersion.AWS_SQS}")
+    implementation("software.amazon.awssdk:sqs")
+    implementation("software.amazon.awssdk:sns")
     implementation("software.amazon.awssdk:scheduler")
     implementation("com.amazonaws:aws-java-sdk-ses:${DependencyVersion.AWS_SES}")
-    implementation("software.amazon.awssdk:sns")
     implementation("software.amazon.awssdk:aws-query-protocol")
 
     /** docs */

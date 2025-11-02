@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.annotation.SqsListener
 import org.slf4j.LoggerFactory
 import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
+@Profile("!test")
 @Component
 class CacheInvalidationListener(
     private val redisTemplate: RedisTemplate<String, Any>,

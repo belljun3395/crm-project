@@ -13,7 +13,8 @@ import org.springframework.stereotype.Component
 @Component
 class SesMessageReverseRelay(
     private val emailEventPublisher: EmailEventPublisher,
-    private val eventMessageMapper: SesMessageMapper
+    private val eventMessageMapper: SesMessageMapper,
+    private val sesEmailEventFactory: SesEmailEventFactory
 ) {
     val log = KotlinLogging.logger { }
 
@@ -23,7 +24,7 @@ class SesMessageReverseRelay(
         acknowledgement: Acknowledgement
     ) {
         eventMessageMapper.map(message)
-            .let { eventMessageMapper.toEvent(it) }
+            .let { sesEmailEventFactory.toEmailSendEvent(it) }
             .ifPresent { publish(it) }
 
         acknowledgement.acknowledge()
