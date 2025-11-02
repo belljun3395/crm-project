@@ -29,6 +29,8 @@ object DependencyVersion {
     const val AWS_SQS = "3.0.1"
     const val SCHEDULER = "2.29.45"
     const val AWS_SES = "1.12.765"
+    // Central version for AWS SDK v2 modules (e.g., sns, sqs async client, etc.)
+    const val AWS_SDK = "2.29.45"
 
     /** jmolecules */
     const val JMOLECULES = "0.24.1"

@@ -7,6 +7,9 @@ spring:
         url: ${DATABASE_URL}
         username: ${DATABASE_USERNAME}
         password: ${DATABASE_PASSWORD}
+        routing:
+            master-url: ${MASTER_DATABASE_URL}
+            replica-url: ${REPLICA_DATABASE_URL}
     data:
         redis:
             cluster:
@@ -41,6 +44,8 @@ spring:
             role-arn: ${AWS_SCHEDULE_ROLE_ARN}
             sqs-arn: ${AWS_SCHEDULE_SQS_ARN}
             group-name: ${AWS_SCHEDULE_GROUP_NAME}
+        sns:
+            cache-invalidation-topic-arn: ${AWS_SNS_CACHE_INVALIDATION_TOPIC_ARN}
     flyway:
         locations: classpath:db/migration/entity
         sql-migration-suffixes: sql

@@ -65,6 +65,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+    implementation("io.r2dbc:r2dbc-pool")
     implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j")
@@ -102,6 +103,7 @@ dependencies {
     implementation("io.awspring.cloud:spring-cloud-aws-starter-sqs:${DependencyVersion.AWS_SQS}")
     implementation("software.amazon.awssdk:scheduler:${DependencyVersion.SCHEDULER}")
     implementation("com.amazonaws:aws-java-sdk-ses:${DependencyVersion.AWS_SES}")
+    implementation("software.amazon.awssdk:sns:${DependencyVersion.AWS_SDK}")
 
     /** docs */
     runtimeOnly("com.github.therapi:therapi-runtime-javadoc-scribe:${DependencyVersion.JAVADOC_SCRIBE}")
