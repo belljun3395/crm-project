@@ -13,19 +13,28 @@ import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import software.amazon.awssdk.services.sns.SnsClient
 import java.time.LocalDateTime
 
 class EnrollUserUseCaseTest : BehaviorSpec({
     lateinit var userRepository: UserRepository
     lateinit var userRepositoryEventProcessor: UserRepositoryEventProcessor
     lateinit var jsonService: JsonService
+    lateinit var snsClient: SnsClient
     lateinit var useCase: EnrollUserUseCase
 
     beforeContainer {
         userRepository = mockk()
         userRepositoryEventProcessor = mockk()
         jsonService = mockk()
-        useCase = EnrollUserUseCase(userRepository, userRepositoryEventProcessor, jsonService)
+        snsClient = mockk()
+        useCase = EnrollUserUseCase(
+            userRepository,
+            userRepositoryEventProcessor,
+            jsonService,
+            snsClient,
+            null
+        )
     }
 
     given("EnrollUserUseCase") {
