@@ -1,8 +1,8 @@
 package com.manage.crm.config
 
-import com.zaxxer.hikari.HikariDataSource
 import com.amazonaws.auth.AWSCredentials
 import com.manage.crm.infrastructure.AwsConfig
+import com.zaxxer.hikari.HikariDataSource
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.jdbc.DataSourceBuilder

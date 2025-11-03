@@ -3,8 +3,8 @@ package com.manage.crm.infrastructure.cache.listener
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.annotation.SqsListener
 import org.slf4j.LoggerFactory
-import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.context.annotation.Profile
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 
 @Profile("!test")
