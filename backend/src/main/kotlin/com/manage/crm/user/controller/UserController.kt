@@ -13,6 +13,8 @@ import com.manage.crm.user.application.dto.EnrollUserUseCaseOut
 import com.manage.crm.user.application.dto.GetTotalUserCountUseCaseOut
 import com.manage.crm.user.controller.request.EnrollUserRequest
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
@@ -34,8 +36,8 @@ class UserController(
 
     @GetMapping
     suspend fun browseUsers(
-        @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "20") size: Int
+        @RequestParam(defaultValue = "0") @Min(0) page: Int,
+        @RequestParam(defaultValue = "20") @Min(1) @Max(100) size: Int
     ): ApiResponse<ApiResponse.SuccessBody<BrowseUsersUseCaseOut>> {
         return browseUsersUseCase
             .execute(BrowseUsersUseCaseIn(page = page, size = size))

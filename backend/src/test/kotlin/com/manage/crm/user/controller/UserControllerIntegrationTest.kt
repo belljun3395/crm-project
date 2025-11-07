@@ -3,6 +3,8 @@ package com.manage.crm.user.controller
 
 import com.manage.crm.integration.AbstractIntegrationTest
 import com.manage.crm.user.controller.request.EnrollUserRequest
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Tag
 import org.springframework.http.MediaType
@@ -69,7 +71,7 @@ class UserControllerIntegrationTest : AbstractIntegrationTest() {
                     )
                 }
 
-                // when & then - first page
+                // when & then - first page with size=2
                 webTestClient.get()
                     .uri { builder ->
                         builder.path("/api/v1/users")
@@ -79,12 +81,14 @@ class UserControllerIntegrationTest : AbstractIntegrationTest() {
                     }
                     .exchange()
                     .expectStatus().isOk
-                    .expectBody<String>()
-                    .consumeWith { response ->
-                        response.responseBody shouldNotBe null
-                    }
+                    .expectBody()
+                    .jsonPath("$.data.users.page").isEqualTo(0)
+                    .jsonPath("$.data.users.size").isEqualTo(2)
+                    .jsonPath("$.data.users.content").isArray
+                    .jsonPath("$.data.users.totalElements").isNumber
+                    .jsonPath("$.data.users.totalPages").isNumber
 
-                // when & then - second page
+                // when & then - second page with size=2
                 webTestClient.get()
                     .uri { builder ->
                         builder.path("/api/v1/users")
@@ -94,22 +98,26 @@ class UserControllerIntegrationTest : AbstractIntegrationTest() {
                     }
                     .exchange()
                     .expectStatus().isOk
-                    .expectBody<String>()
-                    .consumeWith { response ->
-                        response.responseBody shouldNotBe null
-                    }
+                    .expectBody()
+                    .jsonPath("$.data.users.page").isEqualTo(1)
+                    .jsonPath("$.data.users.size").isEqualTo(2)
+                    .jsonPath("$.data.users.content").isArray
+                    .jsonPath("$.data.users.totalElements").isNumber
+                    .jsonPath("$.data.users.totalPages").isNumber
             }
 
             it("browse users with default pagination parameters") {
-                // when & then - using default values
+                // when & then - using default values (page=0, size=20)
                 webTestClient.get()
                     .uri("/api/v1/users")
                     .exchange()
                     .expectStatus().isOk
-                    .expectBody<String>()
-                    .consumeWith { response ->
-                        response.responseBody shouldNotBe null
-                    }
+                    .expectBody()
+                    .jsonPath("$.data.users.page").isEqualTo(0)
+                    .jsonPath("$.data.users.size").isEqualTo(20)
+                    .jsonPath("$.data.users.content").isArray
+                    .jsonPath("$.data.users.totalElements").isNumber
+                    .jsonPath("$.data.users.totalPages").isNumber
             }
         }
 

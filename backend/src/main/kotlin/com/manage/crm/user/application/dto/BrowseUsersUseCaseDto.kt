@@ -19,5 +19,3 @@ data class UserDto(
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime
 )
-
-class BrowseUsersUseCaseDto

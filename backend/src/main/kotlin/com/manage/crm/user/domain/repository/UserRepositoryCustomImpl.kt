@@ -38,6 +38,7 @@ class UserRepositoryCustomImpl(
 
     override suspend fun findAllWithPagination(page: Int, size: Int): List<User> {
         val offset = page * size
+        // ORDER BY id DESC: Return users in reverse chronological order (newest first)
         val query = """
             SELECT * FROM users
             ORDER BY id DESC
