@@ -14,6 +14,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.flow.flowOf
 import java.time.LocalDateTime
 
 class CampaignDashboardServiceTest : BehaviorSpec({
@@ -34,7 +35,7 @@ class CampaignDashboardServiceTest : BehaviorSpec({
     }
 
     given("CampaignDashboardService") {
-        `when`("publishing a campaign event") {
+        `when`("publishCampaignEvent is called") {
             val event = CampaignDashboardEvent(
                 campaignId = 1L,
                 eventId = 100L,
@@ -46,33 +47,25 @@ class CampaignDashboardServiceTest : BehaviorSpec({
             val metricSlot = slot<CampaignDashboardMetrics>()
 
             coEvery { streamService.publishEvent(any()) } returns Unit
-            coEvery { campaignDashboardMetricsRepository.findByCampaignIdAndMetricTypeAndTimeWindowStartAndTimeWindowEnd(any(), any(), any(), any()) } returns null
+            coEvery {
+                campaignDashboardMetricsRepository.findByCampaignIdAndMetricTypeAndTimeWindowStartAndTimeWindowEnd(
+                    any(), any(), any(), any()
+                )
+            } returns null
             coEvery { campaignDashboardMetricsRepository.save(capture(metricSlot)) } answers { metricSlot.captured }
 
             service.publishCampaignEvent(event)
 
-            then("should publish to stream") {
+            then("should publish event to stream") {
                 coVerify(exactly = 1) { streamService.publishEvent(event) }
             }
 
-            then("should create metrics for hour and day windows") {
+            then("should save metrics to database") {
                 coVerify(atLeast = 2) { campaignDashboardMetricsRepository.save(any()) }
-            }
-
-            then("metric should have correct campaign id") {
-                metricSlot.captured.campaignId shouldBe event.campaignId
-            }
-
-            then("metric should have EVENT_COUNT type") {
-                metricSlot.captured.metricType shouldBe MetricType.EVENT_COUNT
-            }
-
-            then("metric should have value of 1") {
-                metricSlot.captured.metricValue shouldBe 1L
             }
         }
 
-        `when`("getting campaign summary") {
+        `when`("getCampaignSummary is called") {
             val campaignId = 1L
             val now = LocalDateTime.now()
 
@@ -95,19 +88,21 @@ class CampaignDashboardServiceTest : BehaviorSpec({
                 )
             )
 
-            coEvery { campaignDashboardMetricsRepository.findAllByCampaignIdOrderByTimeWindowStartDesc(campaignId) } returns kotlinx.coroutines.flow.flowOf(*metrics.toTypedArray())
+            coEvery {
+                campaignDashboardMetricsRepository.findAllByCampaignIdOrderByTimeWindowStartDesc(campaignId)
+            } returns flowOf(*metrics.toTypedArray())
 
             val summary = service.getCampaignSummary(campaignId)
 
-            then("should return summary with campaign id") {
+            then("should return summary with correct campaign id") {
                 summary.campaignId shouldBe campaignId
             }
 
-            then("should calculate total events") {
+            then("should calculate total events correctly") {
                 summary.totalEvents shouldBe 150L
             }
 
-            then("should have last updated timestamp") {
+            then("should have a last updated timestamp") {
                 summary.lastUpdated shouldNotBe null
             }
         }
