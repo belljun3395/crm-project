@@ -3,7 +3,7 @@ package com.manage.crm.event.infrastructure.stream
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactor.awaitSingle
 import org.slf4j.LoggerFactory
-import org.springframework.data.redis.connection.stream.MapRecord
+import org.springframework.data.redis.connection.stream.ObjectRecord
 import org.springframework.data.redis.connection.stream.StreamRecords
 import org.springframework.data.redis.connection.stream.StringRecord
 import org.springframework.data.redis.core.ReactiveRedisTemplate
@@ -52,7 +52,7 @@ class CampaignDashboardStreamService(
                 )
             ).withStreamKey(streamKey)
 
-            reactiveRedisTemplate.opsForStream<String, String>()
+            reactiveRedisTemplate.opsForStream<String, Any>()
                 .add(record)
                 .awaitSingle()
 
@@ -69,7 +69,7 @@ class CampaignDashboardStreamService(
     suspend fun createConsumerGroup(campaignId: Long) {
         try {
             val streamKey = getStreamKey(campaignId)
-            reactiveRedisTemplate.opsForStream<String, String>()
+            reactiveRedisTemplate.opsForStream<String, Any>()
                 .createGroup(streamKey, CONSUMER_GROUP)
                 .awaitFirstOrNull()
             log.info("Created consumer group for campaign: $campaignId")
@@ -86,8 +86,8 @@ class CampaignDashboardStreamService(
     fun streamEvents(campaignId: Long, duration: Duration = Duration.ofHours(1)): Flux<CampaignDashboardEvent> {
         val streamKey = getStreamKey(campaignId)
 
-        return reactiveRedisTemplate.opsForStream<String, String>()
-            .read(String::class.java, org.springframework.data.redis.connection.stream.StreamOffset.fromStart(streamKey))
+        return reactiveRedisTemplate.opsForStream<String, Any>()
+            .read(org.springframework.data.redis.connection.stream.StreamOffset.fromStart<String>(streamKey))
             .map { record -> mapRecordToEvent(record) }
             .timeout(duration)
             .onErrorResume { error ->
@@ -106,10 +106,11 @@ class CampaignDashboardStreamService(
     ): Flux<CampaignDashboardEvent> {
         val streamKey = getStreamKey(campaignId)
 
-        return reactiveRedisTemplate.opsForStream<String, String>()
-            .read(String::class.java, org.springframework.data.redis.connection.stream.StreamOffset.fromStart(streamKey))
+        return reactiveRedisTemplate.opsForStream<String, Any>()
+            .read(org.springframework.data.redis.connection.stream.StreamOffset.fromStart<String>(streamKey))
             .filter { record ->
-                val eventTimestamp = parseTimestamp(record.value["timestamp"] ?: "")
+                val values = record.value as? Map<*, *> ?: emptyMap<String, String>()
+                val eventTimestamp = parseTimestamp(values["timestamp"]?.toString())
                 eventTimestamp != null && eventTimestamp.isAfter(fromTimestamp)
             }
             .map { record -> mapRecordToEvent(record) }
@@ -126,7 +127,7 @@ class CampaignDashboardStreamService(
     suspend fun getStreamLength(campaignId: Long): Long {
         return try {
             val streamKey = getStreamKey(campaignId)
-            reactiveRedisTemplate.opsForStream<String, String>()
+            reactiveRedisTemplate.opsForStream<String, Any>()
                 .size(streamKey)
                 .awaitSingle()
         } catch (e: Exception) {
@@ -141,7 +142,7 @@ class CampaignDashboardStreamService(
     suspend fun trimStream(campaignId: Long, maxLength: Long = 10000) {
         try {
             val streamKey = getStreamKey(campaignId)
-            reactiveRedisTemplate.opsForStream<String, String>()
+            reactiveRedisTemplate.opsForStream<String, Any>()
                 .trim(streamKey, maxLength)
                 .awaitFirstOrNull()
             log.info("Trimmed stream for campaign: $campaignId to max length: $maxLength")
@@ -150,14 +151,14 @@ class CampaignDashboardStreamService(
         }
     }
 
-    private fun mapRecordToEvent(record: MapRecord<String, String, String>): CampaignDashboardEvent {
-        val values = record.value
+    private fun mapRecordToEvent(record: ObjectRecord<String, Any>): CampaignDashboardEvent {
+        val values = record.value as? Map<*, *> ?: throw IllegalArgumentException("Invalid record value")
         return CampaignDashboardEvent(
-            campaignId = values["campaignId"]?.toLong() ?: throw IllegalArgumentException("Missing campaignId"),
-            eventId = values["eventId"]?.toLong() ?: throw IllegalArgumentException("Missing eventId"),
-            userId = values["userId"]?.toLong() ?: throw IllegalArgumentException("Missing userId"),
-            eventName = values["eventName"] ?: throw IllegalArgumentException("Missing eventName"),
-            timestamp = parseTimestamp(values["timestamp"]) ?: LocalDateTime.now()
+            campaignId = values["campaignId"]?.toString()?.toLong() ?: throw IllegalArgumentException("Missing campaignId"),
+            eventId = values["eventId"]?.toString()?.toLong() ?: throw IllegalArgumentException("Missing eventId"),
+            userId = values["userId"]?.toString()?.toLong() ?: throw IllegalArgumentException("Missing userId"),
+            eventName = values["eventName"]?.toString() ?: throw IllegalArgumentException("Missing eventName"),
+            timestamp = parseTimestamp(values["timestamp"]?.toString()) ?: LocalDateTime.now()
         )
     }
 
