@@ -12,6 +12,8 @@ import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.vo.Properties
 import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.event.infrastructure.stream.CampaignDashboardEvent
+import com.manage.crm.event.service.CampaignDashboardService
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.repository.UserRepository
@@ -41,7 +43,8 @@ class PostEventUseCase(
     private val campaignRepository: CampaignRepository,
     private val campaignEventsRepository: CampaignEventsRepository,
     private val campaignCacheManager: CampaignCacheManager,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val campaignDashboardService: CampaignDashboardService
 ) {
     val log = KotlinLogging.logger {}
 
@@ -128,5 +131,21 @@ class PostEventUseCase(
                 eventId = savedEvent.id!!
             )
         )
+
+        // Publish event to Redis Stream for real-time dashboard updates
+        try {
+            val dashboardEvent = CampaignDashboardEvent(
+                campaignId = campaign.id!!,
+                eventId = savedEvent.id!!,
+                userId = savedEvent.userId,
+                eventName = savedEvent.name,
+                timestamp = savedEvent.createdAt ?: java.time.LocalDateTime.now()
+            )
+            campaignDashboardService.publishCampaignEvent(dashboardEvent)
+            log.debug { "Published campaign event to dashboard stream: campaignId=${campaign.id}, eventId=${savedEvent.id}" }
+        } catch (e: Exception) {
+            log.error(e) { "Failed to publish event to dashboard stream: campaignId=${campaign.id}, eventId=${savedEvent.id}" }
+            // Don't fail the entire operation if stream publishing fails
+        }
     }
 }

@@ -13,6 +13,8 @@ import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
+import com.manage.crm.event.infrastructure.stream.CampaignDashboardEvent
+import com.manage.crm.event.service.CampaignDashboardService
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.user.domain.UserFixtures
 import com.manage.crm.user.domain.repository.UserRepository
@@ -24,6 +26,7 @@ import io.mockk.coEvery
 import io.mockk.coInvoke
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.slot
 
 class PostEventUseCaseTest : BehaviorSpec({
     lateinit var eventRepository: EventRepository
@@ -31,6 +34,7 @@ class PostEventUseCaseTest : BehaviorSpec({
     lateinit var campaignEventsRepository: CampaignEventsRepository
     lateinit var campaignCacheManager: CampaignCacheManager
     lateinit var userRepository: UserRepository
+    lateinit var campaignDashboardService: CampaignDashboardService
     lateinit var postEventUseCase: PostEventUseCase
 
     beforeContainer {
@@ -39,8 +43,9 @@ class PostEventUseCaseTest : BehaviorSpec({
         campaignEventsRepository = mockk()
         campaignCacheManager = mockk()
         userRepository = mockk()
+        campaignDashboardService = mockk(relaxed = true)
         postEventUseCase =
-            PostEventUseCase(eventRepository, campaignRepository, campaignEventsRepository, campaignCacheManager, userRepository)
+            PostEventUseCase(eventRepository, campaignRepository, campaignEventsRepository, campaignCacheManager, userRepository, campaignDashboardService)
     }
 
     given("PostEventUseCase") {
