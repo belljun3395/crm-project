@@ -37,18 +37,23 @@ class BrowseEmailSendHistoriesUseCaseTest : BehaviorSpec({
             val historyStubSize = 5
             val historyStubs = emailSendHistoryStubs(historyStubSize)
 
+            coEvery { emailSendHistoryRepository.count() } returns historyStubSize.toLong()
             coEvery { emailSendHistoryRepository.findAllByOrderByCreatedAtDesc() } answers { historyStubs.asFlow() }
 
             val result = useCase.execute(useCaseIn)
 
-            then("should return all email send histories") {
+            then("should return all email send histories with pagination info") {
                 result.histories.size shouldBe historyStubSize
+                result.totalCount shouldBe historyStubSize
+                result.page shouldBe 0
+                result.size shouldBe 20
                 result.histories.forEachIndexed { index, history ->
                     history.id shouldBe (index + 1).toLong()
                 }
             }
 
             then("find all histories ordered by created at desc") {
+                coVerify(exactly = 1) { emailSendHistoryRepository.count() }
                 coVerify(exactly = 1) { emailSendHistoryRepository.findAllByOrderByCreatedAtDesc() }
             }
         }
@@ -59,18 +64,21 @@ class BrowseEmailSendHistoriesUseCaseTest : BehaviorSpec({
             val historyStubSize = 3
             val historyStubs = emailSendHistoryStubs(historyStubSize, userId = testUserId)
 
+            coEvery { emailSendHistoryRepository.countByUserId(testUserId) } returns historyStubSize.toLong()
             coEvery { emailSendHistoryRepository.findByUserId(testUserId) } answers { historyStubs.asFlow() }
 
             val result = useCase.execute(useCaseIn)
 
-            then("should return email send histories for the user") {
+            then("should return email send histories for the user with pagination info") {
                 result.histories.size shouldBe historyStubSize
+                result.totalCount shouldBe historyStubSize
                 result.histories.forEach { history ->
                     history.userId shouldBe testUserId
                 }
             }
 
             then("find histories by user id") {
+                coVerify(exactly = 1) { emailSendHistoryRepository.countByUserId(testUserId) }
                 coVerify(exactly = 1) { emailSendHistoryRepository.findByUserId(testUserId) }
             }
         }
@@ -81,18 +89,21 @@ class BrowseEmailSendHistoriesUseCaseTest : BehaviorSpec({
             val historyStubSize = 4
             val historyStubs = emailSendHistoryStubs(historyStubSize, sendStatus = testStatus)
 
+            coEvery { emailSendHistoryRepository.countBySendStatus(testStatus) } returns historyStubSize.toLong()
             coEvery { emailSendHistoryRepository.findBySendStatus(testStatus) } answers { historyStubs.asFlow() }
 
             val result = useCase.execute(useCaseIn)
 
-            then("should return email send histories with the status") {
+            then("should return email send histories with the status and pagination info") {
                 result.histories.size shouldBe historyStubSize
+                result.totalCount shouldBe historyStubSize
                 result.histories.forEach { history ->
                     history.sendStatus shouldBe testStatus
                 }
             }
 
             then("find histories by send status") {
+                coVerify(exactly = 1) { emailSendHistoryRepository.countBySendStatus(testStatus) }
                 coVerify(exactly = 1) { emailSendHistoryRepository.findBySendStatus(testStatus) }
             }
         }
@@ -105,13 +116,17 @@ class BrowseEmailSendHistoriesUseCaseTest : BehaviorSpec({
             val historyStubs = emailSendHistoryStubs(historyStubSize, userId = testUserId, sendStatus = testStatus)
 
             coEvery {
+                emailSendHistoryRepository.countByUserIdAndSendStatus(testUserId, testStatus)
+            } returns historyStubSize.toLong()
+            coEvery {
                 emailSendHistoryRepository.findByUserIdAndSendStatus(testUserId, testStatus)
             } answers { historyStubs.asFlow() }
 
             val result = useCase.execute(useCaseIn)
 
-            then("should return email send histories for the user and status") {
+            then("should return email send histories for the user and status with pagination info") {
                 result.histories.size shouldBe historyStubSize
+                result.totalCount shouldBe historyStubSize
                 result.histories.forEach { history ->
                     history.userId shouldBe testUserId
                     history.sendStatus shouldBe testStatus
@@ -119,6 +134,9 @@ class BrowseEmailSendHistoriesUseCaseTest : BehaviorSpec({
             }
 
             then("find histories by user id and send status") {
+                coVerify(exactly = 1) {
+                    emailSendHistoryRepository.countByUserIdAndSendStatus(testUserId, testStatus)
+                }
                 coVerify(exactly = 1) {
                     emailSendHistoryRepository.findByUserIdAndSendStatus(testUserId, testStatus)
                 }

@@ -149,10 +149,12 @@ class EmailController(
     @GetMapping(value = ["/histories"])
     suspend fun browseEmailSendHistories(
         @RequestParam(required = false) userId: Long?,
-        @RequestParam(required = false) sendStatus: String?
+        @RequestParam(required = false) sendStatus: String?,
+        @RequestParam(required = false, defaultValue = "0") page: Int,
+        @RequestParam(required = false, defaultValue = "20") size: Int
     ): ApiResponse<ApiResponse.SuccessBody<BrowseEmailSendHistoriesUseCaseOut>> {
         return browseEmailSendHistoriesUseCase
-            .execute(BrowseEmailSendHistoriesUseCaseIn(userId = userId, sendStatus = sendStatus))
+            .execute(BrowseEmailSendHistoriesUseCaseIn(userId = userId, sendStatus = sendStatus, page = page, size = size))
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
     }
 }

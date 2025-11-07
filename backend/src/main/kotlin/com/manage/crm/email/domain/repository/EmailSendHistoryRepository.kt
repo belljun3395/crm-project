@@ -10,4 +10,7 @@ interface EmailSendHistoryRepository : CoroutineCrudRepository<EmailSendHistory,
     fun findBySendStatus(sendStatus: String): Flow<EmailSendHistory>
     fun findByUserIdAndSendStatus(userId: Long, sendStatus: String): Flow<EmailSendHistory>
     fun findAllByOrderByCreatedAtDesc(): Flow<EmailSendHistory>
+    suspend fun countByUserId(userId: Long): Long
+    suspend fun countBySendStatus(sendStatus: String): Long
+    suspend fun countByUserIdAndSendStatus(userId: Long, sendStatus: String): Long
 }

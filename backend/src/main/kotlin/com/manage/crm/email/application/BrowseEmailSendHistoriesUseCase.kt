@@ -5,6 +5,8 @@ import com.manage.crm.email.application.dto.BrowseEmailSendHistoriesUseCaseOut
 import com.manage.crm.email.application.dto.EmailSendHistoryDto
 import com.manage.crm.email.domain.repository.EmailSendHistoryRepository
 import com.manage.crm.support.out
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
 
@@ -15,6 +17,23 @@ class BrowseEmailSendHistoriesUseCase(
     suspend fun execute(useCaseIn: BrowseEmailSendHistoriesUseCaseIn): BrowseEmailSendHistoriesUseCaseOut {
         val userId = useCaseIn.userId
         val sendStatus = useCaseIn.sendStatus
+        val page = useCaseIn.page.coerceAtLeast(0)
+        val size = useCaseIn.size.coerceIn(1, 100)
+
+        val totalCount = when {
+            userId != null && sendStatus != null -> {
+                emailSendHistoryRepository.countByUserIdAndSendStatus(userId, sendStatus)
+            }
+            userId != null -> {
+                emailSendHistoryRepository.countByUserId(userId)
+            }
+            sendStatus != null -> {
+                emailSendHistoryRepository.countBySendStatus(sendStatus)
+            }
+            else -> {
+                emailSendHistoryRepository.count()
+            }
+        }
 
         val histories = when {
             userId != null && sendStatus != null -> {
@@ -29,11 +48,14 @@ class BrowseEmailSendHistoriesUseCase(
             else -> {
                 emailSendHistoryRepository.findAllByOrderByCreatedAtDesc()
             }
-        }.toList()
+        }
+            .drop(page * size)
+            .take(size)
+            .toList()
 
         return out {
-            histories
-                .map { history ->
+            BrowseEmailSendHistoriesUseCaseOut(
+                histories = histories.map { history ->
                     EmailSendHistoryDto(
                         id = history.id!!,
                         userId = history.userId,
@@ -44,8 +66,11 @@ class BrowseEmailSendHistoriesUseCase(
                         createdAt = history.createdAt.toString(),
                         updatedAt = history.updatedAt.toString()
                     )
-                }
-                .let { BrowseEmailSendHistoriesUseCaseOut(it) }
+                },
+                totalCount = totalCount.toInt(),
+                page = page,
+                size = size
+            )
         }
     }
 }
