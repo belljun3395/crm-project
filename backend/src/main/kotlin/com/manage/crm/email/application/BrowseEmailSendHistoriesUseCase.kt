@@ -5,7 +5,6 @@ import com.manage.crm.email.application.dto.BrowseEmailSendHistoriesUseCaseOut
 import com.manage.crm.email.application.dto.EmailSendHistoryDto
 import com.manage.crm.email.domain.repository.EmailSendHistoryRepository
 import com.manage.crm.support.out
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
 
@@ -30,7 +29,7 @@ class BrowseEmailSendHistoriesUseCase(
             else -> {
                 emailSendHistoryRepository.findAllByOrderByCreatedAtDesc()
             }
-        }
+        }.toList()
 
         return out {
             histories
@@ -46,7 +45,6 @@ class BrowseEmailSendHistoriesUseCase(
                         updatedAt = history.updatedAt.toString()
                     )
                 }
-                .toList()
                 .let { BrowseEmailSendHistoriesUseCaseOut(it) }
         }
     }
