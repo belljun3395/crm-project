@@ -117,6 +117,82 @@ class UserControllerIntegrationTest : AbstractIntegrationTest() {
                     .jsonPath("$.data.users.totalElements").isNumber
                     .jsonPath("$.data.users.totalPages").isNumber
             }
+
+            it("should return 400 when page is negative") {
+                // when & then
+                webTestClient.get()
+                    .uri { builder ->
+                        builder.path("/api/v1/users")
+                            .queryParam("page", -1)
+                            .queryParam("size", 10)
+                            .build()
+                    }
+                    .exchange()
+                    .expectStatus().isBadRequest
+            }
+
+            it("should return 400 when size is zero") {
+                // when & then
+                webTestClient.get()
+                    .uri { builder ->
+                        builder.path("/api/v1/users")
+                            .queryParam("page", 0)
+                            .queryParam("size", 0)
+                            .build()
+                    }
+                    .exchange()
+                    .expectStatus().isBadRequest
+            }
+
+            it("should return 400 when size is negative") {
+                // when & then
+                webTestClient.get()
+                    .uri { builder ->
+                        builder.path("/api/v1/users")
+                            .queryParam("page", 0)
+                            .queryParam("size", -5)
+                            .build()
+                    }
+                    .exchange()
+                    .expectStatus().isBadRequest
+            }
+
+            it("should return 400 when size exceeds maximum") {
+                // when & then
+                webTestClient.get()
+                    .uri { builder ->
+                        builder.path("/api/v1/users")
+                            .queryParam("page", 0)
+                            .queryParam("size", 101)
+                            .build()
+                    }
+                    .exchange()
+                    .expectStatus().isBadRequest
+            }
+
+            it("should accept size at boundary values") {
+                // when & then - size = 1 (minimum valid)
+                webTestClient.get()
+                    .uri { builder ->
+                        builder.path("/api/v1/users")
+                            .queryParam("page", 0)
+                            .queryParam("size", 1)
+                            .build()
+                    }
+                    .exchange()
+                    .expectStatus().isOk
+
+                // when & then - size = 100 (maximum valid)
+                webTestClient.get()
+                    .uri { builder ->
+                        builder.path("/api/v1/users")
+                            .queryParam("page", 0)
+                            .queryParam("size", 100)
+                            .build()
+                    }
+                    .exchange()
+                    .expectStatus().isOk
+            }
         }
 
         describe("POST /api/v1/users") {

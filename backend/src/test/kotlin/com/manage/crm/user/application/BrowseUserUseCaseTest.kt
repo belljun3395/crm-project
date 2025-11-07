@@ -125,5 +125,86 @@ class BrowseUserUseCaseTest : BehaviorSpec({
                 result.users.content.size shouldBe 15
             }
         }
+
+        `when`("browse users with empty result") {
+            val page = 0
+            val size = 20
+            val totalElements = 0L
+
+            coEvery { userRepository.findAllWithPagination(page, size) } returns emptyList()
+            coEvery { userRepository.countAll() } returns totalElements
+
+            val input = BrowseUsersUseCaseIn()
+            val result = useCase.execute(input)
+
+            then("should return empty page with zero total pages") {
+                result.users.content shouldBe emptyList()
+                result.users.page shouldBe 0
+                result.users.size shouldBe 20
+                result.users.totalElements shouldBe 0
+                result.users.totalPages shouldBe 0
+            }
+        }
+
+        `when`("browse last page with partial results") {
+            val page = 2
+            val size = 10
+            val totalElements = 22L
+            val expectedUsers = userStubs(2, 21) // Only 2 users on last page
+
+            coEvery { userRepository.findAllWithPagination(page, size) } returns expectedUsers
+            coEvery { userRepository.countAll() } returns totalElements
+
+            val input = BrowseUsersUseCaseIn(page = page, size = size)
+            val result = useCase.execute(input)
+
+            then("should return partial page correctly") {
+                result.users.page shouldBe 2
+                result.users.size shouldBe 10
+                result.users.totalElements shouldBe 22
+                result.users.totalPages shouldBe 3
+                result.users.content.size shouldBe 2
+            }
+        }
+
+        `when`("browse with exact division of total elements") {
+            val page = 0
+            val size = 10
+            val totalElements = 20L
+            val expectedUsers = userStubs(10, 1)
+
+            coEvery { userRepository.findAllWithPagination(page, size) } returns expectedUsers
+            coEvery { userRepository.countAll() } returns totalElements
+
+            val input = BrowseUsersUseCaseIn(page = page, size = size)
+            val result = useCase.execute(input)
+
+            then("should calculate total pages correctly when evenly divisible") {
+                result.users.page shouldBe 0
+                result.users.size shouldBe 10
+                result.users.totalElements shouldBe 20
+                result.users.totalPages shouldBe 2
+                result.users.content.size shouldBe 10
+            }
+        }
+
+        `when`("browse with single element") {
+            val page = 0
+            val size = 20
+            val totalElements = 1L
+            val expectedUsers = userStubs(1, 1)
+
+            coEvery { userRepository.findAllWithPagination(page, size) } returns expectedUsers
+            coEvery { userRepository.countAll() } returns totalElements
+
+            val input = BrowseUsersUseCaseIn()
+            val result = useCase.execute(input)
+
+            then("should handle single element correctly") {
+                result.users.content.size shouldBe 1
+                result.users.totalElements shouldBe 1
+                result.users.totalPages shouldBe 1
+            }
+        }
     }
 })
