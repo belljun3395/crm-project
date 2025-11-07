@@ -3,8 +3,6 @@ package com.manage.crm.user.controller
 
 import com.manage.crm.integration.AbstractIntegrationTest
 import com.manage.crm.user.controller.request.EnrollUserRequest
-import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
-import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Tag
 import org.springframework.http.MediaType
