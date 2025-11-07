@@ -1,12 +1,17 @@
 package com.manage.crm.user.application.dto
 
+import com.manage.crm.support.web.PageResponse
 import java.time.LocalDateTime
 
-class BrowseUsersUseCaseIn
+data class BrowseUsersUseCaseIn(
+    val page: Int = 0,
+    val size: Int = 20
+)
 
 data class BrowseUsersUseCaseOut(
-    val users: List<UserDto>
+    val users: PageResponse<UserDto>
 )
+
 data class UserDto(
     val id: Long,
     val externalId: String,
@@ -14,4 +19,5 @@ data class UserDto(
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime
 )
+
 class BrowseUsersUseCaseDto

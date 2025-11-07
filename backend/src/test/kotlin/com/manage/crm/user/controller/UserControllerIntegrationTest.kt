@@ -56,6 +56,61 @@ class UserControllerIntegrationTest : AbstractIntegrationTest() {
                         response.responseBody shouldNotBe null
                     }
             }
+
+            it("browse users with pagination parameters") {
+                // given - create test users
+                val timestamp = System.currentTimeMillis()
+                repeat(5) { index ->
+                    createTestUser(
+                        email = "pagination-test$index-$timestamp@example.com",
+                        name = "Pagination Test User $index",
+                        externalId = "pagination-test-user$index-$timestamp",
+                        age = "${20 + index}"
+                    )
+                }
+
+                // when & then - first page
+                webTestClient.get()
+                    .uri { builder ->
+                        builder.path("/api/v1/users")
+                            .queryParam("page", 0)
+                            .queryParam("size", 2)
+                            .build()
+                    }
+                    .exchange()
+                    .expectStatus().isOk
+                    .expectBody<String>()
+                    .consumeWith { response ->
+                        response.responseBody shouldNotBe null
+                    }
+
+                // when & then - second page
+                webTestClient.get()
+                    .uri { builder ->
+                        builder.path("/api/v1/users")
+                            .queryParam("page", 1)
+                            .queryParam("size", 2)
+                            .build()
+                    }
+                    .exchange()
+                    .expectStatus().isOk
+                    .expectBody<String>()
+                    .consumeWith { response ->
+                        response.responseBody shouldNotBe null
+                    }
+            }
+
+            it("browse users with default pagination parameters") {
+                // when & then - using default values
+                webTestClient.get()
+                    .uri("/api/v1/users")
+                    .exchange()
+                    .expectStatus().isOk
+                    .expectBody<String>()
+                    .consumeWith { response ->
+                        response.responseBody shouldNotBe null
+                    }
+            }
         }
 
         describe("POST /api/v1/users") {
