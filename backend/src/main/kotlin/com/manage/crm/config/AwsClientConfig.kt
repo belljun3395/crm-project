@@ -2,6 +2,8 @@ package com.manage.crm.config
 
 import com.amazonaws.auth.AWSCredentials
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -11,6 +13,8 @@ import software.amazon.awssdk.services.sns.SnsClient
 import java.net.URI
 
 @Configuration
+@ConditionalOnProperty(name = ["spring.aws.region"])
+@ConditionalOnBean(AWSCredentials::class)
 class AwsClientConfig {
     companion object {
         const val SNS_CLIENT = "snsClient"
