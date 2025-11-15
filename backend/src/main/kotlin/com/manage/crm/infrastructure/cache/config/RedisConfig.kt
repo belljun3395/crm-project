@@ -1,4 +1,4 @@
-package com.manage.crm.config
+package com.manage.crm.infrastructure.cache.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.lettuce.core.ReadFrom

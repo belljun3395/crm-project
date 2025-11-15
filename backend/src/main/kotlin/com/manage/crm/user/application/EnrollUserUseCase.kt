@@ -1,5 +1,6 @@
 package com.manage.crm.user.application
 
+import com.manage.crm.infrastructure.cache.provider.CacheInvalidationPublisher
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
 import com.manage.crm.user.application.dto.EnrollUserUseCaseIn
@@ -11,20 +12,15 @@ import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
 import com.manage.crm.user.domain.vo.UserAttributes
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import software.amazon.awssdk.services.sns.SnsClient
-import software.amazon.awssdk.services.sns.model.PublishRequest
 
 @Service
 class EnrollUserUseCase(
     private val userRepository: UserRepository,
     private val userRepositoryEventProcessor: UserRepositoryEventProcessor,
     private val jsonService: JsonService,
-    private val snsClient: SnsClient,
-    @Value("\${spring.aws.sns.cache-invalidation-topic-arn:#{null}}")
-    private val snsTopicArn: String?
+    private val cacheInvalidationPublisher: CacheInvalidationPublisher
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -55,16 +51,7 @@ class EnrollUserUseCase(
 
         // Publish cache invalidation message
         val userId = updateOrSaveUser.id!!
-        val message = "{\"action\":\"invalidate\", \"keys\":[\"user:$userId\"]}"
-        if (snsTopicArn.isNullOrBlank()) {
-            log.warn("Skip cache invalidation publish: spring.aws.sns.cache-invalidation-topic-arn is not set")
-        } else {
-            val publishRequest = PublishRequest.builder()
-                .topicArn(snsTopicArn)
-                .message(message)
-                .build()
-            snsClient.publish(publishRequest)
-        }
+        cacheInvalidationPublisher.publishCacheInvalidation(listOf("user:$userId"))
 
         return out {
             EnrollUserUseCaseOut(

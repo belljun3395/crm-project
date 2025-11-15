@@ -10,6 +10,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sns.SnsClient
+import software.amazon.awssdk.services.sqs.SqsClient
 import java.net.URI
 
 @Configuration
@@ -18,6 +19,7 @@ import java.net.URI
 class AwsClientConfig {
     companion object {
         const val SNS_CLIENT = "snsClient"
+        const val SQS_CLIENT = "sqsClient"
     }
 
     @Value("\${spring.aws.region}")
@@ -29,6 +31,27 @@ class AwsClientConfig {
     @Bean(name = [SNS_CLIENT])
     fun snsClient(awsCredentials: AWSCredentials): SnsClient {
         val builder = SnsClient.builder()
+            .region(Region.of(region))
+            .credentialsProvider(
+                StaticCredentialsProvider.create(
+                    AwsBasicCredentials.create(
+                        awsCredentials.awsAccessKeyId,
+                        awsCredentials.awsSecretKey
+                    )
+                )
+            )
+
+        // Configure endpoint URL for LocalStack
+        endpointUrl?.let { url ->
+            builder.endpointOverride(URI.create(url))
+        }
+
+        return builder.build()
+    }
+
+    @Bean(name = [SQS_CLIENT])
+    fun sqsClient(awsCredentials: AWSCredentials): SqsClient {
+        val builder = SqsClient.builder()
             .region(Region.of(region))
             .credentialsProvider(
                 StaticCredentialsProvider.create(
