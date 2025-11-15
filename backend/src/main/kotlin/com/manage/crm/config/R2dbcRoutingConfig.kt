@@ -2,6 +2,7 @@ package com.manage.crm.config
 
 import io.r2dbc.spi.ConnectionFactories
 import io.r2dbc.spi.ConnectionFactory
+import io.r2dbc.spi.ConnectionFactoryOptions
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -24,18 +25,24 @@ class R2dbcRoutingConfig {
     @Value("\${spring.r2dbc.routing.replica-url}")
     val replicaDatabaseUrl: String? = null
 
+    @Value("\${spring.r2dbc.routing.username:}")
+    val username: String? = null
+
+    @Value("\${spring.r2dbc.routing.password:}")
+    val password: String? = null
+
     @Bean
     fun masterConnectionFactory(): ConnectionFactory {
         val url = masterDatabaseUrl
             ?: throw IllegalStateException("spring.r2dbc.routing.master-url property not set")
-        return ConnectionFactoryFactory.fromUrl(url)
+        return ConnectionFactoryFactory.create(url, username, password)
     }
 
     @Bean
     fun replicaConnectionFactory(): ConnectionFactory {
         val url = replicaDatabaseUrl
             ?: throw IllegalStateException("spring.r2dbc.routing.replica-url property not set")
-        return ConnectionFactoryFactory.fromUrl(url)
+        return ConnectionFactoryFactory.create(url, username, password)
     }
 
     @Bean
@@ -67,16 +74,24 @@ class R2dbcRoutingConfig {
         return routingConnectionFactory
     }
 
-    // Helper to create ConnectionFactory from URL (assuming r2dbc-pool or similar is available)
-    // This part might need adjustment based on actual R2DBC driver usage
+    // Helper to create ConnectionFactory from URL with separate credentials
     private object ConnectionFactoryFactory {
-        fun fromUrl(url: String): ConnectionFactory {
-            // Example: io.r2dbc.spi.ConnectionFactories.get(url)
-            // You might need to use a specific driver\'s ConnectionFactoryBuilder
-            // For mysql, it might be something like:
-            // return io.r2dbc.mysql.MysqlConnectionFactory.from(io.r2dbc.mysql.MysqlConnectionConfiguration.builder()...)
-            // For simplicity, using generic get for now. Ensure r2dbc-pool is in classpath.
-            return ConnectionFactories.get(url)
+        fun create(url: String, username: String?, password: String?): ConnectionFactory {
+            // Parse the base URL options
+            val baseOptions = ConnectionFactoryOptions.parse(url)
+
+            // Build new options with credentials if provided
+            val builder = ConnectionFactoryOptions.builder().from(baseOptions)
+
+            username?.takeIf { it.isNotBlank() }?.let {
+                builder.option(ConnectionFactoryOptions.USER, it)
+            }
+
+            password?.takeIf { it.isNotBlank() }?.let {
+                builder.option(ConnectionFactoryOptions.PASSWORD, it)
+            }
+
+            return ConnectionFactories.get(builder.build())
         }
     }
 }

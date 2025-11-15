@@ -8,8 +8,10 @@ spring:
         username: root
         password: root
         routing:
-            master-url: r2dbc:pool:mysql://localhost:13306/crm?user=root&password=root
-            replica-url: r2dbc:pool:mysql://localhost:13306/crm?user=root&password=root
+            master-url: r2dbc:pool:mysql://localhost:13306/crm
+            replica-url: r2dbc:pool:mysql://localhost:13306/crm
+            username: root
+            password: root
     data:
         redis:
             cluster:
