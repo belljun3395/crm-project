@@ -1,4 +1,4 @@
-package com.manage.crm.config
+package com.manage.crm.infrastructure.cache.config
 
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.cache.CacheManager

@@ -1,4 +1,4 @@
-package com.manage.crm.config
+package com.manage.crm.infrastructure.cache.listener
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.annotation.SqsListener
@@ -34,9 +34,9 @@ class CacheInvalidationListener(
 
     private fun processMessage(messageJson: String) {
         try {
-            val messageMap = objectMapper.readValue(messageJson, Map::class.java) as Map<String, Any>
+            val messageMap = objectMapper.readValue(messageJson, Map::class.java) as Map<*, *>
             val snsMessage = messageMap["Message"] as String // SNS 메시지 구조에서 실제 메시지 추출
-            val payload = objectMapper.readValue(snsMessage, Map::class.java) as Map<String, Any>
+            val payload = objectMapper.readValue(snsMessage, Map::class.java) as Map<*, *>
 
             if (payload["action"] == "invalidate") {
                 val keys = payload["keys"] as? List<String>
