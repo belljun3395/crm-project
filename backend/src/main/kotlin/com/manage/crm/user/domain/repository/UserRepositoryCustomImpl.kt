@@ -2,7 +2,6 @@ package com.manage.crm.user.domain.repository
 
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.vo.UserAttributes
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.springframework.r2dbc.core.DatabaseClient
@@ -59,7 +58,8 @@ class UserRepositoryCustomImpl(
                     updatedAt = it["updated_at"] as LocalDateTime
                 )
             }
-            .toList()
+            .collectList()
+            .awaitFirst()
     }
 
     override suspend fun countAll(): Long {
