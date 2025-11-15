@@ -49,6 +49,7 @@ dependencyManagement {
     imports {
         mavenBom("org.springframework.modulith:spring-modulith-bom:${DependencyVersion.SPRING_MODULITH}")
         mavenBom("org.springframework.cloud:spring-cloud-dependencies:${DependencyVersion.SPRING_CLOUD}")
+        mavenBom("software.amazon.awssdk:bom:${DependencyVersion.AWS_SDK}")
     }
 }
 
@@ -101,9 +102,10 @@ dependencies {
 
     /** aws */
     implementation("io.awspring.cloud:spring-cloud-aws-starter-sqs:${DependencyVersion.AWS_SQS}")
-    implementation("software.amazon.awssdk:scheduler:${DependencyVersion.SCHEDULER}")
+    implementation("software.amazon.awssdk:scheduler")
     implementation("com.amazonaws:aws-java-sdk-ses:${DependencyVersion.AWS_SES}")
-    implementation("software.amazon.awssdk:sns:${DependencyVersion.AWS_SDK}")
+    implementation("software.amazon.awssdk:sns")
+    implementation("software.amazon.awssdk:aws-query-protocol")
 
     /** docs */
     runtimeOnly("com.github.therapi:therapi-runtime-javadoc-scribe:${DependencyVersion.JAVADOC_SCRIBE}")
