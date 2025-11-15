@@ -7,6 +7,11 @@ spring:
         url: r2dbc:pool:mysql://localhost:13306/test
         username: root
         password: root
+        routing:
+            master-url: r2dbc:pool:mysql://localhost:13306/test
+            replica-url: r2dbc:pool:mysql://localhost:13306/test
+            username: root
+            password: root
     data:
         redis:
             cluster:
