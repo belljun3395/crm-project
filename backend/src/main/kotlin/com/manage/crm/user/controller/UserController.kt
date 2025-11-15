@@ -36,8 +36,13 @@ class UserController(
 
     @GetMapping
     suspend fun browseUsers(
-        @RequestParam(defaultValue = "0") @Min(0) page: Int,
-        @RequestParam(defaultValue = "20") @Min(1) @Max(100) size: Int
+        @RequestParam(defaultValue = "0")
+        @Min(0)
+        page: Int,
+        @RequestParam(defaultValue = "20")
+        @Min(1)
+        @Max(100)
+        size: Int
     ): ApiResponse<ApiResponse.SuccessBody<BrowseUsersUseCaseOut>> {
         return browseUsersUseCase
             .execute(BrowseUsersUseCaseIn(page = page, size = size))
