@@ -7,6 +7,7 @@ import com.manage.crm.email.application.dto.SendEmailOutDto
 import com.manage.crm.email.application.service.MailService
 import com.manage.crm.email.domain.vo.EmailProviderType
 import com.manage.crm.email.domain.vo.SentEmailStatus
+import com.manage.crm.email.event.relay.aws.SesEmailEventFactory
 import com.manage.crm.email.event.relay.aws.SesMessageReverseRelay
 import com.manage.crm.email.event.relay.aws.mapper.SesMessageMapper
 import com.manage.crm.email.support.EmailEventPublisher
@@ -51,8 +52,13 @@ class EmailSendEventListenerTest(
 ) : MailEventInvokeSituationTest() {
 
     private val sesMessageReverseRelayEmailEventPublisher = mock(EmailEventPublisher::class.java)
+    private val sesEmailEventFactory = SesEmailEventFactory()
     private var sesMessageReverseRelay: SesMessageReverseRelay =
-        SesMessageReverseRelay(sesMessageReverseRelayEmailEventPublisher, eventMessageMapper)
+        SesMessageReverseRelay(
+            sesMessageReverseRelayEmailEventPublisher,
+            eventMessageMapper,
+            sesEmailEventFactory
+        )
 
     @Test
     fun `after mail service is called`(scenario: Scenario) {
