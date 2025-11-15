@@ -136,11 +136,22 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
         }
 
         private fun configureDatabaseProperties(registry: DynamicPropertyRegistry) {
-            registry.add("spring.r2dbc.url") {
-                "r2dbc:pool:mysql://${mysqlContainer.host}:${mysqlContainer.getMappedPort(3306)}/${mysqlConfig.databaseName}?useSSL=false"
-            }
+            val r2dbcUrl = "r2dbc:pool:mysql://${mysqlContainer.host}:${mysqlContainer.getMappedPort(3306)}/${mysqlConfig.databaseName}?useSSL=false"
+
+            registry.add("spring.r2dbc.url") { r2dbcUrl }
             registry.add("spring.r2dbc.username") { mysqlConfig.username }
             registry.add("spring.r2dbc.password") { mysqlConfig.password }
+
+            // R2DBC routing configuration
+            registry.add("spring.r2dbc.routing.master-url") {
+                "r2dbc:pool:mysql://${mysqlContainer.host}:${mysqlContainer.getMappedPort(3306)}/${mysqlConfig.databaseName}"
+            }
+            registry.add("spring.r2dbc.routing.replica-url") {
+                "r2dbc:pool:mysql://${mysqlContainer.host}:${mysqlContainer.getMappedPort(3306)}/${mysqlConfig.databaseName}"
+            }
+            registry.add("spring.r2dbc.routing.username") { mysqlConfig.username }
+            registry.add("spring.r2dbc.routing.password") { mysqlConfig.password }
+
             registry.add("spring.flyway.url") { mysqlContainer.jdbcUrl }
             registry.add("spring.flyway.user") { mysqlConfig.username }
             registry.add("spring.flyway.password") { mysqlConfig.password }
