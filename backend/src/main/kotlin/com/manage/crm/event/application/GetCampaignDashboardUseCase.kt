@@ -1,7 +1,6 @@
 package com.manage.crm.event.application
 
 import com.manage.crm.event.domain.CampaignDashboardMetrics
-import com.manage.crm.event.domain.MetricType
 import com.manage.crm.event.domain.TimeWindowUnit
 import com.manage.crm.event.service.CampaignDashboardService
 import org.springframework.stereotype.Component

@@ -7,7 +7,6 @@ import com.manage.crm.event.domain.repository.CampaignDashboardMetricsRepository
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.infrastructure.stream.CampaignDashboardEvent
 import com.manage.crm.event.infrastructure.stream.CampaignDashboardStreamService
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -70,7 +69,10 @@ class CampaignDashboardService(
         incrementBy: Long = 1
     ) {
         val existing = campaignDashboardMetricsRepository.findByCampaignIdAndMetricTypeAndTimeWindowStartAndTimeWindowEnd(
-            campaignId, metricType, timeWindowStart, timeWindowEnd
+            campaignId,
+            metricType,
+            timeWindowStart,
+            timeWindowEnd
         )
 
         if (existing != null) {
@@ -210,14 +212,14 @@ class CampaignDashboardService(
         val eventsLast24Hours = metrics
             .filter {
                 it.metricType == MetricType.EVENT_COUNT &&
-                it.timeWindowStart.isAfter(last24Hours)
+                    it.timeWindowStart.isAfter(last24Hours)
             }
             .sumOf { it.metricValue }
 
         val eventsLast7Days = metrics
             .filter {
                 it.metricType == MetricType.EVENT_COUNT &&
-                it.timeWindowStart.isAfter(last7Days)
+                    it.timeWindowStart.isAfter(last7Days)
             }
             .sumOf { it.metricValue }
 

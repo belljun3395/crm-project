@@ -49,7 +49,10 @@ class CampaignDashboardServiceTest : BehaviorSpec({
             coEvery { streamService.publishEvent(any()) } returns Unit
             coEvery {
                 campaignDashboardMetricsRepository.findByCampaignIdAndMetricTypeAndTimeWindowStartAndTimeWindowEnd(
-                    any(), any(), any(), any()
+                    any(),
+                    any(),
+                    any(),
+                    any()
                 )
             } returns null
             coEvery { campaignDashboardMetricsRepository.save(capture(metricSlot)) } answers { metricSlot.captured }

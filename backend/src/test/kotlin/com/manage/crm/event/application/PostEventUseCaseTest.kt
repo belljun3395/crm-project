@@ -13,7 +13,6 @@ import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
-import com.manage.crm.event.infrastructure.stream.CampaignDashboardEvent
 import com.manage.crm.event.service.CampaignDashboardService
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.user.domain.UserFixtures
@@ -26,7 +25,6 @@ import io.mockk.coEvery
 import io.mockk.coInvoke
 import io.mockk.coVerify
 import io.mockk.mockk
-import io.mockk.slot
 
 class PostEventUseCaseTest : BehaviorSpec({
     lateinit var eventRepository: EventRepository
@@ -206,9 +204,9 @@ class PostEventUseCaseTest : BehaviorSpec({
                     campaignDashboardService.publishCampaignEvent(
                         match {
                             it.campaignId == campaign.id &&
-                            it.eventId == event.id &&
-                            it.userId == event.userId &&
-                            it.eventName == event.name
+                                it.eventId == event.id &&
+                                it.userId == event.userId &&
+                                it.eventName == event.name
                         }
                     )
                 }

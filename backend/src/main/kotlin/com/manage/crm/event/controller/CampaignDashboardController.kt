@@ -5,15 +5,12 @@ import com.manage.crm.event.application.GetCampaignDashboardUseCase
 import com.manage.crm.event.application.GetCampaignDashboardUseCaseIn
 import com.manage.crm.event.application.GetCampaignDashboardUseCaseOut
 import com.manage.crm.event.domain.TimeWindowUnit
-import com.manage.crm.event.infrastructure.stream.CampaignDashboardEvent
 import com.manage.crm.event.service.CampaignDashboardService
 import com.manage.crm.support.web.ApiResponse
 import com.manage.crm.support.web.ApiResponseGenerator
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.reactive.asFlow
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
