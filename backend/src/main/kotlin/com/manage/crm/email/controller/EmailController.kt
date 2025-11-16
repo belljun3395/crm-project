@@ -2,6 +2,7 @@ package com.manage.crm.email.controller
 
 import com.manage.crm.config.SwaggerTag
 import com.manage.crm.email.application.BrowseEmailNotificationSchedulesUseCase
+import com.manage.crm.email.application.BrowseEmailSendHistoriesUseCase
 import com.manage.crm.email.application.BrowseTemplateUseCase
 import com.manage.crm.email.application.CancelNotificationEmailUseCase
 import com.manage.crm.email.application.DeleteTemplateUseCase
@@ -9,6 +10,8 @@ import com.manage.crm.email.application.PostEmailNotificationSchedulesUseCase
 import com.manage.crm.email.application.PostTemplateUseCase
 import com.manage.crm.email.application.SendNotificationEmailUseCase
 import com.manage.crm.email.application.dto.BrowseEmailNotificationSchedulesUseCaseOut
+import com.manage.crm.email.application.dto.BrowseEmailSendHistoriesUseCaseIn
+import com.manage.crm.email.application.dto.BrowseEmailSendHistoriesUseCaseOut
 import com.manage.crm.email.application.dto.BrowseTemplateUseCaseIn
 import com.manage.crm.email.application.dto.BrowseTemplateUseCaseOut
 import com.manage.crm.email.application.dto.CancelNotificationEmailUseCaseIn
@@ -50,7 +53,8 @@ class EmailController(
     private val sendNotificationEmailUseCase: SendNotificationEmailUseCase,
     private val browseEmailNotificationSchedulesUseCase: BrowseEmailNotificationSchedulesUseCase,
     private val postEmailNotificationSchedulesUseCase: PostEmailNotificationSchedulesUseCase,
-    private val cancelNotificationEmailUseCase: CancelNotificationEmailUseCase
+    private val cancelNotificationEmailUseCase: CancelNotificationEmailUseCase,
+    private val browseEmailSendHistoriesUseCase: BrowseEmailSendHistoriesUseCase
 ) {
     @GetMapping(value = ["/templates"])
     suspend fun browseEmailTemplates(
@@ -139,6 +143,18 @@ class EmailController(
     ): ApiResponse<ApiResponse.SuccessBody<CancelNotificationEmailUseCaseOut>> {
         return cancelNotificationEmailUseCase
             .execute(CancelNotificationEmailUseCaseIn(EventId(scheduleId)))
+            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+    }
+
+    @GetMapping(value = ["/histories"])
+    suspend fun browseEmailSendHistories(
+        @RequestParam(required = false) userId: Long?,
+        @RequestParam(required = false) sendStatus: String?,
+        @RequestParam(required = false, defaultValue = "0") page: Int,
+        @RequestParam(required = false, defaultValue = "20") size: Int
+    ): ApiResponse<ApiResponse.SuccessBody<BrowseEmailSendHistoriesUseCaseOut>> {
+        return browseEmailSendHistoriesUseCase
+            .execute(BrowseEmailSendHistoriesUseCaseIn(userId = userId, sendStatus = sendStatus, page = page, size = size))
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
     }
 }
