@@ -64,6 +64,8 @@ func main() {
 	router.Use(middleware.Logger(app.Logger))
 	router.Use(middleware.Recovery(app.Logger))
 	router.Use(middleware.CORS())
+	router.Use(middleware.RateLimit(100, 200))             // 100 requests/second with burst of 200
+	router.Use(middleware.BodySizeLimit(10 * 1024 * 1024)) // 10MB max body size
 
 	// Swagger documentation
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

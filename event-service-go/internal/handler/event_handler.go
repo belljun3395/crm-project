@@ -13,16 +13,21 @@ import (
 
 // EventHandler handles HTTP requests for events
 type EventHandler struct {
-	eventService *service.EventService
+	eventService EventServiceInterface
 	logger       *zap.Logger
 }
 
 // NewEventHandler creates a new event handler
-func NewEventHandler(eventService *service.EventService, logger *zap.Logger) *EventHandler {
+func NewEventHandler(eventService EventServiceInterface, logger *zap.Logger) *EventHandler {
 	return &EventHandler{
 		eventService: eventService,
 		logger:       logger,
 	}
+}
+
+// NewEventHandlerFromService creates a new event handler from concrete service
+func NewEventHandlerFromService(eventService *service.EventService, logger *zap.Logger) *EventHandler {
+	return NewEventHandler(eventService, logger)
 }
 
 // CreateEvent godoc

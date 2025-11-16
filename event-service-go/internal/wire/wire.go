@@ -39,8 +39,8 @@ func InitializeApp(cfg *config.Config) (*App, error) {
 		service.NewCampaignService,
 
 		// Handlers
-		handler.NewEventHandler,
-		handler.NewCampaignHandler,
+		handler.NewEventHandlerFromService,
+		handler.NewCampaignHandlerFromService,
 		handler.NewHealthHandler,
 
 		// App

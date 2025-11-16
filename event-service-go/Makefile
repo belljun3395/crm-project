@@ -22,10 +22,10 @@ deps: ## Download dependencies
 	$(GOMOD) tidy
 
 wire: ## Generate Wire dependency injection
-	cd internal/wire && $(WIRE)
+	$(HOME)/go/bin/wire ./internal/wire
 
 swagger: ## Generate Swagger documentation
-	$(SWAG) init -g main.go --output ./docs
+	$(HOME)/go/bin/swag init -g main.go --output ./docs
 
 build: deps wire ## Build the application
 	mkdir -p bin

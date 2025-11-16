@@ -13,16 +13,21 @@ import (
 
 // CampaignHandler handles HTTP requests for campaigns
 type CampaignHandler struct {
-	campaignService *service.CampaignService
+	campaignService CampaignServiceInterface
 	logger          *zap.Logger
 }
 
 // NewCampaignHandler creates a new campaign handler
-func NewCampaignHandler(campaignService *service.CampaignService, logger *zap.Logger) *CampaignHandler {
+func NewCampaignHandler(campaignService CampaignServiceInterface, logger *zap.Logger) *CampaignHandler {
 	return &CampaignHandler{
 		campaignService: campaignService,
 		logger:          logger,
 	}
+}
+
+// NewCampaignHandlerFromService creates a new campaign handler from concrete service
+func NewCampaignHandlerFromService(campaignService *service.CampaignService, logger *zap.Logger) *CampaignHandler {
+	return NewCampaignHandler(campaignService, logger)
 }
 
 // CreateCampaign godoc
