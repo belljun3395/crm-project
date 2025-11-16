@@ -77,6 +77,7 @@ enum class SesEventType {
             val normalized = value
                 ?.replace("-", "", ignoreCase = true)
                 ?.replace("_", "", ignoreCase = true)
+                ?.replace(" ", "", ignoreCase = true)
                 ?.uppercase()
             return when (normalized) {
                 "SEND" -> SEND
