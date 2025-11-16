@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  event-service-go:
+    build: .
+    ports:
+      - "8081:8081"
+    environment:
+      - SERVER_PORT=8081
+      - ENV=production
+      - DB_HOST=host.docker.internal
+      - DB_PORT=13306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=crm
+      - REDIS_NODE_1=host.docker.internal:7001
+      - REDIS_NODE_2=host.docker.internal:7002
+      - REDIS_NODE_3=host.docker.internal:7003
+      - REDIS_NODE_4=host.docker.internal:7004
+      - REDIS_NODE_5=host.docker.internal:7005
+      - REDIS_NODE_6=host.docker.internal:7006
+      - REDIS_PASSWORD=password
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
