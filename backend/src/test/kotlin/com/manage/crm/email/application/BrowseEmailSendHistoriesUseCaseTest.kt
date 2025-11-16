@@ -65,7 +65,7 @@ class BrowseEmailSendHistoriesUseCaseTest : BehaviorSpec({
             val historyStubs = emailSendHistoryStubs(historyStubSize, userId = testUserId)
 
             coEvery { emailSendHistoryRepository.countByUserId(testUserId) } returns historyStubSize.toLong()
-            coEvery { emailSendHistoryRepository.findByUserId(testUserId) } answers { historyStubs.asFlow() }
+            coEvery { emailSendHistoryRepository.findByUserIdOrderByCreatedAtDesc(testUserId) } answers { historyStubs.asFlow() }
 
             val result = useCase.execute(useCaseIn)
 
@@ -79,7 +79,7 @@ class BrowseEmailSendHistoriesUseCaseTest : BehaviorSpec({
 
             then("find histories by user id") {
                 coVerify(exactly = 1) { emailSendHistoryRepository.countByUserId(testUserId) }
-                coVerify(exactly = 1) { emailSendHistoryRepository.findByUserId(testUserId) }
+                coVerify(exactly = 1) { emailSendHistoryRepository.findByUserIdOrderByCreatedAtDesc(testUserId) }
             }
         }
 
@@ -90,7 +90,7 @@ class BrowseEmailSendHistoriesUseCaseTest : BehaviorSpec({
             val historyStubs = emailSendHistoryStubs(historyStubSize, sendStatus = testStatus)
 
             coEvery { emailSendHistoryRepository.countBySendStatus(testStatus) } returns historyStubSize.toLong()
-            coEvery { emailSendHistoryRepository.findBySendStatus(testStatus) } answers { historyStubs.asFlow() }
+            coEvery { emailSendHistoryRepository.findBySendStatusOrderByCreatedAtDesc(testStatus) } answers { historyStubs.asFlow() }
 
             val result = useCase.execute(useCaseIn)
 
@@ -104,7 +104,7 @@ class BrowseEmailSendHistoriesUseCaseTest : BehaviorSpec({
 
             then("find histories by send status") {
                 coVerify(exactly = 1) { emailSendHistoryRepository.countBySendStatus(testStatus) }
-                coVerify(exactly = 1) { emailSendHistoryRepository.findBySendStatus(testStatus) }
+                coVerify(exactly = 1) { emailSendHistoryRepository.findBySendStatusOrderByCreatedAtDesc(testStatus) }
             }
         }
 
@@ -119,7 +119,7 @@ class BrowseEmailSendHistoriesUseCaseTest : BehaviorSpec({
                 emailSendHistoryRepository.countByUserIdAndSendStatus(testUserId, testStatus)
             } returns historyStubSize.toLong()
             coEvery {
-                emailSendHistoryRepository.findByUserIdAndSendStatus(testUserId, testStatus)
+                emailSendHistoryRepository.findByUserIdAndSendStatusOrderByCreatedAtDesc(testUserId, testStatus)
             } answers { historyStubs.asFlow() }
 
             val result = useCase.execute(useCaseIn)
@@ -138,7 +138,7 @@ class BrowseEmailSendHistoriesUseCaseTest : BehaviorSpec({
                     emailSendHistoryRepository.countByUserIdAndSendStatus(testUserId, testStatus)
                 }
                 coVerify(exactly = 1) {
-                    emailSendHistoryRepository.findByUserIdAndSendStatus(testUserId, testStatus)
+                    emailSendHistoryRepository.findByUserIdAndSendStatusOrderByCreatedAtDesc(testUserId, testStatus)
                 }
             }
         }

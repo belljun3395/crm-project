@@ -37,13 +37,13 @@ class BrowseEmailSendHistoriesUseCase(
 
         val histories = when {
             userId != null && sendStatus != null -> {
-                emailSendHistoryRepository.findByUserIdAndSendStatus(userId, sendStatus)
+                emailSendHistoryRepository.findByUserIdAndSendStatusOrderByCreatedAtDesc(userId, sendStatus)
             }
             userId != null -> {
-                emailSendHistoryRepository.findByUserId(userId)
+                emailSendHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId)
             }
             sendStatus != null -> {
-                emailSendHistoryRepository.findBySendStatus(sendStatus)
+                emailSendHistoryRepository.findBySendStatusOrderByCreatedAtDesc(sendStatus)
             }
             else -> {
                 emailSendHistoryRepository.findAllByOrderByCreatedAtDesc()
