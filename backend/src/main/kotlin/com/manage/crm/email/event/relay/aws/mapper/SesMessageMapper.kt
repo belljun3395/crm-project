@@ -1,95 +1,76 @@
 package com.manage.crm.email.event.relay.aws.mapper
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.manage.crm.email.domain.vo.EmailProviderType
-import com.manage.crm.email.domain.vo.SentEmailStatus
-import com.manage.crm.email.event.send.EmailClickEvent
-import com.manage.crm.email.event.send.EmailDeliveryDelayEvent
-import com.manage.crm.email.event.send.EmailDeliveryEvent
-import com.manage.crm.email.event.send.EmailOpenEvent
-import com.manage.crm.email.event.send.EmailSendEvent
+import com.manage.crm.email.event.relay.aws.model.SesEventMessage
+import com.manage.crm.email.event.relay.aws.model.SesEventType
+import com.manage.crm.email.event.relay.aws.model.SesSnsNotification
 import org.springframework.stereotype.Component
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
-import java.util.*
+import java.time.format.DateTimeParseException
 
-fun ObjectMapper.readMessage(message: String): JsonNode = readTree(message)["Message"]!!
-
-fun ObjectMapper.readMail(message: String): JsonNode = readTree(message)["mail"]!!
-
-fun ObjectMapper.readEventType(message: String): String = readTree(message)["eventType"].asText().toUpperCase()
-
-fun JsonNode.messageId(): String = this["messageId"].asText()
-
-fun JsonNode.timestamp(): LocalDateTime = (this["timestamp"].asText()).let { ZonedDateTime.parse(it).toLocalDateTime() }
-
-fun JsonNode.destination(): String = this["destination"].first().asText()
-
-data class SesMessage(
-    val status: SentEmailStatus,
+data class SesEmailNotification(
+    val eventType: SesEventType,
     val messageId: String,
     val destination: String,
-    val timestamp: LocalDateTime
+    val occurredAt: LocalDateTime
 )
 
 @Component
 class SesMessageMapper(
     private val objectMapper: ObjectMapper
 ) {
-    fun map(message: String): SesMessage {
-        objectMapper
-            .readMessage(message)
-            .let {
-                val mail = objectMapper.readMail(it.asText())
-                val eventType = SentEmailStatus.valueOf(objectMapper.readEventType(it.asText()))
-                return SesMessage(
-                    status = eventType,
-                    messageId = mail.messageId(),
-                    destination = mail.destination(),
-                    timestamp = mail.timestamp()
-                )
-            }
+
+    fun map(message: String): SesEmailNotification {
+        val snsNotification = objectMapper.readValue(message, SesSnsNotification::class.java)
+        val eventPayload = objectMapper.readValue(snsNotification.rawMessage, SesEventMessage::class.java)
+
+        val resolvedEventType = eventPayload.resolvedEventType
+            ?: throw IllegalArgumentException("Unsupported SES event without eventType/notificationType: ${snsNotification.messageId}")
+
+        val timestamp = eventPayload.resolveTimestamp()
+            ?: throw IllegalArgumentException("SES event missing timestamp for type: $resolvedEventType")
+
+        val destination = eventPayload.mail.destination.firstOrNull()
+            ?: eventPayload.mail.commonHeaders?.to?.firstOrNull()
+            ?: throw IllegalArgumentException("SES event missing destination: ${eventPayload.mail}")
+
+        return SesEmailNotification(
+            eventType = resolvedEventType,
+            messageId = eventPayload.mail.messageId,
+            destination = destination,
+            occurredAt = timestamp
+        )
     }
 
-    fun toEvent(message: SesMessage): Optional<EmailSendEvent> =
-        when (message.status) {
-            SentEmailStatus.OPEN ->
-                Optional.of(
-                    EmailOpenEvent(
-                        messageId = message.messageId,
-                        destination = message.destination,
-                        timestamp = message.timestamp,
-                        provider = EmailProviderType.AWS
-                    )
-                )
-            SentEmailStatus.DELIVERY ->
-                Optional.of(
-                    EmailDeliveryEvent(
-                        messageId = message.messageId,
-                        destination = message.destination,
-                        timestamp = message.timestamp,
-                        provider = EmailProviderType.AWS
-                    )
-                )
-            SentEmailStatus.CLICK ->
-                Optional.of(
-                    EmailClickEvent(
-                        messageId = message.messageId,
-                        destination = message.destination,
-                        timestamp = message.timestamp,
-                        provider = EmailProviderType.AWS
-                    )
-                )
-            SentEmailStatus.DELIVERYDELAY ->
-                Optional.of(
-                    EmailDeliveryDelayEvent(
-                        messageId = message.messageId,
-                        destination = message.destination,
-                        timestamp = message.timestamp,
-                        provider = EmailProviderType.AWS
-                    )
-                )
-            else -> Optional.empty()
+    private fun SesEventMessage.resolveTimestamp(): LocalDateTime? {
+        val candidateTimestamp = delivery?.timestamp
+            ?: open?.timestamp
+            ?: click?.timestamp
+            ?: deliveryDelay?.timestamp
+            ?: bounce?.timestamp
+            ?: complaint?.timestamp
+            ?: send?.timestamp
+            ?: mail.timestamp
+        return candidateTimestamp?.let(::parseToLocalDateTime)
+    }
+
+    private fun parseToLocalDateTime(value: String): LocalDateTime? {
+        return try {
+            ZonedDateTime.parse(value).toLocalDateTime()
+        } catch (_: DateTimeParseException) {
+            try {
+                OffsetDateTime.parse(value).toLocalDateTime()
+            } catch (_: DateTimeParseException) {
+                try {
+                    Instant.parse(value).atOffset(ZoneOffset.UTC).toLocalDateTime()
+                } catch (_: DateTimeParseException) {
+                    null
+                }
+            }
         }
+    }
 }
