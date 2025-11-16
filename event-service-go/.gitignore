@@ -1,0 +1,55 @@
+# Binaries for programs and plugins
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# Built binary
+event-service
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+
+# Wire generated files
+internal/wire/wire_gen.go
+
+# Swagger generated files
+docs/swagger.json
+docs/swagger.yaml
+docs/docs.go
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+
+# Build artifacts
+main.go.bak
