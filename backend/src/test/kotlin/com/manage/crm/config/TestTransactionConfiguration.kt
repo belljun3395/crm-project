@@ -1,6 +1,9 @@
 package com.manage.crm.config
 
+import com.amazonaws.auth.AWSCredentials
+import com.manage.crm.infrastructure.AwsConfig
 import com.zaxxer.hikari.HikariDataSource
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.boot.test.context.TestConfiguration
@@ -25,5 +28,12 @@ class TestTransactionConfiguration {
     @Bean
     fun transactionalTemplate(transactionManager: PlatformTransactionManager): TransactionTemplate {
         return TransactionTemplate(transactionManager)
+    }
+
+    @Bean(name = [AwsConfig.AWS_CREDENTIAL_PROVIDER])
+    @ConditionalOnMissingBean(AWSCredentials::class)
+    fun testAwsCredentials(): AWSCredentials = object : AWSCredentials {
+        override fun getAWSAccessKeyId(): String = "test-access-key"
+        override fun getAWSSecretKey(): String = "test-secret-key"
     }
 }
