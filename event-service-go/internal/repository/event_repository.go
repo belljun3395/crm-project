@@ -55,6 +55,11 @@ func (r *EventRepository) SearchByProperty(ctx context.Context, eventName string
 
 	// Build JSON search conditions
 	for _, prop := range properties {
+		// Validate property key to prevent SQL injection
+		if err := model.ValidatePropertyKey(prop.Key); err != nil {
+			return nil, fmt.Errorf("invalid property key '%s': %w", prop.Key, err)
+		}
+
 		switch operation {
 		case model.OpEqual:
 			query = query.Where(fmt.Sprintf("JSON_EXTRACT(properties, '$.%s') = ?", prop.Key), prop.Value)

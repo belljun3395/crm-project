@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"event-service-go/internal/dto"
@@ -47,10 +48,17 @@ func (s *CampaignService) CreateCampaign(ctx context.Context, req *dto.CreateCam
 		properties[i] = model.Property{Key: p.Key, Value: p.Value}
 	}
 
+	// Marshal properties to JSON
+	propertiesJSON, err := json.Marshal(properties)
+	if err != nil {
+		s.logger.Error("Failed to marshal properties", zap.Error(err))
+		return nil, apperrors.NewBadRequestError("Invalid properties format", err)
+	}
+
 	// Create campaign
 	campaign := &model.Campaign{
 		Name:       req.Name,
-		Properties: properties,
+		Properties: propertiesJSON,
 		CreatedAt:  time.Now(),
 	}
 

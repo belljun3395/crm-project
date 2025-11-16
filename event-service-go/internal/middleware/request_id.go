@@ -30,7 +30,9 @@ func RequestID() gin.HandlerFunc {
 // GetRequestID retrieves the request ID from the context
 func GetRequestID(c *gin.Context) string {
 	if requestID, exists := c.Get(RequestIDKey); exists {
-		return requestID.(string)
+		if id, ok := requestID.(string); ok {
+			return id
+		}
 	}
 	return ""
 }

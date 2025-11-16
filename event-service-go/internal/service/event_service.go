@@ -2,6 +2,9 @@ package service
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	"event-service-go/internal/dto"
@@ -56,11 +59,18 @@ func (s *EventService) CreateEvent(ctx context.Context, req *dto.CreateEventRequ
 		properties[i] = model.Property{Key: p.Key, Value: p.Value}
 	}
 
+	// Marshal properties to JSON
+	propertiesJSON, err := json.Marshal(properties)
+	if err != nil {
+		s.logger.Error("Failed to marshal properties", zap.Error(err))
+		return nil, apperrors.NewBadRequestError("Invalid properties format", err)
+	}
+
 	// Create event
 	event := &model.Event{
 		Name:       req.Name,
-		UserID:     user.ID,
-		Properties: properties,
+		UserID:     &user.ID,
+		Properties: propertiesJSON,
 		CreatedAt:  time.Now(),
 	}
 
@@ -127,25 +137,37 @@ func (s *EventService) linkEventToCampaign(ctx context.Context, event *model.Eve
 
 // SearchEvents searches for events
 func (s *EventService) SearchEvents(ctx context.Context, req *dto.SearchEventsRequest) (*dto.SearchEventsResponse, error) {
-	// Parse where clause (simplified implementation)
-	// For production, implement proper query parser
 	var events []model.Event
 	var err error
 
-	// For now, just search by name
-	events, err = s.eventRepo.FindByName(ctx, req.EventName)
-	if err != nil {
-		s.logger.Error("Failed to search events", zap.Error(err))
-		return nil, apperrors.NewDatabaseError("Failed to search events", err)
+	// Parse where clause and search by properties
+	if req.Where != "" {
+		properties, operation, err := parseWhereClause(req.Where)
+		if err != nil {
+			return nil, apperrors.NewBadRequestError("Invalid where clause", err)
+		}
+
+		events, err = s.eventRepo.SearchByProperty(ctx, req.EventName, properties, operation)
+		if err != nil {
+			s.logger.Error("Failed to search events by property", zap.Error(err))
+			return nil, apperrors.NewDatabaseError("Failed to search events", err)
+		}
+	} else {
+		// If no where clause, just search by name
+		events, err = s.eventRepo.FindByName(ctx, req.EventName)
+		if err != nil {
+			s.logger.Error("Failed to search events", zap.Error(err))
+			return nil, apperrors.NewDatabaseError("Failed to search events", err)
+		}
 	}
 
 	// Get user information
 	userIDs := make([]int64, 0, len(events))
 	userIDSet := make(map[int64]bool)
 	for _, event := range events {
-		if !userIDSet[event.UserID] {
-			userIDs = append(userIDs, event.UserID)
-			userIDSet[event.UserID] = true
+		if event.UserID != nil && !userIDSet[*event.UserID] {
+			userIDs = append(userIDs, *event.UserID)
+			userIDSet[*event.UserID] = true
 		}
 	}
 
@@ -164,12 +186,23 @@ func (s *EventService) SearchEvents(ctx context.Context, req *dto.SearchEventsRe
 	eventDTOs := make([]dto.EventDTO, len(events))
 	for i, event := range events {
 		var externalID *string
-		if user, ok := userMap[event.UserID]; ok {
-			externalID = &user.ExternalID
+		if event.UserID != nil {
+			if user, ok := userMap[*event.UserID]; ok {
+				externalID = &user.ExternalID
+			}
 		}
 
-		properties := make([]dto.PropertyDTO, len(event.Properties))
-		for j, prop := range event.Properties {
+		// Unmarshal properties from JSON
+		var props model.Properties
+		if err := json.Unmarshal(event.Properties, &props); err != nil {
+			s.logger.Warn("Failed to unmarshal event properties",
+				zap.Error(err),
+				zap.Int64("event_id", event.ID))
+			props = model.Properties{}
+		}
+
+		properties := make([]dto.PropertyDTO, len(props))
+		for j, prop := range props {
 			properties[j] = dto.PropertyDTO{
 				Key:   prop.Key,
 				Value: prop.Value,
@@ -188,4 +221,83 @@ func (s *EventService) SearchEvents(ctx context.Context, req *dto.SearchEventsRe
 	return &dto.SearchEventsResponse{
 		Events: eventDTOs,
 	}, nil
+}
+
+// parseWhereClause parses the where clause string into properties and operation
+// Format: key&value&operation&joinOperation
+// Example: product&laptop&=&end
+func parseWhereClause(where string) (model.Properties, model.Operation, error) {
+	parts := strings.Split(where, "&")
+	if len(parts) < 4 {
+		return nil, "", fmt.Errorf("where clause must have at least 4 parts (key&value&operation&joinOperation)")
+	}
+
+	// Parse each property query (grouped by 4)
+	var properties model.Properties
+	var operation model.Operation
+
+	for i := 0; i+3 < len(parts); i += 4 {
+		key := parts[i]
+		value := parts[i+1]
+		op := parts[i+2]
+		join := parts[i+3]
+
+		// Validate property key
+		if err := model.ValidatePropertyKey(key); err != nil {
+			return nil, "", fmt.Errorf("invalid property key '%s': %w", key, err)
+		}
+
+		// Parse operation
+		parsedOp, err := parseOperation(op)
+		if err != nil {
+			return nil, "", err
+		}
+
+		// For now, we use the same operation for all properties
+		// In a more complex implementation, we'd support different operations per property
+		if operation == "" {
+			operation = parsedOp
+		} else if operation != parsedOp {
+			return nil, "", fmt.Errorf("mixed operations not supported in current implementation")
+		}
+
+		properties = append(properties, model.Property{
+			Key:   key,
+			Value: value,
+		})
+
+		// If join operation is "end", we're done
+		if join == "end" {
+			break
+		}
+		// "and" and "or" join operations would be handled in a more complex implementation
+	}
+
+	if len(properties) == 0 {
+		return nil, "", fmt.Errorf("no properties found in where clause")
+	}
+
+	return properties, operation, nil
+}
+
+// parseOperation converts string operation to model.Operation
+func parseOperation(op string) (model.Operation, error) {
+	switch op {
+	case "=":
+		return model.OpEqual, nil
+	case "!=":
+		return model.OpNotEqual, nil
+	case ">":
+		return model.OpGreater, nil
+	case ">=":
+		return model.OpGreaterEqual, nil
+	case "<":
+		return model.OpLess, nil
+	case "<=":
+		return model.OpLessEqual, nil
+	case "like":
+		return model.OpLike, nil
+	default:
+		return "", fmt.Errorf("unsupported operation: %s", op)
+	}
 }

@@ -14,7 +14,7 @@ import (
 // NewDatabase creates a new GORM database connection
 func NewDatabase(cfg config.DatabaseConfig, logLevel logger.LogLevel) (*gorm.DB, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName)
+		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logLevel),
