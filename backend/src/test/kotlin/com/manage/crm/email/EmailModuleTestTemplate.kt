@@ -14,6 +14,6 @@ import org.springframework.test.context.ActiveProfiles
     module = "email",
     mode = ApplicationModuleTest.BootstrapMode.ALL_DEPENDENCIES,
     classes = [TestTransactionConfiguration::class],
-    extraIncludes = ["config", "webhook"]
+    extraIncludes = ["config"]
 )
 abstract class EmailModuleTestTemplate

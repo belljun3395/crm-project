@@ -15,6 +15,6 @@ import org.springframework.test.context.ActiveProfiles
     module = "user",
     mode = ApplicationModuleTest.BootstrapMode.ALL_DEPENDENCIES,
     classes = [TestTransactionConfiguration::class],
-    extraIncludes = ["config", "webhook"]
+    extraIncludes = ["config"]
 )
 abstract class UserModuleTestTemplate

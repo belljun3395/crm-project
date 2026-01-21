@@ -10,6 +10,7 @@ import com.amazonaws.services.simpleemail.model.CreateConfigurationSetRequest
 import com.amazonaws.services.simpleemail.model.VerifyEmailIdentityRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.integration.config.TestContainerConfig
+import com.manage.crm.webhook.application.WebhookEventListener
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.extensions.spring.SpringExtension
 import org.slf4j.LoggerFactory
@@ -18,6 +19,7 @@ import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.MySQLContainer
@@ -38,6 +40,9 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
 
     @LocalServerPort
     private var port: Int = 0
+
+    @MockitoBean
+    private lateinit var webhookEventListener: WebhookEventListener
 
     protected val objectMapper: ObjectMapper = ObjectMapper()
     protected lateinit var webTestClient: WebTestClient
