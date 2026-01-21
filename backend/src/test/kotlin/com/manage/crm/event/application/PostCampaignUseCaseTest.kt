@@ -59,15 +59,16 @@ class PostCampaignUseCaseTest : BehaviorSpec({
                     PropertiesFixtures.giveMeOne()
                         .withValue(
                             useCaseIn.properties.map {
-                                PropertyFixtures.giveMeOne()
+                                PropertyFixtures.giveMeOneCampaign()
                                     .withKey(it.key)
                                     .withValue(it.value)
-                                    .build()
+                                    .buildCampaign()
                             }
                         )
-                        .build()
+                        .buildCampaign()
                 )
                 .build()
+
             coEvery { campaignRepository.save(any()) } answers { savedCampaign }
 
             coEvery { campaignCacheManager.save(any()) } answers { savedCampaign }

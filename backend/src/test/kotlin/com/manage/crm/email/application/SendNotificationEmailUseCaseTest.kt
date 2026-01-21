@@ -23,8 +23,10 @@ import com.manage.crm.email.domain.vo.Variables
 import com.manage.crm.event.domain.Campaign
 import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.repository.CampaignRepository
-import com.manage.crm.event.domain.vo.Properties
-import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.event.domain.vo.CampaignProperties
+import com.manage.crm.event.domain.vo.CampaignProperty
+import com.manage.crm.event.domain.vo.EventProperties
+import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.exception.NotFoundByIdException
@@ -525,7 +527,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             val mockCampaign = Campaign.new(
                 id = 1L,
                 name = "Test Campaign",
-                properties = Properties(listOf(Property("eventCount", "10"))),
+                properties = CampaignProperties(listOf(CampaignProperty("eventCount", "10"))),
                 createdAt = LocalDateTime.now()
             )
             coEvery { campaignRepository.findById(useCaseIn.campaignId!!) } returns mockCampaign
@@ -535,14 +537,14 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                     id = 1L,
                     name = "test_event",
                     userId = 1L,
-                    properties = Properties(emptyList()),
+                    properties = EventProperties(emptyList()),
                     createdAt = LocalDateTime.now()
                 ),
                 Event.new(
                     id = 2L,
                     name = "test_event",
                     userId = 2L,
-                    properties = Properties(emptyList()),
+                    properties = EventProperties(emptyList()),
                     createdAt = LocalDateTime.now()
                 )
             )
@@ -557,7 +559,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                 val userVariables = variables.filterByType(USER_TYPE).map { it as UserVariable }
                 val campaignVariables = variables.filterByType(CAMPAIGN_TYPE).map { it as CampaignVariable }
                 val userVariablesMap = VariablesSupport.associateUserAttribute(attributes, userVariables, objectMapper)
-                val campaignVariablesMap = VariablesSupport.associateCampaignEventProperty(mockCampaign.properties, Variables(campaignVariables))
+                val campaignVariablesMap = VariablesSupport.associateCampaignEventProperty(mockCampaignEvents.first().properties, Variables(campaignVariables))
                 VariablesContent(userVariablesMap + campaignVariablesMap)
             }
 

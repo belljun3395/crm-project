@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.email.domain.vo.CampaignVariable
 import com.manage.crm.email.domain.vo.UserVariable
 import com.manage.crm.email.domain.vo.Variables
-import com.manage.crm.event.domain.vo.Properties
-import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.event.domain.vo.EventProperties
+import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.user.domain.vo.UserAttributes
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FeatureSpec
@@ -45,7 +45,7 @@ class VariablesSupportTest : FeatureSpec({
         scenario("associate with property key that exists in campaign properties") {
             // given
             val campaignVariable = CampaignVariable("eventCount")
-            val properties = Properties(listOf(Property("eventCount", "10")))
+            val properties = EventProperties(listOf(EventProperty("eventCount", "10")))
 
             // when
             val result = VariablesSupport.associateCampaignEventProperty(properties, Variables(listOf(campaignVariable)))
@@ -57,7 +57,7 @@ class VariablesSupportTest : FeatureSpec({
         scenario("associate with property key that does not exist in campaign properties") {
             // given
             val campaignVariable = CampaignVariable("eventCount")
-            val properties = Properties(listOf(Property("totalCount", "5")))
+            val properties = EventProperties(listOf(EventProperty("totalCount", "5")))
 
             // when
             val result = VariablesSupport.associateCampaignEventProperty(properties, Variables(listOf(campaignVariable)))
@@ -72,10 +72,10 @@ class VariablesSupportTest : FeatureSpec({
                 CampaignVariable("eventCount"),
                 CampaignVariable("totalRevenue")
             )
-            val properties = Properties(
+            val properties = EventProperties(
                 listOf(
-                    Property("eventCount", "10"),
-                    Property("totalRevenue", "1000.50")
+                    EventProperty("eventCount", "10"),
+                    EventProperty("totalRevenue", "1000.50")
                 )
             )
 
