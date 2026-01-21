@@ -1,8 +1,8 @@
 package com.manage.crm.infrastructure.scheduler.monitor
 
+import com.manage.crm.infrastructure.scheduler.ScheduleName
 import com.manage.crm.infrastructure.scheduler.executor.KafkaScheduledTaskExecutor
 import com.manage.crm.infrastructure.scheduler.provider.RedisSchedulerProvider
-import com.manage.crm.infrastructure.scheduler.ScheduleName
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

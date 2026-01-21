@@ -2,7 +2,6 @@ package com.manage.crm.infrastructure.scheduler.consumer
 
 import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
 import com.manage.crm.email.application.service.ScheduleTaskServiceImpl
-import com.manage.crm.infrastructure.scheduler.ScheduleInfo
 import com.manage.crm.infrastructure.scheduler.event.ScheduledTaskEvent
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
