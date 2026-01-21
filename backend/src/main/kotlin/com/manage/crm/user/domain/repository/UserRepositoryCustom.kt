@@ -9,4 +9,8 @@ interface UserRepositoryCustom {
     suspend fun findAllWithPagination(page: Int, size: Int): List<User>
 
     suspend fun countAll(): Long
+
+    suspend fun searchUsers(query: String, page: Int, size: Int): List<User>
+
+    suspend fun countSearchUsers(query: String): Long
 }

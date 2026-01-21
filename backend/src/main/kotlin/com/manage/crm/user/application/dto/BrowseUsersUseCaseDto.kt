@@ -5,7 +5,8 @@ import java.time.LocalDateTime
 
 data class BrowseUsersUseCaseIn(
     val page: Int = 0,
-    val size: Int = 20
+    val size: Int = 20,
+    val query: String? = null
 )
 
 data class BrowseUsersUseCaseOut(

@@ -13,8 +13,17 @@ class BrowseUserUseCase(
     private val userRepository: UserRepository
 ) {
     suspend fun execute(input: BrowseUsersUseCaseIn): BrowseUsersUseCaseOut {
-        val users = userRepository.findAllWithPagination(input.page, input.size)
-        val totalElements = userRepository.countAll()
+        val searchQuery = input.query?.takeIf { it.isNotBlank() }
+        val users = if (searchQuery == null) {
+            userRepository.findAllWithPagination(input.page, input.size)
+        } else {
+            userRepository.searchUsers(searchQuery, input.page, input.size)
+        }
+        val totalElements = if (searchQuery == null) {
+            userRepository.countAll()
+        } else {
+            userRepository.countSearchUsers(searchQuery)
+        }
 
         val userDtos = users.map { user ->
             UserDto(
