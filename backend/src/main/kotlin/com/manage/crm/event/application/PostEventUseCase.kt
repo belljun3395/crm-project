@@ -19,7 +19,7 @@ import com.manage.crm.support.out
 import com.manage.crm.user.domain.repository.UserRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.supervisorScope
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -65,7 +65,7 @@ class PostEventUseCase(
     }
 
     private suspend fun getSavedEvent(eventName: String, userId: Long, properties: List<PostEventPropertyDto>, campaignName: String?): SavedEvent {
-        return coroutineScope {
+        return supervisorScope {
             val eventDeferred = async {
                 saveEvent(eventName, userId, properties)
             }
@@ -79,7 +79,7 @@ class PostEventUseCase(
                 campaignDeferred.await()
             } catch (e: NotFoundByException) {
                 log.warn { "Campaign not found: ${e.message}" }
-                return@coroutineScope SavedEvent(eventId, SaveEventMessage.EVENT_SAVE_BUT_NOT_CAMPAIGN)
+                return@supervisorScope SavedEvent(eventId, SaveEventMessage.EVENT_SAVE_BUT_NOT_CAMPAIGN)
             }
 
             campaign
