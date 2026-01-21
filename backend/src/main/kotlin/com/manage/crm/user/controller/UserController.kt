@@ -45,10 +45,12 @@ class UserController(
         @RequestParam(defaultValue = "20")
         @Min(1)
         @Max(100)
-        size: Int
+        size: Int,
+        @RequestParam(required = false)
+        query: String?
     ): ApiResponse<ApiResponse.SuccessBody<BrowseUsersUseCaseOut>> {
         return browseUsersUseCase
-            .execute(BrowseUsersUseCaseIn(page = page, size = size))
+            .execute(BrowseUsersUseCaseIn(page = page, size = size, query = query))
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
     }
 
