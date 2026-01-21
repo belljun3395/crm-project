@@ -70,11 +70,11 @@ interface CampaignDashboardMetricsRepository : CoroutineCrudRepository<CampaignD
     )
     suspend fun upsertMetric(
         campaignId: Long,
-        metricType: String,
+        metricType: MetricType,
         metricValue: Long,
         timeWindowStart: LocalDateTime,
         timeWindowEnd: LocalDateTime,
-        timeWindowUnit: String
+        timeWindowUnit: TimeWindowUnit
     ): Int
 
     @Query(

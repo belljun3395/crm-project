@@ -81,11 +81,11 @@ class CampaignDashboardService(
     ) {
         campaignDashboardMetricsRepository.upsertMetric(
             campaignId = campaignId,
-            metricType = metricType.name,
+            metricType = metricType,
             metricValue = incrementBy,
             timeWindowStart = timeWindowStart,
             timeWindowEnd = timeWindowEnd,
-            timeWindowUnit = timeWindowUnit.name
+            timeWindowUnit = timeWindowUnit
         )
     }
 

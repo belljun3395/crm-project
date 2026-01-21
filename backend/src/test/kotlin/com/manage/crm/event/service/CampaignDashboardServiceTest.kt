@@ -3,8 +3,8 @@ package com.manage.crm.event.service
 import com.manage.crm.event.domain.MetricType
 import com.manage.crm.event.domain.TimeWindowUnit
 import com.manage.crm.event.domain.repository.CampaignDashboardMetricsRepository
-import com.manage.crm.event.domain.repository.CampaignSummaryMetricsProjection
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
+import com.manage.crm.event.domain.repository.CampaignSummaryMetricsProjection
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -64,21 +64,21 @@ class CampaignDashboardServiceTest : BehaviorSpec({
                 coVerify(exactly = 1) {
                     campaignDashboardMetricsRepository.upsertMetric(
                         campaignId = 1L,
-                        metricType = MetricType.EVENT_COUNT.name,
+                        metricType = MetricType.EVENT_COUNT,
                         metricValue = 1L,
                         timeWindowStart = any(),
                         timeWindowEnd = any(),
-                        timeWindowUnit = TimeWindowUnit.HOUR.name
+                        timeWindowUnit = TimeWindowUnit.HOUR
                     )
                 }
                 coVerify(exactly = 1) {
                     campaignDashboardMetricsRepository.upsertMetric(
                         campaignId = 1L,
-                        metricType = MetricType.EVENT_COUNT.name,
+                        metricType = MetricType.EVENT_COUNT,
                         metricValue = 1L,
                         timeWindowStart = any(),
                         timeWindowEnd = any(),
-                        timeWindowUnit = TimeWindowUnit.DAY.name
+                        timeWindowUnit = TimeWindowUnit.DAY
                     )
                 }
             }
