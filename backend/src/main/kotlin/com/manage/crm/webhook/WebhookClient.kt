@@ -1,4 +1,4 @@
-package com.manage.crm.infrastructure.webhook
+package com.manage.crm.webhook
 
 import com.manage.crm.webhook.domain.Webhook
 import com.manage.crm.webhook.domain.WebhookEventPayload

@@ -1,14 +1,15 @@
-package com.manage.crm.config
+package com.manage.crm.webhook
 
 import org.springframework.modulith.ApplicationModule
 
 @ApplicationModule(
     type = ApplicationModule.Type.OPEN,
     allowedDependencies = [
-        "email",
+        "support",
+        "infrastructure",
         "user",
-        "event",
-        "webhook"
+        "email",
+        "event"
     ]
 )
 class Metadata

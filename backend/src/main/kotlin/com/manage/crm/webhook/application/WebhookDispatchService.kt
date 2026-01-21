@@ -1,7 +1,7 @@
 package com.manage.crm.webhook.application
 
-import com.manage.crm.infrastructure.webhook.WebhookClient
 import com.manage.crm.support.coroutine.eventListenerCoroutineScope
+import com.manage.crm.webhook.WebhookClient
 import com.manage.crm.webhook.domain.WebhookEventPayload
 import com.manage.crm.webhook.domain.WebhookEventType
 import com.manage.crm.webhook.domain.repository.WebhookRepository

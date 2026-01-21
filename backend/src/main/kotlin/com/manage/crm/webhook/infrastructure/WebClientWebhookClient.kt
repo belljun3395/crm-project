@@ -1,6 +1,6 @@
 package com.manage.crm.webhook.infrastructure
 
-import com.manage.crm.infrastructure.webhook.WebhookClient
+import com.manage.crm.webhook.WebhookClient
 import com.manage.crm.webhook.domain.Webhook
 import com.manage.crm.webhook.domain.WebhookEventPayload
 import io.github.oshai.kotlinlogging.KotlinLogging
