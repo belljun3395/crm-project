@@ -5,8 +5,8 @@ import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.JoinOperation
 import com.manage.crm.event.domain.Operation
 import com.manage.crm.event.domain.repository.query.SearchByPropertyQuery
-import com.manage.crm.event.domain.vo.Properties
-import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.event.domain.vo.EventProperties
+import com.manage.crm.event.domain.vo.EventProperty
 import kotlinx.coroutines.reactive.awaitFirst
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Repository
@@ -83,9 +83,9 @@ class EventRepositoryCustomImpl(
                         .let { properties ->
                             objectMapper.readValue(properties, List::class.java).stream()
                                 .map { objectMapper.convertValue(it, Map::class.java) }
-                                .map { Property(it["key"] as String, it["value"] as String) }
+                                .map { EventProperty(it["key"] as String, it["value"] as String) }
                                 .toList()
-                                .let { Properties(it) }
+                                .let { EventProperties(it) }
                         },
                     createdAt = it["created_at"] as LocalDateTime
                 )
@@ -97,7 +97,7 @@ class EventRepositoryCustomImpl(
 
     private fun buildSelectQueryForOnePropertyOperation(
         operation: Operation,
-        property: Property,
+        property: EventProperty,
         selectQuery: String
     ): String {
         if (operation.paramsCnt != 1) {
@@ -109,14 +109,14 @@ class EventRepositoryCustomImpl(
         return selectQuery.plus("  $whereClause ")
     }
 
-    private fun buildQueryForBetweenOperation(properties: Properties, selectQuery: String): String {
+    private fun buildQueryForBetweenOperation(properties: EventProperties, selectQuery: String): String {
         val whereClause = generateBetweenClause(properties)
 
         return selectQuery.plus(" $whereClause ")
     }
 
     private fun generateWhereClause(
-        property: Property,
+        property: EventProperty,
         operation: Operation
     ): String {
         val whereClause = mutableListOf<String>()
@@ -129,7 +129,7 @@ class EventRepositoryCustomImpl(
         return whereClause.joinToString(" AND ")
     }
 
-    private fun generateBetweenClause(properties: Properties): String {
+    private fun generateBetweenClause(properties: EventProperties): String {
         var keyFlag = false
         var keyValue = ""
         var betweenKeyClause = ""

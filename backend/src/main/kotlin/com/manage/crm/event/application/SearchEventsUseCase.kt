@@ -9,8 +9,8 @@ import com.manage.crm.event.domain.JoinOperation
 import com.manage.crm.event.domain.Operation
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.repository.query.SearchByPropertyQuery
-import com.manage.crm.event.domain.vo.Properties
-import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.event.domain.vo.EventProperties
+import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.repository.UserRepository
 import org.springframework.stereotype.Service
@@ -23,7 +23,7 @@ class SearchEventsUseCase(
     suspend fun execute(useCaseIn: SearchEventsUseCaseIn): SearchEventsUseCaseOut {
         val eventName = useCaseIn.eventName
         val propertyOperations = useCaseIn.propertyAndOperations.map { it ->
-            val properties = Properties(it.properties.map { Property(it.key, it.value) })
+            val properties = EventProperties(it.properties.map { EventProperty(it.key, it.value) })
             val operation = it.operation
             val joinOperation = it.joinOperation
             Triple(properties, operation, joinOperation)
@@ -49,7 +49,7 @@ class SearchEventsUseCase(
         }
     }
 
-    private suspend fun searchEvents(eventName: String, propertyOperations: List<Triple<Properties, Operation, JoinOperation>>): List<Event> {
+    private suspend fun searchEvents(eventName: String, propertyOperations: List<Triple<EventProperties, Operation, JoinOperation>>): List<Event> {
         return when {
             propertyOperations.size == 1 -> {
                 val (properties, operation) = propertyOperations.first()

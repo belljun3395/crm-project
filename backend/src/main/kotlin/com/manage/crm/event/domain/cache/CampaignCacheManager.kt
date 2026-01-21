@@ -2,8 +2,8 @@ package com.manage.crm.event.domain.cache
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.event.domain.Campaign
-import com.manage.crm.event.domain.vo.Properties
-import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.event.domain.vo.CampaignProperties
+import com.manage.crm.event.domain.vo.CampaignProperty
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
@@ -39,10 +39,10 @@ class CampaignCacheManager(
             .mapKeys { it.key.removePrefix(CAMPAIGN_PROPERTIES_KEY_PREFIX) }
             .mapValues { it.value.toString() }
         val campaignPropertiesMap = properties.map { (key, value) ->
-            Property(key = key, value = value)
+            CampaignProperty(key = key, value = value)
         }
         return objectMapper.convertValue(hash, Campaign::class.java).also {
-            it.properties = Properties(campaignPropertiesMap)
+            it.properties = CampaignProperties(campaignPropertiesMap)
         }
     }
 

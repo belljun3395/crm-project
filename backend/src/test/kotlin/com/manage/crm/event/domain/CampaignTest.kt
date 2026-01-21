@@ -1,7 +1,7 @@
 package com.manage.crm.event.domain
 
-import com.manage.crm.event.domain.vo.Properties
-import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.event.domain.vo.CampaignProperties
+import com.manage.crm.event.domain.vo.CampaignProperty
 import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.shouldBe
 
@@ -11,10 +11,10 @@ class CampaignTest : FeatureSpec({
             // given
             val campaign = Campaign.new(
                 name = "testCampaign",
-                properties = Properties(
+                properties = CampaignProperties(
                     value = listOf(
-                        Property("key1", "value1"),
-                        Property("key2", "value2")
+                        CampaignProperty("key1", "value1"),
+                        CampaignProperty("key2", "value2")
                     )
                 )
             )
@@ -30,10 +30,10 @@ class CampaignTest : FeatureSpec({
             // given
             val campaign = Campaign.new(
                 name = "testCampaign",
-                properties = Properties(
+                properties = CampaignProperties(
                     value = listOf(
-                        Property("key1", "value1"),
-                        Property("key2", "value2")
+                        CampaignProperty("key1", "value1"),
+                        CampaignProperty("key2", "value2")
                     )
                 )
             )
@@ -49,10 +49,10 @@ class CampaignTest : FeatureSpec({
             // given
             val campaign = Campaign.new(
                 name = "testCampaign",
-                properties = Properties(
+                properties = CampaignProperties(
                     value = listOf(
-                        Property("key1", "value1"),
-                        Property("key2", "value2")
+                        CampaignProperty("key1", "value1"),
+                        CampaignProperty("key2", "value2")
                     )
                 )
             )
@@ -68,7 +68,7 @@ class CampaignTest : FeatureSpec({
             // given
             val campaign = Campaign.new(
                 name = "testCampaign",
-                properties = Properties(
+                properties = CampaignProperties(
                     value = emptyList()
                 )
             )
@@ -84,10 +84,10 @@ class CampaignTest : FeatureSpec({
             // given
             val campaign = Campaign.new(
                 name = "testCampaign",
-                properties = Properties(
+                properties = CampaignProperties(
                     value = listOf(
-                        Property("key1", "value1"),
-                        Property("key2", "value2")
+                        CampaignProperty("key1", "value1"),
+                        CampaignProperty("key2", "value2")
                     )
                 )
             )

@@ -10,8 +10,8 @@ import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
-import com.manage.crm.event.domain.vo.Properties
-import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.event.domain.vo.EventProperties
+import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.event.service.CampaignDashboardEvent
 import com.manage.crm.event.service.CampaignDashboardService
 import com.manage.crm.support.exception.NotFoundByException
@@ -104,9 +104,9 @@ class PostEventUseCase(
             Event.new(
                 name = eventName,
                 userId = userId,
-                properties = Properties(
+                properties = EventProperties(
                     properties.map {
-                        Property(
+                        EventProperty(
                             key = it.key,
                             value = it.value
                         )

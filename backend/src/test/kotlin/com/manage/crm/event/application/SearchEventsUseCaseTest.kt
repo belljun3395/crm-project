@@ -11,8 +11,8 @@ import com.manage.crm.event.domain.PropertiesFixtures
 import com.manage.crm.event.domain.PropertyFixtures
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.repository.query.SearchByPropertyQuery
-import com.manage.crm.event.domain.vo.Properties
-import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.event.domain.vo.EventProperties
+import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.user.domain.UserFixtures
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.UserAttributes
@@ -58,9 +58,9 @@ class SearchEventsUseCaseTest : BehaviorSpec({
                     id = it.toLong(),
                     name = "event$it",
                     userId = it.toLong(),
-                    properties = Properties(
+                    properties = EventProperties(
                         listOf(
-                            Property("key", "value")
+                            EventProperty("key", "value")
                         )
                     ),
                     createdAt = LocalDateTime.now()
@@ -134,11 +134,11 @@ class SearchEventsUseCaseTest : BehaviorSpec({
                         PropertiesFixtures.giveMeOne()
                             .withValue(
                                 listOf(
-                                    PropertyFixtures.giveMeOne().withKey("key1").withValue("value1").build(),
-                                    PropertyFixtures.giveMeOne().withKey("key2").withValue("value2").build()
+                                    PropertyFixtures.giveMeOne().withKey("key1").withValue("value1").buildEvent(),
+                                    PropertyFixtures.giveMeOne().withKey("key2").withValue("value2").buildEvent()
                                 )
                             )
-                            .build()
+                            .buildEvent()
                     )
                     .build()
             }
@@ -185,7 +185,7 @@ class SearchEventsUseCaseTest : BehaviorSpec({
                     .withId(it.toLong())
                     .withName("event$it")
                     .withUserId(it.toLong())
-                    .withProperties(PropertiesFixtures.giveMeOne().withValue(emptyList()).build())
+                    .withProperties(PropertiesFixtures.giveMeOne().withValue(emptyList()).buildEvent())
                     .build()
             }
             coEvery { eventRepository.findAllByName(any()) } answers {

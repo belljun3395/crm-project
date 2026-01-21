@@ -13,6 +13,8 @@ import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
+import com.manage.crm.event.domain.vo.CampaignProperties
+import com.manage.crm.event.domain.vo.CampaignProperty
 import com.manage.crm.event.service.CampaignDashboardService
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.user.domain.UserFixtures
@@ -80,10 +82,10 @@ class PostEventUseCaseTest : BehaviorSpec({
                                 PropertyFixtures.giveMeOne()
                                     .withKey(it.key)
                                     .withValue(it.value)
-                                    .build()
+                                    .buildEvent()
                             }
                         )
-                        .build()
+                        .buildEvent()
                 )
                 .build()
             coEvery { eventRepository.save(any(Event::class)) } answers { event }
@@ -137,10 +139,10 @@ class PostEventUseCaseTest : BehaviorSpec({
                         PropertyFixtures.giveMeOne()
                             .withKey(it.key)
                             .withValue(it.value)
-                            .build()
+                            .buildEvent()
                     }
                 )
-                .build()
+                .buildEvent()
 
             val event = EventFixtures.giveMeOne()
                 .withName(useCaseIn.name)
@@ -151,7 +153,13 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             val campaign = CampaignFixtures.giveMeOne()
                 .withName(useCaseIn.campaignName!!)
-                .withProperties(eventProperties)
+                .withProperties(
+                    CampaignProperties(
+                        useCaseIn.properties.map {
+                            CampaignProperty(it.key, it.value)
+                        }
+                    )
+                )
                 .build()
 
             coEvery {
@@ -272,10 +280,10 @@ class PostEventUseCaseTest : BehaviorSpec({
                         PropertyFixtures.giveMeOne()
                             .withKey(it.key)
                             .withValue(it.value)
-                            .build()
+                            .buildEvent()
                     }
                 )
-                .build()
+                .buildEvent()
 
             val event = EventFixtures.giveMeOne()
                 .withName(useCaseIn.name)
@@ -286,7 +294,13 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             val campaign = CampaignFixtures.giveMeOne()
                 .withName(useCaseIn.campaignName!!)
-                .withProperties(eventProperties)
+                .withProperties(
+                    CampaignProperties(
+                        useCaseIn.properties.map {
+                            CampaignProperty(it.key, it.value)
+                        }
+                    )
+                )
                 .build()
 
             coEvery {
@@ -360,10 +374,10 @@ class PostEventUseCaseTest : BehaviorSpec({
                                 PropertyFixtures.giveMeOne()
                                     .withKey(it.key)
                                     .withValue(it.value)
-                                    .build()
+                                    .buildEvent()
                             }
                         )
-                        .build()
+                        .buildEvent()
                 )
                 .build()
             coEvery { eventRepository.save(any(Event::class)) } answers { event }
@@ -451,10 +465,10 @@ class PostEventUseCaseTest : BehaviorSpec({
                                 PropertyFixtures.giveMeOne()
                                     .withKey(it.key)
                                     .withValue(it.value)
-                                    .build()
+                                    .buildEvent()
                             }
                         )
-                        .build()
+                        .buildEvent()
                 )
                 .build()
             coEvery { eventRepository.save(any(Event::class)) } answers {
@@ -473,13 +487,13 @@ class PostEventUseCaseTest : BehaviorSpec({
                     PropertiesFixtures.giveMeOne()
                         .withValue(
                             notMatchProperties.map {
-                                PropertyFixtures.giveMeOne()
+                                PropertyFixtures.giveMeOneCampaign()
                                     .withKey(it.key)
                                     .withValue(it.value)
-                                    .build()
+                                    .buildEvent()
                             }
                         )
-                        .build()
+                        .buildCampaign()
                 )
                 .build()
             coEvery {

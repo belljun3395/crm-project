@@ -6,8 +6,8 @@ import com.manage.crm.event.application.dto.PostCampaignUseCaseOut
 import com.manage.crm.event.domain.Campaign
 import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignRepository
-import com.manage.crm.event.domain.vo.Properties
-import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.event.domain.vo.CampaignProperties
+import com.manage.crm.event.domain.vo.CampaignProperty
 import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.out
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
@@ -34,9 +34,9 @@ class PostCampaignUseCase(
         val savedCampaign = campaignRepository.save(
             Campaign.new(
                 name = campaignName,
-                properties = Properties(
+                properties = CampaignProperties(
                     properties.map { (key, value) ->
-                        Property(key = key, value = value)
+                        CampaignProperty(key = key, value = value)
                     }
                 )
             )
