@@ -14,6 +14,8 @@ import com.manage.crm.event.domain.repository.converter.EventPropertiesReadingCo
 import com.manage.crm.event.domain.repository.converter.EventPropertiesWritingConverter
 import com.manage.crm.user.domain.repository.converter.UserAttributeReadingConverter
 import com.manage.crm.user.domain.repository.converter.UserAttributeWritingConverter
+import com.manage.crm.webhook.domain.repository.WebhookEventsReadingConverter
+import com.manage.crm.webhook.domain.repository.WebhookEventsWritingConverter
 import io.r2dbc.spi.ConnectionFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -53,6 +55,8 @@ class R2dbcConfig {
                 VariablesReadingConverter(),
                 EventIdWritingConverter(),
                 EventIdReadingConverter(),
+                WebhookEventsWritingConverter(),
+                WebhookEventsReadingConverter(),
                 EventPropertiesWritingConverter(),
                 EventPropertiesReadingConverter(),
                 CampaignPropertiesWritingConverter(),
