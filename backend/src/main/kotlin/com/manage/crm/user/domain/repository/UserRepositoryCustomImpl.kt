@@ -8,6 +8,8 @@ import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
+private const val LIKE_ESCAPE_CHARACTER = "\\"
+
 @Repository
 class UserRepositoryCustomImpl(
     private val dataBaseClient: DatabaseClient
@@ -76,12 +78,12 @@ class UserRepositoryCustomImpl(
         val offset = page * size
         val sql = """
             SELECT * FROM users
-            WHERE external_id LIKE :pattern
-               OR user_attributes LIKE :pattern
+            WHERE external_id LIKE :pattern ESCAPE '\\'
+               OR user_attributes LIKE :pattern ESCAPE '\\'
             ORDER BY id DESC
             LIMIT :limit OFFSET :offset
         """.trimIndent()
-        val pattern = "%${query}%"
+        val pattern = "%${escapeLikePattern(query)}%"
 
         return dataBaseClient.sql(sql)
             .bind("pattern", pattern)
@@ -105,10 +107,10 @@ class UserRepositoryCustomImpl(
     override suspend fun countSearchUsers(query: String): Long {
         val sql = """
             SELECT COUNT(*) as count FROM users
-            WHERE external_id LIKE :pattern
-               OR user_attributes LIKE :pattern
+            WHERE external_id LIKE :pattern ESCAPE '\\'
+               OR user_attributes LIKE :pattern ESCAPE '\\'
         """.trimIndent()
-        val pattern = "%${query}%"
+        val pattern = "%${escapeLikePattern(query)}%"
 
         return dataBaseClient.sql(sql)
             .bind("pattern", pattern)
@@ -116,5 +118,12 @@ class UserRepositoryCustomImpl(
             .one()
             .map { it["count"] as Long }
             .awaitFirstOrNull() ?: 0L
+    }
+
+    private fun escapeLikePattern(query: String): String {
+        return query
+            .replace(LIKE_ESCAPE_CHARACTER, "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_")
     }
 }
