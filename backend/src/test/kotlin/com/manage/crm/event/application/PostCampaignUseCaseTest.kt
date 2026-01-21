@@ -62,7 +62,7 @@ class PostCampaignUseCaseTest : BehaviorSpec({
                                 PropertyFixtures.giveMeOneCampaign()
                                     .withKey(it.key)
                                     .withValue(it.value)
-                                    .buildCampaign()
+                                    .buildEvent()
                             }
                         )
                         .buildCampaign()
