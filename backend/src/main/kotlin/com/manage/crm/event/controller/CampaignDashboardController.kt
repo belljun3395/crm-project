@@ -25,6 +25,7 @@ import org.springframework.http.codec.ServerSentEvent
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -85,14 +86,22 @@ class CampaignDashboardController(
         @PathVariable campaignId: Long,
         @Parameter(description = "스트리밍 지속 시간 (초), 기본값: 3600초 (1시간)")
         @RequestParam(required = false, defaultValue = "3600")
-        durationSeconds: Long = 3600
+        durationSeconds: Long = 3600,
+        @Parameter(description = "SSE 재연결용 Last-Event-ID (쿼리 파라미터)")
+        @RequestParam(required = false)
+        lastEventId: String? = null,
+        @Parameter(description = "SSE 재연결용 Last-Event-ID (헤더)")
+        @RequestHeader(name = "Last-Event-ID", required = false)
+        lastEventIdHeader: String? = null
     ): Flux<ServerSentEvent<CampaignEventData>> {
         val duration = Duration.ofSeconds(durationSeconds)
+        val resolvedLastEventId = lastEventId ?: lastEventIdHeader
 
-        return campaignDashboardService.streamCampaignEvents(campaignId)
+        return campaignDashboardService.streamCampaignEvents(campaignId, resolvedLastEventId)
             .map { event ->
+                val eventId = event.streamId ?: event.eventId.toString()
                 ServerSentEvent.builder<CampaignEventData>()
-                    .id(event.eventId.toString())
+                    .id(eventId)
                     .event("campaign-event")
                     .data(
                         CampaignEventData(

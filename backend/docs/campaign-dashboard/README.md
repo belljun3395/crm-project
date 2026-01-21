@@ -197,11 +197,17 @@ GET /api/v1/campaigns/{campaignId}/dashboard/stream
 
 **Query Parameters:**
 - `durationSeconds` (optional, default: 3600): 스트리밍 지속 시간 (초)
+- `lastEventId` (optional): SSE 재연결용 마지막 이벤트 ID (쿼리)
+
+**Headers:**
+- `Last-Event-ID` (optional): SSE 재연결용 마지막 이벤트 ID (헤더)
+
+**우선순위:** `lastEventId` 쿼리 파라미터가 헤더보다 우선
 
 **Response (SSE):**
 ```
 event: campaign-event
-id: 100
+id: 1700734890000-0
 data: {"campaignId":1,"eventId":100,"userId":50,"eventName":"click","timestamp":"2025-11-16T14:30:00"}
 
 event: campaign-event
@@ -312,7 +318,8 @@ curl http://localhost:8080/api/v1/campaigns/1/dashboard/stream/status
 - **기본 지속 시간**: 1시간 (3600초)
 - **최대 지속 시간**: 사용자 정의 가능
 - **이벤트 타입**: `campaign-event`, `error`, `stream-end`
-- **재연결**: 클라이언트 측에서 처리 필요
+- **재연결**: `Last-Event-ID`(또는 `lastEventId` 쿼리)로 이어받기 지원
+- **시작 지점**: 기본은 최신 이벤트부터 스트리밍
 
 ### 성능 고려사항
 - ✅ 이벤트 발행은 **비동기** 처리 (실패 시에도 메인 플로우 영향 없음)

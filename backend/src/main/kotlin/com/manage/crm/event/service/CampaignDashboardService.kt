@@ -204,7 +204,8 @@ class CampaignDashboardService(
     /**
      * Gets real-time event stream for a campaign
      */
-    fun streamCampaignEvents(campaignId: Long) = streamService.streamEvents(campaignId)
+    fun streamCampaignEvents(campaignId: Long, lastEventId: String? = null) =
+        streamService.streamEvents(campaignId, lastEventId = lastEventId)
 
     /**
      * Gets the current stream length for monitoring

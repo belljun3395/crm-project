@@ -19,7 +19,8 @@ data class CampaignDashboardEvent(
     val eventId: Long,
     val userId: Long,
     val eventName: String,
-    val timestamp: LocalDateTime
+    val timestamp: LocalDateTime,
+    val streamId: String? = null
 )
 
 @Service
@@ -66,11 +67,22 @@ class CampaignDashboardStreamService(
      * Reads events from the stream in real-time
      * Returns a Flux of events that can be consumed by subscribers
      */
-    fun streamEvents(campaignId: Long, duration: Duration = Duration.ofHours(1)): Flux<CampaignDashboardEvent> {
+    fun streamEvents(
+        campaignId: Long,
+        duration: Duration = Duration.ofHours(1),
+        lastEventId: String? = null
+    ): Flux<CampaignDashboardEvent> {
         val streamKey = getStreamKey(campaignId)
+        val streamOffset = when {
+            lastEventId.isNullOrBlank() -> StreamOffset.latest(streamKey)
+            else -> StreamOffset.fromStart(streamKey)
+        }
 
         return reactiveRedisTemplate.opsForStream<String, Any>()
-            .read(StreamOffset.fromStart(streamKey))
+            .read(streamOffset)
+            .filter { record ->
+                lastEventId.isNullOrBlank() || record.id.value > lastEventId
+            }
             .map { record -> mapRecordToEvent(record) }
             .timeout(duration)
             .onErrorResume { error ->
@@ -118,7 +130,8 @@ class CampaignDashboardStreamService(
             eventId = values["eventId"]?.toString()?.toLong() ?: throw IllegalArgumentException("Missing eventId"),
             userId = values["userId"]?.toString()?.toLong() ?: throw IllegalArgumentException("Missing userId"),
             eventName = values["eventName"]?.toString() ?: throw IllegalArgumentException("Missing eventName"),
-            timestamp = parseTimestamp(values["timestamp"]?.toString()) ?: LocalDateTime.now()
+            timestamp = parseTimestamp(values["timestamp"]?.toString()) ?: LocalDateTime.now(),
+            streamId = record.id.value
         )
     }
 

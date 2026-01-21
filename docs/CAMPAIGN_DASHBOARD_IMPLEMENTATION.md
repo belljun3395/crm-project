@@ -110,8 +110,9 @@ CampaignDashboardMetricsRepository 쿼리
 클라이언트 SSE 연결
     ↓
 GET /api/v1/campaigns/{id}/dashboard/stream
+Header: Last-Event-ID: {id}
     ↓
-CampaignDashboardStreamService.streamEvents()
+CampaignDashboardStreamService.streamEvents(lastEventId)
     ↓
 ReactiveRedisTemplate.opsForStream().read()
     ↓

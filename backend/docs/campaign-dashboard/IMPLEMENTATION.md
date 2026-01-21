@@ -160,10 +160,11 @@ reactiveRedisTemplate.opsForStream<String, Any>()
 ### 3. SSE (Server-Sent Events) 패턴
 ```kotlin
 fun streamCampaignDashboard(...): Flux<ServerSentEvent<CampaignEventData>> {
-    return campaignDashboardService.streamCampaignEvents(campaignId)
+    return campaignDashboardService.streamCampaignEvents(campaignId, lastEventId)
         .map { event ->
+            val eventId = event.streamId ?: event.eventId.toString()
             ServerSentEvent.builder<CampaignEventData>()
-                .id(event.eventId.toString())
+                .id(eventId)
                 .event("campaign-event")
                 .data(CampaignEventData(...))
                 .build()
@@ -365,7 +366,7 @@ Redis Stream → Consumer Group → Worker들이 이벤트 분산 처리
 ### SSE
 - **동시 연결**: 제한 없음 (향후 Rate Limiting 필요)
 - **타임아웃**: 기본 1시간
-- **재연결**: 클라이언트 측 처리
+- **재연결**: `Last-Event-ID` 헤더 또는 `lastEventId` 쿼리로 이어받기 지원
 
 ---
 

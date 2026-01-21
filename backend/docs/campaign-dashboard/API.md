@@ -130,6 +130,14 @@ GET /api/v1/campaigns/{campaignId}/dashboard/stream
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
 | durationSeconds | Long | ❌ | 3600 | 스트리밍 지속 시간 (초) |
+| lastEventId | String | ❌ | - | SSE 재연결용 마지막 이벤트 ID (쿼리 파라미터) |
+
+#### Headers
+| Name | Required | Description |
+|------|----------|-------------|
+| Last-Event-ID | ❌ | SSE 재연결용 마지막 이벤트 ID (헤더) |
+
+**우선순위:** `lastEventId` 쿼리 파라미터가 헤더보다 우선
 
 ### Response
 
@@ -139,6 +147,11 @@ GET /api/v1/campaigns/{campaignId}/dashboard/stream
 #### Event Types
 
 ##### 1. campaign-event (실시간 이벤트)
+```
+event: campaign-event
+id: 1700734890000-0
+Last-Event-ID: 1700734890000-0
+```
 ```
 event: campaign-event
 id: 100
