@@ -7,7 +7,11 @@ import com.manage.crm.event.domain.repository.CampaignDashboardMetricsRepository
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.service.dto.CampaignDashboardSummary
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -20,22 +24,25 @@ class CampaignDashboardService(
     private val streamService: CampaignDashboardStreamService
 ) {
     val log = KotlinLogging.logger { }
+    private val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     /**
      * Publishes a campaign event to Redis Stream and updates metrics
      */
     @Transactional
     suspend fun publishCampaignEvent(event: CampaignDashboardEvent) {
-        // Publish to Redis Stream for real-time consumers
         streamService.publishEvent(event)
-
-        // Update aggregated metrics in database
         updateMetricsForEvent(event)
 
-        // Trim stream periodically to prevent memory overflow (every 100 events)
-        val streamLength = streamService.getStreamLength(event.campaignId)
-        if (streamLength % 100 == 0L && streamLength > 0) {
-            streamService.trimStream(event.campaignId, maxLength = 10000)
+        backgroundScope.launch {
+            try {
+                val streamLength = streamService.getStreamLength(event.campaignId)
+                if (streamLength % 100 == 0L && streamLength > 0) {
+                    streamService.trimStream(event.campaignId, maxLength = 10000)
+                }
+            } catch (e: Exception) {
+                log.error(e) { "Failed to trim stream for campaign: ${event.campaignId}" }
+            }
         }
     }
 
@@ -64,9 +71,6 @@ class CampaignDashboardService(
         log.debug { "Updated metrics for campaign event: campaignId=${event.campaignId}, eventId=${event.eventId}" }
     }
 
-    /**
-     * Updates or creates a metric entry with atomic increment to prevent race conditions
-     */
     private suspend fun updateOrCreateMetric(
         campaignId: Long,
         metricType: MetricType,
@@ -75,27 +79,14 @@ class CampaignDashboardService(
         timeWindowEnd: LocalDateTime,
         incrementBy: Long = 1
     ) {
-        // Try atomic increment first
-        val updatedRows = campaignDashboardMetricsRepository.incrementMetricValue(
+        campaignDashboardMetricsRepository.upsertMetric(
             campaignId = campaignId,
             metricType = metricType.name,
+            metricValue = incrementBy,
             timeWindowStart = timeWindowStart,
             timeWindowEnd = timeWindowEnd,
-            incrementBy = incrementBy
+            timeWindowUnit = timeWindowUnit.name
         )
-
-        // If no rows were updated, create new metric
-        if (updatedRows == 0) {
-            val newMetric = CampaignDashboardMetrics.new(
-                campaignId = campaignId,
-                metricType = metricType,
-                metricValue = incrementBy,
-                timeWindowStart = timeWindowStart,
-                timeWindowEnd = timeWindowEnd,
-                timeWindowUnit = timeWindowUnit
-            )
-            campaignDashboardMetricsRepository.save(newMetric)
-        }
     }
 
     /**
@@ -212,42 +203,22 @@ class CampaignDashboardService(
      */
     suspend fun getStreamLength(campaignId: Long): Long = streamService.getStreamLength(campaignId)
 
-    /**
-     * Gets current summary for a campaign
-     * Uses HOUR window unit to avoid double counting (since events are recorded in both HOUR and DAY windows)
-     */
     suspend fun getCampaignSummary(campaignId: Long): CampaignDashboardSummary {
         val now = LocalDateTime.now()
         val last24Hours = now.minusHours(24)
         val last7Days = now.minusDays(7)
 
-        // Use only HOUR metrics to avoid double counting
-        val metrics = getAllMetricsForCampaign(campaignId)
-            .filter { it.timeWindowUnit == TimeWindowUnit.HOUR }
-
-        val totalEvents = metrics
-            .filter { it.metricType == MetricType.EVENT_COUNT }
-            .sumOf { it.metricValue }
-
-        val eventsLast24Hours = metrics
-            .filter {
-                it.metricType == MetricType.EVENT_COUNT &&
-                    it.timeWindowStart.isAfter(last24Hours)
-            }
-            .sumOf { it.metricValue }
-
-        val eventsLast7Days = metrics
-            .filter {
-                it.metricType == MetricType.EVENT_COUNT &&
-                    it.timeWindowStart.isAfter(last7Days)
-            }
-            .sumOf { it.metricValue }
+        val summaryMetrics = campaignDashboardMetricsRepository.getCampaignSummaryMetrics(
+            campaignId = campaignId,
+            last24Hours = last24Hours,
+            last7Days = last7Days
+        )
 
         return CampaignDashboardSummary(
             campaignId = campaignId,
-            totalEvents = totalEvents,
-            eventsLast24Hours = eventsLast24Hours,
-            eventsLast7Days = eventsLast7Days,
+            totalEvents = summaryMetrics.totalEvents,
+            eventsLast24Hours = summaryMetrics.eventsLast24Hours,
+            eventsLast7Days = summaryMetrics.eventsLast7Days,
             lastUpdated = now
         )
     }

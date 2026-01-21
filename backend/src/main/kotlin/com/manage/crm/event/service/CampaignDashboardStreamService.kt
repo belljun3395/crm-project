@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.data.redis.connection.stream.MapRecord
+import org.springframework.data.redis.connection.stream.ReadOffset
 import org.springframework.data.redis.connection.stream.StreamOffset
 import org.springframework.data.redis.connection.stream.StreamRecords
 import org.springframework.data.redis.connection.stream.StringRecord
@@ -63,26 +64,20 @@ class CampaignDashboardStreamService(
         }
     }
 
-    /**
-     * Reads events from the stream in real-time
-     * Returns a Flux of events that can be consumed by subscribers
-     */
     fun streamEvents(
         campaignId: Long,
         duration: Duration = Duration.ofHours(1),
         lastEventId: String? = null
     ): Flux<CampaignDashboardEvent> {
         val streamKey = getStreamKey(campaignId)
-        val streamOffset = when {
-            lastEventId.isNullOrBlank() -> StreamOffset.latest(streamKey)
-            else -> StreamOffset.fromStart(streamKey)
+        val streamOffset = if (lastEventId.isNullOrBlank()) {
+            StreamOffset.latest(streamKey)
+        } else {
+            StreamOffset.create(streamKey, ReadOffset.from(lastEventId))
         }
 
         return reactiveRedisTemplate.opsForStream<String, Any>()
             .read(streamOffset)
-            .filter { record ->
-                lastEventId.isNullOrBlank() || record.id.value > lastEventId
-            }
             .map { record -> mapRecordToEvent(record) }
             .timeout(duration)
             .onErrorResume { error ->

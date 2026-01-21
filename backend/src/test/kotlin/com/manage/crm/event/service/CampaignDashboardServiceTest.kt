@@ -1,9 +1,9 @@
 package com.manage.crm.event.service
 
-import com.manage.crm.event.domain.CampaignDashboardMetrics
 import com.manage.crm.event.domain.MetricType
 import com.manage.crm.event.domain.TimeWindowUnit
 import com.manage.crm.event.domain.repository.CampaignDashboardMetricsRepository
+import com.manage.crm.event.domain.repository.CampaignSummaryMetricsProjection
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -11,8 +11,6 @@ import io.kotest.matchers.shouldNotBe
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import io.mockk.slot
-import kotlinx.coroutines.flow.flowOf
 import java.time.LocalDateTime
 
 class CampaignDashboardServiceTest : BehaviorSpec({
@@ -42,21 +40,19 @@ class CampaignDashboardServiceTest : BehaviorSpec({
                 timestamp = LocalDateTime.now()
             )
 
-            val metricSlot = slot<CampaignDashboardMetrics>()
-
             coEvery { streamService.publishEvent(any()) } returns Unit
             coEvery { streamService.getStreamLength(any()) } returns 50L
             coEvery { streamService.trimStream(any(), any()) } returns Unit
             coEvery {
-                campaignDashboardMetricsRepository.incrementMetricValue(
+                campaignDashboardMetricsRepository.upsertMetric(
+                    any(),
                     any(),
                     any(),
                     any(),
                     any(),
                     any()
                 )
-            } returns 0 // No rows updated, will create new metric
-            coEvery { campaignDashboardMetricsRepository.save(capture(metricSlot)) } answers { metricSlot.captured }
+            } returns 1
 
             service.publishCampaignEvent(event)
 
@@ -64,16 +60,25 @@ class CampaignDashboardServiceTest : BehaviorSpec({
                 coVerify(exactly = 1) { streamService.publishEvent(event) }
             }
 
-            then("should save metrics for each time window unit") {
-                // HOUR and DAY metrics are created
+            then("should upsert metrics for each time window unit") {
                 coVerify(exactly = 1) {
-                    campaignDashboardMetricsRepository.save(
-                        match { it.timeWindowUnit == TimeWindowUnit.HOUR }
+                    campaignDashboardMetricsRepository.upsertMetric(
+                        campaignId = 1L,
+                        metricType = MetricType.EVENT_COUNT.name,
+                        metricValue = 1L,
+                        timeWindowStart = any(),
+                        timeWindowEnd = any(),
+                        timeWindowUnit = TimeWindowUnit.HOUR.name
                     )
                 }
                 coVerify(exactly = 1) {
-                    campaignDashboardMetricsRepository.save(
-                        match { it.timeWindowUnit == TimeWindowUnit.DAY }
+                    campaignDashboardMetricsRepository.upsertMetric(
+                        campaignId = 1L,
+                        metricType = MetricType.EVENT_COUNT.name,
+                        metricValue = 1L,
+                        timeWindowStart = any(),
+                        timeWindowEnd = any(),
+                        timeWindowUnit = TimeWindowUnit.DAY.name
                     )
                 }
             }
@@ -81,30 +86,16 @@ class CampaignDashboardServiceTest : BehaviorSpec({
 
         `when`("getCampaignSummary is called") {
             val campaignId = 1L
-            val now = LocalDateTime.now()
 
-            val metrics = listOf(
-                CampaignDashboardMetrics.new(
-                    campaignId = campaignId,
-                    metricType = MetricType.EVENT_COUNT,
-                    metricValue = 100L,
-                    timeWindowStart = now.minusDays(1),
-                    timeWindowEnd = now,
-                    timeWindowUnit = TimeWindowUnit.DAY
-                ),
-                CampaignDashboardMetrics.new(
-                    campaignId = campaignId,
-                    metricType = MetricType.EVENT_COUNT,
-                    metricValue = 50L,
-                    timeWindowStart = now.minusHours(1),
-                    timeWindowEnd = now,
-                    timeWindowUnit = TimeWindowUnit.HOUR
-                )
+            val projection = CampaignSummaryMetricsProjection(
+                totalEvents = 150L,
+                eventsLast24Hours = 50L,
+                eventsLast7Days = 100L
             )
 
             coEvery {
-                campaignDashboardMetricsRepository.findAllByCampaignIdOrderByTimeWindowStartDesc(campaignId)
-            } returns flowOf(*metrics.toTypedArray())
+                campaignDashboardMetricsRepository.getCampaignSummaryMetrics(any(), any(), any())
+            } returns projection
 
             val summary = service.getCampaignSummary(campaignId)
 
@@ -112,9 +103,10 @@ class CampaignDashboardServiceTest : BehaviorSpec({
                 summary.campaignId shouldBe campaignId
             }
 
-            then("should calculate total events correctly using only HOUR metrics") {
-                // Only HOUR metrics are counted to avoid double counting
-                summary.totalEvents shouldBe 50L
+            then("should return correct event counts from projection") {
+                summary.totalEvents shouldBe 150L
+                summary.eventsLast24Hours shouldBe 50L
+                summary.eventsLast7Days shouldBe 100L
             }
 
             then("should have a last updated timestamp") {
