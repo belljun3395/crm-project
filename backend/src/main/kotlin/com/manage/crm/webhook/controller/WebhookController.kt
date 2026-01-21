@@ -32,7 +32,11 @@ class WebhookController(
     private val webhookQueryService: WebhookQueryService
 ) {
     @PostMapping
-    suspend fun create(@Valid @RequestBody request: CreateWebhookRequest): ApiResponse<ApiResponse.SuccessBody<WebhookResponse>> {
+    suspend fun create(
+        @Valid
+        @RequestBody
+        request: CreateWebhookRequest
+    ): ApiResponse<ApiResponse.SuccessBody<WebhookResponse>> {
         return manageWebhookUseCase.create(request)
             .let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
     }
@@ -40,7 +44,9 @@ class WebhookController(
     @PutMapping("/{id}")
     suspend fun update(
         @PathVariable id: Long,
-        @Valid @RequestBody request: UpdateWebhookRequest
+        @Valid
+        @RequestBody
+        request: UpdateWebhookRequest
     ): ApiResponse<ApiResponse.SuccessBody<WebhookResponse>> {
         return manageWebhookUseCase.update(id, request)
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
