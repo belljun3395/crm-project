@@ -128,7 +128,7 @@ services:
     # Kafka for Redis+Kafka scheduler implementation
     crm-kafka:
         container_name: crm-kafka
-        image: bitnami/kafka:3.6
+        image: bitnami/kafka:3.6.1
         ports:
             - "9092:9092"
             - "9093:9093"
