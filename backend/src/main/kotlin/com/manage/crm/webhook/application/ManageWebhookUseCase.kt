@@ -11,6 +11,7 @@ import com.manage.crm.webhook.domain.WebhookResponse
 import com.manage.crm.webhook.domain.repository.WebhookRepository
 import kotlinx.coroutines.flow.toList
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import java.time.format.DateTimeFormatter
 
@@ -27,14 +28,18 @@ class ManageWebhookUseCase(
             throw AlreadyExistsException("Webhook", "name", request.name)
         }
 
-        val saved = webhookRepository.save(
-            Webhook.new(
-                name = request.name,
-                url = request.url,
-                events = events,
-                active = request.active ?: true
+        val saved = try {
+            webhookRepository.save(
+                Webhook.new(
+                    name = request.name,
+                    url = request.url,
+                    events = events,
+                    active = request.active ?: true
+                )
             )
-        )
+        } catch (e: DataIntegrityViolationException) {
+            throw AlreadyExistsException("Webhook", "name", request.name)
+        }
 
         return out { saved.toResponse(formatter) }
     }

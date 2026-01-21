@@ -21,7 +21,7 @@ class WebhookRepositoryCustomImpl(
             WHERE active = true
               AND JSON_CONTAINS(events, :eventJson)
         """.trimIndent()
-        val eventJson = "\"$eventType\""
+        val eventJson = objectMapper.writeValueAsString(eventType)
 
         return dataBaseClient.sql(sql)
             .bind("eventJson", eventJson)
@@ -29,14 +29,18 @@ class WebhookRepositoryCustomImpl(
             .all()
             .map { row ->
                 Webhook.new(
-                    id = row["id"] as Long,
+                    id = (row["id"] as Number).toLong(),
                     name = row["name"] as String,
                     url = row["url"] as String,
                     events = WebhookEvents.fromValues(
                         objectMapper.readValue(row["events"] as String, List::class.java)
                             .map { it.toString() }
                     ),
-                    active = row["active"] as Boolean,
+                    active = when (val v = row["active"]) {
+                        is Boolean -> v
+                        is Number -> v.toInt() != 0
+                        else -> throw IllegalStateException("Unexpected active type: ${v?.javaClass}")
+                    },
                     createdAt = row["created_at"] as LocalDateTime
                 )
             }

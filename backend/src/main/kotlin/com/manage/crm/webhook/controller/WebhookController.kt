@@ -9,6 +9,7 @@ import com.manage.crm.webhook.domain.CreateWebhookRequest
 import com.manage.crm.webhook.domain.UpdateWebhookRequest
 import com.manage.crm.webhook.domain.WebhookResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
@@ -31,7 +32,7 @@ class WebhookController(
     private val webhookQueryService: WebhookQueryService
 ) {
     @PostMapping
-    suspend fun create(@RequestBody request: CreateWebhookRequest): ApiResponse<ApiResponse.SuccessBody<WebhookResponse>> {
+    suspend fun create(@Valid @RequestBody request: CreateWebhookRequest): ApiResponse<ApiResponse.SuccessBody<WebhookResponse>> {
         return manageWebhookUseCase.create(request)
             .let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
     }
@@ -39,7 +40,7 @@ class WebhookController(
     @PutMapping("/{id}")
     suspend fun update(
         @PathVariable id: Long,
-        @RequestBody request: UpdateWebhookRequest
+        @Valid @RequestBody request: UpdateWebhookRequest
     ): ApiResponse<ApiResponse.SuccessBody<WebhookResponse>> {
         return manageWebhookUseCase.update(id, request)
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
