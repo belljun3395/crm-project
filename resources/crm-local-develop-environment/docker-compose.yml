@@ -148,8 +148,6 @@ services:
             - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
             - KAFKA_LOG_DIRS=/tmp/kraft-combined-logs
             - CLUSTER_ID=HYL2Y2eXBWf3X-MUk4zjSA
-        volumes:
-            - kafka_data:/tmp/kraft-combined-logs
         healthcheck:
             test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
             interval: 10s
@@ -168,6 +166,3 @@ services:
         depends_on:
             crm-kafka:
                 condition: service_healthy
-
-volumes:
-    kafka_data:
