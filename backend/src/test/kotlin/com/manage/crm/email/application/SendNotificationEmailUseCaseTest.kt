@@ -26,7 +26,6 @@ import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.vo.CampaignProperties
 import com.manage.crm.event.domain.vo.CampaignProperty
 import com.manage.crm.event.domain.vo.EventProperties
-import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.exception.NotFoundByIdException
