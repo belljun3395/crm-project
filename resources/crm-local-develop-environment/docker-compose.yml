@@ -148,13 +148,6 @@ services:
             - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
             - KAFKA_LOG_DIRS=/tmp/kraft-combined-logs
             - CLUSTER_ID=HYL2Y2eXBWf3X-MUk4zjSA
-        healthcheck:
-            test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
-            interval: 10s
-            timeout: 5s
-            retries: 5
-            start_period: 30s
-
     crm-kafka-ui:
         container_name: crm-kafka-ui
         image: provectuslabs/kafka-ui:latest
@@ -164,5 +157,4 @@ services:
             - KAFKA_CLUSTERS_0_NAME=crm-kafka
             - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=crm-kafka:9092
         depends_on:
-            crm-kafka:
-                condition: service_healthy
+            - crm-kafka
