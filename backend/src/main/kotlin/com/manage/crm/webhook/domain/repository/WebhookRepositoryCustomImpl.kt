@@ -4,11 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.webhook.domain.Webhook
 import com.manage.crm.webhook.domain.WebhookEvents
 import kotlinx.coroutines.reactive.awaitFirst
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
 @Repository
+@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
 class WebhookRepositoryCustomImpl(
     private val dataBaseClient: DatabaseClient,
     private val objectMapper: ObjectMapper

@@ -5,10 +5,12 @@ import com.manage.crm.support.out
 import com.manage.crm.webhook.domain.WebhookResponse
 import com.manage.crm.webhook.domain.repository.WebhookRepository
 import kotlinx.coroutines.flow.toList
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Service
 import java.time.format.DateTimeFormatter
 
 @Service
+@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
 class WebhookQueryService(
     private val webhookRepository: WebhookRepository
 ) {

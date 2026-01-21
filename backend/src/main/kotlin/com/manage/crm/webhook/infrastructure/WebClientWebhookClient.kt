@@ -6,11 +6,13 @@ import com.manage.crm.webhook.domain.WebhookEventPayload
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.http.MediaType
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 
 @Component
+@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
 class WebClientWebhookClient : WebhookClient {
     private val log = KotlinLogging.logger {}
     private val webClient = WebClient.builder().build()
