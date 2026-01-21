@@ -2,7 +2,7 @@ package com.manage.crm.event.domain
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.manage.crm.event.domain.vo.Properties
+import com.manage.crm.event.domain.vo.CampaignProperties
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
@@ -17,7 +17,7 @@ class Campaign(
     @Column("name")
     var name: String,
     @Column("properties")
-    var properties: Properties,
+    var properties: CampaignProperties,
     @CreatedDate
     var createdAt: LocalDateTime? = null
 ) {
@@ -28,7 +28,7 @@ class Campaign(
     ) : this(
         id = id,
         name = name,
-        properties = Properties(emptyList()),
+        properties = CampaignProperties(emptyList()),
         createdAt = createdAt
     )
 
@@ -39,7 +39,7 @@ class Campaign(
     companion object {
         fun new(
             name: String,
-            properties: Properties
+            properties: CampaignProperties
         ): Campaign {
             return Campaign(
                 name = name,
@@ -50,7 +50,7 @@ class Campaign(
         fun new(
             id: Long,
             name: String,
-            properties: Properties,
+            properties: CampaignProperties,
             createdAt: LocalDateTime
         ): Campaign {
             return Campaign(
