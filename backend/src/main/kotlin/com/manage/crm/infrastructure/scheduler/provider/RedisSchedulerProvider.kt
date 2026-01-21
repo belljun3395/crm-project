@@ -6,6 +6,7 @@ import com.manage.crm.infrastructure.scheduler.ScheduleName
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.reactive.awaitFirstOrNull
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.data.redis.core.ReactiveRedisTemplate
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
@@ -21,6 +22,7 @@ import java.time.ZoneOffset
  * - Value: JSON containing schedule name, schedule time, and payload
  */
 @Component
+@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class RedisSchedulerProvider(
     private val redisTemplate: ReactiveRedisTemplate<String, String>,
     private val objectMapper: ObjectMapper
