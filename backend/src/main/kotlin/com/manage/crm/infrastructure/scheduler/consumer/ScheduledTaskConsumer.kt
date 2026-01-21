@@ -5,6 +5,7 @@ import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOut
 import com.manage.crm.infrastructure.scheduler.event.ScheduledTaskEvent
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.support.Acknowledgment
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component
  * Processes messages from the scheduled-tasks topic and executes business logic
  */
 @Component
+@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class ScheduledTaskConsumer(
     private val applicationEventPublisher: ApplicationEventPublisher
 ) {

@@ -24,11 +24,13 @@ class ScheduleTaskServiceImpl(
 
     override fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String {
         return runBlocking {
-            when (val result = schedulerProvider.createSchedule(
-                name = input.eventId.value,
-                scheduleTime = input.expiredTime,
-                input = input
-            )) {
+            when (
+                val result = schedulerProvider.createSchedule(
+                    name = input.eventId.value,
+                    scheduleTime = input.expiredTime,
+                    input = input
+                )
+            ) {
                 is ScheduleCreationResult.Success -> result.scheduleId
                 is ScheduleCreationResult.Failure -> {
                     log.error { "Failed to create schedule: ${result.reason}" }

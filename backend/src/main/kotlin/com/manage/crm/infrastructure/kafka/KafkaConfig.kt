@@ -6,6 +6,7 @@ import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
@@ -23,6 +24,7 @@ import org.springframework.kafka.support.serializer.JsonSerializer
  * Configures producers and consumers for the scheduled-tasks topic
  */
 @Configuration
+@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class KafkaConfig {
 
     @Value("\${spring.kafka.bootstrap-servers}")

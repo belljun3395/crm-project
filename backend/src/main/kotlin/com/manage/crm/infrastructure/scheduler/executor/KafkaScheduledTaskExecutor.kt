@@ -3,6 +3,7 @@ package com.manage.crm.infrastructure.scheduler.executor
 import com.manage.crm.infrastructure.scheduler.event.ScheduledTaskEvent
 import com.manage.crm.infrastructure.scheduler.provider.RedisSchedulerProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.support.SendResult
 import org.springframework.stereotype.Component
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component
  * Publishes scheduled task events to Kafka for distributed processing
  */
 @Component
+@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class KafkaScheduledTaskExecutor(
     private val kafkaTemplate: KafkaTemplate<String, ScheduledTaskEvent>
 ) {

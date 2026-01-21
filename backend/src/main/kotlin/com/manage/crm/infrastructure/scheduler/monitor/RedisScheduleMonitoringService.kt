@@ -8,6 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
@@ -24,6 +25,7 @@ import kotlin.time.Duration.Companion.seconds
  * 3. Remove successfully published schedules from Redis
  */
 @Service
+@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class RedisScheduleMonitoringService(
     private val redisSchedulerProvider: RedisSchedulerProvider,
     private val kafkaExecutor: KafkaScheduledTaskExecutor
