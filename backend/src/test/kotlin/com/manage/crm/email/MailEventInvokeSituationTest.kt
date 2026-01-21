@@ -13,6 +13,7 @@ import com.manage.crm.email.event.template.handler.PostEmailTemplateEventHandler
 import com.manage.crm.email.support.EmailEventPublisher
 import com.manage.crm.infrastructure.message.config.MessageConfig
 import com.manage.crm.infrastructure.scheduler.provider.AwsSchedulerService
+import com.manage.crm.webhook.application.WebhookEventListener
 import io.awspring.cloud.sqs.config.SqsMessageListenerContainerFactory
 import io.awspring.cloud.sqs.operations.SqsTemplate
 import org.junit.jupiter.api.DisplayNameGeneration
@@ -72,4 +73,8 @@ abstract class MailEventInvokeSituationTest : EmailModuleTestTemplate() {
     // ----------------- EventTemplateTransactionListenerInvokeSituation -----------------
     @MockitoBean
     lateinit var postEmailTemplateEventHandler: PostEmailTemplateEventHandler
+
+    // ----------------- WebhookEventListener -----------------
+    @MockitoBean
+    lateinit var webhookEventListener: WebhookEventListener
 }
