@@ -1,10 +1,11 @@
 package com.manage.crm.infrastructure.scheduler.consumer
 
 import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
-import com.manage.crm.email.application.service.ScheduleTaskServiceImpl
+import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
 import com.manage.crm.infrastructure.scheduler.event.ScheduledTaskEvent
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.support.Acknowledgment
 import org.springframework.stereotype.Component
@@ -15,7 +16,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 class ScheduledTaskConsumer(
-    private val scheduleTaskService: ScheduleTaskServiceImpl
+    private val applicationEventPublisher: ApplicationEventPublisher
 ) {
     private val log = KotlinLogging.logger {}
 
@@ -50,13 +51,21 @@ class ScheduledTaskConsumer(
         }
     }
 
-    private suspend fun processNotificationEmailTimeout(input: NotificationEmailSendTimeOutEventInput) {
+    private fun processNotificationEmailTimeout(input: NotificationEmailSendTimeOutEventInput) {
         log.info {
             "Processing notification email timeout: templateId=${input.templateId}, " +
                 "userCount=${input.userIds.size}, eventId=${input.eventId}"
         }
 
-        scheduleTaskService.processNotificationEmailTimeout(input)
+        // Publish event to trigger email sending via existing event handler
+        applicationEventPublisher.publishEvent(
+            NotificationEmailSendTimeOutInvokeEvent(
+                timeOutEventId = input.eventId,
+                templateId = input.templateId,
+                templateVersion = input.templateVersion,
+                userIds = input.userIds
+            )
+        )
     }
 
     /**
