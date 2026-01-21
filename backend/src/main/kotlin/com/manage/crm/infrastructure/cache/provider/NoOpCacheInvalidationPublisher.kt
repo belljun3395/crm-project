@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 import software.amazon.awssdk.services.sns.SnsClient
 
 @Component
-@Profile("test")
+@Profile("local || test")
 @ConditionalOnMissingBean(SnsClient::class)
 class NoOpCacheInvalidationPublisher : CacheInvalidationPublisher {
 
