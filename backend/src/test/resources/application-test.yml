@@ -71,6 +71,9 @@ springdoc:
     model-and-view-allowed: true
     packages-to-scan: com.manage.crm
 
+webhook:
+    enabled: false
+
 logging:
     level:
         root: INFO
