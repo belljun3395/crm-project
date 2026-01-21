@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.ConstraintViolationException
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
+import jakarta.validation.constraints.Size
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -45,10 +46,13 @@ class UserController(
         @RequestParam(defaultValue = "20")
         @Min(1)
         @Max(100)
-        size: Int
+        size: Int,
+        @RequestParam(required = false)
+        @Size(max = 255)
+        query: String?
     ): ApiResponse<ApiResponse.SuccessBody<BrowseUsersUseCaseOut>> {
         return browseUsersUseCase
-            .execute(BrowseUsersUseCaseIn(page = page, size = size))
+            .execute(BrowseUsersUseCaseIn(page = page, size = size, query = query))
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
     }
 
