@@ -6,11 +6,13 @@ import com.manage.crm.support.transactional.TransactionTemplates
 import com.manage.crm.user.event.NewUserEvent
 import com.manage.crm.webhook.domain.WebhookEventType
 import kotlinx.coroutines.launch
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.reactive.executeAndAwait
 
 @Component
+@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
 class WebhookEventListener(
     private val webhookDispatchService: WebhookDispatchService,
     private val transactionalTemplates: TransactionTemplates
