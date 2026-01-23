@@ -156,6 +156,7 @@ variable "app_env" {
     AWS_SCHEDULE_GROUP_NAME = string
     KAFKA_BOOTSTRAP_SERVERS = string
     SCHEDULER_PROVIDER      = optional(string, "aws")
+    MESSAGE_PROVIDER        = optional(string, "aws")
   })
 }
 

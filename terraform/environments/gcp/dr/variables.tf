@@ -166,19 +166,6 @@ variable "secret_manager_secret_id" {
   default     = "crm-prod-application"
 }
 
-variable "secret_manager_secret_data" {
-  description = "Secret data (JSON string)"
-  type        = string
-  sensitive   = true
-  default     = "{}"
-}
-
-variable "secret_manager_replication" {
-  description = "Replication policy (automatic or user_managed)"
-  type        = string
-  default     = "automatic"
-}
-
 # Cloud SQL Variables
 variable "enable_cloud_sql" {
   description = "Enable Cloud SQL PostgreSQL database"
@@ -339,4 +326,25 @@ variable "memorystore_rdb_snapshot_period" {
   description = "RDB snapshot period"
   type        = string
   default     = "TWELVE_HOURS"
+}
+
+variable "app_env" {
+  description = "Application runtime environment variables that will be stored in GCP Secret Manager."
+  type = object({
+    DATABASE_URL            = string
+    DATABASE_USERNAME       = string
+    DATABASE_PASSWORD       = string
+    REDIS_HOST              = string
+    REDIS_MAX_REDIRECTS     = string
+    REDIS_PASSWORD          = string
+    REDIS_NODES             = string
+    MAIL_USERNAME           = string
+    MAIL_PASSWORD           = string
+    AWS_ACCESS_KEY          = string
+    AWS_SECRET_KEY          = string
+    AWS_CONFIGURATION_SET   = string
+    KAFKA_BOOTSTRAP_SERVERS = string
+    SCHEDULER_PROVIDER      = optional(string, "redis-kafka")
+    MESSAGE_PROVIDER        = optional(string, "kafka")
+  })
 }

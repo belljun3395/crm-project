@@ -9,6 +9,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import software.amazon.awssdk.auth.credentials.AwsCredentials
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.sqs.SqsAsyncClient
 
 @Configuration
 @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
@@ -20,7 +22,6 @@ class MessageConfig {
         const val SQS_LISTENER_CONTAINER_FACTORY = "defaultSqsListenerContainerFactory"
     }
 
-    // ----------------- AWS SQS -----------------
     @Value("\${spring.aws.region}")
     val region: String? = null
 
@@ -39,7 +40,6 @@ class MessageConfig {
             }
             .region(Region.of(region))
 
-        // Configure endpoint URL for LocalStack
         endpointUrl?.let { url ->
             clientBuilder.endpointOverride(java.net.URI.create(url))
         }

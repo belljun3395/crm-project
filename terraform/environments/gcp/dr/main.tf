@@ -59,11 +59,9 @@ module "secret_manager" {
 
   count = var.enable_secret_manager ? 1 : 0
 
-  project_id  = var.project_id
-  secret_id   = var.secret_manager_secret_id
-  secret_data = var.secret_manager_secret_data
-  replication = var.secret_manager_replication
-  labels      = local.labels
+  secret_name          = var.secret_manager_secret_id
+  secret_string_values = { for k, v in var.app_env : k => tostring(v) }
+  labels               = local.labels
 }
 
 # Database (Cloud SQL - PostgreSQL)

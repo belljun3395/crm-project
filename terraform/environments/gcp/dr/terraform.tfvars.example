@@ -29,3 +29,22 @@ node_pool_initial_count = 1
 artifact_registry_location     = "asia-northeast3"
 artifact_registry_repository_id = "crm-app"
 artifact_registry_format        = "DOCKER"
+
+# App Environment Variables
+app_env = {
+  DATABASE_URL            = "r2dbc:pool:postgresql://<cloud-sql-ip>:5432/crm"
+  DATABASE_USERNAME       = "crmadmin"
+  DATABASE_PASSWORD       = "CHANGE_ME"
+  REDIS_HOST              = "<memorystore-ip>"
+  REDIS_MAX_REDIRECTS     = "3"
+  REDIS_PASSWORD          = ""
+  REDIS_NODES             = "<memorystore-ip>:6379"
+  MAIL_USERNAME           = "example@gmail.com"
+  MAIL_PASSWORD           = "CHANGE_ME"
+  AWS_ACCESS_KEY          = "YOUR_AWS_SES_ACCESS_KEY"
+  AWS_SECRET_KEY          = "YOUR_AWS_SES_SECRET_KEY"
+  AWS_CONFIGURATION_SET   = "default"
+  KAFKA_BOOTSTRAP_SERVERS = "gcp-kafka-bootstrap.kafka.svc:9092"
+  SCHEDULER_PROVIDER      = "redis-kafka"
+  MESSAGE_PROVIDER        = "kafka"
+}
