@@ -1,9 +1,13 @@
 package com.manage.crm.infrastructure.scheduler.config
 
 import com.amazonaws.auth.AWSCredentials
+import com.manage.crm.infrastructure.scheduler.provider.RedisSchedulerProvider
+import com.manage.crm.infrastructure.scheduler.provider.SchedulerProvider
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
 import org.springframework.scheduling.annotation.EnableScheduling
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration
@@ -17,6 +21,18 @@ import java.time.Duration
 class SchedulerConfig {
     companion object {
         const val SCHEDULER_CLIENT = "schedulerClient"
+        const val SCHEDULER_PROVIDER = "schedulerProvider"
+    }
+
+    @Value("\${scheduler.provider:aws}")
+    lateinit var schedulerProvider: String
+
+    // ----------------- Redis + Kafka Scheduler Provider -----------------
+    @Bean(name = [SCHEDULER_PROVIDER])
+    @Primary
+    @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
+    fun redisKafkaSchedulerProvider(redisSchedulerProvider: RedisSchedulerProvider): SchedulerProvider {
+        return redisSchedulerProvider
     }
 
     // ----------------- AWS Scheduler -----------------
@@ -27,6 +43,7 @@ class SchedulerConfig {
     val endpointUrl: String? = null
 
     @Bean(name = [SCHEDULER_CLIENT])
+    @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws", matchIfMissing = true)
     fun awsSchedulerClient(
         awsCredentials: AWSCredentials
     ): SchedulerClient {
