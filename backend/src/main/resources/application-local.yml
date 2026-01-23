@@ -7,6 +7,11 @@ spring:
         url: r2dbc:pool:mysql://localhost:13306/crm
         username: root
         password: root
+        routing:
+            master-url: r2dbc:pool:mysql://localhost:13306/crm
+            replica-url: r2dbc:pool:mysql://localhost:13306/crm
+            username: root
+            password: root
     data:
         redis:
             cluster:
@@ -48,6 +53,8 @@ spring:
             role-arn: arn:aws:iam::000000000000:role/LocalEventBridgeSchedulerRole
             sqs-arn: arn:aws:sqs:ap-northeast-2:000000000000:ses_sqs
             group-name: local-schedule-group
+        sns:
+            cache-invalidation-topic-arn: arn:aws:sns:ap-northeast-2:000000000000:cache-invalidation-topic
     flyway:
         locations: classpath:db/migration/entity
         sql-migration-suffixes: sql

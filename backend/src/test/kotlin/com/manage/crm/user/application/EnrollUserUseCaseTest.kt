@@ -1,5 +1,6 @@
 package com.manage.crm.user.application
 
+import com.manage.crm.infrastructure.cache.provider.CacheInvalidationPublisher
 import com.manage.crm.user.application.dto.EnrollUserUseCaseIn
 import com.manage.crm.user.application.dto.EnrollUserUseCaseOut
 import com.manage.crm.user.application.service.JsonService
@@ -12,6 +13,7 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.justRun
 import io.mockk.mockk
 import java.time.LocalDateTime
 
@@ -19,13 +21,21 @@ class EnrollUserUseCaseTest : BehaviorSpec({
     lateinit var userRepository: UserRepository
     lateinit var userRepositoryEventProcessor: UserRepositoryEventProcessor
     lateinit var jsonService: JsonService
+    lateinit var cacheInvalidationPublisher: CacheInvalidationPublisher
     lateinit var useCase: EnrollUserUseCase
 
     beforeContainer {
         userRepository = mockk()
         userRepositoryEventProcessor = mockk()
         jsonService = mockk()
-        useCase = EnrollUserUseCase(userRepository, userRepositoryEventProcessor, jsonService)
+        cacheInvalidationPublisher = mockk()
+        justRun { cacheInvalidationPublisher.publishCacheInvalidation(any()) }
+        useCase = EnrollUserUseCase(
+            userRepository,
+            userRepositoryEventProcessor,
+            jsonService,
+            cacheInvalidationPublisher
+        )
     }
 
     given("EnrollUserUseCase") {

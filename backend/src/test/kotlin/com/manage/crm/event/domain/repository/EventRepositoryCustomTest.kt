@@ -5,8 +5,8 @@ import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.JoinOperation
 import com.manage.crm.event.domain.Operation
 import com.manage.crm.event.domain.repository.query.SearchByPropertyQuery
-import com.manage.crm.event.domain.vo.Properties
-import com.manage.crm.event.domain.vo.Property
+import com.manage.crm.event.domain.vo.EventProperties
+import com.manage.crm.event.domain.vo.EventProperty
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Nested
@@ -35,9 +35,9 @@ class EventRepositoryCustomTest(
                         Event.new(
                             name = "event",
                             userId = it.toLong(),
-                            properties = Properties(
+                            properties = EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         key = "propertyKey",
                                         value = "$it"
                                     )
@@ -52,9 +52,9 @@ class EventRepositoryCustomTest(
                     val result = eventRepository.searchByProperty(
                         SearchByPropertyQuery(
                             "event",
-                            Properties(
+                            EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         "propertyKey",
                                         "1"
                                     )
@@ -77,9 +77,9 @@ class EventRepositoryCustomTest(
                         Event.new(
                             name = "event",
                             userId = it.toLong(),
-                            properties = Properties(
+                            properties = EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         key = "propertyKey",
                                         value = "$it"
                                     )
@@ -94,9 +94,9 @@ class EventRepositoryCustomTest(
                     val result = eventRepository.searchByProperty(
                         SearchByPropertyQuery(
                             "event",
-                            Properties(
+                            EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         "propertyKey",
                                         "1"
                                     )
@@ -119,9 +119,9 @@ class EventRepositoryCustomTest(
                         Event.new(
                             name = "event",
                             userId = it.toLong(),
-                            properties = Properties(
+                            properties = EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         key = "propertyKey",
                                         value = "$it"
                                     )
@@ -136,7 +136,7 @@ class EventRepositoryCustomTest(
                     val result = eventRepository.searchByProperty(
                         SearchByPropertyQuery(
                             "event",
-                            Properties(listOf(Property("propertyKey", "5"))),
+                            EventProperties(listOf(EventProperty("propertyKey", "5"))),
                             Operation.GREATER_THAN
                         )
                     )
@@ -154,9 +154,9 @@ class EventRepositoryCustomTest(
                         Event.new(
                             name = "event",
                             userId = it.toLong(),
-                            properties = Properties(
+                            properties = EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         key = "propertyKey",
                                         value = "$it"
                                     )
@@ -171,9 +171,9 @@ class EventRepositoryCustomTest(
                     val result = eventRepository.searchByProperty(
                         SearchByPropertyQuery(
                             "event",
-                            Properties(
+                            EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         "propertyKey",
                                         "5"
                                     )
@@ -196,9 +196,9 @@ class EventRepositoryCustomTest(
                         Event.new(
                             name = "event",
                             userId = it.toLong(),
-                            properties = Properties(
+                            properties = EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         key = "propertyKey",
                                         value = "$it"
                                     )
@@ -214,9 +214,9 @@ class EventRepositoryCustomTest(
                         eventRepository.searchByProperty(
                             SearchByPropertyQuery(
                                 "event",
-                                Properties(
+                                EventProperties(
                                     listOf(
-                                        Property(
+                                        EventProperty(
                                             "propertyKey",
                                             "5"
                                         )
@@ -239,9 +239,9 @@ class EventRepositoryCustomTest(
                         Event.new(
                             name = "event",
                             userId = it.toLong(),
-                            properties = Properties(
+                            properties = EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         key = "propertyKey",
                                         value = "$it"
                                     )
@@ -257,9 +257,9 @@ class EventRepositoryCustomTest(
                         eventRepository.searchByProperty(
                             SearchByPropertyQuery(
                                 "event",
-                                Properties(
+                                EventProperties(
                                     listOf(
-                                        Property(
+                                        EventProperty(
                                             "propertyKey",
                                             "5"
                                         )
@@ -285,9 +285,9 @@ class EventRepositoryCustomTest(
                             Event.new(
                                 name = "event",
                                 userId = it.toLong(),
-                                properties = Properties(
+                                properties = EventProperties(
                                     listOf(
-                                        Property(
+                                        EventProperty(
                                             key = "propertyKey",
                                             value = "$it"
                                         )
@@ -302,10 +302,10 @@ class EventRepositoryCustomTest(
                         val result = eventRepository.searchByProperty(
                             SearchByPropertyQuery(
                                 "event",
-                                Properties(
+                                EventProperties(
                                     listOf(
-                                        Property("propertyKey", "1"),
-                                        Property("propertyKey", "5")
+                                        EventProperty("propertyKey", "1"),
+                                        EventProperty("propertyKey", "5")
                                     )
                                 ),
                                 Operation.BETWEEN
@@ -325,9 +325,9 @@ class EventRepositoryCustomTest(
                             Event.new(
                                 name = "event",
                                 userId = it.toLong(),
-                                properties = Properties(
+                                properties = EventProperties(
                                     listOf(
-                                        Property(
+                                        EventProperty(
                                             key = "propertyKey",
                                             value = "$it"
                                         )
@@ -339,13 +339,13 @@ class EventRepositoryCustomTest(
                         }
 
                         // when
-                        val property1 = Property("propertyKey1", "1")
-                        val property2 = Property("propertyKey2", "5")
+                        val property1 = EventProperty("propertyKey1", "1")
+                        val property2 = EventProperty("propertyKey2", "5")
                         val exception = assertThrows<IllegalArgumentException> {
                             eventRepository.searchByProperty(
                                 SearchByPropertyQuery(
                                     "event",
-                                    Properties(
+                                    EventProperties(
                                         listOf(
                                             property1,
                                             property2
@@ -374,9 +374,9 @@ class EventRepositoryCustomTest(
                         Event.new(
                             name = "event",
                             userId = it.toLong(),
-                            properties = Properties(
+                            properties = EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         key = "propertyKey",
                                         value = "value$it"
                                     )
@@ -391,9 +391,9 @@ class EventRepositoryCustomTest(
                     val result = eventRepository.searchByProperty(
                         SearchByPropertyQuery(
                             "event",
-                            Properties(
+                            EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         "propertyKey",
                                         "value1"
                                     )
@@ -416,9 +416,9 @@ class EventRepositoryCustomTest(
                         Event.new(
                             name = "event",
                             userId = it.toLong(),
-                            properties = Properties(
+                            properties = EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         key = "propertyKey",
                                         value = "value$it"
                                     )
@@ -434,9 +434,9 @@ class EventRepositoryCustomTest(
                         eventRepository.searchByProperty(
                             SearchByPropertyQuery(
                                 "event",
-                                Properties(
+                                EventProperties(
                                     listOf(
-                                        Property(
+                                        EventProperty(
                                             "propertyKey",
                                             "value1"
                                         )
@@ -464,9 +464,9 @@ class EventRepositoryCustomTest(
                         Event.new(
                             name = "event",
                             userId = it.toLong(),
-                            properties = Properties(
+                            properties = EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         key = "propertyKey",
                                         value = "value$it"
                                     )
@@ -481,9 +481,9 @@ class EventRepositoryCustomTest(
                     val result = eventRepository.searchByProperty(
                         SearchByPropertyQuery(
                             "event",
-                            Properties(
+                            EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         "propertyKey",
                                         value
                                     )
@@ -511,13 +511,13 @@ class EventRepositoryCustomTest(
                     Event.new(
                         name = "event",
                         userId = it.toLong(),
-                        properties = Properties(
+                        properties = EventProperties(
                             listOf(
-                                Property(
+                                EventProperty(
                                     key = "propertyKey1",
                                     value = "$it"
                                 ),
-                                Property(
+                                EventProperty(
                                     key = "propertyKey2",
                                     value = "${10 - it}"
                                 )
@@ -533,9 +533,9 @@ class EventRepositoryCustomTest(
                     listOf(
                         SearchByPropertyQuery(
                             "event",
-                            Properties(
+                            EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         "propertyKey1",
                                         "5"
                                     )
@@ -546,9 +546,9 @@ class EventRepositoryCustomTest(
                         ),
                         SearchByPropertyQuery(
                             "event",
-                            Properties(
+                            EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         "propertyKey2",
                                         "5"
                                     )
@@ -572,13 +572,13 @@ class EventRepositoryCustomTest(
                     Event.new(
                         name = "event",
                         userId = it.toLong(),
-                        properties = Properties(
+                        properties = EventProperties(
                             listOf(
-                                Property(
+                                EventProperty(
                                     key = "propertyKey1",
                                     value = "$it"
                                 ),
-                                Property(
+                                EventProperty(
                                     key = "propertyKey2",
                                     value = "${10 - it}"
                                 )
@@ -594,9 +594,9 @@ class EventRepositoryCustomTest(
                     listOf(
                         SearchByPropertyQuery(
                             "event",
-                            Properties(
+                            EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         "propertyKey1",
                                         "1"
                                     )
@@ -607,9 +607,9 @@ class EventRepositoryCustomTest(
                         ),
                         SearchByPropertyQuery(
                             "event",
-                            Properties(
+                            EventProperties(
                                 listOf(
-                                    Property(
+                                    EventProperty(
                                         "propertyKey2",
                                         "2"
                                     )

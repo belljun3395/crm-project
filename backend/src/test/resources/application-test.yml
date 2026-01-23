@@ -7,6 +7,11 @@ spring:
         url: r2dbc:pool:mysql://localhost:13306/test
         username: root
         password: root
+        routing:
+            master-url: r2dbc:pool:mysql://localhost:13306/test
+            replica-url: r2dbc:pool:mysql://localhost:13306/test
+            username: root
+            password: root
     data:
         redis:
             cluster:
@@ -65,6 +70,9 @@ springdoc:
         operations-sorter: alpha
     model-and-view-allowed: true
     packages-to-scan: com.manage.crm
+
+webhook:
+    enabled: false
 
 logging:
     level:

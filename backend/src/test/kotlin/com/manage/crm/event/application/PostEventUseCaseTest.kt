@@ -13,6 +13,9 @@ import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
+import com.manage.crm.event.domain.vo.CampaignProperties
+import com.manage.crm.event.domain.vo.CampaignProperty
+import com.manage.crm.event.service.CampaignDashboardService
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.user.domain.UserFixtures
 import com.manage.crm.user.domain.repository.UserRepository
@@ -31,6 +34,7 @@ class PostEventUseCaseTest : BehaviorSpec({
     lateinit var campaignEventsRepository: CampaignEventsRepository
     lateinit var campaignCacheManager: CampaignCacheManager
     lateinit var userRepository: UserRepository
+    lateinit var campaignDashboardService: CampaignDashboardService
     lateinit var postEventUseCase: PostEventUseCase
 
     beforeContainer {
@@ -39,8 +43,9 @@ class PostEventUseCaseTest : BehaviorSpec({
         campaignEventsRepository = mockk()
         campaignCacheManager = mockk()
         userRepository = mockk()
+        campaignDashboardService = mockk(relaxed = true)
         postEventUseCase =
-            PostEventUseCase(eventRepository, campaignRepository, campaignEventsRepository, campaignCacheManager, userRepository)
+            PostEventUseCase(eventRepository, campaignRepository, campaignEventsRepository, campaignCacheManager, userRepository, campaignDashboardService)
     }
 
     given("PostEventUseCase") {
@@ -77,10 +82,10 @@ class PostEventUseCaseTest : BehaviorSpec({
                                 PropertyFixtures.giveMeOne()
                                     .withKey(it.key)
                                     .withValue(it.value)
-                                    .build()
+                                    .buildEvent()
                             }
                         )
-                        .build()
+                        .buildEvent()
                 )
                 .build()
             coEvery { eventRepository.save(any(Event::class)) } answers { event }
@@ -97,6 +102,10 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             then("save event") {
                 coVerify(exactly = 1) { eventRepository.save(any(Event::class)) }
+            }
+
+            then("should not publish to dashboard stream when no campaign") {
+                coVerify(exactly = 0) { campaignDashboardService.publishCampaignEvent(any()) }
             }
         }
 
@@ -130,10 +139,10 @@ class PostEventUseCaseTest : BehaviorSpec({
                         PropertyFixtures.giveMeOne()
                             .withKey(it.key)
                             .withValue(it.value)
-                            .build()
+                            .buildEvent()
                     }
                 )
-                .build()
+                .buildEvent()
 
             val event = EventFixtures.giveMeOne()
                 .withName(useCaseIn.name)
@@ -144,7 +153,13 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             val campaign = CampaignFixtures.giveMeOne()
                 .withName(useCaseIn.campaignName!!)
-                .withProperties(eventProperties)
+                .withProperties(
+                    CampaignProperties(
+                        useCaseIn.properties.map {
+                            CampaignProperty(it.key, it.value)
+                        }
+                    )
+                )
                 .build()
 
             coEvery {
@@ -192,6 +207,19 @@ class PostEventUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { campaignEventsRepository.save(any(CampaignEvents::class)) }
             }
 
+            then("publish campaign event to dashboard stream") {
+                coVerify(exactly = 1) {
+                    campaignDashboardService.publishCampaignEvent(
+                        match {
+                            it.campaignId == campaign.id &&
+                                it.eventId == event.id &&
+                                it.userId == event.userId &&
+                                it.eventName == event.name
+                        }
+                    )
+                }
+            }
+
             `when`("post event with campaign. when campaign is not cached") {
                 coEvery {
                     campaignCacheManager.loadAndSaveIfMiss(
@@ -219,6 +247,96 @@ class PostEventUseCaseTest : BehaviorSpec({
                     }
                     coVerify(exactly = 1) { campaignRepository.findCampaignByName(campaign.name) }
                 }
+            }
+        }
+
+        `when`("post event with campaign when dashboard service fails") {
+            val properties = listOf(
+                PostEventPropertyDto(
+                    key = "key1",
+                    value = "value1"
+                ),
+                PostEventPropertyDto(
+                    key = "key2",
+                    value = "value2"
+                )
+            )
+            val useCaseIn = PostEventUseCaseIn(
+                name = "event",
+                externalId = "1",
+                properties = properties,
+                campaignName = "campaign"
+            )
+
+            val user = UserFixtures.giveMeOne()
+                .withExternalId(useCaseIn.externalId)
+                .withUserAttributes(UserAttributesFixtures.giveMeOne().withValue("""{}""").build())
+                .build()
+            coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
+
+            val eventProperties = PropertiesFixtures.giveMeOne()
+                .withValue(
+                    useCaseIn.properties.map {
+                        PropertyFixtures.giveMeOne()
+                            .withKey(it.key)
+                            .withValue(it.value)
+                            .buildEvent()
+                    }
+                )
+                .buildEvent()
+
+            val event = EventFixtures.giveMeOne()
+                .withName(useCaseIn.name)
+                .withUserId(user.id!!)
+                .withProperties(eventProperties)
+                .build()
+            coEvery { eventRepository.save(any(Event::class)) } answers { event }
+
+            val campaign = CampaignFixtures.giveMeOne()
+                .withName(useCaseIn.campaignName!!)
+                .withProperties(
+                    CampaignProperties(
+                        useCaseIn.properties.map {
+                            CampaignProperty(it.key, it.value)
+                        }
+                    )
+                )
+                .build()
+
+            coEvery {
+                campaignCacheManager.loadAndSaveIfMiss(
+                    eq(Campaign.UNIQUE_FIELDS.NAME),
+                    eq(useCaseIn.campaignName!!),
+                    captureLambda<suspend () -> Campaign?>()
+                )
+            } coAnswers {
+                campaign
+            }
+
+            val campaignEvents = CampaignEvents.new(
+                campaignId = campaign.id!!,
+                eventId = event.id!!
+            )
+            coEvery { campaignEventsRepository.save(any(CampaignEvents::class)) } answers { campaignEvents }
+
+            // Dashboard service throws exception
+            coEvery {
+                campaignDashboardService.publishCampaignEvent(any())
+            } throws RuntimeException("Redis connection failed")
+
+            val result = postEventUseCase.execute(useCaseIn)
+
+            then("should return success despite dashboard service failure") {
+                result.id shouldBe event.id!!
+                result.message shouldBe SaveEventMessage.EVENT_SAVE_WITH_CAMPAIGN.message
+            }
+
+            then("should still save campaign event") {
+                coVerify(exactly = 1) { campaignEventsRepository.save(any(CampaignEvents::class)) }
+            }
+
+            then("should attempt to publish to dashboard stream") {
+                coVerify(exactly = 1) { campaignDashboardService.publishCampaignEvent(any()) }
             }
         }
 
@@ -256,10 +374,10 @@ class PostEventUseCaseTest : BehaviorSpec({
                                 PropertyFixtures.giveMeOne()
                                     .withKey(it.key)
                                     .withValue(it.value)
-                                    .build()
+                                    .buildEvent()
                             }
                         )
-                        .build()
+                        .buildEvent()
                 )
                 .build()
             coEvery { eventRepository.save(any(Event::class)) } answers { event }
@@ -307,6 +425,10 @@ class PostEventUseCaseTest : BehaviorSpec({
             then("can't set campaign and event case campaign not found") {
                 coVerify(exactly = 0) { campaignEventsRepository.save(any(CampaignEvents::class)) }
             }
+
+            then("should not publish to dashboard stream when campaign not found") {
+                coVerify(exactly = 0) { campaignDashboardService.publishCampaignEvent(any()) }
+            }
         }
 
         `when`("post event with campaign but not all match property keys") {
@@ -343,10 +465,10 @@ class PostEventUseCaseTest : BehaviorSpec({
                                 PropertyFixtures.giveMeOne()
                                     .withKey(it.key)
                                     .withValue(it.value)
-                                    .build()
+                                    .buildEvent()
                             }
                         )
-                        .build()
+                        .buildEvent()
                 )
                 .build()
             coEvery { eventRepository.save(any(Event::class)) } answers {
@@ -365,13 +487,13 @@ class PostEventUseCaseTest : BehaviorSpec({
                     PropertiesFixtures.giveMeOne()
                         .withValue(
                             notMatchProperties.map {
-                                PropertyFixtures.giveMeOne()
+                                PropertyFixtures.giveMeOneCampaign()
                                     .withKey(it.key)
                                     .withValue(it.value)
-                                    .build()
+                                    .buildEvent()
                             }
                         )
-                        .build()
+                        .buildCampaign()
                 )
                 .build()
             coEvery {
@@ -411,6 +533,10 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             then("can't set campaign and event cause property keys not match") {
                 coVerify(exactly = 0) { campaignEventsRepository.save(any(CampaignEvents::class)) }
+            }
+
+            then("should not publish to dashboard stream when property keys mismatch") {
+                coVerify(exactly = 0) { campaignDashboardService.publishCampaignEvent(any()) }
             }
         }
 

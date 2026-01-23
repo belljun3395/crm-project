@@ -49,6 +49,7 @@ dependencyManagement {
     imports {
         mavenBom("org.springframework.modulith:spring-modulith-bom:${DependencyVersion.SPRING_MODULITH}")
         mavenBom("org.springframework.cloud:spring-cloud-dependencies:${DependencyVersion.SPRING_CLOUD}")
+        mavenBom("software.amazon.awssdk:bom:${DependencyVersion.AWS_SDK}")
     }
 }
 
@@ -62,10 +63,13 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
     /** spring */
+    implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+    implementation("io.r2dbc:r2dbc-pool")
     implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
+    implementation("org.springframework.kafka:spring-kafka")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j")
     implementation("org.springframework.modulith:spring-modulith-starter-core")
@@ -100,8 +104,11 @@ dependencies {
 
     /** aws */
     implementation("io.awspring.cloud:spring-cloud-aws-starter-sqs:${DependencyVersion.AWS_SQS}")
-    implementation("software.amazon.awssdk:scheduler:${DependencyVersion.SCHEDULER}")
+    implementation("software.amazon.awssdk:sqs")
+    implementation("software.amazon.awssdk:sns")
+    implementation("software.amazon.awssdk:scheduler")
     implementation("com.amazonaws:aws-java-sdk-ses:${DependencyVersion.AWS_SES}")
+    implementation("software.amazon.awssdk:aws-query-protocol")
 
     /** docs */
     runtimeOnly("com.github.therapi:therapi-runtime-javadoc-scribe:${DependencyVersion.JAVADOC_SCRIBE}")

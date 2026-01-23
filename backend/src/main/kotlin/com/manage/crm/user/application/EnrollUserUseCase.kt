@@ -1,5 +1,6 @@
 package com.manage.crm.user.application
 
+import com.manage.crm.infrastructure.cache.provider.CacheInvalidationPublisher
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
 import com.manage.crm.user.application.dto.EnrollUserUseCaseIn
@@ -10,6 +11,7 @@ import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
 import com.manage.crm.user.domain.vo.UserAttributes
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -17,8 +19,11 @@ import org.springframework.transaction.annotation.Transactional
 class EnrollUserUseCase(
     private val userRepository: UserRepository,
     private val userRepositoryEventProcessor: UserRepositoryEventProcessor,
-    private val jsonService: JsonService
+    private val jsonService: JsonService,
+    private val cacheInvalidationPublisher: CacheInvalidationPublisher
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Transactional
     suspend fun execute(useCaseIn: EnrollUserUseCaseIn): EnrollUserUseCaseOut {
         val id: Long? = useCaseIn.id
@@ -44,9 +49,13 @@ class EnrollUserUseCase(
             }
         }
 
+        // Publish cache invalidation message
+        val userId = updateOrSaveUser.id!!
+        cacheInvalidationPublisher.publishCacheInvalidation(listOf("user:$userId"))
+
         return out {
             EnrollUserUseCaseOut(
-                id = updateOrSaveUser.id!!,
+                id = userId,
                 externalId = updateOrSaveUser.externalId,
                 userAttributes = updateOrSaveUser.userAttributes.value
             )
