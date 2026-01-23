@@ -27,7 +27,8 @@ Active-Active 재해복구(DR)를 지원하는 멀티 클라우드 Kubernetes �
 - 자동 장애조치: 30초 내 자동 전환
 - 데이터베이스 복제: PostgreSQL 실시간 복제 (1-5초 지연)
 - 글로벌 로드밸런싱: CloudFlare 기반 지능형 라우팅
-- 고가용성: 99.99% 가용성 목표
+- 고가용성: 99.99% 가용성 목표 (Multi-AZ NAT, EKS/GKE HA 구성)
+- 보안 강화: Kubernetes 제어부 프라이빗 액세스 제한, VPN 기반 내부 통신
 - 모듈화: 재사용 가능한 Terraform 모듈
 
 ---

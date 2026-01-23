@@ -145,10 +145,11 @@ cd terraform/environments/aws/dr
 
 cat > terraform.tfvars << 'EOF'
 # 기본 설정
-aws_region   = "ap-northeast-2"
-cluster_name = "crm-dr"
-project      = "crm"
-environment  = "dr"
+aws_region     = "ap-northeast-2"
+cluster_name   = "crm-dr"
+project        = "crm"
+environment    = "dr"
+gcp_project_id = "your-gcp-project-id"  # 필수: GCP 프로젝트 ID
 
 # VPC 설정
 vpc_cidr             = "10.30.0.0/16"
@@ -158,6 +159,10 @@ private_subnet_cidrs = ["10.30.10.0/24", "10.30.11.0/24"]
 
 # EKS 설정
 cluster_version             = "1.29"
+# 초기 배포 시 로컬에서 접근하려면 true로 설정하고, 운영 시 false로 변경 권장
+enable_cluster_public_access = true
+cluster_public_access_cidrs  = ["0.0.0.0/0"] # 운영 시 관리자 IP로 제한 권장
+
 node_group_instance_types   = ["t3.xlarge"]
 node_group_desired_capacity = 5
 node_group_min_size         = 3
