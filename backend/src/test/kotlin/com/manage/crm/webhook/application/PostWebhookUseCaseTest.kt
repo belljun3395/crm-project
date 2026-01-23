@@ -2,8 +2,7 @@ package com.manage.crm.webhook.application
 
 import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.exception.NotFoundByIdException
-import com.manage.crm.webhook.domain.CreateWebhookRequest
-import com.manage.crm.webhook.domain.UpdateWebhookRequest
+import com.manage.crm.webhook.application.dto.PostWebhookUseCaseIn
 import com.manage.crm.webhook.domain.Webhook
 import com.manage.crm.webhook.domain.WebhookEventType
 import com.manage.crm.webhook.domain.WebhookEvents
@@ -22,13 +21,13 @@ import org.springframework.dao.DataIntegrityViolationException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-class ManageWebhookUseCaseTest : BehaviorSpec({
+class PostWebhookUseCaseTest : BehaviorSpec({
     lateinit var webhookRepository: WebhookRepository
-    lateinit var manageWebhookUseCase: ManageWebhookUseCase
+    lateinit var postWebhookUseCase: PostWebhookUseCase
 
     beforeTest {
         webhookRepository = mockk()
-        manageWebhookUseCase = ManageWebhookUseCase(webhookRepository)
+        postWebhookUseCase = PostWebhookUseCase(webhookRepository)
     }
 
     afterTest { (_, _) ->
@@ -38,7 +37,7 @@ class ManageWebhookUseCaseTest : BehaviorSpec({
     given("create webhook") {
         `when`("request is valid and name is unique") {
             then("persist webhook and return response") {
-                val request = CreateWebhookRequest(
+                val request = PostWebhookUseCaseIn(
                     name = "user-webhook",
                     url = "https://example.com/webhook",
                     events = listOf(WebhookEventType.USER_CREATED.value),
@@ -56,7 +55,7 @@ class ManageWebhookUseCaseTest : BehaviorSpec({
                 coEvery { webhookRepository.findByName(request.name) } returns null
                 coEvery { webhookRepository.save(any()) } returns saved
 
-                val response = manageWebhookUseCase.create(request)
+                val response = postWebhookUseCase.execute(request)
 
                 coVerify(exactly = 1) { webhookRepository.findByName(request.name) }
                 val savedSlot = slot<Webhook>()
@@ -77,7 +76,7 @@ class ManageWebhookUseCaseTest : BehaviorSpec({
 
         `when`("name already exists before save") {
             then("throw AlreadyExistsException") {
-                val request = CreateWebhookRequest(
+                val request = PostWebhookUseCaseIn(
                     name = "duplicated",
                     url = "https://example.com/webhook",
                     events = listOf(WebhookEventType.EMAIL_SENT.value),
@@ -94,14 +93,14 @@ class ManageWebhookUseCaseTest : BehaviorSpec({
                 )
 
                 shouldThrow<AlreadyExistsException> {
-                    runBlocking { manageWebhookUseCase.create(request) }
+                    runBlocking { postWebhookUseCase.execute(request) }
                 }
             }
         }
 
         `when`("database reports duplicate name during save") {
             then("wrap duplicate violation as AlreadyExistsException") {
-                val request = CreateWebhookRequest(
+                val request = PostWebhookUseCaseIn(
                     name = "unique-check",
                     url = "https://example.com/webhook",
                     events = listOf(WebhookEventType.USER_CREATED.value),
@@ -112,7 +111,7 @@ class ManageWebhookUseCaseTest : BehaviorSpec({
                 coEvery { webhookRepository.save(any()) } throws DataIntegrityViolationException("duplicate")
 
                 shouldThrow<AlreadyExistsException> {
-                    runBlocking { manageWebhookUseCase.create(request) }
+                    runBlocking { postWebhookUseCase.execute(request) }
                 }
             }
         }
@@ -130,9 +129,10 @@ class ManageWebhookUseCaseTest : BehaviorSpec({
                     active = true,
                     createdAt = LocalDateTime.of(2024, 1, 1, 10, 0, 0)
                 )
-                val request = UpdateWebhookRequest(
+                val request = PostWebhookUseCaseIn(
+                    id = webhookId,
                     name = "new-name",
-                    url = null,
+                    url = "https://old.example.com",
                     events = listOf("email_sent"),
                     active = false
                 )
@@ -140,7 +140,7 @@ class ManageWebhookUseCaseTest : BehaviorSpec({
                 coEvery { webhookRepository.findById(webhookId) } returns existing
                 coEvery { webhookRepository.save(any()) } returns existing
 
-                val response = manageWebhookUseCase.update(webhookId, request)
+                val response = postWebhookUseCase.execute(request)
 
                 coVerify(exactly = 1) { webhookRepository.findById(webhookId) }
                 val updatedSlot = slot<Webhook>()
@@ -163,7 +163,8 @@ class ManageWebhookUseCaseTest : BehaviorSpec({
         `when`("webhook does not exist") {
             then("throw NotFoundByIdException") {
                 val webhookId = 99L
-                val request = UpdateWebhookRequest(
+                val request = PostWebhookUseCaseIn(
+                    id = webhookId,
                     name = "any",
                     url = "https://example.com",
                     events = listOf(WebhookEventType.USER_CREATED.value),
@@ -173,25 +174,8 @@ class ManageWebhookUseCaseTest : BehaviorSpec({
                 coEvery { webhookRepository.findById(webhookId) } returns null
 
                 shouldThrow<NotFoundByIdException> {
-                    runBlocking { manageWebhookUseCase.update(webhookId, request) }
+                    runBlocking { postWebhookUseCase.execute(request) }
                 }
-            }
-        }
-    }
-
-    given("delete webhook") {
-        `when`("webhook is missing") {
-            then("throw NotFoundByIdException and skip delete") {
-                val webhookId = 123L
-                coEvery { webhookRepository.findById(webhookId) } returns null
-                coEvery { webhookRepository.delete(any()) } returns Unit
-
-                shouldThrow<NotFoundByIdException> {
-                    runBlocking { manageWebhookUseCase.delete(webhookId) }
-                }
-
-                coVerify(exactly = 1) { webhookRepository.findById(webhookId) }
-                coVerify(exactly = 0) { webhookRepository.delete(any()) }
             }
         }
     }
