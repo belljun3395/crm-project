@@ -195,6 +195,14 @@ elasticache_snapshot_retention_limit   = 30
 elasticache_automatic_failover_enabled = true
 elasticache_multi_az_enabled           = true
 
+# Kafka (MSK) 설정 (활성화)
+enable_kafka              = true
+kafka_version             = "3.6.0"
+kafka_instance_type       = "kafka.t3.small"
+kafka_number_of_brokers   = 2
+kafka_volume_size         = 10
+kafka_allowed_cidr_blocks = [] # 필요 시 추가
+
 # VPN 설정 (나중에 GCP 배포 후 활성화)
 enable_vpn                  = false  # 먼저 false로 시작
 gcp_network_id              = ""     # GCP 배포 후 채움

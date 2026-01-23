@@ -97,3 +97,19 @@ output "vpn_gateway_id" {
   description = "VPN Gateway ID"
   value       = var.enable_vpn ? module.vpn_to_gcp[0].aws_vpn_gateway_id : null
 }
+
+# Kafka (MSK) Outputs
+output "kafka_bootstrap_brokers_sasl_scram" {
+  description = "Kafka bootstrap brokers (SASL/SCRAM)"
+  value       = var.enable_kafka ? module.msk[0].bootstrap_brokers_sasl_scram : null
+}
+
+output "kafka_bootstrap_brokers_sasl_iam" {
+  description = "Kafka bootstrap brokers (SASL/IAM)"
+  value       = var.enable_kafka ? module.msk[0].bootstrap_brokers_sasl_iam : null
+}
+
+output "kafka_zookeeper_connect_string" {
+  description = "Kafka Zookeeper connection string"
+  value       = var.enable_kafka ? module.msk[0].zookeeper_connect_string : null
+}

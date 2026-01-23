@@ -68,6 +68,7 @@ Active-Active 재해복구(DR)를 지원하는 멀티 클라우드 Kubernetes �
 - EKS: Kubernetes 클러스터
 - RDS: PostgreSQL (Primary)
 - ElastiCache: Redis (Multi-AZ)
+- MSK: Kafka (Event Streaming)
 - VPN: AWS-GCP 연결
 
 #### GCP 환경

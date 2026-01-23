@@ -150,6 +150,23 @@ module "elasticache" {
   tags                       = local.common_tags
 }
 
+# Kafka (MSK)
+module "msk" {
+  source = "../../../modules/msk"
+  count  = var.enable_kafka ? 1 : 0
+
+  name_prefix            = local.name_prefix
+  vpc_id                 = module.networking.vpc_id
+  client_subnets         = [for i in range(length(module.networking.private_subnets)) : module.networking.private_subnets[i]]
+  allowed_cidr_blocks    = concat([var.vpc_cidr], var.kafka_allowed_cidr_blocks)
+  kafka_version          = var.kafka_version
+  number_of_broker_nodes = var.kafka_number_of_brokers
+  instance_type          = var.kafka_instance_type
+  volume_size            = var.kafka_volume_size
+
+  tags = local.common_tags
+}
+
 # VPN Connection to GCP (조건부)
 module "vpn_to_gcp" {
   source = "../../../modules/aws-gcp-vpn"

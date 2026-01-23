@@ -385,3 +385,40 @@ variable "acm_certificate_arn" {
   type        = string
   default     = ""
 }
+
+# Kafka Configuration
+variable "enable_kafka" {
+  description = "Enable MSK Kafka cluster"
+  type        = bool
+  default     = true
+}
+
+variable "kafka_version" {
+  description = "Kafka version"
+  type        = string
+  default     = "3.6.0"
+}
+
+variable "kafka_instance_type" {
+  description = "Kafka broker instance type"
+  type        = string
+  default     = "kafka.t3.small"
+}
+
+variable "kafka_number_of_brokers" {
+  description = "Number of Kafka brokers"
+  type        = number
+  default     = 2
+}
+
+variable "kafka_volume_size" {
+  description = "EBS volume size per broker (GB)"
+  type        = number
+  default     = 10
+}
+
+variable "kafka_allowed_cidr_blocks" {
+  description = "CIDR blocks allowed to access Kafka"
+  type        = list(string)
+  default     = []
+}
