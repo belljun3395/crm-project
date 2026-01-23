@@ -1,9 +1,10 @@
 package com.manage.crm.email.event.relay.aws.mapper
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
 import com.manage.crm.email.domain.vo.EventId
-import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
 import org.springframework.stereotype.Component
+import java.time.LocalDateTime
 
 data class ScheduledEventMessage(
     val templateId: Long,
@@ -32,12 +33,13 @@ class ScheduledEventMessageMapper(
         }
     }
 
-    fun toEvent(message: ScheduledEventMessage): NotificationEmailSendTimeOutInvokeEvent {
-        return NotificationEmailSendTimeOutInvokeEvent(
-            timeOutEventId = EventId(message.eventId),
+    fun toInput(message: ScheduledEventMessage): NotificationEmailSendTimeOutEventInput {
+        return NotificationEmailSendTimeOutEventInput(
             templateId = message.templateId,
             templateVersion = message.templateVersion,
-            userIds = message.userIds
+            userIds = message.userIds,
+            eventId = EventId(message.eventId),
+            expiredTime = LocalDateTime.now()
         )
     }
 }

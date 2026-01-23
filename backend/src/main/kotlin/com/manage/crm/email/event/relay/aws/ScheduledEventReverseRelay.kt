@@ -1,8 +1,7 @@
 package com.manage.crm.email.event.relay.aws
 
 import com.manage.crm.email.event.relay.aws.mapper.ScheduledEventMessageMapper
-import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
-import com.manage.crm.email.support.EmailEventPublisher
+import com.manage.crm.infrastructure.scheduler.handler.ScheduledTaskHandler
 import io.awspring.cloud.sqs.annotation.SqsListener
 import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -14,8 +13,8 @@ import org.springframework.stereotype.Component
 @Component
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws")
 class ScheduledEventReverseRelay(
-    private val emailEventPublisher: EmailEventPublisher,
-    private val scheduledEventMessageMapper: ScheduledEventMessageMapper
+    private val scheduledEventMessageMapper: ScheduledEventMessageMapper,
+    private val scheduledTaskHandler: ScheduledTaskHandler
 ) {
     val log = KotlinLogging.logger { }
 
@@ -25,12 +24,8 @@ class ScheduledEventReverseRelay(
         acknowledgement: Acknowledgement
     ) {
         scheduledEventMessageMapper.map(message)
-            .let { scheduledEventMessageMapper.toEvent(it) }
-            .let { publish(it) }
+            .let { scheduledEventMessageMapper.toInput(it) }
+            .let { scheduledTaskHandler.handle(it) }
         acknowledgement.acknowledge()
-    }
-
-    fun publish(event: NotificationEmailSendTimeOutInvokeEvent) {
-        emailEventPublisher.publishEvent(event)
     }
 }
