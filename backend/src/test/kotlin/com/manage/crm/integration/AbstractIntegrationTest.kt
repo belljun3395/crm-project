@@ -30,7 +30,7 @@ import java.net.URI
 import java.nio.charset.Charset
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Testcontainers(disabledWithoutDocker = true)
+@Testcontainers
 @ActiveProfiles("test")
 abstract class AbstractIntegrationTest : DescribeSpec() {
 
@@ -136,7 +136,10 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
         }
 
         private fun configureDatabaseProperties(registry: DynamicPropertyRegistry) {
+            val jdbcUrl = mysqlContainer.jdbcUrl
             val r2dbcUrl = "r2dbc:pool:mysql://${mysqlContainer.host}:${mysqlContainer.getMappedPort(3306)}/${mysqlConfig.databaseName}?useSSL=false"
+
+            LoggerFactory.getLogger(AbstractIntegrationTest::class.java).info("MySQL Container started. JDBC URL: $jdbcUrl, R2DBC URL: $r2dbcUrl")
 
             registry.add("spring.r2dbc.url") { r2dbcUrl }
             registry.add("spring.r2dbc.username") { mysqlConfig.username }
