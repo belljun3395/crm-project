@@ -71,3 +71,9 @@ output "memorystore_connection_string" {
   value       = var.enable_memorystore ? module.memorystore[0].connection_string : null
   description = "Memorystore connection string"
 }
+
+# Kafka Outputs
+output "kafka_bootstrap_servers" {
+  value       = module.kafka.kafka_bootstrap_servers
+  description = "Kafka bootstrap servers (internal)"
+}
