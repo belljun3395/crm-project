@@ -3,11 +3,18 @@ package com.manage.crm.webhook.controller
 import com.manage.crm.config.SwaggerTag
 import com.manage.crm.support.web.ApiResponse
 import com.manage.crm.support.web.ApiResponseGenerator
-import com.manage.crm.webhook.application.ManageWebhookUseCase
-import com.manage.crm.webhook.application.WebhookQueryService
-import com.manage.crm.webhook.domain.CreateWebhookRequest
-import com.manage.crm.webhook.domain.UpdateWebhookRequest
-import com.manage.crm.webhook.domain.WebhookResponse
+import com.manage.crm.webhook.application.BrowseWebhookUseCase
+import com.manage.crm.webhook.application.DeleteWebhookUseCase
+import com.manage.crm.webhook.application.GetWebhookUseCase
+import com.manage.crm.webhook.application.PostWebhookUseCase
+import com.manage.crm.webhook.application.dto.BrowseWebhookUseCaseIn
+import com.manage.crm.webhook.application.dto.DeleteWebhookUseCaseIn
+import com.manage.crm.webhook.application.dto.GetWebhookUseCaseIn
+import com.manage.crm.webhook.application.dto.PostWebhookUseCaseIn
+import com.manage.crm.webhook.application.dto.PostWebhookUseCaseOut
+import com.manage.crm.webhook.application.dto.WebhookDto
+import com.manage.crm.webhook.controller.request.PostWebhookRequest
+import com.manage.crm.webhook.controller.request.PutWebhookRequest
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -28,17 +35,25 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping(value = ["/api/v1/webhooks"])
 @ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
 class WebhookController(
-    private val manageWebhookUseCase: ManageWebhookUseCase,
-    private val webhookQueryService: WebhookQueryService
+    private val postWebhookUseCase: PostWebhookUseCase,
+    private val deleteWebhookUseCase: DeleteWebhookUseCase,
+    private val browseWebhookUseCase: BrowseWebhookUseCase,
+    private val getWebhookUseCase: GetWebhookUseCase
 ) {
     @PostMapping
     suspend fun create(
         @Valid
         @RequestBody
-        request: CreateWebhookRequest
-    ): ApiResponse<ApiResponse.SuccessBody<WebhookResponse>> {
-        return manageWebhookUseCase.create(request)
-            .let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
+        request: PostWebhookRequest
+    ): ApiResponse<ApiResponse.SuccessBody<PostWebhookUseCaseOut>> {
+        return postWebhookUseCase.execute(
+            PostWebhookUseCaseIn(
+                name = request.name,
+                url = request.url,
+                events = request.events,
+                active = request.active
+            )
+        ).let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
     }
 
     @PutMapping("/{id}")
@@ -46,27 +61,35 @@ class WebhookController(
         @PathVariable id: Long,
         @Valid
         @RequestBody
-        request: UpdateWebhookRequest
-    ): ApiResponse<ApiResponse.SuccessBody<WebhookResponse>> {
-        return manageWebhookUseCase.update(id, request)
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+        request: PutWebhookRequest
+    ): ApiResponse<ApiResponse.SuccessBody<PostWebhookUseCaseOut>> {
+        val existing = getWebhookUseCase.execute(GetWebhookUseCaseIn(id)).webhook
+        return postWebhookUseCase.execute(
+            PostWebhookUseCaseIn(
+                id = id,
+                name = request.name ?: existing.name,
+                url = request.url ?: existing.url,
+                events = request.events ?: existing.events,
+                active = request.active ?: existing.active
+            )
+        ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
     }
 
     @DeleteMapping("/{id}")
     suspend fun delete(@PathVariable id: Long): ApiResponse<ApiResponse.Success> {
-        manageWebhookUseCase.delete(id)
+        deleteWebhookUseCase.execute(DeleteWebhookUseCaseIn(id))
         return ApiResponseGenerator.success(HttpStatus.NO_CONTENT)
     }
 
     @GetMapping
-    suspend fun list(): ApiResponse<ApiResponse.SuccessBody<List<WebhookResponse>>> {
-        return webhookQueryService.list()
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+    suspend fun list(): ApiResponse<ApiResponse.SuccessBody<List<WebhookDto>>> {
+        return browseWebhookUseCase.execute(BrowseWebhookUseCaseIn())
+            .let { ApiResponseGenerator.success(it.webhooks, HttpStatus.OK) }
     }
 
     @GetMapping("/{id}")
-    suspend fun get(@PathVariable id: Long): ApiResponse<ApiResponse.SuccessBody<WebhookResponse>> {
-        return webhookQueryService.get(id)
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+    suspend fun get(@PathVariable id: Long): ApiResponse<ApiResponse.SuccessBody<WebhookDto>> {
+        return getWebhookUseCase.execute(GetWebhookUseCaseIn(id))
+            .let { ApiResponseGenerator.success(it.webhook, HttpStatus.OK) }
     }
 }
