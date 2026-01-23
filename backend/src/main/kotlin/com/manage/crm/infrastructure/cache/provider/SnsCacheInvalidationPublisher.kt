@@ -2,7 +2,7 @@ package com.manage.crm.infrastructure.cache.provider
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.services.sns.SnsClient
@@ -10,7 +10,7 @@ import software.amazon.awssdk.services.sns.model.PublishRequest
 
 @Primary
 @Component
-@ConditionalOnBean(SnsClient::class)
+@ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
 class SnsCacheInvalidationPublisher(
     private val snsClient: SnsClient,
     @Value("\${spring.aws.sns.cache-invalidation-topic-arn:#{null}}")

@@ -30,6 +30,13 @@ scheduler:
     # - 'redis-kafka': Uses Redis Sorted Sets for scheduling and Kafka for distributed execution
     provider: ${SCHEDULER_PROVIDER:aws}
 
+message:
+    # Message infrastructure provider.
+    # Supported values:
+    # - 'aws': Uses AWS SQS and SNS
+    # - 'kafka': Uses Kafka for messaging
+    provider: ${MESSAGE_PROVIDER:aws}
+
 webhook:
     # Enable/disable webhook feature globally (dispatching events to registered URLs)
     enabled: ${WEBHOOK_ENABLED:true}
