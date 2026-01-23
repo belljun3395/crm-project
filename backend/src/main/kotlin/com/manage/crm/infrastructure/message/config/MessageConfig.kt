@@ -13,7 +13,6 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 
 @Configuration
-@ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
 class MessageConfig {
 
     companion object {
@@ -23,12 +22,13 @@ class MessageConfig {
     }
 
     @Value("\${spring.aws.region}")
-    val region: String? = null
+    private lateinit var region: String
 
     @Value("\${spring.aws.endpoint-url:#{null}}")
-    val endpointUrl: String? = null
+    private var endpointUrl: String? = null
 
     @Bean(SQS_ASYNC_CLIENT)
+    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
     fun sqsAsyncClient(awsCredentials: AWSCredentials): SqsAsyncClient {
         val clientBuilder = SqsAsyncClient
             .builder()
@@ -48,6 +48,7 @@ class MessageConfig {
     }
 
     @Bean(SQS_LISTENER_CONTAINER_FACTORY)
+    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
     fun defaultSqsListenerContainerFactory(awsCredentials: AWSCredentials): SqsMessageListenerContainerFactory<Any> =
         SqsMessageListenerContainerFactory
             .builder<Any>()
@@ -58,6 +59,7 @@ class MessageConfig {
             .build()
 
     @Bean(SQS_TEMPLATE)
+    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
     fun sqsTemplate(awsCredentials: AWSCredentials): SqsTemplate =
         SqsTemplate.newTemplate(sqsAsyncClient(awsCredentials))
 }

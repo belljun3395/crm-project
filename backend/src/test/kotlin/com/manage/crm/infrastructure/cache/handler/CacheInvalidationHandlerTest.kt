@@ -2,11 +2,12 @@ package com.manage.crm.infrastructure.cache.handler
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.springframework.data.redis.core.RedisTemplate
+
+
 
 class CacheInvalidationHandlerTest {
     private val redisTemplate = mockk<RedisTemplate<String, Any>>(relaxed = true)

@@ -15,6 +15,7 @@ import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.mockingDetails
 import org.mockito.Mockito.`when`
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.modulith.test.Scenario
 import software.amazon.awssdk.services.scheduler.model.CreateScheduleResponse
@@ -22,11 +23,12 @@ import java.time.LocalDateTime
 import kotlin.test.assertEquals
 
 class NotificationEmailSendTimeOutEventListenerTest(
-    @Qualifier("scheduleTaskServicePostEventProcessor")
-    private val scheduleTaskService: ScheduleTaskAllService,
     scheduledEventMessageMapper: ScheduledEventMessageMapper,
-    scheduledTaskHandler: ScheduledTaskHandler
 ) : MailEventInvokeSituationTest() {
+
+    @Autowired
+    @Qualifier("scheduleTaskServicePostEventProcessor")
+    private lateinit var scheduleTaskService: ScheduleTaskAllService
 
     private var scheduledEventReverseRelay =
         ScheduledEventReverseRelay(

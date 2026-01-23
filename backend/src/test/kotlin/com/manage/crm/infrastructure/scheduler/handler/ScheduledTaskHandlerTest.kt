@@ -4,7 +4,6 @@ import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInp
 import com.manage.crm.email.domain.vo.EventId
 import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
 import io.mockk.confirmVerified
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
@@ -31,12 +30,14 @@ class ScheduledTaskHandlerTest {
 
         // Then
         verify(exactly = 1) {
-            applicationEventPublisher.publishEvent(match<NotificationEmailSendTimeOutInvokeEvent> {
-                it.timeOutEventId == input.eventId &&
-                    it.templateId == input.templateId &&
-                    it.templateVersion == input.templateVersion &&
-                    it.userIds == input.userIds
-            })
+            applicationEventPublisher.publishEvent(
+                match<NotificationEmailSendTimeOutInvokeEvent> {
+                    it.timeOutEventId == input.eventId &&
+                        it.templateId == input.templateId &&
+                        it.templateVersion == input.templateVersion &&
+                        it.userIds == input.userIds
+                }
+            )
         }
         confirmVerified(applicationEventPublisher)
     }

@@ -14,19 +14,17 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import java.net.URI
 
 @Configuration
-@ConditionalOnProperty(name = ["spring.aws.region"])
-@ConditionalOnBean(AWSCredentials::class)
 class AwsClientConfig {
     companion object {
         const val SNS_CLIENT = "snsClient"
         const val SQS_CLIENT = "sqsClient"
     }
 
-    @Value("\${spring.aws.region}")
-    val region: String? = null
+    @Value("\${spring.aws.region:ap-northeast-2}")
+    private lateinit var region: String
 
     @Value("\${spring.aws.endpoint-url:#{null}}")
-    val endpointUrl: String? = null
+    private var endpointUrl: String? = null
 
     @Bean(name = [SNS_CLIENT])
     @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
@@ -42,7 +40,6 @@ class AwsClientConfig {
                 )
             )
 
-        // Configure endpoint URL for LocalStack
         endpointUrl?.let { url ->
             builder.endpointOverride(URI.create(url))
         }
@@ -64,7 +61,6 @@ class AwsClientConfig {
                 )
             )
 
-        // Configure endpoint URL for LocalStack
         endpointUrl?.let { url ->
             builder.endpointOverride(URI.create(url))
         }
