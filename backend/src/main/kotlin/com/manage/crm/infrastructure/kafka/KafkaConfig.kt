@@ -24,36 +24,14 @@ import org.springframework.kafka.support.serializer.JsonSerializer
  * Configures producers and consumers for the scheduled-tasks topic
  */
 @Configuration
-@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
+@ConditionalOnProperty(name = ["spring.kafka.bootstrap-servers"])
 class KafkaConfig {
 
     @Value("\${spring.kafka.bootstrap-servers}")
     private lateinit var bootstrapServers: String
 
-    @Value("\${spring.kafka.consumer.group-id:crm-scheduled-tasks-consumer}")
-    private lateinit var groupId: String
-
-    /**
-     * Producer configuration for ScheduledTaskEvent
-     */
-    @Bean
-    fun scheduledTaskProducerFactory(): ProducerFactory<String, ScheduledTaskEvent> {
-        val configProps = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
-            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java,
-            ProducerConfig.ACKS_CONFIG to "all", // Wait for all replicas
-            ProducerConfig.RETRIES_CONFIG to 3,
-            ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION to 1, // Ensure ordering
-            ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true // Prevent duplicates
-        )
-        return DefaultKafkaProducerFactory(configProps)
-    }
-
-    @Bean
-    fun scheduledTaskKafkaTemplate(): KafkaTemplate<String, ScheduledTaskEvent> {
-        return KafkaTemplate(scheduledTaskProducerFactory())
-    }
+    @Value("\${spring.kafka.consumer.group-id:crm-default-group}")
+    private lateinit var defaultGroupId: String
 
     @Bean
     fun stringProducerFactory(): ProducerFactory<String, String> {
@@ -70,20 +48,61 @@ class KafkaConfig {
         return KafkaTemplate(stringProducerFactory())
     }
 
-    /**
-     * Consumer configuration for ScheduledTaskEvent
-     */
     @Bean
+    fun stringConsumerFactory(): ConsumerFactory<String, String> {
+        val props = mapOf(
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+            ConsumerConfig.GROUP_ID_CONFIG to defaultGroupId,
+            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
+            ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false
+        )
+        return DefaultKafkaConsumerFactory(props)
+    }
+
+    @Bean
+    fun kafkaListenerContainerFactory(): ConcurrentKafkaListenerContainerFactory<String, String> {
+        val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
+        factory.consumerFactory = stringConsumerFactory()
+        factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
+        return factory
+    }
+
+    // ----------------- Scheduled Task Specific -----------------
+
+    @Bean
+    @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
+    fun scheduledTaskProducerFactory(): ProducerFactory<String, ScheduledTaskEvent> {
+        val configProps = mapOf(
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java,
+            ProducerConfig.ACKS_CONFIG to "all",
+            ProducerConfig.RETRIES_CONFIG to 3,
+            ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION to 1,
+            ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true
+        )
+        return DefaultKafkaProducerFactory(configProps)
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
+    fun scheduledTaskKafkaTemplate(): KafkaTemplate<String, ScheduledTaskEvent> {
+        return KafkaTemplate(scheduledTaskProducerFactory())
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
     fun scheduledTaskConsumerFactory(): ConsumerFactory<String, ScheduledTaskEvent> {
         val props = mapOf(
             ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
-            ConsumerConfig.GROUP_ID_CONFIG to groupId,
+            ConsumerConfig.GROUP_ID_CONFIG to "crm-scheduled-tasks-consumer",
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to JsonDeserializer::class.java,
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
-            ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false, // Manual acknowledgment
-            ConsumerConfig.MAX_POLL_RECORDS_CONFIG to 10,
-            JsonDeserializer.TRUSTED_PACKAGES to "*", // Allow all packages for deserialization
+            ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
+            JsonDeserializer.TRUSTED_PACKAGES to "*",
             JsonDeserializer.VALUE_DEFAULT_TYPE to ScheduledTaskEvent::class.java.name
         )
         return DefaultKafkaConsumerFactory(
@@ -94,11 +113,12 @@ class KafkaConfig {
     }
 
     @Bean
+    @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
     fun scheduledTaskKafkaListenerContainerFactory(): ConcurrentKafkaListenerContainerFactory<String, ScheduledTaskEvent> {
         val factory = ConcurrentKafkaListenerContainerFactory<String, ScheduledTaskEvent>()
         factory.consumerFactory = scheduledTaskConsumerFactory()
-        factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL // Manual acknowledgment
-        factory.setConcurrency(3) // 3 concurrent consumers (matches 3 partitions)
+        factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
+        factory.setConcurrency(3)
         return factory
     }
 }
