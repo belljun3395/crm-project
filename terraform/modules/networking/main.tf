@@ -85,20 +85,20 @@ resource "aws_subnet" "private" {
 }
 
 resource "aws_eip" "nat" {
-  count = var.enable_nat ? 1 : 0
+  count = var.enable_nat ? length(var.public_subnet_cidrs) : 0
 
   domain = "vpc"
 
-  tags = merge(local.merged_tags, { Name = "${var.name}-nat-eip" })
+  tags = merge(local.merged_tags, { Name = "${var.name}-nat-eip-${count.index}" })
 }
 
 resource "aws_nat_gateway" "this" {
-  count = var.enable_nat ? 1 : 0
+  count = var.enable_nat ? length(var.public_subnet_cidrs) : 0
 
-  allocation_id = aws_eip.nat[0].id
-  subnet_id     = aws_subnet.public[local.first_public_subnet_key].id
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[tostring(count.index)].id
 
-  tags = merge(local.merged_tags, { Name = "${var.name}-nat" })
+  tags = merge(local.merged_tags, { Name = "${var.name}-nat-${count.index}" })
 }
 
 resource "aws_route_table" "public" {
@@ -121,26 +121,26 @@ resource "aws_route_table_association" "public" {
 }
 
 resource "aws_route_table" "private" {
-  count = var.enable_nat ? 1 : 0
+  count = var.enable_nat ? length(var.private_subnet_cidrs) : 0
 
   vpc_id = aws_vpc.this.id
 
-  tags = merge(local.merged_tags, { Name = "${var.name}-private-rt" })
+  tags = merge(local.merged_tags, { Name = "${var.name}-private-rt-${count.index}" })
 }
 
 resource "aws_route" "private_nat" {
-  count = var.enable_nat ? 1 : 0
+  count = var.enable_nat ? length(var.private_subnet_cidrs) : 0
 
-  route_table_id         = aws_route_table.private[0].id
+  route_table_id         = aws_route_table.private[count.index].id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.this[0].id
+  nat_gateway_id         = aws_nat_gateway.this[count.index % length(aws_nat_gateway.this)].id
 }
 
 resource "aws_route_table_association" "private" {
   for_each = aws_subnet.private
 
   subnet_id      = each.value.id
-  route_table_id = var.enable_nat ? aws_route_table.private[0].id : aws_route_table.public.id
+  route_table_id = var.enable_nat ? aws_route_table.private[each.key].id : aws_route_table.public.id
 }
 
 resource "aws_flow_log" "this" {

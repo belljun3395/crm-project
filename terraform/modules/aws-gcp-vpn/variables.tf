@@ -65,6 +65,12 @@ variable "advertised_ip_ranges" {
   default     = []
 }
 
+variable "remote_cidr_ranges" {
+  description = "Remote (AWS) CIDR ranges to allow in GCP firewall"
+  type        = list(string)
+  default     = []
+}
+
 variable "tags" {
   description = "Tags to apply to AWS resources"
   type        = map(string)

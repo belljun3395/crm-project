@@ -61,7 +61,7 @@ variable "cluster_version" {
 variable "enable_cluster_public_access" {
   description = "Expose the EKS API server to the internet. Useful for dev but restrict CIDRs."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "cluster_public_access_cidrs" {

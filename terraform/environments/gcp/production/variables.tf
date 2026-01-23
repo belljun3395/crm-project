@@ -87,12 +87,7 @@ variable "master_authorized_networks" {
     cidr_block   = string
     display_name = string
   }))
-  default = [
-    {
-      cidr_block   = "0.0.0.0/0"
-      display_name = "public"
-    }
-  ]
+  default = []
 }
 
 variable "node_pool_machine_type" {

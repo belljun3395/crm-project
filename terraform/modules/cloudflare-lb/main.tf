@@ -228,14 +228,3 @@ resource "cloudflare_load_balancer" "main" {
   }
 }
 
-# DNS Record (Load Balancer 연결)
-resource "cloudflare_record" "lb" {
-  zone_id = var.cloudflare_zone_id
-  name    = var.dns_record_name
-  type    = "CNAME"
-  value   = cloudflare_load_balancer.main.name
-  ttl     = 1 # Auto
-  proxied = var.proxied
-
-  comment = "Managed by Terraform - Active-Active Load Balancer"
-}

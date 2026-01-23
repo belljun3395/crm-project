@@ -164,6 +164,7 @@ module "vpn_to_gcp" {
   tunnel1_preshared_key       = var.vpn_tunnel1_preshared_key
   tunnel2_preshared_key       = var.vpn_tunnel2_preshared_key
   advertised_ip_ranges        = [var.gcp_vpc_cidr]
+  remote_cidr_ranges          = [var.vpc_cidr]
   tags                        = local.common_tags
 
   depends_on = [module.networking]

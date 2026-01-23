@@ -336,6 +336,11 @@ variable "enable_vpn" {
   default     = true
 }
 
+variable "gcp_project_id" {
+  description = "GCP Project ID for VPN connection"
+  type        = string
+}
+
 variable "gcp_network_id" {
   description = "GCP VPC network ID for VPN"
   type        = string

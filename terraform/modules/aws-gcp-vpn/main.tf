@@ -198,10 +198,16 @@ resource "google_compute_router_peer" "peer_2" {
   interface                 = google_compute_router_interface.interface_2.name
 }
 
-# Enable route propagation on AWS
-resource "aws_vpn_gateway_route_propagation" "private_subnets" {
-  count = length(var.aws_private_route_table_ids)
 
-  vpn_gateway_id = aws_vpn_gateway.main.id
-  route_table_id = var.aws_private_route_table_ids[count.index]
+# Allow traffic from AWS VPC
+resource "google_compute_firewall" "allow_aws" {
+  name    = "${var.name_prefix}-allow-aws-ingress"
+  network = var.gcp_network_id
+
+  allow {
+    protocol = "all"
+  }
+
+  source_ranges = var.remote_cidr_ranges
+  priority      = 1000
 }
