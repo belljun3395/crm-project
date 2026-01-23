@@ -29,22 +29,19 @@ class AwsClientConfig {
     val endpointUrl: String? = null
 
     @Bean(name = [SNS_CLIENT])
+    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
     fun snsClient(awsCredentials: AWSCredentials): SnsClient {
         val builder = SnsClient.builder()
-            .region(Region.of(region))
-            .credentialsProvider(
-                StaticCredentialsProvider.create(
-                    AwsBasicCredentials.create(
-                        awsCredentials.awsAccessKeyId,
-                        awsCredentials.awsSecretKey
-                    )
-                )
-            )
+        // ...
+    }
 
-        // Configure endpoint URL for LocalStack
-        endpointUrl?.let { url ->
-            builder.endpointOverride(URI.create(url))
-        }
+    @Bean(name = [SQS_CLIENT])
+    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
+    fun sqsClient(awsCredentials: AWSCredentials): SqsClient {
+        val builder = SqsClient.builder()
+        // ...
+    }
+
 
         return builder.build()
     }
