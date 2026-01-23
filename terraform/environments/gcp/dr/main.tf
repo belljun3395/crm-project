@@ -115,3 +115,15 @@ module "memorystore" {
 
   depends_on = [module.networking]
 }
+
+# Kafka (Strimzi on GKE)
+module "kafka" {
+  source = "../../modules/gke-kafka"
+
+  cluster_name  = "gcp-kafka"
+  namespace     = "kafka"
+  kafka_version = "3.6.0"
+  replicas      = 3
+
+  depends_on = [module.gke]
+}

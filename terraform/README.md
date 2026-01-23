@@ -75,6 +75,7 @@ Active-Active 재해복구(DR)를 지원하는 멀티 클라우드 Kubernetes �
 - GKE: Kubernetes 클러스터
 - Cloud SQL: PostgreSQL (Replica)
 - Memorystore: Redis (HA)
+- Kafka: Strimzi on GKE (Event Streaming)
 - VPN: GCP-AWS 연결
 
 ### 환경 구성
