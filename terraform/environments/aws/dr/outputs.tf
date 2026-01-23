@@ -1,0 +1,115 @@
+output "vpc_id" {
+  description = "ID of the provisioned VPC."
+  value       = module.networking.vpc_id
+}
+
+output "public_subnet_ids" {
+  description = "Public subnet IDs."
+  value       = module.networking.public_subnet_ids
+}
+
+output "private_subnet_ids" {
+  description = "Private subnet IDs."
+  value       = module.networking.private_subnet_ids
+}
+
+output "cluster_endpoint" {
+  description = "EKS control plane endpoint."
+  value       = module.eks.cluster_endpoint
+}
+
+output "cluster_certificate_authority_data" {
+  description = "CA bundle for configuring kubectl."
+  value       = module.eks.cluster_certificate_authority_data
+  sensitive   = true
+}
+
+output "ecr_repository_url" {
+  description = "URI for pushing images."
+  value       = module.ecr.repository_url
+}
+
+output "app_secret_arn" {
+  description = "ARN of the Secrets Manager secret containing application configuration."
+  value       = module.app_secret.secret_arn
+}
+
+output "app_secret_name" {
+  description = "Name of the Secrets Manager secret containing application configuration."
+  value       = module.app_secret.secret_name
+}
+
+# RDS Outputs
+output "rds_endpoint" {
+  description = "RDS instance endpoint"
+  value       = var.enable_rds ? module.rds[0].endpoint : null
+}
+
+output "rds_address" {
+  description = "RDS instance address"
+  value       = var.enable_rds ? module.rds[0].address : null
+}
+
+output "rds_port" {
+  description = "RDS instance port"
+  value       = var.enable_rds ? module.rds[0].port : null
+}
+
+output "rds_database_name" {
+  description = "RDS database name"
+  value       = var.enable_rds ? module.rds[0].database_name : null
+}
+
+# ElastiCache Outputs
+output "elasticache_primary_endpoint" {
+  description = "ElastiCache primary endpoint"
+  value       = var.enable_elasticache ? module.elasticache[0].primary_endpoint_address : null
+}
+
+output "elasticache_reader_endpoint" {
+  description = "ElastiCache reader endpoint"
+  value       = var.enable_elasticache ? module.elasticache[0].reader_endpoint_address : null
+}
+
+output "elasticache_port" {
+  description = "ElastiCache port"
+  value       = var.enable_elasticache ? module.elasticache[0].port : null
+}
+
+# ALB Outputs
+output "alb_dns_name" {
+  description = "ALB DNS name"
+  value       = aws_lb.main.dns_name
+}
+
+output "alb_zone_id" {
+  description = "ALB zone ID"
+  value       = aws_lb.main.zone_id
+}
+
+output "alb_arn" {
+  description = "ALB ARN"
+  value       = aws_lb.main.arn
+}
+
+# VPN Outputs
+output "vpn_gateway_id" {
+  description = "VPN Gateway ID"
+  value       = var.enable_vpn ? module.vpn_to_gcp[0].aws_vpn_gateway_id : null
+}
+
+# Kafka (MSK) Outputs
+output "kafka_bootstrap_brokers_sasl_scram" {
+  description = "Kafka bootstrap brokers (SASL/SCRAM)"
+  value       = var.enable_kafka ? module.msk[0].bootstrap_brokers_sasl_scram : null
+}
+
+output "kafka_bootstrap_brokers_sasl_iam" {
+  description = "Kafka bootstrap brokers (SASL/IAM)"
+  value       = var.enable_kafka ? module.msk[0].bootstrap_brokers_sasl_iam : null
+}
+
+output "kafka_zookeeper_connect_string" {
+  description = "Kafka Zookeeper connection string"
+  value       = var.enable_kafka ? module.msk[0].zookeeper_connect_string : null
+}

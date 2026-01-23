@@ -1,0 +1,31 @@
+project_id = "your-gcp-project-id"
+region     = "asia-northeast3"
+zones      = ["asia-northeast3-a", "asia-northeast3-b"]
+
+network_name                     = "crm-dev"
+subnet_ip_cidr_range             = "10.20.0.0/20"
+subnet_secondary_pods_cidr       = "10.21.0.0/16"
+subnet_secondary_services_cidr   = "10.22.0.0/20"
+ip_range_pods_name               = "crm-dev-pods"
+ip_range_services_name           = "crm-dev-services"
+
+cluster_name                   = "crm-dev-gke"
+cluster_release_channel        = "REGULAR"
+cluster_enable_private_nodes   = true
+cluster_enable_private_endpoint = false
+master_authorized_networks = [
+  {
+    cidr_block   = "0.0.0.0/0"
+    display_name = "public"
+  }
+]
+
+node_pool_machine_type  = "e2-standard-4"
+node_pool_disk_size_gb  = 100
+node_pool_min_count     = 1
+node_pool_max_count     = 3
+node_pool_initial_count = 1
+
+artifact_registry_location     = "asia-northeast3"
+artifact_registry_repository_id = "crm-app"
+artifact_registry_format        = "DOCKER"
