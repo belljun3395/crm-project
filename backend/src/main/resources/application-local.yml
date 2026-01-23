@@ -55,6 +55,10 @@ spring:
             group-name: local-schedule-group
         sns:
             cache-invalidation-topic-arn: arn:aws:sns:ap-northeast-2:000000000000:cache-invalidation-topic
+    kafka:
+        bootstrap-servers: localhost:9092
+        consumer:
+            group-id: crm-scheduled-tasks-consumer
     flyway:
         locations: classpath:db/migration/entity
         sql-migration-suffixes: sql

@@ -48,6 +48,10 @@ spring:
             group-name: ${AWS_SCHEDULE_GROUP_NAME}
         sns:
             cache-invalidation-topic-arn: ${AWS_SNS_CACHE_INVALIDATION_TOPIC_ARN}
+    kafka:
+        bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+        consumer:
+            group-id: ${KAFKA_CONSUMER_GROUP_ID:crm-scheduled-tasks-consumer}
     flyway:
         locations: classpath:db/migration/entity
         sql-migration-suffixes: sql
