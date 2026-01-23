@@ -16,6 +16,9 @@ plugins {
 
     /** lint */
     id("org.jlleitschuh.gradle.ktlint") version DependencyVersion.KTLINT
+
+    /** coverage */
+    id("jacoco")
 }
 
 group = "com.manage"
@@ -154,6 +157,15 @@ kotlin {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
 }
 
 ktlint {
