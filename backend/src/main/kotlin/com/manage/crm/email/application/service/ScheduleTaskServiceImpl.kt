@@ -6,31 +6,44 @@ import com.manage.crm.email.application.dto.ScheduleTaskView
 import com.manage.crm.email.domain.repository.ScheduledEventRepository
 import com.manage.crm.email.domain.vo.EventId
 import com.manage.crm.infrastructure.scheduler.ScheduleName
-import com.manage.crm.infrastructure.scheduler.provider.AwsSchedulerService
+import com.manage.crm.infrastructure.scheduler.provider.ScheduleCreationResult
+import com.manage.crm.infrastructure.scheduler.provider.SchedulerProvider
 import com.manage.crm.support.asLong
 import com.manage.crm.support.parseISOExpiredTime
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
 
 @Component
 class ScheduleTaskServiceImpl(
     private val scheduledEventRepository: ScheduledEventRepository,
-    private val awsSchedulerService: AwsSchedulerService,
+    private val schedulerProvider: SchedulerProvider,
     private val objectMapper: ObjectMapper
 ) : ScheduleTaskAllService {
     val log = KotlinLogging.logger {}
 
     override fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String {
-        awsSchedulerService.createSchedule(
-            name = input.eventId.value,
-            schedule = input.expiredTime,
-            input = input
-        )
-        return input.eventId.value
+        return runBlocking {
+            when (
+                val result = schedulerProvider.createSchedule(
+                    name = input.eventId.value,
+                    scheduleTime = input.expiredTime,
+                    input = input
+                )
+            ) {
+                is ScheduleCreationResult.Success -> result.scheduleId
+                is ScheduleCreationResult.Failure -> {
+                    log.error { "Failed to create schedule: ${result.reason}" }
+                    throw RuntimeException("Failed to create schedule: ${result.reason}", result.cause)
+                }
+            }
+        }
     }
 
     override fun cancel(scheduleName: String) {
-        awsSchedulerService.deleteSchedule(ScheduleName(scheduleName))
+        runBlocking {
+            schedulerProvider.deleteSchedule(ScheduleName(scheduleName))
+        }
         log.info { "Task $scheduleName is cancelled" }
     }
 
@@ -40,12 +53,12 @@ class ScheduleTaskServiceImpl(
     }
 
     override suspend fun browseScheduledTasksView(): List<ScheduleTaskView> {
-        val awsScheduleViews = awsSchedulerService.browseSchedule()
+        val scheduleViews = schedulerProvider.browseSchedules()
             .map { EventId(it.value) }
             .filter { it.value.matches(Regex("[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}")) }
 
         return scheduledEventRepository
-            .findAllByEventIdIn(awsScheduleViews)
+            .findAllByEventIdIn(scheduleViews)
             .map {
                 // TODO: refactor readValue to readTree
                 val payload = objectMapper.readValue(it.eventPayload, Map::class.java).toMutableMap()
