@@ -37,6 +37,11 @@ message:
     # - 'kafka': Uses Kafka for messaging
     provider: ${MESSAGE_PROVIDER:aws}
 
+cache:
+    invalidation:
+        # Kafka topic name for cache invalidation
+        topic: ${CACHE_INVALIDATION_TOPIC:cache-invalidation}
+
 webhook:
     # Enable/disable webhook feature globally (dispatching events to registered URLs)
     enabled: ${WEBHOOK_ENABLED:true}
