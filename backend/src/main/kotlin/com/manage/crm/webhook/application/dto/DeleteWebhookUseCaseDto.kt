@@ -7,5 +7,3 @@ data class DeleteWebhookUseCaseIn(
 data class DeleteWebhookUseCaseOut(
     val success: Boolean
 )
-
-class DeleteWebhookUseCaseDto

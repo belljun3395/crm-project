@@ -19,7 +19,9 @@ import java.time.format.DateTimeFormatter
 class PostWebhookUseCase(
     private val webhookRepository: WebhookRepository
 ) {
-    private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    companion object {
+        private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    }
 
     @Transactional
     suspend fun execute(useCaseIn: PostWebhookUseCaseIn): PostWebhookUseCaseOut {
@@ -32,7 +34,7 @@ class PostWebhookUseCase(
         val existing = if (id != null) {
             webhookRepository.findById(id) ?: throw NotFoundByIdException("Webhook", id)
         } else {
-            webhookRepository.findByName(name)?.let {
+            if (webhookRepository.findByName(name) != null) {
                 throw AlreadyExistsException("Webhook", "name", name)
             }
             null

@@ -16,5 +16,3 @@ data class PostWebhookUseCaseOut(
     val active: Boolean,
     val createdAt: String?
 )
-
-class PostWebhookUseCaseDto

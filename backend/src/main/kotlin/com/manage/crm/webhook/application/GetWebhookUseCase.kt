@@ -15,7 +15,9 @@ import java.time.format.DateTimeFormatter
 class GetWebhookUseCase(
     private val webhookRepository: WebhookRepository
 ) {
-    private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    companion object {
+        private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    }
 
     suspend fun execute(useCaseIn: GetWebhookUseCaseIn): GetWebhookUseCaseOut {
         val id = useCaseIn.id
