@@ -71,6 +71,12 @@ springdoc:
     model-and-view-allowed: true
     packages-to-scan: com.manage.crm
 
+scheduler:
+    provider: aws
+
+message:
+    provider: aws
+
 logging:
     config: classpath:logback-spring.xml
     level:

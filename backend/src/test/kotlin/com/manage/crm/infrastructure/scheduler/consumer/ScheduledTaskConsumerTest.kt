@@ -2,25 +2,24 @@ package com.manage.crm.infrastructure.scheduler.consumer
 
 import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
 import com.manage.crm.email.domain.vo.EventId
-import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
 import com.manage.crm.infrastructure.scheduler.event.ScheduledTaskEvent
+import com.manage.crm.infrastructure.scheduler.handler.ScheduledTaskHandler
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
 import org.junit.jupiter.api.Test
-import org.springframework.context.ApplicationEventPublisher
 import org.springframework.kafka.support.Acknowledgment
 import java.time.LocalDateTime
 
 class ScheduledTaskConsumerTest {
 
-    private val publisher: ApplicationEventPublisher = mockk(relaxed = true)
+    private val handler: ScheduledTaskHandler = mockk(relaxed = true)
     private val acknowledgment: Acknowledgment = mockk {
         every { acknowledge() } just runs
     }
-    private val consumer = ScheduledTaskConsumer(publisher)
+    private val consumer = ScheduledTaskConsumer(handler)
 
     @Test
     fun `publishes notification timeout event and acknowledges message`() {
@@ -40,9 +39,7 @@ class ScheduledTaskConsumerTest {
         consumer.consume(event, acknowledgment)
 
         verify(exactly = 1) {
-            publisher.publishEvent(
-                match<NotificationEmailSendTimeOutInvokeEvent> { it.timeOutEventId == payload.eventId }
-            )
+            handler.handle(payload)
         }
         verify(exactly = 1) { acknowledgment.acknowledge() }
     }

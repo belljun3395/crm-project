@@ -18,6 +18,7 @@ import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.MySQLContainer
@@ -32,6 +33,7 @@ import java.nio.charset.Charset
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 @ActiveProfiles("test")
+@TestPropertySource(properties = ["message.provider=aws", "scheduler.provider=aws"])
 abstract class AbstractIntegrationTest : DescribeSpec() {
 
     override fun extensions() = listOf(SpringExtension)

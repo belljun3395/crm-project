@@ -7,7 +7,7 @@ import com.manage.crm.email.domain.EmailTemplateFixtures
 import com.manage.crm.email.domain.vo.EventIdFixtures
 import com.manage.crm.email.event.relay.aws.ScheduledEventReverseRelay
 import com.manage.crm.email.event.relay.aws.mapper.ScheduledEventMessageMapper
-import com.manage.crm.email.support.EmailEventPublisher
+import com.manage.crm.infrastructure.scheduler.handler.ScheduledTaskHandler
 import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
@@ -24,14 +24,14 @@ import kotlin.test.assertEquals
 class NotificationEmailSendTimeOutEventListenerTest(
     @Qualifier("scheduleTaskServicePostEventProcessor")
     private val scheduleTaskService: ScheduleTaskAllService,
-    scheduledEventMessageMapper: ScheduledEventMessageMapper
+    scheduledEventMessageMapper: ScheduledEventMessageMapper,
+    scheduledTaskHandler: ScheduledTaskHandler
 ) : MailEventInvokeSituationTest() {
 
-    private val scheduledEventReverseRelayEmailEventPublisher = mock(EmailEventPublisher::class.java)
     private var scheduledEventReverseRelay =
         ScheduledEventReverseRelay(
-            scheduledEventReverseRelayEmailEventPublisher,
-            scheduledEventMessageMapper
+            scheduledEventMessageMapper,
+            scheduledTaskHandler
         )
 
     @Test
@@ -108,7 +108,6 @@ class NotificationEmailSendTimeOutEventListenerTest(
                 templateVersion = template.version.value,
                 userIds = userIds
             )
-            doNothing().`when`(scheduledEventReverseRelayEmailEventPublisher).publishEvent(event)
 
             // when
             scheduledEventReverseRelay.onMessage(message, acknowledgement)
