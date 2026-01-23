@@ -23,8 +23,19 @@ services:
             - ADMINER_DESIGN=nette
             - ADMINER_PLUGINS=tables-filter tinymce
 
+    crm-frontend:
+        container_name: crm-frontend
+        build:
+            context: ../../frontend
+            dockerfile: Dockerfile
+        ports:
+            - "3000:80"
+        depends_on:
+            - crm-mysql
+            - crm-redis-cluster
+
     crm-redis-cluster:
-        image: redis:latest
+        image: redis:7.2-alpine
         container_name: crm-redis-cluster
         volumes:
             - ./cluster/redis.sh:/tmp/redis.sh
@@ -39,7 +50,7 @@ services:
             - "7006:7006"
 
     crm-redis-node-1:
-        image: redis:latest
+        image: redis:7.2-alpine
         container_name: crm-redis-node-1
         network_mode: "service:crm-redis-cluster"
         volumes:
@@ -47,7 +58,7 @@ services:
         command: [ "sh","-c","chmod +x /tmp/redis.sh && /tmp/redis.sh password 7002" ]
 
     crm-redis-node-2:
-        image: redis:latest
+        image: redis:7.2-alpine
         container_name: crm-redis-node-2
         network_mode: "service:crm-redis-cluster"
         volumes:
@@ -55,7 +66,7 @@ services:
         command: [ "sh","-c","chmod +x /tmp/redis.sh && /tmp/redis.sh password 7003" ]
 
     crm-redis-node-3:
-        image: redis:latest
+        image: redis:7.2-alpine
         container_name: crm-redis-node-3
         network_mode: "service:crm-redis-cluster"
         volumes:
@@ -63,7 +74,7 @@ services:
         command: [ "sh","-c","chmod +x /tmp/redis.sh && /tmp/redis.sh password 7004" ]
 
     crm-redis-node-4:
-        image: redis:latest
+        image: redis:7.2-alpine
         container_name: crm-redis-node-4
         network_mode: "service:crm-redis-cluster"
         volumes:
@@ -71,7 +82,7 @@ services:
         command: [ "sh","-c","chmod +x /tmp/redis.sh && /tmp/redis.sh password 7005" ]
 
     crm-redis-node-5:
-        image: redis:latest
+        image: redis:7.2-alpine
         container_name: crm-redis-node-5
         network_mode: "service:crm-redis-cluster"
         volumes:
@@ -79,7 +90,7 @@ services:
         command: [ "sh","-c","chmod +x /tmp/redis.sh && /tmp/redis.sh password 7006" ]
 
     crm-redis-cluster-create:
-        image: redis:latest
+        image: redis:7.2-alpine
         network_mode: "service:crm-redis-cluster"
         depends_on:
             - crm-redis-cluster
