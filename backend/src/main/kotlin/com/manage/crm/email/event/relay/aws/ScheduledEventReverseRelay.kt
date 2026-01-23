@@ -6,11 +6,13 @@ import com.manage.crm.email.support.EmailEventPublisher
 import io.awspring.cloud.sqs.annotation.SqsListener
 import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
 @Profile("!local && !test && !local-dev")
 @Component
+@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws")
 class ScheduledEventReverseRelay(
     private val emailEventPublisher: EmailEventPublisher,
     private val scheduledEventMessageMapper: ScheduledEventMessageMapper
