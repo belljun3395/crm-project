@@ -7,7 +7,6 @@ import com.manage.crm.email.domain.EmailTemplateFixtures
 import com.manage.crm.email.domain.vo.EventIdFixtures
 import com.manage.crm.email.event.relay.aws.ScheduledEventReverseRelay
 import com.manage.crm.email.event.relay.aws.mapper.ScheduledEventMessageMapper
-import com.manage.crm.infrastructure.scheduler.handler.ScheduledTaskHandler
 import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
@@ -23,7 +22,7 @@ import java.time.LocalDateTime
 import kotlin.test.assertEquals
 
 class NotificationEmailSendTimeOutEventListenerTest(
-    scheduledEventMessageMapper: ScheduledEventMessageMapper,
+    scheduledEventMessageMapper: ScheduledEventMessageMapper
 ) : MailEventInvokeSituationTest() {
 
     @Autowired

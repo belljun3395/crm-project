@@ -7,8 +7,6 @@ import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.springframework.data.redis.core.RedisTemplate
 
-
-
 class CacheInvalidationHandlerTest {
     private val redisTemplate = mockk<RedisTemplate<String, Any>>(relaxed = true)
     private val objectMapper = ObjectMapper().registerKotlinModule()
