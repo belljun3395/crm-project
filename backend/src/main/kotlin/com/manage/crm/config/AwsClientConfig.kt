@@ -14,7 +14,6 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import java.net.URI
 
 @Configuration
-@ConditionalOnProperty(name = ["spring.aws.region"])
 @ConditionalOnBean(AWSCredentials::class)
 class AwsClientConfig {
     companion object {
@@ -29,6 +28,7 @@ class AwsClientConfig {
     val endpointUrl: String? = null
 
     @Bean(name = [SNS_CLIENT])
+    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
     fun snsClient(awsCredentials: AWSCredentials): SnsClient {
         val builder = SnsClient.builder()
             .region(Region.of(region))
@@ -50,6 +50,7 @@ class AwsClientConfig {
     }
 
     @Bean(name = [SQS_CLIENT])
+    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
     fun sqsClient(awsCredentials: AWSCredentials): SqsClient {
         val builder = SqsClient.builder()
             .region(Region.of(region))

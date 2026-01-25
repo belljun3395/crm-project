@@ -5,9 +5,11 @@ import io.awspring.cloud.sqs.config.SqsMessageListenerContainerFactory
 import io.awspring.cloud.sqs.listener.acknowledgement.handler.AcknowledgementMode
 import io.awspring.cloud.sqs.operations.SqsTemplate
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import software.amazon.awssdk.auth.credentials.AwsCredentials
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 
@@ -27,15 +29,18 @@ class MessageConfig {
     val endpointUrl: String? = null
 
     @Bean(SQS_ASYNC_CLIENT)
+    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
     fun sqsAsyncClient(awsCredentials: AWSCredentials): SqsAsyncClient {
         val clientBuilder = SqsAsyncClient
             .builder()
-            .credentialsProvider {
-                object : AwsCredentials {
-                    override fun accessKeyId(): String = awsCredentials.awsAccessKeyId
-                    override fun secretAccessKey(): String = awsCredentials.awsSecretKey
-                }
-            }
+            .credentialsProvider(
+                StaticCredentialsProvider.create(
+                    AwsBasicCredentials.create(
+                        awsCredentials.awsAccessKeyId,
+                        awsCredentials.awsSecretKey
+                    )
+                )
+            )
             .region(Region.of(region))
 
         // Configure endpoint URL for LocalStack
@@ -47,6 +52,7 @@ class MessageConfig {
     }
 
     @Bean(SQS_LISTENER_CONTAINER_FACTORY)
+    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
     fun defaultSqsListenerContainerFactory(awsCredentials: AWSCredentials): SqsMessageListenerContainerFactory<Any> =
         SqsMessageListenerContainerFactory
             .builder<Any>()
@@ -57,6 +63,7 @@ class MessageConfig {
             .build()
 
     @Bean(SQS_TEMPLATE)
+    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
     fun sqsTemplate(awsCredentials: AWSCredentials): SqsTemplate =
         SqsTemplate.newTemplate(sqsAsyncClient(awsCredentials))
 }

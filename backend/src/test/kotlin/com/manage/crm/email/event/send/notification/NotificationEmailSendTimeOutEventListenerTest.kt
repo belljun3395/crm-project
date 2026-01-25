@@ -7,6 +7,7 @@ import com.manage.crm.email.domain.EmailTemplateFixtures
 import com.manage.crm.email.domain.vo.EventIdFixtures
 import com.manage.crm.email.event.relay.aws.ScheduledEventReverseRelay
 import com.manage.crm.email.event.relay.aws.mapper.ScheduledEventMessageMapper
+import com.manage.crm.email.event.schedule.handler.ScheduledTaskHandler
 import com.manage.crm.email.support.EmailEventPublisher
 import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement
 import kotlinx.coroutines.test.runTest
@@ -30,7 +31,7 @@ class NotificationEmailSendTimeOutEventListenerTest(
     private val scheduledEventReverseRelayEmailEventPublisher = mock(EmailEventPublisher::class.java)
     private var scheduledEventReverseRelay =
         ScheduledEventReverseRelay(
-            scheduledEventReverseRelayEmailEventPublisher,
+            ScheduledTaskHandler(scheduledEventReverseRelayEmailEventPublisher),
             scheduledEventMessageMapper
         )
 
