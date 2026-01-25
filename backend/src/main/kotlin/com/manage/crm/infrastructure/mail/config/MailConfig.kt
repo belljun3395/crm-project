@@ -6,6 +6,8 @@ import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClientBuilder
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.autoconfigure.mail.MailProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -70,6 +72,7 @@ class MailConfig {
 
     // ----------------- Java Mail Config -----------------
     @Bean(name = [MAIL_SENDER])
+    @ConditionalOnProperty(name = ["mail.provider"], havingValue = "javamail")
     fun javaMailSender(): JavaMailSender {
         val javaMailSender = JavaMailSenderImpl()
         val mailProperties = mailProperties()
@@ -99,6 +102,8 @@ class MailConfig {
     val endpointUrl: String? = null
 
     @Bean(name = [AWS_EMAIL_SENDER])
+    @ConditionalOnBean(AWSCredentials::class)
+    @ConditionalOnProperty(name = ["mail.provider"], havingValue = "aws", matchIfMissing = true)
     fun awsEmailSender(awsCredentials: AWSCredentials): AmazonSimpleEmailService {
         val awsStaticCredentialsProvider = AWSStaticCredentialsProvider(awsCredentials)
         val clientBuilder = AmazonSimpleEmailServiceClientBuilder

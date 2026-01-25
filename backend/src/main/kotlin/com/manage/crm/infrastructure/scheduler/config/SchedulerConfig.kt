@@ -4,6 +4,7 @@ import com.amazonaws.auth.AWSCredentials
 import com.manage.crm.infrastructure.scheduler.provider.RedisSchedulerProvider
 import com.manage.crm.infrastructure.scheduler.provider.SchedulerProvider
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -43,6 +44,7 @@ class SchedulerConfig {
     val endpointUrl: String? = null
 
     @Bean(name = [SCHEDULER_CLIENT])
+    @ConditionalOnBean(AWSCredentials::class)
     @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws", matchIfMissing = true)
     fun awsSchedulerClient(
         awsCredentials: AWSCredentials

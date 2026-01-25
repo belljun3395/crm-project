@@ -5,6 +5,7 @@ import io.awspring.cloud.sqs.config.SqsMessageListenerContainerFactory
 import io.awspring.cloud.sqs.listener.acknowledgement.handler.AcknowledgementMode
 import io.awspring.cloud.sqs.operations.SqsTemplate
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -29,6 +30,7 @@ class MessageConfig {
     private var endpointUrl: String? = null
 
     @Bean(SQS_ASYNC_CLIENT)
+    @ConditionalOnBean(AWSCredentials::class)
     @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
     fun sqsAsyncClient(awsCredentials: AWSCredentials): SqsAsyncClient {
         val clientBuilder = SqsAsyncClient
@@ -51,6 +53,7 @@ class MessageConfig {
     }
 
     @Bean(SQS_LISTENER_CONTAINER_FACTORY)
+    @ConditionalOnBean(AWSCredentials::class)
     @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
     fun defaultSqsListenerContainerFactory(awsCredentials: AWSCredentials): SqsMessageListenerContainerFactory<Any> =
         SqsMessageListenerContainerFactory
@@ -62,6 +65,7 @@ class MessageConfig {
             .build()
 
     @Bean(SQS_TEMPLATE)
+    @ConditionalOnBean(AWSCredentials::class)
     @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
     fun sqsTemplate(awsCredentials: AWSCredentials): SqsTemplate =
         SqsTemplate.newTemplate(sqsAsyncClient(awsCredentials))

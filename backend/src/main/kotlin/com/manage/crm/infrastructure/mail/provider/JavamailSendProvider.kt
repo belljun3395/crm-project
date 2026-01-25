@@ -2,11 +2,13 @@ package com.manage.crm.infrastructure.mail.provider
 
 import jakarta.mail.MessagingException
 import jakarta.mail.internet.MimeMessage
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Component
 
 @Component
+@ConditionalOnProperty(name = ["mail.provider"], havingValue = "javamail")
 class JavamailSendProvider(
     private val emailSender: JavaMailSender
 ) : MailSendProvider {
