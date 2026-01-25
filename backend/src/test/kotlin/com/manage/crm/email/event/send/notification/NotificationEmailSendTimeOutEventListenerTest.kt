@@ -7,8 +7,7 @@ import com.manage.crm.email.domain.EmailTemplateFixtures
 import com.manage.crm.email.domain.vo.EventIdFixtures
 import com.manage.crm.email.event.relay.aws.ScheduledEventReverseRelay
 import com.manage.crm.email.event.relay.aws.mapper.ScheduledEventMessageMapper
-import com.manage.crm.email.event.schedule.handler.ScheduledTaskHandler
-import com.manage.crm.email.support.EmailEventPublisher
+import com.manage.crm.infrastructure.scheduler.handler.ScheduledTaskHandler
 import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
@@ -16,6 +15,7 @@ import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.mockingDetails
 import org.mockito.Mockito.`when`
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.modulith.test.Scenario
 import software.amazon.awssdk.services.scheduler.model.CreateScheduleResponse
@@ -23,15 +23,16 @@ import java.time.LocalDateTime
 import kotlin.test.assertEquals
 
 class NotificationEmailSendTimeOutEventListenerTest(
-    @Qualifier("scheduleTaskServicePostEventProcessor")
-    private val scheduleTaskService: ScheduleTaskAllService,
-    scheduledEventMessageMapper: ScheduledEventMessageMapper
+    scheduledEventMessageMapper: ScheduledEventMessageMapper,
 ) : MailEventInvokeSituationTest() {
 
-    private val scheduledEventReverseRelayEmailEventPublisher = mock(EmailEventPublisher::class.java)
+    @Autowired
+    @Qualifier("scheduleTaskServicePostEventProcessor")
+    private lateinit var scheduleTaskService: ScheduleTaskAllService
+
     private var scheduledEventReverseRelay =
         ScheduledEventReverseRelay(
-            ScheduledTaskHandler(scheduledEventReverseRelayEmailEventPublisher),
+            scheduledTaskHandler,
             scheduledEventMessageMapper
         )
 
@@ -109,7 +110,6 @@ class NotificationEmailSendTimeOutEventListenerTest(
                 templateVersion = template.version.value,
                 userIds = userIds
             )
-            doNothing().`when`(scheduledEventReverseRelayEmailEventPublisher).publishEvent(event)
 
             // when
             scheduledEventReverseRelay.onMessage(message, acknowledgement)

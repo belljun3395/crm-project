@@ -7,7 +7,8 @@ import org.springframework.modulith.ApplicationModule
     allowedDependencies = [
         "email",
         "user",
-        "event"
+        "event",
+        "webhook"
     ]
 )
 class Metadata

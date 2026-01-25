@@ -1,4 +1,3 @@
-version: '3.8'
 services:
     crm-mysql:
         container_name: crm-mysql8
@@ -24,7 +23,7 @@ services:
             - ADMINER_PLUGINS=tables-filter tinymce
 
     crm-redis-cluster:
-        image: redis:latest
+        image: redis:7.2-alpine
         container_name: crm-redis-cluster
         volumes:
             - ./cluster/redis.sh:/tmp/redis.sh
@@ -39,7 +38,7 @@ services:
             - "7006:7006"
 
     crm-redis-node-1:
-        image: redis:latest
+        image: redis:7.2-alpine
         container_name: crm-redis-node-1
         network_mode: "service:crm-redis-cluster"
         volumes:
@@ -47,7 +46,7 @@ services:
         command: [ "sh","-c","chmod +x /tmp/redis.sh && /tmp/redis.sh password 7002" ]
 
     crm-redis-node-2:
-        image: redis:latest
+        image: redis:7.2-alpine
         container_name: crm-redis-node-2
         network_mode: "service:crm-redis-cluster"
         volumes:
@@ -55,7 +54,7 @@ services:
         command: [ "sh","-c","chmod +x /tmp/redis.sh && /tmp/redis.sh password 7003" ]
 
     crm-redis-node-3:
-        image: redis:latest
+        image: redis:7.2-alpine
         container_name: crm-redis-node-3
         network_mode: "service:crm-redis-cluster"
         volumes:
@@ -63,7 +62,7 @@ services:
         command: [ "sh","-c","chmod +x /tmp/redis.sh && /tmp/redis.sh password 7004" ]
 
     crm-redis-node-4:
-        image: redis:latest
+        image: redis:7.2-alpine
         container_name: crm-redis-node-4
         network_mode: "service:crm-redis-cluster"
         volumes:
@@ -71,7 +70,7 @@ services:
         command: [ "sh","-c","chmod +x /tmp/redis.sh && /tmp/redis.sh password 7005" ]
 
     crm-redis-node-5:
-        image: redis:latest
+        image: redis:7.2-alpine
         container_name: crm-redis-node-5
         network_mode: "service:crm-redis-cluster"
         volumes:
@@ -79,7 +78,7 @@ services:
         command: [ "sh","-c","chmod +x /tmp/redis.sh && /tmp/redis.sh password 7006" ]
 
     crm-redis-cluster-create:
-        image: redis:latest
+        image: redis:7.2-alpine
         network_mode: "service:crm-redis-cluster"
         depends_on:
             - crm-redis-cluster
@@ -124,3 +123,37 @@ services:
             timeout: 5s
             retries: 3
             start_period: 10s
+
+    # Kafka for Redis+Kafka scheduler implementation
+    crm-kafka:
+        container_name: crm-kafka
+        image: apache/kafka:3.8.1
+        ports:
+            - "9092:9092"
+            - "9093:9093"
+        environment:
+            - KAFKA_NODE_ID=0
+            - KAFKA_PROCESS_ROLES=controller,broker
+            - KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+            - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+            - KAFKA_CONTROLLER_QUORUM_VOTERS=0@crm-kafka:9093
+            - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+            - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+            - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+            - KAFKA_NUM_PARTITIONS=3
+            - KAFKA_DEFAULT_REPLICATION_FACTOR=1
+            - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+            - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+            - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+            - KAFKA_LOG_DIRS=/tmp/kraft-combined-logs
+            - CLUSTER_ID=HYL2Y2eXBWf3X-MUk4zjSA
+    crm-kafka-ui:
+        container_name: crm-kafka-ui
+        image: provectuslabs/kafka-ui:latest
+        ports:
+            - "18082:8080"
+        environment:
+            - KAFKA_CLUSTERS_0_NAME=crm-kafka
+            - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=crm-kafka:9092
+        depends_on:
+            - crm-kafka

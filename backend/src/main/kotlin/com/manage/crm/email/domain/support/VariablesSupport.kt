@@ -7,7 +7,7 @@ import com.manage.crm.email.domain.vo.USER_TYPE
 import com.manage.crm.email.domain.vo.UserVariable
 import com.manage.crm.email.domain.vo.Variable
 import com.manage.crm.email.domain.vo.Variables
-import com.manage.crm.event.domain.vo.Properties
+import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.user.domain.vo.UserAttributes
 
 fun List<String>.stringListToVariables(): Variables {
@@ -42,7 +42,7 @@ class VariablesSupport {
             return result
         }
 
-        fun associateCampaignEventProperty(properties: Properties, campaignVariables: Variables): Map<String, String> {
+        fun associateCampaignEventProperty(properties: EventProperties, campaignVariables: Variables): Map<String, String> {
             val eventVariables = mutableMapOf<String, String>()
             val propertyKeys = properties.getKeys()
             for (campaignVariable in campaignVariables) {

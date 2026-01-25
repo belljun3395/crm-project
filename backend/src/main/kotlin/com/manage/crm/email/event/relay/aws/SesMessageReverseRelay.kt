@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component
 @Profile("!local && !test && !local-dev")
 @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
 @Component
+@ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
 class SesMessageReverseRelay(
     private val emailEventPublisher: EmailEventPublisher,
     private val eventMessageMapper: SesMessageMapper,

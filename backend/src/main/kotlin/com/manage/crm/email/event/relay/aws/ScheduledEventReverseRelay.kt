@@ -1,7 +1,7 @@
 package com.manage.crm.email.event.relay.aws
 
 import com.manage.crm.email.event.relay.aws.mapper.ScheduledEventMessageMapper
-import com.manage.crm.email.event.schedule.handler.ScheduledTaskHandler
+import com.manage.crm.infrastructure.scheduler.handler.ScheduledTaskHandler
 import io.awspring.cloud.sqs.annotation.SqsListener
 import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement
 import io.github.oshai.kotlinlogging.KotlinLogging

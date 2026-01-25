@@ -57,6 +57,10 @@ psd
 thumb
 sketch
 
-package-lock.json
-
 **/.adminjs
+coverage/
+
+### Terraform ###
+.terraform/
+*.tfstate
+*.tfstate.backup

@@ -1,0 +1,26 @@
+# GCP Profile configuration
+# Use this profile for GCP deployment (spring.profiles.active=gcp)
+
+scheduler:
+    provider: redis-kafka
+
+message:
+    provider: kafka
+
+spring:
+    aws:
+        # Credential for SES must be provided via environment variables
+        # AWS_ACCESS_KEY, AWS_SECRET_KEY
+        region: ap-northeast-2
+    kafka:
+        bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+        consumer:
+            group-id: ${KAFKA_CONSUMER_GROUP_ID:crm-scheduled-tasks-consumer}
+    data:
+        redis:
+            # Use Memorystore for GCP
+            cluster:
+                connect-ip: ${REDIS_HOST}
+                max-redirects: ${REDIS_MAX_REDIRECTS:3}
+                password: ${REDIS_PASSWORD}
+                nodes: ${REDIS_NODES}

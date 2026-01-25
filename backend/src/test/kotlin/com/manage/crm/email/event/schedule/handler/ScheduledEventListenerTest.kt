@@ -10,12 +10,14 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mockingDetails
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.doNothing
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.modulith.test.Scenario
 import kotlin.test.assertEquals
 
-class ScheduledEventListenerTest(
-    private val scheduleTaskService: ScheduleTaskServicePostEventProcessor
-) : MailEventInvokeSituationTest() {
+class ScheduledEventListenerTest : MailEventInvokeSituationTest() {
+    @Autowired
+    private lateinit var scheduleTaskService: ScheduleTaskServicePostEventProcessor
+
     @Test
     fun `schedule task service cancel method is called`(scenario: Scenario) {
         runTest {

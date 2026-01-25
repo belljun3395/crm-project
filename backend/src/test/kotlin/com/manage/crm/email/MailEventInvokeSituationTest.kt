@@ -12,6 +12,7 @@ import com.manage.crm.email.event.send.notification.handler.NotificationEmailSen
 import com.manage.crm.email.event.template.handler.PostEmailTemplateEventHandler
 import com.manage.crm.email.support.EmailEventPublisher
 import com.manage.crm.infrastructure.message.config.MessageConfig
+import com.manage.crm.infrastructure.scheduler.handler.ScheduledTaskHandler
 import com.manage.crm.infrastructure.scheduler.provider.AwsSchedulerService
 import io.awspring.cloud.sqs.config.SqsMessageListenerContainerFactory
 import io.awspring.cloud.sqs.operations.SqsTemplate
@@ -23,17 +24,20 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores::class)
 abstract class MailEventInvokeSituationTest : EmailModuleTestTemplate() {
     // ----------------- Common -----------------
-    @MockitoBean
+    @MockitoBean(enforceOverride = false)
     lateinit var emailEventPublisher: EmailEventPublisher
 
-    @MockitoBean(name = MessageConfig.SQS_ASYNC_CLIENT)
+    @MockitoBean(enforceOverride = false)
+    lateinit var scheduledTaskHandler: ScheduledTaskHandler
+
+    @MockitoBean(name = MessageConfig.SQS_ASYNC_CLIENT, enforceOverride = false)
     lateinit var sqsAsyncClient: SqsAsyncClient
 
-    @MockitoBean(name = MessageConfig.SQS_TEMPLATE)
+    @MockitoBean(name = MessageConfig.SQS_TEMPLATE, enforceOverride = false)
     lateinit var sqsTemplate: SqsTemplate
 
     @Suppress("UNCHECKED_CAST")
-    @MockitoBean(name = MessageConfig.SQS_LISTENER_CONTAINER_FACTORY)
+    @MockitoBean(name = MessageConfig.SQS_LISTENER_CONTAINER_FACTORY, enforceOverride = false)
     lateinit var sqsListenerContainerFactory: SqsMessageListenerContainerFactory<Any>
 
     // ----------------- CancelScheduledEventHandlerTest -----------------

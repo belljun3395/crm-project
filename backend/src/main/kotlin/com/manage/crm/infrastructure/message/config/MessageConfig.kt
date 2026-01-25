@@ -15,18 +15,18 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient
 
 @Configuration
 class MessageConfig {
+
     companion object {
         const val SQS_ASYNC_CLIENT = "sqsAsyncClient"
         const val SQS_TEMPLATE = "sqsTemplate"
         const val SQS_LISTENER_CONTAINER_FACTORY = "defaultSqsListenerContainerFactory"
     }
 
-    // ----------------- AWS SQS -----------------
     @Value("\${spring.aws.region}")
-    val region: String? = null
+    private lateinit var region: String
 
     @Value("\${spring.aws.endpoint-url:#{null}}")
-    val endpointUrl: String? = null
+    private var endpointUrl: String? = null
 
     @Bean(SQS_ASYNC_CLIENT)
     @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
@@ -43,7 +43,6 @@ class MessageConfig {
             )
             .region(Region.of(region))
 
-        // Configure endpoint URL for LocalStack
         endpointUrl?.let { url ->
             clientBuilder.endpointOverride(java.net.URI.create(url))
         }

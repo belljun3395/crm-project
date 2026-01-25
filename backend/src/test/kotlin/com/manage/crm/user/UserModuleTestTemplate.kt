@@ -6,7 +6,9 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
 import org.springframework.modulith.test.ApplicationModuleTest
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.TestPropertySource
 
+@TestPropertySource(properties = ["message.provider=aws", "scheduler.provider=aws"])
 @ActiveProfiles(value = ["test", "new"])
 @EnableAutoConfiguration(
     exclude = [FlywayAutoConfiguration::class, SqsAutoConfiguration::class]
@@ -15,6 +17,6 @@ import org.springframework.test.context.ActiveProfiles
     module = "user",
     mode = ApplicationModuleTest.BootstrapMode.ALL_DEPENDENCIES,
     classes = [TestTransactionConfiguration::class],
-    extraIncludes = ["config"]
+    extraIncludes = ["config", "infrastructure"]
 )
 abstract class UserModuleTestTemplate

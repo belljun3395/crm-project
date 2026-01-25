@@ -35,10 +35,10 @@ class ScheduledEventMessageMapper(
 
     fun toInput(message: ScheduledEventMessage): NotificationEmailSendTimeOutEventInput {
         return NotificationEmailSendTimeOutEventInput(
-            eventId = EventId(message.eventId),
             templateId = message.templateId,
             templateVersion = message.templateVersion,
             userIds = message.userIds,
+            eventId = EventId(message.eventId),
             expiredTime = LocalDateTime.now()
         )
     }

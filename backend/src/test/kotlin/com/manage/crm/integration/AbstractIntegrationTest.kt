@@ -18,6 +18,7 @@ import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.MySQLContainer
@@ -32,6 +33,7 @@ import java.nio.charset.Charset
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 @ActiveProfiles("test")
+@TestPropertySource(properties = ["message.provider=aws", "scheduler.provider=aws"])
 abstract class AbstractIntegrationTest : DescribeSpec() {
 
     override fun extensions() = listOf(SpringExtension)
@@ -136,7 +138,10 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
         }
 
         private fun configureDatabaseProperties(registry: DynamicPropertyRegistry) {
+            val jdbcUrl = mysqlContainer.jdbcUrl
             val r2dbcUrl = "r2dbc:pool:mysql://${mysqlContainer.host}:${mysqlContainer.getMappedPort(3306)}/${mysqlConfig.databaseName}?useSSL=false"
+
+            LoggerFactory.getLogger(AbstractIntegrationTest::class.java).info("MySQL Container started. JDBC URL: $jdbcUrl, R2DBC URL: $r2dbcUrl")
 
             registry.add("spring.r2dbc.url") { r2dbcUrl }
             registry.add("spring.r2dbc.username") { mysqlConfig.username }

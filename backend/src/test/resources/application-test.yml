@@ -71,6 +71,15 @@ springdoc:
     model-and-view-allowed: true
     packages-to-scan: com.manage.crm
 
+scheduler:
+    provider: aws
+
+message:
+    provider: aws
+
+webhook:
+    enabled: false
+
 logging:
     level:
         root: INFO

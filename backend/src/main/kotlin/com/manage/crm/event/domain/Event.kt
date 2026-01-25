@@ -1,6 +1,6 @@
 package com.manage.crm.event.domain
 
-import com.manage.crm.event.domain.vo.Properties
+import com.manage.crm.event.domain.vo.EventProperties
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
@@ -16,7 +16,7 @@ class Event(
     @Column("user_id")
     var userId: Long,
     @Column("properties")
-    var properties: Properties,
+    var properties: EventProperties,
     @CreatedDate
     var createdAt: LocalDateTime? = null
 ) {
@@ -24,7 +24,7 @@ class Event(
         fun new(
             name: String,
             userId: Long,
-            properties: Properties
+            properties: EventProperties
         ): Event {
             return Event(
                 name = name,
@@ -37,7 +37,7 @@ class Event(
             id: Long,
             name: String,
             userId: Long,
-            properties: Properties,
+            properties: EventProperties,
             createdAt: LocalDateTime
         ): Event {
             return Event(
