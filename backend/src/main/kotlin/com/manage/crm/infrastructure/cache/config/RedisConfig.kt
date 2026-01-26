@@ -9,16 +9,22 @@ import io.lettuce.core.internal.HostAndPort
 import io.lettuce.core.resource.ClientResources
 import io.lettuce.core.resource.DnsResolvers
 import io.lettuce.core.resource.MappingSocketAddressResolver
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
 import org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory
 import org.springframework.data.redis.connection.RedisClusterConfiguration
 import org.springframework.data.redis.connection.RedisConnectionFactory
 import org.springframework.data.redis.connection.RedisPassword
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory
 import org.springframework.data.redis.core.ReactiveRedisTemplate
@@ -34,11 +40,15 @@ data class RedisConfigurationProperties(
     var nodes: List<String>? = null,
     var password: String? = null,
     var maxRedirects: Int? = null
-)
+) {
+    fun hasValidClusterNodes(): Boolean = !nodes.isNullOrEmpty() && nodes!!.any { it.isNotBlank() }
+}
 
 @Configuration
 @EnableAutoConfiguration(exclude = [RedisAutoConfiguration::class, RedisReactiveAutoConfiguration::class])
 class RedisConfig {
+    private val logger = LoggerFactory.getLogger(RedisConfig::class.java)
+
     @Bean
     @ConfigurationProperties(prefix = "spring.data.redis.cluster")
     fun redisConfigurationProperties(): RedisConfigurationProperties {
@@ -50,11 +60,34 @@ class RedisConfig {
         return Jackson2JsonRedisSerializer(objectMapper, Any::class.java)
     }
 
+    // ----------------- Standalone Redis (for tests and simple deployments) -----------------
     @Bean
-    fun redisConnectionFactory(rcp: RedisConfigurationProperties): RedisConnectionFactory {
+    @Primary
+    @ConditionalOnProperty(name = ["spring.data.redis.host"])
+    fun standaloneRedisConnectionFactory(
+        @Value("\${spring.data.redis.host}") host: String,
+        @Value("\${spring.data.redis.port:6379}") port: Int
+    ): RedisConnectionFactory {
+        logger.info("Creating standalone Redis connection factory: {}:{}", host, port)
+        val standaloneConfig = RedisStandaloneConfiguration(host, port)
+        return LettuceConnectionFactory(standaloneConfig)
+    }
+
+    // ----------------- Cluster Redis (for production) -----------------
+    @Bean
+    @ConditionalOnMissingBean(RedisConnectionFactory::class)
+    fun clusterRedisConnectionFactory(rcp: RedisConfigurationProperties): RedisConnectionFactory {
+        if (!rcp.hasValidClusterNodes()) {
+            throw IllegalStateException(
+                "Redis configuration error: Neither standalone (spring.data.redis.host) " +
+                    "nor cluster (spring.data.redis.cluster.nodes) is properly configured"
+            )
+        }
+
+        logger.info("Creating cluster Redis connection factory with nodes: {}", rcp.nodes)
         val redisClusterConfiguration = RedisClusterConfiguration(rcp.nodes!!).apply {
-            password = RedisPassword.of(rcp.password!!)
-            maxRedirects = rcp.maxRedirects!!
+            rcp.password?.let { password = RedisPassword.of(it) }
+            rcp.maxRedirects?.let { maxRedirects = it }
         }
 
         val socketOptions = SocketOptions.builder()
@@ -107,7 +140,7 @@ class RedisConfig {
     }
 
     @Bean
-    fun reactiveRedisTemplate(redisConnectionFactory: ReactiveRedisConnectionFactory, serializer: RedisSerializer<Any>): ReactiveRedisTemplate<String, Any> {
+    fun reactiveRedisTemplate(reactiveRedisConnectionFactory: ReactiveRedisConnectionFactory, serializer: RedisSerializer<Any>): ReactiveRedisTemplate<String, Any> {
         val builder = newSerializationContext<String, Any>(StringRedisSerializer())
         val keySerializer = StringRedisSerializer()
         val context = builder
@@ -116,6 +149,21 @@ class RedisConfig {
             .hashValue(serializer)
             .hashKey(keySerializer)
             .build()
-        return ReactiveRedisTemplate(redisConnectionFactory, context)
+        return ReactiveRedisTemplate(reactiveRedisConnectionFactory, context)
+    }
+
+    /**
+     * ReactiveRedisTemplate<String, String> for RedisSchedulerProvider
+     */
+    @Bean
+    fun reactiveStringRedisTemplate(reactiveRedisConnectionFactory: ReactiveRedisConnectionFactory): ReactiveRedisTemplate<String, String> {
+        val keySerializer = StringRedisSerializer()
+        val context = newSerializationContext<String, String>(keySerializer)
+            .key(keySerializer)
+            .value(keySerializer)
+            .hashValue(keySerializer)
+            .hashKey(keySerializer)
+            .build()
+        return ReactiveRedisTemplate(reactiveRedisConnectionFactory, context)
     }
 }

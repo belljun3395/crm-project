@@ -144,6 +144,7 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter:${DependencyVersion.TESTCONTAINERS}")
     testImplementation("org.testcontainers:mysql:${DependencyVersion.TESTCONTAINERS}")
     testImplementation("org.testcontainers:testcontainers:${DependencyVersion.TESTCONTAINERS}")
+    testImplementation("org.testcontainers:kafka:${DependencyVersion.TESTCONTAINERS}")
 
     /** logger */
     implementation("io.github.oshai:kotlin-logging-jvm:${DependencyVersion.KOTLIN_LOGGING}")

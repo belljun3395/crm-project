@@ -21,14 +21,17 @@ import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.containers.MySQLContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.lifecycle.Startables
+import org.testcontainers.utility.DockerImageName
 import java.net.URI
 import java.nio.charset.Charset
+import java.time.Duration
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -69,6 +72,8 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
     }
 
     companion object {
+        private val logger = LoggerFactory.getLogger(AbstractIntegrationTest::class.java)
+
         // Load configuration from YAML
         private val config = TestContainerConfig.load()
         private val mysqlConfig = config.testcontainers.mysql
@@ -82,6 +87,7 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
         @JvmStatic
         private val sharedNetwork: Network = Network.newNetwork()
 
+        // ==================== MySQL Container ====================
         @Container
         @JvmStatic
         val mysqlContainer: MySQLContainer<*> = MySQLContainer(mysqlConfig.image)
@@ -97,6 +103,27 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
                     .withStartupTimeout(mysqlConfig.getStartupTimeout())
             )
 
+        // ==================== Redis Container (for redis-kafka scheduler) ====================
+        @Container
+        @JvmStatic
+        val redisContainer: GenericContainer<*> = GenericContainer(DockerImageName.parse("redis:7-alpine"))
+            .withExposedPorts(6379)
+            .withNetwork(sharedNetwork)
+            .withNetworkAliases("redis")
+            .withReuse(true)
+            .withStartupTimeout(Duration.ofMinutes(2))
+            .waitingFor(Wait.forListeningPort())
+
+        // ==================== Kafka Container (for redis-kafka scheduler) ====================
+        @Container
+        @JvmStatic
+        val kafkaContainer: KafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0"))
+            .withNetwork(sharedNetwork)
+            .withNetworkAliases("kafka")
+            .withReuse(true)
+            .withStartupTimeout(Duration.ofMinutes(2))
+
+        // ==================== LocalStack Container (optional, for AWS services) ====================
         @Container
         @JvmStatic
         val localStackContainer: GenericContainer<*>? = if (useLocalStack) {
@@ -118,21 +145,26 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
         @DynamicPropertySource
         @JvmStatic
         fun configureProperties(registry: DynamicPropertyRegistry) {
-            // Start containers in parallel for better performance
+            // Start all containers in parallel for better performance
+            val containersToStart = mutableListOf(mysqlContainer, redisContainer, kafkaContainer)
             if (useLocalStack && localStackContainer != null) {
-                Startables.deepStart(mysqlContainer, localStackContainer).join()
-            } else {
-                mysqlContainer.start()
+                containersToStart.add(localStackContainer)
             }
+            logger.info("Starting test containers: MySQL, Redis, Kafka" + if (useLocalStack) ", LocalStack" else "")
+            Startables.deepStart(*containersToStart.toTypedArray()).join()
 
             // Database configuration
             configureDatabaseProperties(registry)
 
+            // Redis configuration for redis-kafka provider
+            configureRedisProperties(registry)
+
+            // Kafka configuration for redis-kafka provider
+            configureKafkaProperties(registry)
+
             // LocalStack configuration (only if enabled)
             if (useLocalStack && localStackContainer != null) {
                 configureLocalStackProperties(registry)
-
-                // Setup AWS services asynchronously
                 setupAwsServices()
             }
         }
@@ -141,7 +173,7 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
             val jdbcUrl = mysqlContainer.jdbcUrl
             val r2dbcUrl = "r2dbc:pool:mysql://${mysqlContainer.host}:${mysqlContainer.getMappedPort(3306)}/${mysqlConfig.databaseName}?useSSL=false"
 
-            LoggerFactory.getLogger(AbstractIntegrationTest::class.java).info("MySQL Container started. JDBC URL: $jdbcUrl, R2DBC URL: $r2dbcUrl")
+            logger.info("MySQL Container started. JDBC URL: $jdbcUrl, R2DBC URL: $r2dbcUrl")
 
             registry.add("spring.r2dbc.url") { r2dbcUrl }
             registry.add("spring.r2dbc.username") { mysqlConfig.username }
@@ -163,6 +195,25 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
             registry.add("spring.datasource.url") { mysqlContainer.jdbcUrl }
             registry.add("spring.datasource.username") { mysqlConfig.username }
             registry.add("spring.datasource.password") { mysqlConfig.password }
+        }
+
+        private fun configureRedisProperties(registry: DynamicPropertyRegistry) {
+            val redisHost = redisContainer.host
+            val redisPort = redisContainer.getMappedPort(6379)
+            logger.info("Redis Container started. Host: $redisHost, Port: $redisPort")
+
+            // Use standalone Redis for tests (not cluster)
+            registry.add("spring.data.redis.host") { redisHost }
+            registry.add("spring.data.redis.port") { redisPort }
+            // Clear cluster nodes to force standalone mode
+            registry.add("spring.data.redis.cluster.nodes") { "" }
+        }
+
+        private fun configureKafkaProperties(registry: DynamicPropertyRegistry) {
+            val bootstrapServers = kafkaContainer.bootstrapServers
+            logger.info("Kafka Container started. Bootstrap servers: $bootstrapServers")
+
+            registry.add("spring.kafka.bootstrap-servers") { bootstrapServers }
         }
 
         private fun configureLocalStackProperties(registry: DynamicPropertyRegistry) {
@@ -193,15 +244,13 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
                     try {
                         task()
                     } catch (e: Exception) {
-                        LoggerFactory.getLogger(AbstractIntegrationTest::class.java).error("Failed to setup AWS service", e)
+                        logger.error("Failed to setup AWS service", e)
                     }
                 }
             }
         }
 
         private fun setupLocalStackSES(endpoint: String) {
-            val logger = LoggerFactory.getLogger(AbstractIntegrationTest::class.java)
-
             try {
                 logger.info("Setting up LocalStack SES at $endpoint")
 
@@ -299,8 +348,6 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
          * 이는 예상된 동작입니다.
          */
         private fun setupLocalStackScheduler(endpoint: String) {
-            val logger = LoggerFactory.getLogger(AbstractIntegrationTest::class.java)
-
             try {
                 logger.info("Setting up LocalStack EventBridge Scheduler at $endpoint")
                 logger.warn("Note: LocalStack EventBridge Scheduler provides mocked functionality only")
