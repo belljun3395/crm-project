@@ -45,7 +45,7 @@ class SchedulerConfig {
 
     @Bean(name = [SCHEDULER_CLIENT])
     @ConditionalOnBean(AWSCredentials::class)
-    @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws", matchIfMissing = true)
+    @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws")
     fun awsSchedulerClient(
         awsCredentials: AWSCredentials
     ): SchedulerClient {

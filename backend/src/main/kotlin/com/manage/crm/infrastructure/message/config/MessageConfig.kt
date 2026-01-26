@@ -31,7 +31,7 @@ class MessageConfig {
 
     @Bean(SQS_ASYNC_CLIENT)
     @ConditionalOnBean(AWSCredentials::class)
-    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
+    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws")
     fun sqsAsyncClient(awsCredentials: AWSCredentials): SqsAsyncClient {
         val clientBuilder = SqsAsyncClient
             .builder()
@@ -54,7 +54,7 @@ class MessageConfig {
 
     @Bean(SQS_LISTENER_CONTAINER_FACTORY)
     @ConditionalOnBean(AWSCredentials::class)
-    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
+    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws")
     fun defaultSqsListenerContainerFactory(awsCredentials: AWSCredentials): SqsMessageListenerContainerFactory<Any> =
         SqsMessageListenerContainerFactory
             .builder<Any>()
@@ -66,7 +66,7 @@ class MessageConfig {
 
     @Bean(SQS_TEMPLATE)
     @ConditionalOnBean(AWSCredentials::class)
-    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
+    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws")
     fun sqsTemplate(awsCredentials: AWSCredentials): SqsTemplate =
         SqsTemplate.newTemplate(sqsAsyncClient(awsCredentials))
 }

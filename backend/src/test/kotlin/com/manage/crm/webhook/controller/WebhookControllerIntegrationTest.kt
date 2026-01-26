@@ -6,7 +6,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 
 @Tag("integration")
-@TestPropertySource(properties = ["webhook.enabled=true", "message.provider=aws", "scheduler.provider=aws"])
+@TestPropertySource(properties = ["webhook.enabled=true", "message.provider=redis-kafka", "scheduler.provider=redis-kafka"])
 class WebhookControllerIntegrationTest : AbstractIntegrationTest() {
     init {
         describe("Webhook API") {

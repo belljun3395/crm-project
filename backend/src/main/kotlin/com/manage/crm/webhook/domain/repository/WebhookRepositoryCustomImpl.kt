@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
 @Repository
-@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true")
 class WebhookRepositoryCustomImpl(
     private val dataBaseClient: DatabaseClient,
     private val objectMapper: ObjectMapper

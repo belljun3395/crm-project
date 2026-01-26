@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service
 import java.time.format.DateTimeFormatter
 
 @Service
-@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true")
 class ManageWebhookUseCase(
     private val webhookRepository: WebhookRepository
 ) {

@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController
 @Validated
 @RestController
 @RequestMapping(value = ["/api/v1/webhooks"])
-@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true")
 class WebhookController(
     private val manageWebhookUseCase: ManageWebhookUseCase,
     private val webhookQueryService: WebhookQueryService

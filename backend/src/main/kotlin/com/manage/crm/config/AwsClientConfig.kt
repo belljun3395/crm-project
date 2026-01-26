@@ -29,7 +29,7 @@ class AwsClientConfig {
 
     @Bean(name = [SNS_CLIENT])
     @ConditionalOnBean(AWSCredentials::class)
-    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
+    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws")
     fun snsClient(awsCredentials: AWSCredentials): SnsClient {
         val builder = SnsClient.builder()
             .region(Region.of(region))
@@ -51,7 +51,7 @@ class AwsClientConfig {
 
     @Bean(name = [SQS_CLIENT])
     @ConditionalOnBean(AWSCredentials::class)
-    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws", matchIfMissing = true)
+    @ConditionalOnProperty(name = ["message.provider"], havingValue = "aws")
     fun sqsClient(awsCredentials: AWSCredentials): SqsClient {
         val builder = SqsClient.builder()
             .region(Region.of(region))

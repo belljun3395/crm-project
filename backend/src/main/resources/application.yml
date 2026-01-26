@@ -28,14 +28,14 @@ scheduler:
     # Supported values:
     # - 'aws': Uses AWS EventBridge Scheduler (Default, uses LocalStack in local profile)
     # - 'redis-kafka': Uses Redis Sorted Sets for scheduling and Kafka for distributed execution
-    provider: ${SCHEDULER_PROVIDER:aws}
+    provider: ${SCHEDULER_PROVIDER:redis-kafka}
 
 message:
     # Message infrastructure provider.
     # Supported values:
     # - 'aws': Uses AWS SQS and SNS
     # - 'kafka': Uses Kafka for messaging
-    provider: ${MESSAGE_PROVIDER:aws}
+    provider: ${MESSAGE_PROVIDER:redis-kafka}
 
 cache:
     invalidation:
