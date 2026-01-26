@@ -37,6 +37,13 @@ message:
     # - 'kafka': Uses Kafka for messaging
     provider: ${MESSAGE_PROVIDER:redis-kafka}
 
+mail:
+    # Mail delivery provider.
+    # Supported values:
+    # - 'aws': Uses AWS SES
+    # - 'javamail': Uses standard JavaMail/SMTP
+    provider: ${MAIL_PROVIDER:javamail}
+
 cache:
     invalidation:
         # Kafka topic name for cache invalidation

@@ -11,7 +11,8 @@ import java.time.LocalDateTime
  * Wraps AwsSchedulerService to provide vendor-independent interface.
  */
 @Component
-@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws", matchIfMissing = true)
+@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws")
+@ConditionalOnBean(AwsSchedulerService::class)
 class AwsSchedulerProvider(
     private val awsSchedulerService: AwsSchedulerService
 ) : SchedulerProvider {

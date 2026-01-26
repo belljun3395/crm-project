@@ -33,7 +33,7 @@ import java.nio.charset.Charset
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 @ActiveProfiles("test")
-@TestPropertySource(properties = ["message.provider=redis-kafka", "scheduler.provider=redis-kafka"])
+@TestPropertySource(properties = ["message.provider=redis-kafka", "scheduler.provider=redis-kafka", "mail.provider=javamail"])
 abstract class AbstractIntegrationTest : DescribeSpec() {
 
     override fun extensions() = listOf(SpringExtension)

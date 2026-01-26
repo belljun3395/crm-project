@@ -14,7 +14,8 @@ import org.springframework.stereotype.Component
 
 @Primary
 @Component
-@ConditionalOnProperty(name = ["mail.provider"], havingValue = "aws", matchIfMissing = true)
+@ConditionalOnProperty(name = ["mail.provider"], havingValue = "aws")
+@ConditionalOnBean(AmazonSimpleEmailService::class)
 class SesMailSendProvider(
     private val amazonSimpleEmailService: AmazonSimpleEmailService,
     @Value("\${spring.aws.mail.configuration-set.default}") private val configurationSetName: String

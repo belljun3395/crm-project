@@ -103,7 +103,7 @@ class MailConfig {
 
     @Bean(name = [AWS_EMAIL_SENDER])
     @ConditionalOnBean(AWSCredentials::class)
-    @ConditionalOnProperty(name = ["mail.provider"], havingValue = "aws", matchIfMissing = true)
+    @ConditionalOnProperty(name = ["mail.provider"], havingValue = "aws")
     fun awsEmailSender(awsCredentials: AWSCredentials): AmazonSimpleEmailService {
         val awsStaticCredentialsProvider = AWSStaticCredentialsProvider(awsCredentials)
         val clientBuilder = AmazonSimpleEmailServiceClientBuilder

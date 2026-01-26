@@ -72,10 +72,13 @@ springdoc:
     packages-to-scan: com.manage.crm
 
 scheduler:
-    provider: aws
+    provider: redis-kafka
 
 message:
-    provider: aws
+    provider: redis-kafka
+
+mail:
+    provider: javamail
 
 webhook:
     enabled: false

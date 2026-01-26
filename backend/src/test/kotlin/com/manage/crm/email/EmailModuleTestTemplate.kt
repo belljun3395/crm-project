@@ -7,7 +7,7 @@ import org.springframework.modulith.test.ApplicationModuleTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestPropertySource
 
-@TestPropertySource(properties = ["message.provider=redis-kafka", "scheduler.provider=redis-kafka"])
+@TestPropertySource(properties = ["message.provider=redis-kafka", "scheduler.provider=redis-kafka", "mail.provider=javamail"])
 @ActiveProfiles(value = ["test", "new"])
 @EnableAutoConfiguration(
     exclude = [FlywayAutoConfiguration::class]
