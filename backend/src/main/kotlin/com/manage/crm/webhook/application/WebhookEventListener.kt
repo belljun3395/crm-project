@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.reactive.executeAndAwait
 
 @Component
-@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true")
 class WebhookEventListener(
     private val webhookDispatchService: WebhookDispatchService,
     private val transactionalTemplates: TransactionTemplates

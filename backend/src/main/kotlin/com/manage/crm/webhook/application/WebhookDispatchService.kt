@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service
 import java.util.UUID
 
 @Service
-@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true")
 class WebhookDispatchService(
     private val webhookRepository: WebhookRepository,
     private val webhookClient: WebhookClient

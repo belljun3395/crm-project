@@ -17,7 +17,7 @@ import java.net.URI
 import java.time.Duration
 
 @Component
-@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true")
 class WebClientWebhookClient(
     webClientBuilder: WebClient.Builder
 ) : WebhookClient {

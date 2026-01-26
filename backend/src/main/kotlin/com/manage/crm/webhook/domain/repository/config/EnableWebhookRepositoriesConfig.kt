@@ -5,6 +5,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
 
 @Configuration
-@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true")
 @EnableR2dbcRepositories(basePackages = ["com.manage.crm.webhook.domain.repository"])
 class EnableWebhookRepositoriesConfig
