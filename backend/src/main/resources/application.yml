@@ -22,3 +22,8 @@ spring:
                 - prd
             dev:
                 - dev
+
+# Scheduler configuration
+# Supported providers: "aws" (AWS EventBridge) or "redis-kafka" (Redis + Kafka hybrid)
+scheduler:
+    provider: ${SCHEDULER_PROVIDER:redis-kafka}
