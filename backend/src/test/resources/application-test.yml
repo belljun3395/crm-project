@@ -3,6 +3,8 @@ spring:
         web-application-type: reactive
     application:
         name: crm
+    kafka:
+        bootstrap-servers: localhost:29092
     r2dbc:
         url: r2dbc:pool:mysql://localhost:13306/test
         username: root
@@ -81,3 +83,7 @@ logging:
         org.testcontainers: debug
         # LocalStack specific logging
         localstack: debug
+
+# Scheduler configuration - use redis-kafka for tests
+scheduler:
+    provider: redis-kafka
