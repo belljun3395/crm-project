@@ -2,6 +2,7 @@ package com.manage.crm.infrastructure.scheduler.provider
 
 import com.manage.crm.infrastructure.scheduler.ScheduleInfo
 import com.manage.crm.infrastructure.scheduler.ScheduleName
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
