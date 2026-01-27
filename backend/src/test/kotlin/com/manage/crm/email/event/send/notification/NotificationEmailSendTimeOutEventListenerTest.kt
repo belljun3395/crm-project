@@ -40,7 +40,6 @@ class NotificationEmailSendTimeOutEventListenerTest(
                 scheduledEventMessageMapper
             )
 
-
             // given
             val template = EmailTemplateFixtures.giveMeOne().build()
             val eventId = EventIdFixtures.giveMeOne().build()
