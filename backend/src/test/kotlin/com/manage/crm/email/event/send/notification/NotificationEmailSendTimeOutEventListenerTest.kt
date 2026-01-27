@@ -22,22 +22,25 @@ import java.time.LocalDateTime
 import kotlin.test.assertEquals
 
 class NotificationEmailSendTimeOutEventListenerTest(
-    scheduledEventMessageMapper: ScheduledEventMessageMapper
+    private val scheduledEventMessageMapper: ScheduledEventMessageMapper
 ) : MailEventInvokeSituationTest() {
 
     @Autowired
     @Qualifier("scheduleTaskServicePostEventProcessor")
     private lateinit var scheduleTaskService: ScheduleTaskAllService
 
-    private var scheduledEventReverseRelay =
-        ScheduledEventReverseRelay(
-            scheduledTaskHandler,
-            scheduledEventMessageMapper
-        )
+    private lateinit var scheduledEventReverseRelay: ScheduledEventReverseRelay
 
     @Test
     fun `schedule task service new schedule method is called`(scenario: Scenario) {
         runTest {
+            // Initialize scheduledEventReverseRelay
+            scheduledEventReverseRelay = ScheduledEventReverseRelay(
+                scheduledTaskHandler,
+                scheduledEventMessageMapper
+            )
+
+
             // given
             val template = EmailTemplateFixtures.giveMeOne().build()
             val eventId = EventIdFixtures.giveMeOne().build()
@@ -88,6 +91,12 @@ class NotificationEmailSendTimeOutEventListenerTest(
     @Test
     fun `scheduled notification email event from aws scheduler`(scenario: Scenario) {
         runTest {
+            // Initialize scheduledEventReverseRelay
+            scheduledEventReverseRelay = ScheduledEventReverseRelay(
+                scheduledTaskHandler,
+                scheduledEventMessageMapper
+            )
+
             // given
             val message = """
                     {
