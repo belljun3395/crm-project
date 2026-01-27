@@ -27,6 +27,7 @@ data class SendEmailArgs(
 ) : SendMailArgs<Content, String>
 
 data class SendEmailInDto(
+    val userId: Long,
     val to: String,
     val subject: String,
     val template: String,

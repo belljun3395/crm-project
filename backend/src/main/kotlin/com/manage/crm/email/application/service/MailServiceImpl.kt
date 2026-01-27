@@ -9,14 +9,11 @@ import com.manage.crm.infrastructure.mail.MailSender
 import com.manage.crm.infrastructure.mail.MailTemplateProcessor
 import com.manage.crm.infrastructure.mail.MailTemplateType
 import com.manage.crm.infrastructure.mail.provider.MailSendProvider
-import com.manage.crm.support.exception.NotFoundByException
-import com.manage.crm.user.domain.repository.UserRepository
 import org.springframework.boot.autoconfigure.mail.MailProperties
 import org.springframework.stereotype.Component
 
 @Component
 class MailServiceImpl(
-    private val userRepository: UserRepository,
     private val mailTemplateProcessor: MailTemplateProcessor,
     mailProperties: MailProperties,
     mailSendProvider: MailSendProvider
@@ -33,10 +30,8 @@ class MailServiceImpl(
     override suspend fun send(args: SendEmailInDto): SendEmailOutDto {
         val emailArgs = args.emailArgs
         return send(emailArgs).let {
-            val userId = userRepository.findByEmail(args.to)?.id
-                ?: throw NotFoundByException("User", "email", args.to)
             SendEmailOutDto(
-                userId = userId,
+                userId = args.userId,
                 emailBody = args.emailBody,
                 messageId = it,
                 destination = args.destination,

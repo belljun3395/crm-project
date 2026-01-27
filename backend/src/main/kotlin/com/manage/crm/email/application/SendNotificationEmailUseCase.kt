@@ -191,17 +191,19 @@ class SendNotificationEmailUseCase(
     private suspend fun generateNotificationDto(targetUsers: Map<Email, User>, notificationVariables: NotificationEmailTemplateVariablesModel, campaignId: Long?): List<SendEmailInDto?> {
         return targetUsers.toList().parMap(Dispatchers.IO) { (email, user) ->
             val content = emailContentService.genUserEmailContent(user, notificationVariables, campaignId)
-            doMapToNotificationDto(email, content, notificationVariables)
+            doMapToNotificationDto(email, user, content, notificationVariables)
         }
     }
 
     private fun doMapToNotificationDto(
         email: Email,
+        user: User,
         content: Content?,
         notificationProperties: NotificationEmailTemplateVariablesModel
     ): SendEmailInDto? {
         return content?.let {
             SendEmailInDto(
+                userId = user.id ?: throw IllegalStateException("User id must not be null"),
                 to = email.value,
                 subject = notificationProperties.subject,
                 template = notificationProperties.body,

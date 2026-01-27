@@ -86,6 +86,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
             val emailMessageId =
                 mailService.send(
                     SendEmailInDto(
+                        userId = user.id ?: return@collect,
                         to = email,
                         subject = template.subject,
                         template = template.body,

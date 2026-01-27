@@ -65,6 +65,7 @@ class EmailSendEventListenerTest(
         runTest {
             // given
             val sendEmailInDto = SendEmailInDto(
+                userId = 1L,
                 to = "example@example.com",
                 subject = "subject",
                 template = "template",
