@@ -234,11 +234,20 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
             if (localStackContainer != null) {
                 val localStackEndpoint = "http://${localStackContainer.host}:${localStackContainer.getMappedPort(4566)}"
 
+                // Only setup AWS services if needed based on provider configuration
+                val mailProvider = System.getProperty("mail.provider", "javamail")
+                val schedulerProvider = System.getProperty("scheduler.provider", "redis-kafka")
+
                 // Run AWS services setup in parallel
-                val setupTasks = listOf(
-                    { setupLocalStackSES(localStackEndpoint) },
-                    { setupLocalStackScheduler(localStackEndpoint) }
-                )
+                val setupTasks = mutableListOf<() -> Unit>()
+
+                if (mailProvider == "aws") {
+                    setupTasks.add { setupLocalStackSES(localStackEndpoint) }
+                }
+
+                if (schedulerProvider == "aws") {
+                    setupTasks.add { setupLocalStackScheduler(localStackEndpoint) }
+                }
 
                 setupTasks.forEach { task ->
                     try {
