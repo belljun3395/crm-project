@@ -8,7 +8,7 @@ import org.springframework.kafka.support.Acknowledgment
 import org.springframework.stereotype.Component
 
 @Component
-@ConditionalOnProperty(name = ["message.provider"], havingValue = "kafka")
+@ConditionalOnProperty(name = ["message.provider"], havingValue = "kafka", matchIfMissing = false)
 class KafkaCacheInvalidationListener(
     private val handler: CacheInvalidationHandler
 ) {

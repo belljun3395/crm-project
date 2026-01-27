@@ -61,7 +61,7 @@ class RedisConfig {
     }
 
     // ----------------- Standalone Redis (for tests and simple deployments) -----------------
-    @Bean
+    @Bean("redisConnectionFactory")
     @Primary
     @ConditionalOnProperty(name = ["spring.data.redis.host"])
     fun standaloneRedisConnectionFactory(
@@ -75,8 +75,9 @@ class RedisConfig {
 
     // ----------------- Cluster Redis (for production) -----------------
     @Bean
-    @ConditionalOnMissingBean(RedisConnectionFactory::class)
-    fun clusterRedisConnectionFactory(rcp: RedisConfigurationProperties): RedisConnectionFactory {
+    @ConditionalOnMissingBean(name = ["redisConnectionFactory"])
+    @ConditionalOnProperty(name = ["spring.data.redis.cluster.nodes"])
+    fun redisConnectionFactory(rcp: RedisConfigurationProperties): RedisConnectionFactory {
         if (!rcp.hasValidClusterNodes()) {
             throw IllegalStateException(
                 "Redis configuration error: Neither standalone (spring.data.redis.host) " +

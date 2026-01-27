@@ -10,7 +10,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
 
-@TestPropertySource(properties = ["message.provider=aws", "scheduler.provider=aws"])
+@TestPropertySource(properties = ["message.provider=kafka", "scheduler.provider=redis-kafka"])
 @ActiveProfiles(value = ["test", "new"])
 @EnableAutoConfiguration(
     exclude = [FlywayAutoConfiguration::class, SqsAutoConfiguration::class]

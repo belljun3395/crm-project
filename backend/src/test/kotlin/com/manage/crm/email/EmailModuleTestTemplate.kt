@@ -9,7 +9,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
 
-@TestPropertySource(properties = ["message.provider=redis-kafka", "scheduler.provider=redis-kafka", "mail.provider=javamail"])
+@TestPropertySource(properties = ["message.provider=kafka", "scheduler.provider=redis-kafka", "mail.provider=javamail"])
 @ActiveProfiles(value = ["test", "new"])
 @EnableAutoConfiguration(
     exclude = [FlywayAutoConfiguration::class]

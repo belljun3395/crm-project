@@ -77,7 +77,7 @@ scheduler:
     provider: redis-kafka
 
 message:
-    provider: redis-kafka
+    provider: kafka
 
 mail:
     provider: javamail
