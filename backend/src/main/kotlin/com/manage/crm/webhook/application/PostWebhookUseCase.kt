@@ -16,6 +16,15 @@ import java.time.format.DateTimeFormatter
 
 @Service
 @ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
+/**
+ * UC-WEBHOOK-001
+ * Creates or updates a webhook endpoint subscription.
+ *
+ * Input: webhook id (optional), name, url, subscribed events, and active flag.
+ * Success: persists webhook state and returns normalized webhook response.
+ * Failure: throws when update target does not exist or duplicate name is detected.
+ * Side effects: enforces unique webhook name through pre-check and DB constraint handling.
+ */
 class PostWebhookUseCase(
     private val webhookRepository: WebhookRepository
 ) {
