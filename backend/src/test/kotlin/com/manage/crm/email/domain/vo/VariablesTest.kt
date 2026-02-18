@@ -36,7 +36,7 @@ class VariablesTest : FeatureSpec({
             val variables = Variables(listOf(userVariable, campaignVariable))
 
             // when
-            val result = variables.getVariables(USER_TYPE)
+            val result = variables.getVariables(VariableSource.USER)
 
             // then
             result shouldBe listOf(userVariable)
@@ -49,7 +49,7 @@ class VariablesTest : FeatureSpec({
             val variables = Variables(listOf(userVariable, campaignVariable))
 
             // when
-            val result = variables.getVariables(CAMPAIGN_TYPE)
+            val result = variables.getVariables(VariableSource.CAMPAIGN)
 
             // then
             result shouldBe listOf(campaignVariable)

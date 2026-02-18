@@ -1,9 +1,10 @@
 package com.manage.crm.email.domain.support
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.manage.crm.email.application.service.CampaignVariableResolver
+import com.manage.crm.email.application.service.UserVariableResolver
 import com.manage.crm.email.domain.vo.CampaignVariable
 import com.manage.crm.email.domain.vo.UserVariable
-import com.manage.crm.email.domain.vo.Variables
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.user.domain.vo.UserAttributes
@@ -14,59 +15,66 @@ import io.kotest.matchers.shouldBe
 class VariablesSupportTest : FeatureSpec({
 
     val objectMapper = ObjectMapper()
+    val userVariableResolver = UserVariableResolver()
+    val campaignVariableResolver = CampaignVariableResolver()
 
-    feature("VariablesSupport#associateUserAttribute") {
-        scenario("associate with attribute key that exists in attributes") {
+    feature("UserVariableResolver#resolve") {
+        scenario("resolve with attribute key that exists in attributes") {
             // given
             val userVariable = UserVariable("name")
             val attributes = UserAttributes("""{"name": "John Doe"}""")
+            val context = VariableResolverContext(userAttributes = attributes, objectMapper = objectMapper)
 
             // when
-            val result = VariablesSupport.associateUserAttribute(attributes, listOf(userVariable), objectMapper)
-            val resultPair = userVariable.keyWithType() to result[userVariable.keyWithType()]!!
+            val result = userVariableResolver.resolve(userVariable, context)
 
             // then
-            resultPair shouldBe ("user_name" to "John Doe")
+            result["user.name"] shouldBe "John Doe"
+            result["user_name"] shouldBe "John Doe"
         }
 
-        scenario("associateUserAttribute with attribute key that does not exist in attributes") {
+        scenario("resolve with attribute key that does not exist in attributes") {
             // given
             val userVariable = UserVariable("name")
             val attributes = UserAttributes("""{"email": "john@example.com"}""")
+            val context = VariableResolverContext(userAttributes = attributes, objectMapper = objectMapper)
 
             // when & then
             shouldThrow<IllegalArgumentException> {
-                VariablesSupport.associateUserAttribute(attributes, listOf(userVariable), objectMapper)
+                userVariableResolver.resolve(userVariable, context)
             }
         }
     }
 
-    feature("VariablesSupport#associateCampaignEventProperty") {
-        scenario("associate with property key that exists in campaign properties") {
+    feature("CampaignVariableResolver#resolve") {
+        scenario("resolve with property key that exists in campaign properties") {
             // given
             val campaignVariable = CampaignVariable("eventCount")
             val properties = EventProperties(listOf(EventProperty("eventCount", "10")))
+            val context = VariableResolverContext(eventProperties = properties)
 
             // when
-            val result = VariablesSupport.associateCampaignEventProperty(properties, Variables(listOf(campaignVariable)))
+            val result = campaignVariableResolver.resolve(campaignVariable, context)
 
             // then
-            result[campaignVariable.keyWithType()] shouldBe "10"
+            result["campaign.eventCount"] shouldBe "10"
+            result["campaign_eventCount"] shouldBe "10"
         }
 
-        scenario("associate with property key that does not exist in campaign properties") {
+        scenario("resolve with property key that does not exist in campaign properties") {
             // given
             val campaignVariable = CampaignVariable("eventCount")
             val properties = EventProperties(listOf(EventProperty("totalCount", "5")))
+            val context = VariableResolverContext(eventProperties = properties)
 
             // when
-            val result = VariablesSupport.associateCampaignEventProperty(properties, Variables(listOf(campaignVariable)))
+            val result = campaignVariableResolver.resolve(campaignVariable, context)
 
             // then
             result.isEmpty() shouldBe true
         }
 
-        scenario("associate with multiple campaign properties") {
+        scenario("resolve with multiple campaign properties") {
             // given
             val campaignVariables = listOf(
                 CampaignVariable("eventCount"),
@@ -78,13 +86,28 @@ class VariablesSupportTest : FeatureSpec({
                     EventProperty("totalRevenue", "1000.50")
                 )
             )
+            val context = VariableResolverContext(eventProperties = properties)
+
+            // when & then
+            val resultA = campaignVariableResolver.resolve(campaignVariables[0], context)
+            resultA["campaign.eventCount"] shouldBe "10"
+            resultA["campaign_eventCount"] shouldBe "10"
+
+            val resultB = campaignVariableResolver.resolve(campaignVariables[1], context)
+            resultB["campaign.totalRevenue"] shouldBe "1000.50"
+            resultB["campaign_totalRevenue"] shouldBe "1000.50"
+        }
+
+        scenario("resolve returns empty map when no event properties in context") {
+            // given
+            val campaignVariable = CampaignVariable("eventCount")
+            val context = VariableResolverContext(eventProperties = null)
 
             // when
-            val result = VariablesSupport.associateCampaignEventProperty(properties, Variables(campaignVariables))
+            val result = campaignVariableResolver.resolve(campaignVariable, context)
 
             // then
-            result["campaign_eventCount"] shouldBe "10"
-            result["campaign_totalRevenue"] shouldBe "1000.50"
+            result.isEmpty() shouldBe true
         }
     }
 })
