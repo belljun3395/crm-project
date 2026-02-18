@@ -8,6 +8,7 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Tag
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
+import org.springframework.test.web.reactive.server.expectBody
 
 @Tag("integration")
 @TestPropertySource(properties = ["idempotency.enabled=true"])
@@ -37,7 +38,7 @@ class EmailControllerIdempotencyIntegrationTest : AbstractIntegrationTest() {
             it("replays completed response for same key and same body") {
                 val templateId = createTemplate()
                 val userId = createUserWithIdempotencyHeader("same-body-user")
-                val key = "idem-email-send-same-001"
+                val key = "idem-email-send-same-${System.currentTimeMillis()}"
                 val request = SendNotificationEmailRequest(
                     campaignId = null,
                     templateId = templateId,
@@ -76,7 +77,7 @@ class EmailControllerIdempotencyIntegrationTest : AbstractIntegrationTest() {
         val templateRequest = PostTemplateRequest(
             templateName = "idem-template-${System.currentTimeMillis()}",
             subject = "Idempotency Test",
-            body = "<h1>Hello \\${user_name}</h1>",
+            body = "<h1>Hello ${'$'}{user_name}</h1>",
             variables = listOf("user_name")
         )
 

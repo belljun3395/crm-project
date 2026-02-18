@@ -51,7 +51,7 @@ class IdempotencyKeyFilter(
 
         return readRequestBody(request).flatMap { requestBodyBytes ->
             val requestHash = IdempotencyKeyPolicy.hashRequestBody(requestBodyBytes)
-            val method = request.method?.name() ?: "UNKNOWN"
+            val method = request.method.name()
             val path = request.path.value()
 
             idempotencyRecordStore.get(method, path, idempotencyKey)
@@ -98,7 +98,7 @@ class IdempotencyKeyFilter(
         requestHash: String,
         requestBodyBytes: ByteArray
     ): Mono<Void> {
-        val method = exchange.request.method?.name() ?: "UNKNOWN"
+        val method = exchange.request.method.name()
         val path = exchange.request.path.value()
         val bodyCapture = ByteArrayOutputStream()
 

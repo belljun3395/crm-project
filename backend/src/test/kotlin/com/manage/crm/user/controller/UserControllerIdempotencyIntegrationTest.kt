@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Tag
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
+import org.springframework.test.web.reactive.server.expectBody
 
 @Tag("integration")
 @TestPropertySource(properties = ["idempotency.enabled=true"])
@@ -26,7 +27,7 @@ class UserControllerIdempotencyIntegrationTest : AbstractIntegrationTest() {
             }
 
             it("replays completed response for same key and same body") {
-                val key = "idem-user-same-body-001"
+                val key = "idem-user-same-body-${System.currentTimeMillis()}"
                 val request = newEnrollUserRequest("same-body")
 
                 val firstResponse = webTestClient.post()
@@ -55,7 +56,7 @@ class UserControllerIdempotencyIntegrationTest : AbstractIntegrationTest() {
             }
 
             it("returns 409 when same key is used with different body") {
-                val key = "idem-user-diff-body-001"
+                val key = "idem-user-diff-body-${System.currentTimeMillis()}"
                 val firstRequest = newEnrollUserRequest("diff-a")
                 val secondRequest = newEnrollUserRequest("diff-b")
 
