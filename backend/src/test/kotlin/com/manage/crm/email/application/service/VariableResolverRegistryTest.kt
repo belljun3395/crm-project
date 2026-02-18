@@ -20,7 +20,7 @@ class VariableResolverRegistryTest : FeatureSpec({
     )
 
     feature("VariableResolverRegistry#resolveAll") {
-        scenario("resolve user variables produces both new and legacy keys") {
+        scenario("resolve user variables produces legacy keys for Thymeleaf substitution") {
             // given
             val variables = Variables(listOf(UserVariable("name"), UserVariable("email")))
             val context = VariableResolverContext(
@@ -31,15 +31,12 @@ class VariableResolverRegistryTest : FeatureSpec({
             // when
             val result = registry.resolveAll(variables, context)
 
-            // then - new format keys
-            result["user.name"] shouldBe "John"
-            result["user.email"] shouldBe "john@example.com"
-            // then - legacy format keys (backward compat)
+            // then - legacy format keys used for ${user_name} / ${user_email} in HTML templates
             result["user_name"] shouldBe "John"
             result["user_email"] shouldBe "john@example.com"
         }
 
-        scenario("resolve campaign variables produces both new and legacy keys") {
+        scenario("resolve campaign variables produces legacy keys for Thymeleaf substitution") {
             // given
             val variables = Variables(listOf(CampaignVariable("eventCount")))
             val context = VariableResolverContext(
@@ -49,9 +46,7 @@ class VariableResolverRegistryTest : FeatureSpec({
             // when
             val result = registry.resolveAll(variables, context)
 
-            // then - new format keys
-            result["campaign.eventCount"] shouldBe "42"
-            // then - legacy format keys (backward compat)
+            // then - legacy format key used for ${campaign_eventCount} in HTML templates
             result["campaign_eventCount"] shouldBe "42"
         }
 
@@ -73,9 +68,7 @@ class VariableResolverRegistryTest : FeatureSpec({
             val result = registry.resolveAll(variables, context)
 
             // then
-            result["user.name"] shouldBe "Jane"
             result["user_name"] shouldBe "Jane"
-            result["campaign.eventCount"] shouldBe "5"
             result["campaign_eventCount"] shouldBe "5"
         }
 

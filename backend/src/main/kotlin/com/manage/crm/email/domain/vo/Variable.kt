@@ -5,7 +5,6 @@ const val LEGACY_TYPE_DELIMITER = "_"
 const val DELIMITER = ":"
 
 // Backward-compatible aliases
-const val ALL_TYPES = "all"
 val USER_TYPE = VariableSource.USER.value
 val CAMPAIGN_TYPE = VariableSource.CAMPAIGN.value
 

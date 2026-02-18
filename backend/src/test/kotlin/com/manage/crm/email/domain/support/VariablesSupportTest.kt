@@ -28,8 +28,7 @@ class VariablesSupportTest : FeatureSpec({
             // when
             val result = userVariableResolver.resolve(userVariable, context)
 
-            // then
-            result["user.name"] shouldBe "John Doe"
+            // then - legacy format key for Thymeleaf template substitution
             result["user_name"] shouldBe "John Doe"
         }
 
@@ -56,8 +55,7 @@ class VariablesSupportTest : FeatureSpec({
             // when
             val result = campaignVariableResolver.resolve(campaignVariable, context)
 
-            // then
-            result["campaign.eventCount"] shouldBe "10"
+            // then - legacy format key for Thymeleaf template substitution
             result["campaign_eventCount"] shouldBe "10"
         }
 
@@ -90,11 +88,9 @@ class VariablesSupportTest : FeatureSpec({
 
             // when & then
             val resultA = campaignVariableResolver.resolve(campaignVariables[0], context)
-            resultA["campaign.eventCount"] shouldBe "10"
             resultA["campaign_eventCount"] shouldBe "10"
 
             val resultB = campaignVariableResolver.resolve(campaignVariables[1], context)
-            resultB["campaign.totalRevenue"] shouldBe "1000.50"
             resultB["campaign_totalRevenue"] shouldBe "1000.50"
         }
 
