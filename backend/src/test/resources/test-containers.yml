@@ -1,38 +1,7 @@
 testcontainers:
-  mysql:
-    image: mysql:8.0
-    database-name: test_crm
-    username: test_user
-    password: test_password
-    startup-timeout-minutes: 2
-    ready-log-pattern: ".*ready for connections.*"
-    ready-log-count: 2
-    network-alias: mysql
-    reuse: true
-    
   localstack:
     enabled: true
-    image: localstack/localstack:3.8
-    startup-timeout-minutes: 3
-    ready-log-pattern: ".*Ready.*"
-    ready-log-count: 1
-    network-alias: localstack
-    reuse: true
-    ports:
-      - 4566
-      - 25
-    environment:
-      SERVICES: "ses,sqs,sns,events,iam,scheduler"
-      DEBUG: "0"
-      AWS_DEFAULT_REGION: "ap-northeast-2"
-      AWS_ACCESS_KEY_ID: "test"
-      AWS_SECRET_ACCESS_KEY: "test"
-      SKIP_INFRA_DOWNLOADS: "1"
-      SES_ACCEPT_ALL_EMAILS: "true"
-      SES_VERIFIED_EMAILS: "test@example.com,notification@example.com,noreply@example.com"
-      SES_CONFIGURATION_SET: "test-configuration-set"
-      LOCALSTACK_HOST: "localstack"
-      
+
   aws:
     region: "ap-northeast-2"
     access-key: "test"
@@ -40,7 +9,7 @@ testcontainers:
     ses:
       verified-emails:
         - "test@example.com"
-        - "notification@example.com" 
+        - "notification@example.com"
         - "noreply@example.com"
         - "admin@example.com"
         - "example@example.com"
@@ -52,7 +21,7 @@ testcontainers:
       sqs-arn: "arn:aws:sqs:ap-northeast-2:000000000000:test-queue"
       group-name: "test-group"
       setup-retry-count: 3
-      
+
   retry:
     max-retries: 3
     initial-delay-ms: 500
