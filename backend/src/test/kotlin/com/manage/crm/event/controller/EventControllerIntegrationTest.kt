@@ -233,6 +233,97 @@ class EventControllerIntegrationTest : AbstractIntegrationTest() {
                     searchConditions = "action&purchase&=&and,amount&150&=&end"
                 )
             }
+
+            it("returns 400 when where format is invalid") {
+                // given
+                val timestamp = System.currentTimeMillis()
+                val userExternalId = createTestUser(
+                    email = "invalid-format-$timestamp@example.com",
+                    name = "Invalid Format User",
+                    externalId = "invalid-format-user-$timestamp"
+                )
+
+                createTestEvent(
+                    name = "invalid_where_event",
+                    userExternalId = userExternalId
+                )
+
+                // when & then
+                webTestClient.get()
+                    .uri { uriBuilder ->
+                        uriBuilder
+                            .path("/api/v1/events")
+                            .queryParam("eventName", "invalid_where_event")
+                            .queryParam("where", "category&electronics&=")
+                            .build()
+                    }
+                    .exchange()
+                    .expectStatus().isBadRequest
+                    .expectBody()
+                    .jsonPath("$.message").isEqualTo("Invalid where format at index 0")
+            }
+
+            it("returns 400 when where contains invalid operation") {
+                // given
+                val timestamp = System.currentTimeMillis()
+                val userExternalId = createTestUser(
+                    email = "invalid-op-$timestamp@example.com",
+                    name = "Invalid Operation User",
+                    externalId = "invalid-op-user-$timestamp"
+                )
+
+                createTestEvent(
+                    name = "invalid_operation_event",
+                    userExternalId = userExternalId
+                )
+
+                // when & then
+                webTestClient.get()
+                    .uri { uriBuilder ->
+                        uriBuilder
+                            .path("/api/v1/events")
+                            .queryParam("eventName", "invalid_operation_event")
+                            .queryParam("where", "category&electronics&LIKEX&end")
+                            .build()
+                    }
+                    .exchange()
+                    .expectStatus().isBadRequest
+                    .expectBody()
+                    .jsonPath("$.message").isEqualTo("Invalid operation at index 0: LIKEX")
+            }
+
+            it("returns 400 when BETWEEN keys are different") {
+                // given
+                val timestamp = System.currentTimeMillis()
+                val userExternalId = createTestUser(
+                    email = "between-key-$timestamp@example.com",
+                    name = "Between Key User",
+                    externalId = "between-key-user-$timestamp"
+                )
+
+                createTestEvent(
+                    name = "between_key_event",
+                    userExternalId = userExternalId,
+                    properties = listOf(
+                        PostEventPropertyDto(key = "amount", value = "100"),
+                        PostEventPropertyDto(key = "amount", value = "200")
+                    )
+                )
+
+                // when & then
+                webTestClient.get()
+                    .uri { uriBuilder ->
+                        uriBuilder
+                            .path("/api/v1/events")
+                            .queryParam("eventName", "between_key_event")
+                            .queryParam("where", "startAmount&100&endAmount&200&BETWEEN&end")
+                            .build()
+                    }
+                    .exchange()
+                    .expectStatus().isBadRequest
+                    .expectBody()
+                    .jsonPath("$.message").isEqualTo("Between operation requires the same key at index 0")
+            }
         }
     }
 }

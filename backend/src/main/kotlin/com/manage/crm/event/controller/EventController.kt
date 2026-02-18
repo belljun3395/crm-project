@@ -18,6 +18,7 @@ import com.manage.crm.event.controller.request.PostCampaignRequest
 import com.manage.crm.event.controller.request.PostEventRequest
 import com.manage.crm.event.domain.JoinOperation
 import com.manage.crm.event.domain.Operation
+import com.manage.crm.event.exception.InvalidSearchConditionException
 import com.manage.crm.support.web.ApiResponse
 import com.manage.crm.support.web.ApiResponseGenerator
 import io.swagger.v3.oas.annotations.Parameter
@@ -25,11 +26,13 @@ import io.swagger.v3.oas.annotations.Parameters
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = SwaggerTag.EVENT_SWAGGER_TAG, description = "이벤트 API")
@@ -87,27 +90,16 @@ ex) key1&value1&operation&joinOperation,key2&value2&operation&joinOperation...
             .execute(
                 SearchEventsUseCaseIn(
                     eventName = eventName,
-                    propertyAndOperations = where.split(",").map {
-                        // TODO extract to function in support class
-                        val count = it.split("&").count()
-                        val propertySource = mutableListOf<SearchEventPropertyDto>()
-                        for (i in 0 until count - 2 step 2) {
-                            propertySource.add(
-                                SearchEventPropertyDto(
-                                    key = it.split("&")[i],
-                                    value = it.split("&")[i + 1]
-                                )
-                            )
-                        }
-                        PropertyAndOperationDto(
-                            properties = propertySource,
-                            operation = Operation.fromValue(it.split("&")[count - 2]),
-                            joinOperation = JoinOperation.fromValue(it.split("&")[count - 1])
-                        )
-                    }.toList()
+                    propertyAndOperations = parseWhereClause(where)
                 )
             )
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+    }
+
+    @ExceptionHandler(InvalidSearchConditionException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleInvalidSearchConditionException(e: InvalidSearchConditionException): ApiResponse<ApiResponse.FailureBody> {
+        return ApiResponseGenerator.fail(e.message ?: "invalid search condition", HttpStatus.BAD_REQUEST)
     }
 
     @PostMapping("/campaign")
@@ -125,5 +117,54 @@ ex) key1&value1&operation&joinOperation,key2&value2&operation&joinOperation...
                 )
             )
             .let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
+    }
+
+    private fun parseWhereClause(where: String): List<PropertyAndOperationDto> {
+        if (where.isBlank()) {
+            throw InvalidSearchConditionException("where parameter is required")
+        }
+
+        return where.split(",").mapIndexed { index, expression ->
+            val tokens = expression.split("&")
+            if (tokens.size < 4 || tokens.size % 2 != 0) {
+                throw InvalidSearchConditionException("Invalid where format at index $index")
+            }
+
+            val operation = runCatching { Operation.fromValue(tokens[tokens.lastIndex - 1]) }
+                .getOrElse {
+                    throw InvalidSearchConditionException("Invalid operation at index $index: ${tokens[tokens.lastIndex - 1]}")
+                }
+
+            val joinOperation = runCatching { JoinOperation.fromValue(tokens.last()) }
+                .getOrElse {
+                    throw InvalidSearchConditionException("Invalid join operation at index $index: ${tokens.last()}")
+                }
+
+            val properties = tokens
+                .dropLast(2)
+                .chunked(2)
+                .map { (key, value) ->
+                    if (key.isBlank() || value.isBlank()) {
+                        throw InvalidSearchConditionException("Empty key/value is not allowed at index $index")
+                    }
+                    SearchEventPropertyDto(key = key, value = value)
+                }
+
+            if (properties.size != operation.paramsCnt) {
+                throw InvalidSearchConditionException(
+                    "Operation ${operation.name} requires ${operation.paramsCnt} value(s) at index $index"
+                )
+            }
+
+            if (operation == Operation.BETWEEN && properties.map { it.key }.distinct().size != 1) {
+                throw InvalidSearchConditionException("Between operation requires the same key at index $index")
+            }
+
+            PropertyAndOperationDto(
+                properties = properties,
+                operation = operation,
+                joinOperation = joinOperation
+            )
+        }
     }
 }

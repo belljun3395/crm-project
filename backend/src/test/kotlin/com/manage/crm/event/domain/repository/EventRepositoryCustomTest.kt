@@ -497,6 +497,78 @@ class EventRepositoryCustomTest(
                     assert(result.size == expectedSize)
                 }
             }
+
+            @Test
+            fun `search events with SQL injection-like value does not bypass filtering`() {
+                runTest {
+                    // given
+                    (1..3).map { it ->
+                        Event.new(
+                            name = "event",
+                            userId = it.toLong(),
+                            properties = EventProperties(
+                                listOf(
+                                    EventProperty(
+                                        key = "propertyKey",
+                                        value = "value$it"
+                                    )
+                                )
+                            )
+                        ).let { eventRepository.save(it) }
+                    }
+
+                    // when
+                    val result = eventRepository.searchByProperty(
+                        SearchByPropertyQuery(
+                            "event",
+                            EventProperties(
+                                listOf(
+                                    EventProperty("propertyKey", "value1' OR '1'='1")
+                                )
+                            ),
+                            Operation.EQUALS
+                        )
+                    )
+
+                    // then
+                    assert(result.isEmpty())
+                }
+            }
+
+            @Test
+            fun `search events with SQL injection-like eventName does not bypass filtering`() {
+                runTest {
+                    // given
+                    Event.new(
+                        name = "safe_event",
+                        userId = 1L,
+                        properties = EventProperties(
+                            listOf(
+                                EventProperty(
+                                    key = "propertyKey",
+                                    value = "value1"
+                                )
+                            )
+                        )
+                    ).let { eventRepository.save(it) }
+
+                    // when
+                    val result = eventRepository.searchByProperty(
+                        SearchByPropertyQuery(
+                            "safe_event' OR '1'='1",
+                            EventProperties(
+                                listOf(
+                                    EventProperty("propertyKey", "value1")
+                                )
+                            ),
+                            Operation.EQUALS
+                        )
+                    )
+
+                    // then
+                    assert(result.isEmpty())
+                }
+            }
         }
     }
 
