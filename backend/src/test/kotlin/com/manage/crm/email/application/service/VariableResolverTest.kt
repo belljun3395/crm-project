@@ -1,8 +1,6 @@
 package com.manage.crm.email.application.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.manage.crm.email.application.service.CampaignVariableResolver
-import com.manage.crm.email.application.service.UserVariableResolver
 import com.manage.crm.email.domain.support.VariableResolverContext
 import com.manage.crm.email.domain.vo.CampaignVariable
 import com.manage.crm.email.domain.vo.UserVariable
