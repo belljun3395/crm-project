@@ -13,6 +13,7 @@ import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.coEvery
 import io.mockk.coInvoke
 import io.mockk.coVerify
@@ -171,14 +172,15 @@ class PostCampaignUseCaseTest : BehaviorSpec({
             )
 
             coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
-            coEvery { campaignRepository.save(any()) } throws DataIntegrityViolationException("duplicate key")
+            coEvery { campaignRepository.save(any()) } throws DataIntegrityViolationException("Duplicate entry for key 'uk_campaigns_name'")
+
+            val thrownException = runCatching {
+                postCampaignUseCase.execute(useCaseIn)
+            }.exceptionOrNull()
 
             then("should throw already exists exception from db constraint") {
-                val exception = shouldThrow<AlreadyExistsException> {
-                    postCampaignUseCase.execute(useCaseIn)
-                }
-
-                exception.message shouldBe "Campaign already exists with name: ${useCaseIn.name}"
+                thrownException.shouldBeInstanceOf<AlreadyExistsException>()
+                thrownException.message shouldBe "Campaign already exists with name: ${useCaseIn.name}"
             }
 
             then("save campaign is attempted once") {
