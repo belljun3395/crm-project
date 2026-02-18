@@ -10,20 +10,29 @@ import java.time.LocalDateTime
 
 private const val LIKE_ESCAPE_CHARACTER = "\\"
 
+/**
+ * DM-USER-001
+ * Provides custom user search and lookup queries.
+ *
+ * Input: email or search query with pagination.
+ * Success: returns matching users and counts.
+ * Failure: returns empty result when no matching user exists.
+ * Side effects: reads user records from DB using LIKE-escaped and bound patterns.
+ */
 @Repository
 class UserRepositoryCustomImpl(
     private val dataBaseClient: DatabaseClient
 ) : UserRepositoryCustom {
 
     override suspend fun findByEmail(email: String): User? {
-        var selectQuery = """
+        val selectQuery = """
             SELECT * FROM users
+            WHERE user_attributes LIKE :pattern ESCAPE '\\'
         """.trimIndent()
-        val whereClause = mutableListOf<String>()
-        whereClause.add("user_attributes LIKE '%\"email\": \"$email\"%'")
-        selectQuery = selectQuery.plus(" WHERE ${whereClause.joinToString(" AND ")}")
+        val pattern = "%\"email\": \"${escapeLikePattern(email)}\"%"
 
         return dataBaseClient.sql(selectQuery)
+            .bind("pattern", pattern)
             .fetch()
             .all()
             .map {
