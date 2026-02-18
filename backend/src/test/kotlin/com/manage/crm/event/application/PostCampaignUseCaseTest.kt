@@ -18,6 +18,7 @@ import io.mockk.coInvoke
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
+import org.springframework.dao.DataIntegrityViolationException
 
 class PostCampaignUseCaseTest : BehaviorSpec({
     lateinit var campaignRepository: CampaignRepository
@@ -154,6 +155,44 @@ class PostCampaignUseCaseTest : BehaviorSpec({
             }
 
             then("not called save campaign cache") {
+                coVerify(exactly = 0) { campaignCacheManager.save(any()) }
+            }
+        }
+
+        `when`("post campaign with concurrent duplicate save") {
+            val useCaseIn = PostCampaignUseCaseIn(
+                name = "racing_campaign",
+                properties = listOf(
+                    PostCampaignPropertyDto(
+                        key = "key1",
+                        value = "value1"
+                    )
+                )
+            )
+
+            coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
+            coEvery { campaignRepository.save(any()) } throws DataIntegrityViolationException("duplicate key")
+
+            then("should throw already exists exception from db constraint") {
+                val exception = shouldThrow<AlreadyExistsException> {
+                    postCampaignUseCase.execute(useCaseIn)
+                }
+
+                exception.message shouldBe "Campaign already exists with name: ${useCaseIn.name}"
+            }
+
+            then("save campaign is attempted once") {
+                coVerify(exactly = 1) { campaignRepository.save(any(Campaign::class)) }
+            }
+
+            then("post-save callbacks are not executed") {
+                coVerify(exactly = 0) {
+                    transactionSynchronizationTemplate.afterCommit(
+                        eq(Dispatchers.IO),
+                        eq("save campaign cache"),
+                        captureLambda<suspend () -> Unit>()
+                    )
+                }
                 coVerify(exactly = 0) { campaignCacheManager.save(any()) }
             }
         }

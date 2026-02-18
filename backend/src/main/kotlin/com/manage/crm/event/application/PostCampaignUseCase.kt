@@ -12,10 +12,19 @@ import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.out
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
 import kotlinx.coroutines.Dispatchers
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
-// TODO: check concurrency issues: existsCampaignsByName and save
+/**
+ * UC-CAMPAIGN-001
+ * Creates a campaign with unique name and property definitions.
+ *
+ * Input: campaign name and property list.
+ * Success: persists campaign and returns campaign id/name/properties.
+ * Failure: throws AlreadyExistsException when campaign name already exists.
+ * Side effects: writes campaign cache after transaction commit.
+ */
 @Service
 class PostCampaignUseCase(
     private val campaignRepository: CampaignRepository,
@@ -31,16 +40,20 @@ class PostCampaignUseCase(
             throw AlreadyExistsException("Campaign", "name", campaignName)
         }
 
-        val savedCampaign = campaignRepository.save(
-            Campaign.new(
-                name = campaignName,
-                properties = CampaignProperties(
-                    properties.map { (key, value) ->
-                        CampaignProperty(key = key, value = value)
-                    }
+        val savedCampaign = try {
+            campaignRepository.save(
+                Campaign.new(
+                    name = campaignName,
+                    properties = CampaignProperties(
+                        properties.map { (key, value) ->
+                            CampaignProperty(key = key, value = value)
+                        }
+                    )
                 )
             )
-        )
+        } catch (_: DataIntegrityViolationException) {
+            throw AlreadyExistsException("Campaign", "name", campaignName)
+        }
 
         transactionSynchronizationTemplate.afterCommit(Dispatchers.IO, "save campaign cache") {
             campaignCacheManager.save(savedCampaign)
