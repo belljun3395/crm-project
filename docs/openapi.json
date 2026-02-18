@@ -82,6 +82,12 @@
               "type": "integer",
               "format": "int64"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Idempotency key for write request replay and duplicate prevention",
+            "required": true
           }
         ],
         "requestBody": {
@@ -161,6 +167,14 @@
           "Webhooks API"
         ],
         "operationId": "create",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Idempotency key for write request replay and duplicate prevention",
+            "required": true
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -254,6 +268,14 @@
           "Users API"
         ],
         "operationId": "enrollUser",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Idempotency key for write request replay and duplicate prevention",
+            "required": true
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -341,6 +363,14 @@
           "Event API"
         ],
         "operationId": "postEvent",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Idempotency key for write request replay and duplicate prevention",
+            "required": true
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -381,6 +411,14 @@
           "Event API"
         ],
         "operationId": "postCampaign",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Idempotency key for write request replay and duplicate prevention",
+            "required": true
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -479,6 +517,14 @@
           "Emails API"
         ],
         "operationId": "sendNotificationEmail",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Idempotency key for write request replay and duplicate prevention",
+            "required": true
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -527,6 +573,14 @@
           "Emails API"
         ],
         "operationId": "postEmailNotificationSchedule",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Idempotency key for write request replay and duplicate prevention",
+            "required": true
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
