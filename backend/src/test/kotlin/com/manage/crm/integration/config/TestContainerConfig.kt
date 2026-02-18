@@ -7,7 +7,6 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.ClassPathResource
-import java.time.Duration
 
 data class TestContainerConfig(
     val testcontainers: TestContainers
@@ -46,9 +45,7 @@ data class TestContainers(
 
 data class LocalStackConfig(
     val enabled: Boolean = true
-) {
-    fun getStartupTimeout(): Duration = Duration.ofMinutes(3)
-}
+)
 
 data class AwsConfig(
     val region: String = "ap-northeast-2",

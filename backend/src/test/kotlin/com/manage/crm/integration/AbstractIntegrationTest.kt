@@ -59,6 +59,8 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
     }
 
     companion object {
+        private val logger = LoggerFactory.getLogger(AbstractIntegrationTest::class.java)
+
         private val config = TestContainerConfig.load()
         private val localStackConfig = config.testcontainers.localstack
         private val awsConfig = config.testcontainers.aws
@@ -79,23 +81,15 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
 
         private fun setupAwsServices() {
             val endpoint = "http://localhost:4566"
-            val setupTasks = listOf(
-                { setupLocalStackSES(endpoint) },
-                { setupLocalStackScheduler(endpoint) }
-            )
-            setupTasks.forEach { task ->
-                try {
-                    task()
-                } catch (e: Exception) {
-                    LoggerFactory.getLogger(AbstractIntegrationTest::class.java)
-                        .error("Failed to setup AWS service", e)
-                }
+            setupLocalStackSES(endpoint) // fatal — 실패 시 예외 전파
+            try {
+                setupLocalStackScheduler(endpoint) // non-fatal — mocked 기능이므로 실패해도 계속 진행
+            } catch (e: Exception) {
+                logger.error("Failed to setup AWS scheduler service (non-fatal)", e)
             }
         }
 
         private fun setupLocalStackSES(endpoint: String) {
-            val logger = LoggerFactory.getLogger(AbstractIntegrationTest::class.java)
-
             try {
                 logger.info("Setting up LocalStack SES at $endpoint")
 
@@ -189,15 +183,17 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
          * 이는 예상된 동작입니다.
          */
         private fun setupLocalStackScheduler(endpoint: String) {
-            val logger = LoggerFactory.getLogger(AbstractIntegrationTest::class.java)
-
             try {
                 logger.info("Setting up LocalStack EventBridge Scheduler at $endpoint")
                 logger.warn("Note: LocalStack EventBridge Scheduler provides mocked functionality only")
 
                 retryOperation(maxRetries = awsConfig.scheduler.setupRetryCount) {
-                    val httpResponse = URI(endpoint).toURL().openConnection()
-                    httpResponse.connect()
+                    val connection = URI(endpoint).toURL().openConnection()
+                    try {
+                        connection.connect()
+                    } finally {
+                        (connection as? java.net.HttpURLConnection)?.disconnect()
+                    }
                     true
                 }
 
