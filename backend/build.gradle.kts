@@ -174,7 +174,7 @@ ktlint {
 
 openApi {
     customBootRun {
-        jvmArgs = listOf("-Dspring.profiles.active=local,new")
+        jvmArgs = listOf("-Dspring.profiles.active=local,new,openapi")
     }
 }
 

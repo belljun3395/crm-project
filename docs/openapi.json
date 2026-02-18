@@ -1,0 +1,2179 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "crm",
+    "description": "CRM API Docs",
+    "version": "0.0.1-SNAPSHOT"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080"
+    }
+  ],
+  "security": [
+    {
+      "Authorization": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Webhooks API",
+      "description": "웹훅 API"
+    },
+    {
+      "name": "Event API",
+      "description": "캠페인 대시보드 API"
+    },
+    {
+      "name": "Event API",
+      "description": "이벤트 API"
+    },
+    {
+      "name": "Users API",
+      "description": "사용자 API"
+    },
+    {
+      "name": "Emails API",
+      "description": "이메일 API"
+    }
+  ],
+  "paths": {
+    "/api/v1/webhooks/{id}": {
+      "get": {
+        "tags": [
+          "Webhooks API"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyWebhookDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Webhooks API"
+        ],
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutWebhookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyPostWebhookUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Webhooks API"
+        ],
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks": {
+      "get": {
+        "tags": [
+          "Webhooks API"
+        ],
+        "operationId": "list",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyListWebhookDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Webhooks API"
+        ],
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostWebhookRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyPostWebhookUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "tags": [
+          "Users API"
+        ],
+        "operationId": "browseUsers",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 0,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyBrowseUsersUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Users API"
+        ],
+        "operationId": "enrollUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrollUserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyEnrollUserUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events": {
+      "get": {
+        "tags": [
+          "Event API"
+        ],
+        "operationId": "searchEvents",
+        "parameters": [
+          {
+            "name": "eventName",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "where",
+            "in": "query",
+            "description": "\n검색 조건을 설정합니다.\n형식: key\u0026value(\u0026key\u0026value)\u0026operation\u0026joinOperation,...\n- key(필수): 검색할 이벤트의 속성 키\n- value(필수): 검색할 이벤트의 속성 값\n- operation(필수): \u003d, !\u003d, \u003e, \u003e\u003d, \u003c, \u003c\u003d, like, between\n    - between: 동일한 key로 두 개의 value를 입력\n- joinOperation(필수): and, or, end(마지막)\nex) key1\u0026value1\u0026operation\u0026joinOperation,key2\u0026value2\u0026operation\u0026joinOperation...\n            ",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodySearchEventsUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Event API"
+        ],
+        "operationId": "postEvent",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyPostEventUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/campaign": {
+      "post": {
+        "tags": [
+          "Event API"
+        ],
+        "operationId": "postCampaign",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostCampaignRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyPostCampaignUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/emails/templates": {
+      "get": {
+        "tags": [
+          "Emails API"
+        ],
+        "operationId": "browseEmailTemplates",
+        "parameters": [
+          {
+            "name": "history",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyBrowseTemplateUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Emails API"
+        ],
+        "operationId": "postEmailTemplate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyPostTemplateUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/emails/send/notifications": {
+      "post": {
+        "tags": [
+          "Emails API"
+        ],
+        "operationId": "sendNotificationEmail",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendNotificationEmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodySendNotificationEmailUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/emails/schedules/notifications/email": {
+      "get": {
+        "tags": [
+          "Emails API"
+        ],
+        "operationId": "browseEmailNotificationSchedules",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyBrowseEmailNotificationSchedulesUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Emails API"
+        ],
+        "operationId": "postEmailNotificationSchedule",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostNotificationEmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyPostEmailNotificationSchedulesUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/count": {
+      "get": {
+        "tags": [
+          "Users API"
+        ],
+        "operationId": "getTotalUserCount",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyGetTotalUserCountUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/emails/histories": {
+      "get": {
+        "tags": [
+          "Emails API"
+        ],
+        "operationId": "browseEmailSendHistories",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "sendStatus",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyBrowseEmailSendHistoriesUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/campaigns/{campaignId}/dashboard": {
+      "get": {
+        "tags": [
+          "Event API"
+        ],
+        "summary": "캠페인 대시보드 조회",
+        "description": "특정 캠페인의 대시보드 메트릭 정보를 조회합니다. 시간 범위 또는 시간 단위를 지정할 수 있습니다.",
+        "operationId": "getCampaignDashboard",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "startTime",
+            "in": "query",
+            "description": "조회 시작 시간 (ISO 8601 형식)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endTime",
+            "in": "query",
+            "description": "조회 종료 시간 (ISO 8601 형식)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "timeWindowUnit",
+            "in": "query",
+            "description": "시간 단위: MINUTE, HOUR, DAY, WEEK, MONTH",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "MINUTE",
+                "HOUR",
+                "DAY",
+                "WEEK",
+                "MONTH"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyGetCampaignDashboardUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/campaigns/{campaignId}/dashboard/summary": {
+      "get": {
+        "tags": [
+          "Event API"
+        ],
+        "summary": "캠페인 요약 정보 조회",
+        "description": "캠페인의 요약 통계 정보를 조회합니다 (전체/24시간/7일 이벤트 수 등).",
+        "operationId": "getCampaignSummary",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyCampaignSummaryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/campaigns/{campaignId}/dashboard/stream/status": {
+      "get": {
+        "tags": [
+          "Event API"
+        ],
+        "summary": "캠페인 스트림 상태 조회",
+        "description": "Redis Stream의 현재 이벤트 개수를 조회합니다 (모니터링 및 헬스체크용).",
+        "operationId": "getStreamStatus",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyStreamStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/campaigns/{campaignId}/dashboard/stream": {
+      "get": {
+        "tags": [
+          "Event API"
+        ],
+        "summary": "캠페인 대시보드 실시간 스트리밍",
+        "description": "캠페인의 실시간 이벤트 스트림을 Server-Sent Events (SSE)로 전송합니다.",
+        "operationId": "streamCampaignDashboard",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "durationSeconds",
+            "in": "query",
+            "description": "스트리밍 지속 시간 (초), 기본값: 3600초 (1시간)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 3600
+            }
+          },
+          {
+            "name": "lastEventId",
+            "in": "query",
+            "description": "SSE 재연결용 Last-Event-ID (쿼리 파라미터)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "description": "SSE 재연결용 Last-Event-ID (헤더)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServerSentEventCampaignEventData"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/emails/templates/{templateId}": {
+      "delete": {
+        "tags": [
+          "Emails API"
+        ],
+        "operationId": "deleteEmailTemplate",
+        "parameters": [
+          {
+            "name": "templateId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyDeleteTemplateUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/emails/schedules/notifications/email/{scheduleId}": {
+      "delete": {
+        "tags": [
+          "Emails API"
+        ],
+        "operationId": "cancelEmailNotificationSchedule",
+        "parameters": [
+          {
+            "name": "scheduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyCancelNotificationEmailUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "FailureBody": {
+        "required": [
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "PutWebhookRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PostWebhookUseCaseOut": {
+        "required": [
+          "active",
+          "events",
+          "id",
+          "name",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyPostWebhookUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PostWebhookUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "PostWebhookRequest": {
+        "required": [
+          "events",
+          "name",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "EnrollUserRequest": {
+        "required": [
+          "externalId",
+          "userAttributes"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "userAttributes": {
+            "type": "string"
+          }
+        }
+      },
+      "EnrollUserUseCaseOut": {
+        "required": [
+          "externalId",
+          "id",
+          "userAttributes"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "userAttributes": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyEnrollUserUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/EnrollUserUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "PostEventPropertyDto": {
+        "required": [
+          "key",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "PostEventRequest": {
+        "required": [
+          "externalId",
+          "name",
+          "properties"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "campaignName": {
+            "type": "string"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "properties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostEventPropertyDto"
+            }
+          }
+        }
+      },
+      "PostEventUseCaseOut": {
+        "required": [
+          "id",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyPostEventUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PostEventUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "PostCampaignPropertyDto": {
+        "required": [
+          "key",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "PostCampaignRequest": {
+        "required": [
+          "name",
+          "properties"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "properties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostCampaignPropertyDto"
+            }
+          }
+        }
+      },
+      "PostCampaignUseCaseOut": {
+        "required": [
+          "id",
+          "name",
+          "properties"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "properties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostCampaignPropertyDto"
+            }
+          }
+        }
+      },
+      "SuccessBodyPostCampaignUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PostCampaignUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "PostTemplateRequest": {
+        "required": [
+          "body",
+          "templateName"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "templateName": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number",
+            "format": "float"
+          },
+          "body": {
+            "type": "string"
+          },
+          "variables": {
+            "type": "array",
+            "description": "변수 리스트",
+            "example": [
+              "name:default",
+              "email"
+            ],
+            "items": {
+              "type": "string",
+              "description": "변수 리스트",
+              "example": "[\"name:default\",\"email\"]"
+            }
+          }
+        }
+      },
+      "PostTemplateUseCaseOut": {
+        "required": [
+          "id",
+          "templateName"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "templateName": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number",
+            "format": "float"
+          }
+        }
+      },
+      "SuccessBodyPostTemplateUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PostTemplateUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "SendNotificationEmailRequest": {
+        "required": [
+          "templateId"
+        ],
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "templateId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "templateVersion": {
+            "type": "number",
+            "format": "float"
+          },
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        }
+      },
+      "SendNotificationEmailUseCaseOut": {
+        "required": [
+          "isSuccess"
+        ],
+        "type": "object",
+        "properties": {
+          "isSuccess": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SuccessBodySendNotificationEmailUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SendNotificationEmailUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "PostNotificationEmailRequest": {
+        "required": [
+          "expiredTime",
+          "templateId",
+          "userIds"
+        ],
+        "type": "object",
+        "properties": {
+          "templateId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "templateVersion": {
+            "type": "number",
+            "format": "float"
+          },
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "expiredTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PostEmailNotificationSchedulesUseCaseOut": {
+        "required": [
+          "newSchedule"
+        ],
+        "type": "object",
+        "properties": {
+          "newSchedule": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyPostEmailNotificationSchedulesUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PostEmailNotificationSchedulesUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyListWebhookDto": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookDto"
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "WebhookDto": {
+        "required": [
+          "active",
+          "events",
+          "id",
+          "name",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyWebhookDto": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/WebhookDto"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "BrowseUsersUseCaseOut": {
+        "required": [
+          "users"
+        ],
+        "type": "object",
+        "properties": {
+          "users": {
+            "$ref": "#/components/schemas/PageResponseUserDto"
+          }
+        }
+      },
+      "PageResponseUserDto": {
+        "required": [
+          "content",
+          "page",
+          "size",
+          "totalElements",
+          "totalPages"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserDto"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "SuccessBodyBrowseUsersUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/BrowseUsersUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "UserDto": {
+        "required": [
+          "createdAt",
+          "externalId",
+          "id",
+          "updatedAt",
+          "userAttributes"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "userAttributes": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GetTotalUserCountUseCaseOut": {
+        "required": [
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "totalCount": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "SuccessBodyGetTotalUserCountUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/GetTotalUserCountUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "EventDto": {
+        "required": [
+          "createdAt",
+          "id",
+          "name",
+          "properties"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "properties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchEventPropertyDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SearchEventPropertyDto": {
+        "required": [
+          "key",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "SearchEventsUseCaseOut": {
+        "required": [
+          "events"
+        ],
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventDto"
+            }
+          }
+        }
+      },
+      "SuccessBodySearchEventsUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SearchEventsUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "BrowseTemplateUseCaseOut": {
+        "required": [
+          "templates"
+        ],
+        "type": "object",
+        "properties": {
+          "templates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateWithHistoryDto"
+            }
+          }
+        }
+      },
+      "SuccessBodyBrowseTemplateUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/BrowseTemplateUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "TemplateDto": {
+        "required": [
+          "body",
+          "createdAt",
+          "id",
+          "subject",
+          "templateName",
+          "variables",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "templateName": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "variables": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "version": {
+            "type": "number",
+            "format": "float"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      },
+      "TemplateHistoryDto": {
+        "required": [
+          "body",
+          "createdAt",
+          "id",
+          "subject",
+          "templateId",
+          "variables",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "templateId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "variables": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "version": {
+            "type": "number",
+            "format": "float"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      },
+      "TemplateWithHistoryDto": {
+        "required": [
+          "histories",
+          "template"
+        ],
+        "type": "object",
+        "properties": {
+          "template": {
+            "$ref": "#/components/schemas/TemplateDto"
+          },
+          "histories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateHistoryDto"
+            }
+          }
+        }
+      },
+      "BrowseEmailNotificationSchedulesUseCaseOut": {
+        "required": [
+          "schedules"
+        ],
+        "type": "object",
+        "properties": {
+          "schedules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailNotificationScheduleDto"
+            }
+          }
+        }
+      },
+      "EmailNotificationScheduleDto": {
+        "required": [
+          "expiredTime",
+          "taskName",
+          "templateId",
+          "userIds"
+        ],
+        "type": "object",
+        "properties": {
+          "taskName": {
+            "type": "string"
+          },
+          "templateId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "expiredTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SuccessBodyBrowseEmailNotificationSchedulesUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/BrowseEmailNotificationSchedulesUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "BrowseEmailSendHistoriesUseCaseOut": {
+        "required": [
+          "histories",
+          "page",
+          "size",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "histories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailSendHistoryDto"
+            }
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "EmailSendHistoryDto": {
+        "required": [
+          "createdAt",
+          "emailBody",
+          "emailMessageId",
+          "id",
+          "sendStatus",
+          "updatedAt",
+          "userEmail",
+          "userId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "userEmail": {
+            "type": "string"
+          },
+          "emailMessageId": {
+            "type": "string"
+          },
+          "emailBody": {
+            "type": "string"
+          },
+          "sendStatus": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyBrowseEmailSendHistoriesUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/BrowseEmailSendHistoriesUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "DashboardSummaryDto": {
+        "required": [
+          "campaignId",
+          "eventsLast24Hours",
+          "eventsLast7Days",
+          "lastUpdated",
+          "totalEvents"
+        ],
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalEvents": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "eventsLast24Hours": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "eventsLast7Days": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lastUpdated": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GetCampaignDashboardUseCaseOut": {
+        "required": [
+          "campaignId",
+          "metrics",
+          "summary"
+        ],
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "metrics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetricDto"
+            }
+          },
+          "summary": {
+            "$ref": "#/components/schemas/DashboardSummaryDto"
+          }
+        }
+      },
+      "MetricDto": {
+        "required": [
+          "campaignId",
+          "metricType",
+          "metricValue",
+          "timeWindowEnd",
+          "timeWindowStart",
+          "timeWindowUnit"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "campaignId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "metricType": {
+            "type": "string"
+          },
+          "metricValue": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "timeWindowStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "timeWindowEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "timeWindowUnit": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SuccessBodyGetCampaignDashboardUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/GetCampaignDashboardUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "CampaignSummaryResponse": {
+        "required": [
+          "campaignId",
+          "eventsLast24Hours",
+          "eventsLast7Days",
+          "lastUpdated",
+          "totalEvents"
+        ],
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalEvents": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "eventsLast24Hours": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "eventsLast7Days": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lastUpdated": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SuccessBodyCampaignSummaryResponse": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CampaignSummaryResponse"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "StreamStatusResponse": {
+        "required": [
+          "campaignId",
+          "checkedAt",
+          "streamLength"
+        ],
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "streamLength": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SuccessBodyStreamStatusResponse": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/StreamStatusResponse"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ServerSentEventCampaignEventData": {
+        "type": "object"
+      },
+      "Success": {
+        "required": [
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "DeleteTemplateUseCaseOut": {
+        "required": [
+          "success"
+        ],
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SuccessBodyDeleteTemplateUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DeleteTemplateUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "CancelNotificationEmailUseCaseOut": {
+        "required": [
+          "success"
+        ],
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SuccessBodyCancelNotificationEmailUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CancelNotificationEmailUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "Authorization": {
+        "type": "apiKey",
+        "description": "Access Token",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  }
+}

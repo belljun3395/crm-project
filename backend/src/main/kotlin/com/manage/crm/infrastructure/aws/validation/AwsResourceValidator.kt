@@ -13,7 +13,7 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
 
 @Component
-@Profile("!test")
+@Profile("!test & !openapi")
 @ConditionalOnBean(SnsClient::class, SqsClient::class)
 class AwsResourceValidator(
     private val snsClient: SnsClient,
