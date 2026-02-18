@@ -14,7 +14,6 @@ import com.manage.crm.support.out
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
-@Service
 /**
  * UC-EMAIL-001
  * Creates or updates an email template with validated variables.
@@ -24,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional
  * Failure: throws on duplicate template name, missing template id, or variable mismatch.
  * Side effects: normalizes template body through HTML formatting before persistence.
  */
+@Service
 class PostTemplateUseCase(
     private val emailTemplateRepository: EmailTemplateRepository,
     private val emailTemplateSaveRepository: EmailTemplateRepositoryEventProcessor,
