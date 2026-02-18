@@ -113,7 +113,7 @@ ALTER TABLE events
 CREATE INDEX idx_events_name_created_at ON events (name, created_at);
 CREATE INDEX idx_events_user_id_created_at ON events (user_id, created_at);
 
-DELETE ce1
+DELETE ce2
 FROM campaign_events ce1
          JOIN campaign_events ce2
               ON ce1.campaign_id = ce2.campaign_id
