@@ -33,3 +33,7 @@ scheduler:
 webhook:
     # Enable/disable webhook feature globally (dispatching events to registered URLs)
     enabled: ${WEBHOOK_ENABLED:true}
+
+idempotency:
+    enabled: ${IDEMPOTENCY_ENABLED:true}
+    ttl-seconds: ${IDEMPOTENCY_TTL_SECONDS:86400}
