@@ -26,8 +26,7 @@ class EmailContentService(
      *
      * - Returns [NonContent] when the template has no variables.
      * - Returns [VariablesContent] with all resolved key-value pairs when variables are present.
-     * - Both the new-format key (`user.email`) and the legacy key (`user_email`) are included
-     *   in the resolved map so that HTML templates written in either syntax work correctly.
+     * - The resolved map uses legacy-format keys (`user_email`) for Thymeleaf compatibility.
      */
     suspend fun genUserEmailContent(
         user: User,

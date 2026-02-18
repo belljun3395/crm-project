@@ -4,10 +4,6 @@ const val SOURCE_DELIMITER = "."
 const val LEGACY_TYPE_DELIMITER = "_"
 const val DELIMITER = ":"
 
-// Backward-compatible aliases
-val USER_TYPE = VariableSource.USER.value
-val CAMPAIGN_TYPE = VariableSource.CAMPAIGN.value
-
 abstract class Variable(
     val source: VariableSource,
     val key: String,

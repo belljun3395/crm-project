@@ -6,20 +6,15 @@ import com.manage.crm.email.application.dto.SendEmailInDto
 import com.manage.crm.email.application.dto.SendEmailOutDto
 import com.manage.crm.email.application.dto.SendNotificationEmailUseCaseIn
 import com.manage.crm.email.application.dto.VariablesContent
-import com.manage.crm.email.application.service.CampaignVariableResolver
 import com.manage.crm.email.application.service.EmailContentService
 import com.manage.crm.email.application.service.MailService
-import com.manage.crm.email.application.service.UserVariableResolver
 import com.manage.crm.email.domain.EmailTemplate
 import com.manage.crm.email.domain.EmailTemplateHistory
-import com.manage.crm.email.domain.model.NotificationEmailTemplateVariablesModel
 import com.manage.crm.email.domain.repository.EmailTemplateHistoryRepository
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
-import com.manage.crm.email.domain.support.VariableResolverContext
 import com.manage.crm.email.domain.vo.CampaignVariable
 import com.manage.crm.email.domain.vo.EmailProviderType
 import com.manage.crm.email.domain.vo.UserVariable
-import com.manage.crm.email.domain.vo.VariableSource
 import com.manage.crm.email.domain.vo.Variables
 import com.manage.crm.event.domain.Campaign
 import com.manage.crm.event.domain.Event
@@ -338,21 +333,8 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
             coEvery { campaignRepository.findById(any()) } returns null
 
-            val objectMapper = ObjectMapper()
-            val userResolver = UserVariableResolver()
-            coEvery { emailContentService.genUserEmailContent(any(), any(), any()) } answers { it ->
-                val user = it.invocation.args[0] as User
-                val notificationVariables = it.invocation.args[1] as NotificationEmailTemplateVariablesModel
-                val variables = notificationVariables.variables
-                val userVariables = variables.filterBySource(VariableSource.USER)
-                val context = VariableResolverContext(
-                    userAttributes = user.userAttributes,
-                    objectMapper = objectMapper
-                )
-                val variablesMap = userVariables.flatMap { v ->
-                    userResolver.resolve(v, context).entries
-                }.associate { e -> e.key to e.value }
-                VariablesContent(variablesMap)
+            coEvery { emailContentService.genUserEmailContent(any(), any(), any()) } answers {
+                VariablesContent(mapOf("user_email" to "example1@example.com", "user_name" to "User1"))
             }
 
             coEvery { mailService.send(any(SendEmailInDto::class)) } answers {
@@ -544,29 +526,14 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             )
             coEvery { campaignEventsService.findAllEventsByCampaignIdAndUserId(useCaseIn.campaignId!!) } returns mockCampaignEvents
 
-            val objectMapper = ObjectMapper()
-            val userResolver = UserVariableResolver()
-            val campaignResolver = CampaignVariableResolver()
-            coEvery { emailContentService.genUserEmailContent(any(), any(), any()) } answers { it ->
-                val user = it.invocation.args[0] as User
-                val notificationVariables = it.invocation.args[1] as NotificationEmailTemplateVariablesModel
-                val variables = notificationVariables.variables
-                val userVariables = variables.filterBySource(VariableSource.USER)
-                val campaignVariables = variables.filterBySource(VariableSource.CAMPAIGN)
-                val userContext = VariableResolverContext(
-                    userAttributes = user.userAttributes,
-                    objectMapper = objectMapper
+            coEvery { emailContentService.genUserEmailContent(any(), any(), any()) } answers {
+                VariablesContent(
+                    mapOf(
+                        "user_email" to "example1@example.com",
+                        "user_name" to "User1",
+                        "campaign_eventCount" to "10"
+                    )
                 )
-                val campaignContext = VariableResolverContext(
-                    eventProperties = mockCampaignEvents.first().properties
-                )
-                val userMap = userVariables.flatMap { v ->
-                    userResolver.resolve(v, userContext).entries
-                }.associate { e -> e.key to e.value }
-                val campaignMap = campaignVariables.flatMap { v ->
-                    campaignResolver.resolve(v, campaignContext).entries
-                }.associate { e -> e.key to e.value }
-                VariablesContent(userMap + campaignMap)
             }
 
             coEvery { mailService.send(any(SendEmailInDto::class)) } answers {

@@ -13,8 +13,8 @@ data class NotificationEmailTemplateVariablesModel(
     fun isNoVariables(): Boolean = variables.isEmpty()
 
     fun getCampaignVariables(): List<CampaignVariable> =
-        variables.filterBySource(VariableSource.CAMPAIGN).map { it as CampaignVariable }
+        variables.filterBySource(VariableSource.CAMPAIGN).filterIsInstance<CampaignVariable>()
 
     fun getUserVariables(): List<UserVariable> =
-        variables.filterBySource(VariableSource.USER).map { it as UserVariable }
+        variables.filterBySource(VariableSource.USER).filterIsInstance<UserVariable>()
 }
