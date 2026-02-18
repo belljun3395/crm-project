@@ -81,6 +81,18 @@ class VariableParserTest : FeatureSpec({
         }
     }
 
+    feature("VariableParser#parse - dotted legacy key guard") {
+        scenario("legacy key containing a dot is not mis-parsed as new format") {
+            // user_profile.name → source=user, key=profile.name (legacy, not new format)
+            // The dot in 'profile.name' must NOT trigger new-format parsing
+            // because 'user_profile' is not a valid VariableSource.
+            val (source, key, default) = VariableParser.parse("user_profile.name")
+            source shouldBe VariableSource.USER
+            key shouldBe "profile.name"
+            default shouldBe null
+        }
+    }
+
     feature("VariableParser#parse - invalid formats") {
         scenario("unknown source throws IllegalArgumentException") {
             shouldThrow<IllegalArgumentException> {

@@ -19,11 +19,22 @@ object VariableParser {
         val namePart = value.substringBefore(DELIMITER)
         val defaultValue = if (value.contains(DELIMITER)) value.substringAfter(DELIMITER) else null
 
-        return if (namePart.contains(SOURCE_DELIMITER)) {
+        return if (isNewFormat(namePart)) {
             parseNewFormat(namePart, defaultValue)
         } else {
             parseLegacyFormat(namePart, defaultValue)
         }
+    }
+
+    /**
+     * Returns true only when the part before the first dot is a valid [VariableSource] value.
+     * This guards against legacy keys that happen to contain dots (e.g., `user_profile.name`),
+     * which would otherwise be mis-classified as new-format variables.
+     */
+    private fun isNewFormat(namePart: String): Boolean {
+        if (!namePart.contains(SOURCE_DELIMITER)) return false
+        val potentialSource = namePart.substringBefore(SOURCE_DELIMITER)
+        return VariableSource.entries.any { it.value == potentialSource }
     }
 
     private fun parseNewFormat(namePart: String, defaultValue: String?): Triple<VariableSource, String, String?> {

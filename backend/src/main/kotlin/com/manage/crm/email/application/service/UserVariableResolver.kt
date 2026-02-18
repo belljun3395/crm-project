@@ -13,8 +13,12 @@ import org.springframework.stereotype.Component
  * - Attribute exists → resolve to its value
  * - Attribute missing → throw IllegalArgumentException (strict)
  *
- * Returns both the new-format key (`user.email`) and the legacy-format key (`user_email`)
- * so that templates using either syntax continue to work.
+ * The resolved map uses the legacy key format (`user_email`) because Thymeleaf's
+ * Standard Dialect interprets `${user.email}` as dot-notation property access
+ * (i.e., the `email` property of a context variable named `user`), not as a
+ * flat variable with a literal dot in its name. Supporting `${user.email}` in
+ * HTML templates requires restructuring the MailContext to hold nested objects,
+ * which is deferred to a future phase.
  */
 @Component
 class UserVariableResolver : VariableResolver {
@@ -34,9 +38,6 @@ class UserVariableResolver : VariableResolver {
         }
 
         val value = userAttributes.getValue(variable.key, objectMapper)
-        return mapOf(
-            variable.keyWithSource() to value,
-            variable.legacyKeyWithType() to value
-        )
+        return mapOf(variable.legacyKeyWithType() to value)
     }
 }

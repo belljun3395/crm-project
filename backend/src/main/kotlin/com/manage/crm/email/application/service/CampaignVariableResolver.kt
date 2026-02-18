@@ -13,8 +13,9 @@ import org.springframework.stereotype.Component
  * - Property key exists → resolve to its value
  * - Property key missing → silently skip (relaxed, no entry added to result map)
  *
- * Returns both the new-format key (`campaign.eventCount`) and the legacy-format key
- * (`campaign_eventCount`) so that templates using either syntax continue to work.
+ * The resolved map uses the legacy key format (`campaign_eventCount`). See
+ * [UserVariableResolver] for the rationale on why dot-format keys are not
+ * included in the map at this stage.
  */
 @Component
 class CampaignVariableResolver : VariableResolver {
@@ -30,9 +31,6 @@ class CampaignVariableResolver : VariableResolver {
         }
 
         val value = eventProperties.getValue(variable.key)
-        return mapOf(
-            variable.keyWithSource() to value,
-            variable.legacyKeyWithType() to value
-        )
+        return mapOf(variable.legacyKeyWithType() to value)
     }
 }

@@ -39,7 +39,12 @@ class EmailContentService(
         }
 
         return try {
-            val eventProperties: EventProperties? = campaignId?.let { getCampaignEventProperties(it, user.id!!) }
+            val userId = user.id
+                ?: run {
+                    log.error { "User id is null, cannot generate email content for campaignId: $campaignId" }
+                    return null
+                }
+            val eventProperties: EventProperties? = campaignId?.let { getCampaignEventProperties(it, userId) }
 
             val context = VariableResolverContext(
                 userAttributes = user.userAttributes,
