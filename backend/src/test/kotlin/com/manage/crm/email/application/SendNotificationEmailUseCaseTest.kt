@@ -10,7 +10,6 @@ import com.manage.crm.email.application.service.CampaignVariableResolver
 import com.manage.crm.email.application.service.EmailContentService
 import com.manage.crm.email.application.service.MailService
 import com.manage.crm.email.application.service.UserVariableResolver
-import com.manage.crm.email.application.service.VariableResolverRegistry
 import com.manage.crm.email.domain.EmailTemplate
 import com.manage.crm.email.domain.EmailTemplateHistory
 import com.manage.crm.email.domain.model.NotificationEmailTemplateVariablesModel
