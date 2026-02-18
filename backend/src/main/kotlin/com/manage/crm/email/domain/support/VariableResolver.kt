@@ -9,8 +9,9 @@ import com.manage.crm.user.domain.vo.UserAttributes
 /**
  * Strategy interface for resolving a single variable to a map of key-value pairs.
  *
- * The returned map contains both the new-format key (`user.email`) and the legacy-format key
- * (`user_email`) so that HTML templates using either format are supported.
+ * The returned map currently uses the legacy-format key only (`user_email`, `campaign_eventCount`)
+ * because Thymeleaf interprets dot-notation (`user.email`) as property access rather than a
+ * flat variable name. See [UserVariableResolver] for detailed rationale.
  */
 interface VariableResolver {
     fun supports(source: VariableSource): Boolean

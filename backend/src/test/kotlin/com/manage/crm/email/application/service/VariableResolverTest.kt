@@ -1,8 +1,9 @@
-package com.manage.crm.email.domain.support
+package com.manage.crm.email.application.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.email.application.service.CampaignVariableResolver
 import com.manage.crm.email.application.service.UserVariableResolver
+import com.manage.crm.email.domain.support.VariableResolverContext
 import com.manage.crm.email.domain.vo.CampaignVariable
 import com.manage.crm.email.domain.vo.UserVariable
 import com.manage.crm.event.domain.vo.EventProperties
@@ -12,7 +13,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.shouldBe
 
-class VariablesSupportTest : FeatureSpec({
+class VariableResolverTest : FeatureSpec({
 
     val objectMapper = ObjectMapper()
     val userVariableResolver = UserVariableResolver()

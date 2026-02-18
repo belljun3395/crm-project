@@ -2,6 +2,7 @@ package com.manage.crm.email.application.service
 
 import com.manage.crm.email.domain.support.VariableResolver
 import com.manage.crm.email.domain.support.VariableResolverContext
+import com.manage.crm.email.domain.vo.VariableSource
 import com.manage.crm.email.domain.vo.Variables
 import org.springframework.stereotype.Service
 
@@ -16,14 +17,19 @@ import org.springframework.stereotype.Service
  */
 @Service
 class VariableResolverRegistry(
-    private val resolvers: List<VariableResolver>
+    resolvers: List<VariableResolver>
 ) {
+    private val resolverMap: Map<VariableSource, VariableResolver> =
+        resolvers.associateBy { resolver ->
+            VariableSource.entries.first { resolver.supports(it) }
+        }
+
     /**
      * Resolves all variables in [variables] and merges the results into a single map.
      */
     fun resolveAll(variables: Variables, context: VariableResolverContext): Map<String, String> {
         return variables.value.flatMap { variable ->
-            val resolver = resolvers.find { it.supports(variable.source) }
+            val resolver = resolverMap[variable.source]
                 ?: throw IllegalArgumentException(
                     "No VariableResolver found for source '${variable.source}'. " +
                         "Register a VariableResolver @Component that supports this source."
