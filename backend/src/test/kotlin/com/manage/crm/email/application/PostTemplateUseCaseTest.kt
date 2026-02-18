@@ -210,7 +210,8 @@ class PostTemplateUseCaseTest : BehaviorSpec({
             val exception = shouldThrow<VariablesNotMatchException> { useCase.execute(useCaseIn) }
 
             then("should throw VariablesNotMatchException") {
-                exception.message shouldBe "Variables do not match: \n$bodyVariables != ${useCaseIn.variables}"
+                // displayValue() now uses the new source.key format (user.email, user.name)
+                exception.message shouldBe "Variables do not match: \n[user.email] != [user.name]"
             }
 
             then("pretty useCaseIn.body") {
@@ -243,8 +244,8 @@ class PostTemplateUseCaseTest : BehaviorSpec({
 
             val exception = shouldThrow<IllegalArgumentException> { useCase.execute(useCaseIn) }
 
-            then("should throw IllegalArgumentException") {
-                exception.message shouldBe "Type must be either user or campaign"
+            then("should throw IllegalArgumentException for unknown variable source") {
+                exception.message?.contains("Unknown variable source") shouldBe true
             }
 
             then("pretty useCaseIn.body") {

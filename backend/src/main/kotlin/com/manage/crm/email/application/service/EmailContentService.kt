@@ -5,61 +5,67 @@ import com.manage.crm.email.application.dto.Content
 import com.manage.crm.email.application.dto.NonContent
 import com.manage.crm.email.application.dto.VariablesContent
 import com.manage.crm.email.domain.model.NotificationEmailTemplateVariablesModel
-import com.manage.crm.email.domain.support.VariablesSupport
+import com.manage.crm.email.domain.support.VariableResolverContext
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.user.domain.User
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Service
-import kotlin.collections.emptyMap
 
 @Service
 class EmailContentService(
     private val objectMapper: ObjectMapper,
-    private val campaignEventsService: CampaignEventsService
+    private val campaignEventsService: CampaignEventsService,
+    private val resolverRegistry: VariableResolverRegistry
 ) {
     private val log = KotlinLogging.logger {}
 
     /**
-     *  - 알림 프로퍼티와 사용자 정보를 기반으로 이메일 콘텐츠를 생성합니다.
-     *      - 만약 프로퍼티에 변수가 없다면 NonContent를 반환합니다.
-     *      - 변수가 있다면 사용자 속성에서 해당 변수를 추출하여 VariablesContent를 반환합니다.
-     *      - 캠페인 ID가 제공되면 해당 캠페인 이벤트의 프로퍼티도 포함하여 최종 변수를 구성합니다.
+     * Generates email content for a single user by resolving all template variables
+     * through the [VariableResolverRegistry].
+     *
+     * - Returns [NonContent] when the template has no variables.
+     * - Returns [VariablesContent] with all resolved key-value pairs when variables are present.
+     * - The resolved map uses legacy-format keys (`user_email`) for Thymeleaf compatibility.
      */
-    suspend fun genUserEmailContent(user: User, notificationVariables: NotificationEmailTemplateVariablesModel, campaignId: Long?): Content? {
-        return if (notificationVariables.isNoVariables()) {
-            NonContent()
-        } else {
-            try {
-                val userAttributes = user.userAttributes
-                val userAttributeVariables = VariablesSupport.associateUserAttribute(
-                    userAttributes,
-                    notificationVariables.getUserVariables(),
-                    objectMapper
-                )
-                val eventVariables = campaignId?.let { cId ->
-                    return@let getCampaignEventProperties(cId, user.id!!)?.let { it ->
-                        val campaignVariables = notificationVariables.variables
-                        VariablesSupport.associateCampaignEventProperty(it, campaignVariables)
-                    }
-                } ?: emptyMap()
+    suspend fun genUserEmailContent(
+        user: User,
+        notificationVariables: NotificationEmailTemplateVariablesModel,
+        campaignId: Long?
+    ): Content? {
+        if (notificationVariables.isNoVariables()) {
+            return NonContent()
+        }
 
-                val finalVariables = userAttributeVariables + eventVariables
-                VariablesContent(finalVariables)
-            } catch (e: Exception) {
-                log.error(e) { "Failed to generate email content for user ${user.id}, campaignId: $campaignId" }
-                return null
-            }
+        return try {
+            val userId = user.id
+                ?: run {
+                    log.error { "User id is null, cannot generate email content for campaignId: $campaignId" }
+                    return null
+                }
+            val eventProperties: EventProperties? = campaignId?.let { getCampaignEventProperties(it, userId) }
+
+            val context = VariableResolverContext(
+                userAttributes = user.userAttributes,
+                eventProperties = eventProperties,
+                objectMapper = objectMapper
+            )
+
+            val resolvedVariables = resolverRegistry.resolveAll(notificationVariables.variables, context)
+            VariablesContent(resolvedVariables)
+        } catch (e: Exception) {
+            log.error(e) { "Failed to generate email content for user ${user.id}, campaignId: $campaignId" }
+            null
         }
     }
 
     suspend fun getCampaignEventProperties(campaignId: Long, userId: Long): EventProperties? {
-        try {
+        return try {
             val events = campaignEventsService.findAllEventsByCampaignIdAndUserId(campaignId, userId)
-            return events.sortedBy { it.id }.firstOrNull()?.properties
+            events.sortedBy { it.id }.firstOrNull()?.properties
         } catch (e: Exception) {
             log.error(e) { "Failed to get campaign event variables for campaignId: $campaignId" }
-            return null
+            null
         }
     }
 }
