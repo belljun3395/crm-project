@@ -29,10 +29,8 @@ jobs:
               - 'docs/openapi.json'
               - 'scripts/**'
               - 'resources/**'
-              - '.github/workflows/validation.yml'
             frontend:
               - 'frontend/**'
-              - '.github/workflows/validation.yml'
 
   backend-spec-governance:
     runs-on: ubuntu-latest
@@ -189,7 +187,7 @@ jobs:
       - name: Install Dependencies
         run: |
           cd ./frontend
-          npm ci
+          npm install
 
       - name: Run Tests (CI)
         run: |
