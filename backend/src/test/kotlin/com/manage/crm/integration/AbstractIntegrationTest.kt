@@ -6,6 +6,7 @@ import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClientBuilder
 import com.amazonaws.services.simpleemail.model.ConfigurationSet
+import com.amazonaws.services.simpleemail.model.ConfigurationSetAlreadyExistsException
 import com.amazonaws.services.simpleemail.model.CreateConfigurationSetRequest
 import com.amazonaws.services.simpleemail.model.VerifyEmailIdentityRequest
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -118,14 +119,19 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
                 }
 
                 retryOperation(maxRetries = awsConfig.ses.setupRetryCount) {
-                    sesClient.createConfigurationSet(
-                        CreateConfigurationSetRequest()
-                            .withConfigurationSet(
-                                ConfigurationSet()
-                                    .withName(awsConfig.ses.configurationSet)
-                            )
-                    )
-                    logger.info("✓ Created SES configuration set: ${awsConfig.ses.configurationSet}")
+                    try {
+                        sesClient.createConfigurationSet(
+                            CreateConfigurationSetRequest()
+                                .withConfigurationSet(
+                                    ConfigurationSet()
+                                        .withName(awsConfig.ses.configurationSet)
+                                )
+                        )
+                        logger.info("✓ Created SES configuration set: ${awsConfig.ses.configurationSet}")
+                    } catch (e: ConfigurationSetAlreadyExistsException) {
+                        logger.info("SES configuration set already exists: ${awsConfig.ses.configurationSet}")
+                    }
+
                     true
                 }
 
