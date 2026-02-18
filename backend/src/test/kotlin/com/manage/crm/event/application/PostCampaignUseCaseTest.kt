@@ -13,11 +13,13 @@ import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.coEvery
 import io.mockk.coInvoke
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
+import org.springframework.dao.DataIntegrityViolationException
 
 class PostCampaignUseCaseTest : BehaviorSpec({
     lateinit var campaignRepository: CampaignRepository
@@ -154,6 +156,45 @@ class PostCampaignUseCaseTest : BehaviorSpec({
             }
 
             then("not called save campaign cache") {
+                coVerify(exactly = 0) { campaignCacheManager.save(any()) }
+            }
+        }
+
+        `when`("post campaign with concurrent duplicate save") {
+            val useCaseIn = PostCampaignUseCaseIn(
+                name = "racing_campaign",
+                properties = listOf(
+                    PostCampaignPropertyDto(
+                        key = "key1",
+                        value = "value1"
+                    )
+                )
+            )
+
+            coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
+            coEvery { campaignRepository.save(any()) } throws DataIntegrityViolationException("Duplicate entry for key 'uk_campaigns_name'")
+
+            val thrownException = runCatching {
+                postCampaignUseCase.execute(useCaseIn)
+            }.exceptionOrNull()
+
+            then("should throw already exists exception from db constraint") {
+                thrownException.shouldBeInstanceOf<AlreadyExistsException>()
+                thrownException.message shouldBe "Campaign already exists with name: ${useCaseIn.name}"
+            }
+
+            then("save campaign is attempted once") {
+                coVerify(exactly = 1) { campaignRepository.save(any(Campaign::class)) }
+            }
+
+            then("post-save callbacks are not executed") {
+                coVerify(exactly = 0) {
+                    transactionSynchronizationTemplate.afterCommit(
+                        eq(Dispatchers.IO),
+                        eq("save campaign cache"),
+                        captureLambda<suspend () -> Unit>()
+                    )
+                }
                 coVerify(exactly = 0) { campaignCacheManager.save(any()) }
             }
         }
