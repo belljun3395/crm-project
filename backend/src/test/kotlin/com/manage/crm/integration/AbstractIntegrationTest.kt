@@ -19,18 +19,10 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
-import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.MySQLContainer
-import org.testcontainers.containers.Network
-import org.testcontainers.containers.wait.strategy.Wait
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
-import org.testcontainers.lifecycle.Startables
 import java.net.URI
 import java.nio.charset.Charset
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Testcontainers
 @ActiveProfiles("test")
 abstract class AbstractIntegrationTest : DescribeSpec() {
 
@@ -67,143 +59,40 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
     }
 
     companion object {
-        // Load configuration from YAML
+        private val logger = LoggerFactory.getLogger(AbstractIntegrationTest::class.java)
+
         private val config = TestContainerConfig.load()
-        private val mysqlConfig = config.testcontainers.mysql
         private val localStackConfig = config.testcontainers.localstack
         private val awsConfig = config.testcontainers.aws
         private val retryConfig = config.testcontainers.retry
 
         private val useLocalStack = System.getProperty("useLocalStack", localStackConfig.enabled.toString()).toBoolean()
 
-        // Shared network for container communication
-        @JvmStatic
-        private val sharedNetwork: Network = Network.newNetwork()
-
-        @Container
-        @JvmStatic
-        val mysqlContainer: MySQLContainer<*> = MySQLContainer(mysqlConfig.image)
-            .withDatabaseName(mysqlConfig.databaseName)
-            .withUsername(mysqlConfig.username)
-            .withPassword(mysqlConfig.password)
-            .withNetwork(sharedNetwork)
-            .withNetworkAliases(mysqlConfig.networkAlias)
-            .withReuse(mysqlConfig.reuse)
-            .withStartupTimeout(mysqlConfig.getStartupTimeout())
-            .waitingFor(
-                Wait.forLogMessage(mysqlConfig.readyLogPattern, mysqlConfig.readyLogCount)
-                    .withStartupTimeout(mysqlConfig.getStartupTimeout())
-            )
-
-        @Container
-        @JvmStatic
-        val localStackContainer: GenericContainer<*>? = if (useLocalStack) {
-            GenericContainer(localStackConfig.image)
-                .withExposedPorts(*localStackConfig.ports.toTypedArray())
-                .withNetwork(sharedNetwork)
-                .withNetworkAliases(localStackConfig.networkAlias)
-                .withReuse(localStackConfig.reuse)
-                .withStartupTimeout(localStackConfig.getStartupTimeout())
-                .withEnv(localStackConfig.environment)
-                .waitingFor(
-                    Wait.forLogMessage(localStackConfig.readyLogPattern, localStackConfig.readyLogCount)
-                        .withStartupTimeout(localStackConfig.getStartupTimeout())
-                )
-        } else {
-            null
-        }
-
+        // Spring properties are configured via application-test.yml (docker-compose fixed ports).
+        // This method only runs pre-context AWS service setup when LocalStack is enabled.
         @DynamicPropertySource
         @JvmStatic
+        @Suppress("UNUSED_PARAMETER")
         fun configureProperties(registry: DynamicPropertyRegistry) {
-            // Start containers in parallel for better performance
-            if (useLocalStack && localStackContainer != null) {
-                Startables.deepStart(mysqlContainer, localStackContainer).join()
-            } else {
-                mysqlContainer.start()
-            }
-
-            // Database configuration
-            configureDatabaseProperties(registry)
-
-            // LocalStack configuration (only if enabled)
-            if (useLocalStack && localStackContainer != null) {
-                configureLocalStackProperties(registry)
-
-                // Setup AWS services asynchronously
+            if (useLocalStack) {
                 setupAwsServices()
             }
         }
 
-        private fun configureDatabaseProperties(registry: DynamicPropertyRegistry) {
-            val jdbcUrl = mysqlContainer.jdbcUrl
-            val r2dbcUrl = "r2dbc:pool:mysql://${mysqlContainer.host}:${mysqlContainer.getMappedPort(3306)}/${mysqlConfig.databaseName}?useSSL=false"
-
-            LoggerFactory.getLogger(AbstractIntegrationTest::class.java).info("MySQL Container started. JDBC URL: $jdbcUrl, R2DBC URL: $r2dbcUrl")
-
-            registry.add("spring.r2dbc.url") { r2dbcUrl }
-            registry.add("spring.r2dbc.username") { mysqlConfig.username }
-            registry.add("spring.r2dbc.password") { mysqlConfig.password }
-
-            // R2DBC routing configuration
-            registry.add("spring.r2dbc.routing.master-url") {
-                "r2dbc:pool:mysql://${mysqlContainer.host}:${mysqlContainer.getMappedPort(3306)}/${mysqlConfig.databaseName}"
-            }
-            registry.add("spring.r2dbc.routing.replica-url") {
-                "r2dbc:pool:mysql://${mysqlContainer.host}:${mysqlContainer.getMappedPort(3306)}/${mysqlConfig.databaseName}"
-            }
-            registry.add("spring.r2dbc.routing.username") { mysqlConfig.username }
-            registry.add("spring.r2dbc.routing.password") { mysqlConfig.password }
-
-            registry.add("spring.flyway.url") { mysqlContainer.jdbcUrl }
-            registry.add("spring.flyway.user") { mysqlConfig.username }
-            registry.add("spring.flyway.password") { mysqlConfig.password }
-            registry.add("spring.datasource.url") { mysqlContainer.jdbcUrl }
-            registry.add("spring.datasource.username") { mysqlConfig.username }
-            registry.add("spring.datasource.password") { mysqlConfig.password }
-        }
-
-        private fun configureLocalStackProperties(registry: DynamicPropertyRegistry) {
-            val localStackEndpoint = "http://${localStackContainer!!.host}:${localStackContainer.getMappedPort(4566)}"
-
-            registry.add("spring.aws.endpoint-url") { localStackEndpoint }
-            registry.add("spring.aws.credentials.access-key") { awsConfig.accessKey }
-            registry.add("spring.aws.credentials.secret-key") { awsConfig.secretKey }
-            registry.add("spring.aws.region") { awsConfig.region }
-            registry.add("spring.aws.mail.configuration-set.default") { awsConfig.ses.configurationSet }
-            registry.add("spring.mail.username") { awsConfig.ses.verifiedEmails.firstOrNull() ?: "example@example.com" }
-            registry.add("spring.aws.schedule.role-arn") { awsConfig.scheduler.roleArn }
-            registry.add("spring.aws.schedule.sqs-arn") { awsConfig.scheduler.sqsArn }
-            registry.add("spring.aws.schedule.group-name") { awsConfig.scheduler.groupName }
-        }
-
         private fun setupAwsServices() {
-            if (localStackContainer != null) {
-                val localStackEndpoint = "http://${localStackContainer.host}:${localStackContainer.getMappedPort(4566)}"
-
-                // Run AWS services setup in parallel
-                val setupTasks = listOf(
-                    { setupLocalStackSES(localStackEndpoint) },
-                    { setupLocalStackScheduler(localStackEndpoint) }
-                )
-
-                setupTasks.forEach { task ->
-                    try {
-                        task()
-                    } catch (e: Exception) {
-                        LoggerFactory.getLogger(AbstractIntegrationTest::class.java).error("Failed to setup AWS service", e)
-                    }
-                }
+            val endpoint = "http://localhost:4566"
+            setupLocalStackSES(endpoint) // fatal — 실패 시 예외 전파
+            try {
+                setupLocalStackScheduler(endpoint) // non-fatal — mocked 기능이므로 실패해도 계속 진행
+            } catch (e: Exception) {
+                logger.error("Failed to setup AWS scheduler service (non-fatal)", e)
             }
         }
 
         private fun setupLocalStackSES(endpoint: String) {
-            val logger = LoggerFactory.getLogger(AbstractIntegrationTest::class.java)
-
             try {
                 logger.info("Setting up LocalStack SES at $endpoint")
 
-                // Use AWS SDK to set up SES programmatically with retry mechanism
                 val awsCredentials = BasicAWSCredentials(awsConfig.accessKey, awsConfig.secretKey)
                 val awsCredentialsProvider = AWSStaticCredentialsProvider(awsCredentials)
 
@@ -215,10 +104,8 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
                     )
                     .build()
 
-                // Wait for LocalStack SES to be ready with exponential backoff
                 waitForSESReady(sesClient, maxRetries = awsConfig.ses.readyWaitRetryCount)
 
-                // Setup SES identities from configuration
                 val verificationResults = awsConfig.ses.verifiedEmails.map { email ->
                     retryOperation(maxRetries = awsConfig.ses.setupRetryCount) {
                         sesClient.verifyEmailIdentity(
@@ -230,7 +117,6 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
                     }
                 }
 
-                // Create configuration set with retry
                 retryOperation(maxRetries = awsConfig.ses.setupRetryCount) {
                     sesClient.createConfigurationSet(
                         CreateConfigurationSetRequest()
@@ -259,7 +145,7 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
                     return
                 } catch (e: Exception) {
                     if (attempt == maxRetries - 1) throw e
-                    Thread.sleep(1000L * (attempt + 1)) // Exponential backoff
+                    Thread.sleep(1000L * (attempt + 1))
                 }
             }
         }
@@ -297,17 +183,17 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
          * 이는 예상된 동작입니다.
          */
         private fun setupLocalStackScheduler(endpoint: String) {
-            val logger = LoggerFactory.getLogger(AbstractIntegrationTest::class.java)
-
             try {
                 logger.info("Setting up LocalStack EventBridge Scheduler at $endpoint")
                 logger.warn("Note: LocalStack EventBridge Scheduler provides mocked functionality only")
 
-                // Validate that EventBridge Scheduler service is accessible
                 retryOperation(maxRetries = awsConfig.scheduler.setupRetryCount) {
-                    // Since LocalStack Scheduler API is limited, we just verify the endpoint is accessible
-                    val httpResponse = URI(endpoint).toURL().openConnection()
-                    httpResponse.connect()
+                    val connection = URI(endpoint).toURL().openConnection()
+                    try {
+                        connection.connect()
+                    } finally {
+                        (connection as? java.net.HttpURLConnection)?.disconnect()
+                    }
                     true
                 }
 

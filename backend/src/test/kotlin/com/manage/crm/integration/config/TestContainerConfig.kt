@@ -7,7 +7,6 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.ClassPathResource
-import java.time.Duration
 
 data class TestContainerConfig(
     val testcontainers: TestContainers
@@ -29,7 +28,6 @@ data class TestContainerConfig(
         private fun createDefaultConfig(): TestContainerConfig {
             return TestContainerConfig(
                 testcontainers = TestContainers(
-                    mysql = MySqlConfig(),
                     localstack = LocalStackConfig(),
                     aws = AwsConfig(),
                     retry = RetryConfig()
@@ -40,59 +38,14 @@ data class TestContainerConfig(
 }
 
 data class TestContainers(
-    val mysql: MySqlConfig,
     val localstack: LocalStackConfig,
     val aws: AwsConfig,
     val retry: RetryConfig
 )
 
-data class MySqlConfig(
-    val image: String = "mysql:8.0",
-    @JsonProperty("database-name")
-    val databaseName: String = "test_crm",
-    val username: String = "test_user",
-    val password: String = "test_password",
-    @JsonProperty("startup-timeout-minutes")
-    val startupTimeoutMinutes: Long = 2,
-    @JsonProperty("ready-log-pattern")
-    val readyLogPattern: String = ".*ready for connections.*",
-    @JsonProperty("ready-log-count")
-    val readyLogCount: Int = 2,
-    @JsonProperty("network-alias")
-    val networkAlias: String = "mysql",
-    val reuse: Boolean = true
-) {
-    fun getStartupTimeout(): Duration = Duration.ofMinutes(startupTimeoutMinutes)
-}
-
 data class LocalStackConfig(
-    val enabled: Boolean = true,
-    val image: String = "localstack/localstack:3.8",
-    @JsonProperty("startup-timeout-minutes")
-    val startupTimeoutMinutes: Long = 3,
-    @JsonProperty("ready-log-pattern")
-    val readyLogPattern: String = ".*Ready.*",
-    @JsonProperty("ready-log-count")
-    val readyLogCount: Int = 1,
-    @JsonProperty("network-alias")
-    val networkAlias: String = "localstack",
-    val reuse: Boolean = true,
-    val ports: List<Int> = listOf(4566, 25),
-    val environment: Map<String, String> = mapOf(
-        "SERVICES" to "ses,sqs,sns,events,iam,scheduler",
-        "DEBUG" to "0",
-        "AWS_DEFAULT_REGION" to "ap-northeast-2",
-        "AWS_ACCESS_KEY_ID" to "test",
-        "AWS_SECRET_ACCESS_KEY" to "test",
-        "SKIP_INFRA_DOWNLOADS" to "1",
-        "SES_ACCEPT_ALL_EMAILS" to "true",
-        "SES_VERIFIED_EMAILS" to "test@example.com,notification@example.com,noreply@example.com",
-        "SES_CONFIGURATION_SET" to "test-configuration-set",
-        "LOCALSTACK_HOST" to "localstack"
-    )
-) {
-    fun getStartupTimeout(): Duration = Duration.ofMinutes(startupTimeoutMinutes)
-}
+    val enabled: Boolean = true
+)
 
 data class AwsConfig(
     val region: String = "ap-northeast-2",
