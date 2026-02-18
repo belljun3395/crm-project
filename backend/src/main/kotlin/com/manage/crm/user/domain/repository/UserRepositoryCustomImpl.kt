@@ -10,6 +10,15 @@ import java.time.LocalDateTime
 
 private const val LIKE_ESCAPE_CHARACTER = "\\"
 
+/**
+ * DM-USER-001
+ * Provides custom user search and lookup queries.
+ *
+ * Input: email or search query with pagination.
+ * Success: returns matching users and counts.
+ * Failure: returns empty result when no matching user exists.
+ * Side effects: reads user records from DB using LIKE-escaped and bound patterns.
+ */
 @Repository
 class UserRepositoryCustomImpl(
     private val dataBaseClient: DatabaseClient

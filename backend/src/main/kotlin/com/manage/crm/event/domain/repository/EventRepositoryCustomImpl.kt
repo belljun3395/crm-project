@@ -14,6 +14,15 @@ import org.springframework.r2dbc.core.DatabaseClient.GenericExecuteSpec
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
+/**
+ * DM-EVENT-001
+ * Builds and executes dynamic event-property search queries.
+ *
+ * Input: event name, property filters, operation, and optional join operation.
+ * Success: returns matched events with deduplicated ids.
+ * Failure: throws InvalidSearchConditionException for invalid filter contracts.
+ * Side effects: reads events from DB using parameter-bound SQL.
+ */
 @Repository
 class EventRepositoryCustomImpl(
     private val dataBaseClient: DatabaseClient,
