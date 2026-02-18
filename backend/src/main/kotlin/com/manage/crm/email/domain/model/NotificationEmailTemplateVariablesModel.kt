@@ -1,9 +1,8 @@
 package com.manage.crm.email.domain.model
 
-import com.manage.crm.email.domain.vo.CAMPAIGN_TYPE
 import com.manage.crm.email.domain.vo.CampaignVariable
-import com.manage.crm.email.domain.vo.USER_TYPE
 import com.manage.crm.email.domain.vo.UserVariable
+import com.manage.crm.email.domain.vo.VariableSource
 import com.manage.crm.email.domain.vo.Variables
 
 data class NotificationEmailTemplateVariablesModel(
@@ -11,15 +10,11 @@ data class NotificationEmailTemplateVariablesModel(
     val body: String,
     val variables: Variables
 ) {
-    fun isNoVariables(): Boolean {
-        return variables.isEmpty()
-    }
+    fun isNoVariables(): Boolean = variables.isEmpty()
 
-    fun getCampaignVariables(): List<CampaignVariable> {
-        return variables.filterByType(CAMPAIGN_TYPE).map { it as CampaignVariable }
-    }
+    fun getCampaignVariables(): List<CampaignVariable> =
+        variables.filterBySource(VariableSource.CAMPAIGN).map { it as CampaignVariable }
 
-    fun getUserVariables(): List<UserVariable> {
-        return variables.filterByType(USER_TYPE).map { it as UserVariable }
-    }
+    fun getUserVariables(): List<UserVariable> =
+        variables.filterBySource(VariableSource.USER).map { it as UserVariable }
 }
