@@ -23,14 +23,11 @@ import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.MySQLContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.Wait
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.lifecycle.Startables
 import java.net.URI
 import java.nio.charset.Charset
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Testcontainers
 @ActiveProfiles("test")
 abstract class AbstractIntegrationTest : DescribeSpec() {
 
@@ -76,11 +73,18 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
 
         private val useLocalStack = System.getProperty("useLocalStack", localStackConfig.enabled.toString()).toBoolean()
 
-        // Shared network for container communication
+        /**
+         * Detects whether the tests are running in a CI environment (e.g. GitHub Actions).
+         * GitHub Actions automatically sets CI=true.
+         * In CI, docker-compose services (MySQL, LocalStack) are already running, so
+         * Testcontainers container startup is skipped and the existing services are used directly.
+         */
+        private val isCI: Boolean = System.getenv("CI") != null
+
+        // Shared network for container communication (local dev only)
         @JvmStatic
         private val sharedNetwork: Network = Network.newNetwork()
 
-        @Container
         @JvmStatic
         val mysqlContainer: MySQLContainer<*> = MySQLContainer(mysqlConfig.image)
             .withDatabaseName(mysqlConfig.databaseName)
@@ -95,7 +99,6 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
                     .withStartupTimeout(mysqlConfig.getStartupTimeout())
             )
 
-        @Container
         @JvmStatic
         val localStackContainer: GenericContainer<*>? = if (useLocalStack) {
             GenericContainer(localStackConfig.image)
@@ -116,22 +119,31 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
         @DynamicPropertySource
         @JvmStatic
         fun configureProperties(registry: DynamicPropertyRegistry) {
-            // Start containers in parallel for better performance
-            if (useLocalStack && localStackContainer != null) {
-                Startables.deepStart(mysqlContainer, localStackContainer).join()
+            if (isCI) {
+                // CI: docker-compose services are already running — skip container startup
+                configureCIDatabaseProperties(registry)
+                if (useLocalStack) {
+                    configureCILocalStackProperties(registry)
+                    setupAwsServicesForCI()
+                }
             } else {
-                mysqlContainer.start()
-            }
+                // Local dev: start Testcontainers
+                if (useLocalStack && localStackContainer != null) {
+                    Startables.deepStart(mysqlContainer, localStackContainer).join()
+                } else {
+                    mysqlContainer.start()
+                }
 
-            // Database configuration
-            configureDatabaseProperties(registry)
+                // Database configuration
+                configureDatabaseProperties(registry)
 
-            // LocalStack configuration (only if enabled)
-            if (useLocalStack && localStackContainer != null) {
-                configureLocalStackProperties(registry)
+                // LocalStack configuration (only if enabled)
+                if (useLocalStack && localStackContainer != null) {
+                    configureLocalStackProperties(registry)
 
-                // Setup AWS services asynchronously
-                setupAwsServices()
+                    // Setup AWS services asynchronously
+                    setupAwsServices()
+                }
             }
         }
 
@@ -163,8 +175,61 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
             registry.add("spring.datasource.password") { mysqlConfig.password }
         }
 
+        /**
+         * Configures Spring properties to use the docker-compose MySQL service running in CI.
+         * The docker-compose MySQL is accessible at localhost:13306 (mapped from container port 3306).
+         * DB name and credentials match the init script in mysql-init.d/00_init.sql.
+         */
+        private fun configureCIDatabaseProperties(registry: DynamicPropertyRegistry) {
+            val host = "localhost"
+            val port = 13306
+            val dbName = "test"
+            val username = "root"
+            val password = "root"
+            val jdbcUrl = "jdbc:mysql://$host:$port/$dbName?useSSL=false&allowPublicKeyRetrieval=true"
+            val r2dbcUrl = "r2dbc:pool:mysql://$host:$port/$dbName?useSSL=false"
+
+            LoggerFactory.getLogger(AbstractIntegrationTest::class.java)
+                .info("CI mode: using docker-compose MySQL at $jdbcUrl")
+
+            registry.add("spring.r2dbc.url") { r2dbcUrl }
+            registry.add("spring.r2dbc.username") { username }
+            registry.add("spring.r2dbc.password") { password }
+            registry.add("spring.r2dbc.routing.master-url") { "r2dbc:pool:mysql://$host:$port/$dbName" }
+            registry.add("spring.r2dbc.routing.replica-url") { "r2dbc:pool:mysql://$host:$port/$dbName" }
+            registry.add("spring.r2dbc.routing.username") { username }
+            registry.add("spring.r2dbc.routing.password") { password }
+            registry.add("spring.flyway.url") { jdbcUrl }
+            registry.add("spring.flyway.user") { username }
+            registry.add("spring.flyway.password") { password }
+            registry.add("spring.datasource.url") { jdbcUrl }
+            registry.add("spring.datasource.username") { username }
+            registry.add("spring.datasource.password") { password }
+        }
+
         private fun configureLocalStackProperties(registry: DynamicPropertyRegistry) {
             val localStackEndpoint = "http://${localStackContainer!!.host}:${localStackContainer.getMappedPort(4566)}"
+
+            registry.add("spring.aws.endpoint-url") { localStackEndpoint }
+            registry.add("spring.aws.credentials.access-key") { awsConfig.accessKey }
+            registry.add("spring.aws.credentials.secret-key") { awsConfig.secretKey }
+            registry.add("spring.aws.region") { awsConfig.region }
+            registry.add("spring.aws.mail.configuration-set.default") { awsConfig.ses.configurationSet }
+            registry.add("spring.mail.username") { awsConfig.ses.verifiedEmails.firstOrNull() ?: "example@example.com" }
+            registry.add("spring.aws.schedule.role-arn") { awsConfig.scheduler.roleArn }
+            registry.add("spring.aws.schedule.sqs-arn") { awsConfig.scheduler.sqsArn }
+            registry.add("spring.aws.schedule.group-name") { awsConfig.scheduler.groupName }
+        }
+
+        /**
+         * Configures Spring properties to use the docker-compose LocalStack service running in CI.
+         * The LocalStack service is accessible at localhost:4566.
+         */
+        private fun configureCILocalStackProperties(registry: DynamicPropertyRegistry) {
+            val localStackEndpoint = "http://localhost:4566"
+
+            LoggerFactory.getLogger(AbstractIntegrationTest::class.java)
+                .info("CI mode: using docker-compose LocalStack at $localStackEndpoint")
 
             registry.add("spring.aws.endpoint-url") { localStackEndpoint }
             registry.add("spring.aws.credentials.access-key") { awsConfig.accessKey }
@@ -193,6 +258,26 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
                     } catch (e: Exception) {
                         LoggerFactory.getLogger(AbstractIntegrationTest::class.java).error("Failed to setup AWS service", e)
                     }
+                }
+            }
+        }
+
+        /**
+         * Sets up required AWS services (SES, Scheduler) against the docker-compose LocalStack
+         * instance already running in CI at localhost:4566.
+         */
+        private fun setupAwsServicesForCI() {
+            val endpoint = "http://localhost:4566"
+            val setupTasks = listOf(
+                { setupLocalStackSES(endpoint) },
+                { setupLocalStackScheduler(endpoint) }
+            )
+            setupTasks.forEach { task ->
+                try {
+                    task()
+                } catch (e: Exception) {
+                    LoggerFactory.getLogger(AbstractIntegrationTest::class.java)
+                        .error("Failed to setup AWS service in CI mode", e)
                 }
             }
         }
