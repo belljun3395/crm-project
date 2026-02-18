@@ -3,8 +3,8 @@ set -euo pipefail
 
 echo "Checking backend UseCase/Domain contract documentation and test mapping"
 
-BASE_SHA="${GITHUB_BASE_SHA:-}"
-if [[ -z "${BASE_SHA}" && -n "${GITHUB_BASE_REF:-}" ]]; then
+BASE_SHA=""
+if [[ -n "${GITHUB_BASE_REF:-}" ]]; then
   BASE_SHA="origin/${GITHUB_BASE_REF}"
 fi
 HEAD_SHA="${GITHUB_SHA:-HEAD}"
@@ -47,6 +47,11 @@ fi
 HAS_ERROR=0
 
 for file in "${TARGET_FILES[@]}"; do
+  if [[ ! -f "$file" ]]; then
+    echo "[INFO] Skipping deleted or renamed file: $file"
+    continue
+  fi
+
   if ! sed -n '1,80p' "$file" | grep -Eq '^\s*/\*\*'; then
     echo "[FAIL] KDoc missing in first 80 lines: $file"
     HAS_ERROR=1

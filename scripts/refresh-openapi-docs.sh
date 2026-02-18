@@ -18,8 +18,11 @@ fi
 cd "$REPO_ROOT"
 
 if ! git ls-files --error-unmatch docs/openapi.json >/dev/null 2>&1; then
-  echo "[WARN] docs/openapi.json is not tracked yet. Baseline check is skipped for now."
-  exit 0
+  echo "[FAIL] docs/openapi.json baseline is missing. Run scripts/refresh-openapi-docs.sh and commit the result." >&2
+  exit 1
 fi
 
-git diff --exit-code -- docs/openapi.json
+if ! git diff --exit-code -- docs/openapi.json; then
+  echo "[FAIL] OpenAPI spec drift detected. Run scripts/refresh-openapi-docs.sh and commit docs/openapi.json." >&2
+  exit 1
+fi
