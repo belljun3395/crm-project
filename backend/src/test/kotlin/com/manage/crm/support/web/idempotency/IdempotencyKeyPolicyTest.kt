@@ -22,5 +22,14 @@ class IdempotencyKeyPolicyTest : BehaviorSpec({
                 IdempotencyKeyPolicy.isValid("invalid key with spaces") shouldBe false
             }
         }
+
+        `when`("request body hash is generated") {
+            then("same payload generates same hash") {
+                val first = IdempotencyKeyPolicy.hashRequestBody("{\"a\":1}".toByteArray())
+                val second = IdempotencyKeyPolicy.hashRequestBody("{\"a\":1}".toByteArray())
+
+                first shouldBe second
+            }
+        }
     }
 })

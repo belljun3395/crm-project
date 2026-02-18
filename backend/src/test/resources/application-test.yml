@@ -74,6 +74,9 @@ springdoc:
 webhook:
     enabled: false
 
+idempotency:
+    enabled: false
+
 logging:
     level:
         root: INFO
