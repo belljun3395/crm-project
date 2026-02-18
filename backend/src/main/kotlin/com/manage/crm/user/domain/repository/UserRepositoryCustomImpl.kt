@@ -16,14 +16,14 @@ class UserRepositoryCustomImpl(
 ) : UserRepositoryCustom {
 
     override suspend fun findByEmail(email: String): User? {
-        var selectQuery = """
+        val selectQuery = """
             SELECT * FROM users
+            WHERE user_attributes LIKE :pattern ESCAPE '\\'
         """.trimIndent()
-        val whereClause = mutableListOf<String>()
-        whereClause.add("user_attributes LIKE '%\"email\": \"$email\"%'")
-        selectQuery = selectQuery.plus(" WHERE ${whereClause.joinToString(" AND ")}")
+        val pattern = "%\"email\": \"${escapeLikePattern(email)}\"%"
 
         return dataBaseClient.sql(selectQuery)
+            .bind("pattern", pattern)
             .fetch()
             .all()
             .map {

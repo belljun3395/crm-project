@@ -7,8 +7,10 @@ import com.manage.crm.event.domain.Operation
 import com.manage.crm.event.domain.repository.query.SearchByPropertyQuery
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
+import com.manage.crm.event.exception.InvalidSearchConditionException
 import kotlinx.coroutines.reactive.awaitFirst
 import org.springframework.r2dbc.core.DatabaseClient
+import org.springframework.r2dbc.core.DatabaseClient.GenericExecuteSpec
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
@@ -17,8 +19,13 @@ class EventRepositoryCustomImpl(
     private val dataBaseClient: DatabaseClient,
     private val objectMapper: ObjectMapper
 ) : EventRepositoryCustom {
+
+    private data class QueryClause(
+        val clause: String,
+        val bindings: Map<String, Any>
+    )
+
     override suspend fun searchByProperty(query: SearchByPropertyQuery): List<Event> {
-        // TODO 중복된 값이 조회 되지 않도록 수정
         var selectQuery = """
             SELECT * FROM events 
             CROSS JOIN JSON_TABLE(properties, '$[*]' 
@@ -29,18 +36,13 @@ class EventRepositoryCustomImpl(
             ) AS properties
         """.trimIndent()
 
-        selectQuery = selectQuery.plus(" WHERE ")
-        if (query.properties.value.size == 1) {
-            val property = query.properties.value.first()
-            val operation = query.operation
-            selectQuery = buildSelectQueryForOnePropertyOperation(operation, property, selectQuery)
-        } else if (query.operation == Operation.BETWEEN) {
-            val properties = query.properties
-            selectQuery = buildQueryForBetweenOperation(properties, selectQuery)
+        val queryClause = when (query.operation) {
+            Operation.BETWEEN -> buildBetweenClause(query.properties)
+            else -> buildSinglePropertyClause(query.operation, query.properties)
         }
 
-        selectQuery = selectQuery.plus(" AND name = '${query.eventName}'")
-        return fetchQuery(selectQuery)
+        selectQuery = "$selectQuery WHERE ${queryClause.clause} AND name = :eventName"
+        return fetchQuery(selectQuery, queryClause.bindings + mapOf("eventName" to query.eventName))
     }
 
     override suspend fun searchByProperties(queries: List<SearchByPropertyQuery>): List<Event> {
@@ -70,8 +72,13 @@ class EventRepositoryCustomImpl(
         return events.toList()
     }
 
-    private suspend fun fetchQuery(selectQuery: String): List<Event> {
-        return dataBaseClient.sql(selectQuery)
+    private suspend fun fetchQuery(selectQuery: String, bindings: Map<String, Any>): List<Event> {
+        var executeSpec: GenericExecuteSpec = dataBaseClient.sql(selectQuery)
+        bindings.forEach { (key, value) ->
+            executeSpec = executeSpec.bind(key, value)
+        }
+
+        return executeSpec
             .fetch()
             .all()
             .map { it ->
@@ -95,61 +102,61 @@ class EventRepositoryCustomImpl(
             .awaitFirst()
     }
 
-    private fun buildSelectQueryForOnePropertyOperation(
+    private fun buildSinglePropertyClause(
         operation: Operation,
-        property: EventProperty,
-        selectQuery: String
-    ): String {
-        if (operation.paramsCnt != 1) {
-            throw IllegalArgumentException("Operation ${operation.name} needs ${operation.paramsCnt} params")
+        properties: EventProperties
+    ): QueryClause {
+        if (properties.value.size != operation.paramsCnt) {
+            throw InvalidSearchConditionException("Operation ${operation.name} needs ${operation.paramsCnt} params")
         }
 
-        val whereClause = generateWhereClause(property, operation)
+        val property = properties.value.first()
+        val bindings = mutableMapOf<String, Any>()
+        bindings["key0"] = property.key
+        val valueKey = "value0"
 
-        return selectQuery.plus("  $whereClause ")
-    }
-
-    private fun buildQueryForBetweenOperation(properties: EventProperties, selectQuery: String): String {
-        val whereClause = generateBetweenClause(properties)
-
-        return selectQuery.plus(" $whereClause ")
-    }
-
-    private fun generateWhereClause(
-        property: EventProperty,
-        operation: Operation
-    ): String {
-        val whereClause = mutableListOf<String>()
-        whereClause.add("properties.key = '${property.key}'")
-        if (property.isNum()) {
-            whereClause.add("properties.value ${operation.value} ${property.value}")
+        val valueClause = if (property.isNum() && operation != Operation.LIKE) {
+            bindings[valueKey] = property.value.toBigDecimalOrNull()
+                ?: throw InvalidSearchConditionException("Numeric value expected for operation ${operation.name}")
+            "CAST(properties.value AS DECIMAL(65, 10)) ${operation.value} :$valueKey"
         } else {
-            whereClause.add("properties.value ${operation.value} '${property.value}'")
+            bindings[valueKey] = property.value
+            "properties.value ${operation.value} :$valueKey"
         }
-        return whereClause.joinToString(" AND ")
+
+        return QueryClause(
+            clause = "properties.key = :key0 AND $valueClause",
+            bindings = bindings
+        )
     }
 
-    private fun generateBetweenClause(properties: EventProperties): String {
-        var keyFlag = false
-        var keyValue = ""
-        var betweenKeyClause = ""
-        val andClause = mutableListOf<String>()
-        properties.value.forEach { property ->
-            if (!keyFlag) {
-                betweenKeyClause = "properties.key = '${property.key}'"
-                keyFlag = true
-                keyValue = property.key
-            } else {
-                if (keyValue != property.key) {
-                    throw IllegalArgumentException("Between operation needs same key. But $keyValue and ${property.key} are different")
-                }
-            }
-            if (property.isNum()) {
-                andClause.add(property.value)
-            } else {
-                andClause.add("'${property.value}'")
-            }
+    private fun buildBetweenClause(properties: EventProperties): QueryClause {
+        if (properties.value.size != Operation.BETWEEN.paramsCnt) {
+            throw InvalidSearchConditionException("Operation BETWEEN needs ${Operation.BETWEEN.paramsCnt} params")
         }
-        return "$betweenKeyClause AND properties.value BETWEEN ${andClause.joinToString(" AND ")}"
+
+        val first = properties.value.first()
+        val second = properties.value.last()
+        if (first.key != second.key) {
+            throw InvalidSearchConditionException("Between operation needs same key. But ${first.key} and ${second.key} are different")
+        }
+
+        val bindings = mutableMapOf<String, Any>("betweenKey" to first.key)
+        val betweenClause = if (first.isNum() && second.isNum()) {
+            bindings["betweenStart"] = first.value.toBigDecimalOrNull()
+                ?: throw InvalidSearchConditionException("Numeric value expected for BETWEEN operation")
+            bindings["betweenEnd"] = second.value.toBigDecimalOrNull()
+                ?: throw InvalidSearchConditionException("Numeric value expected for BETWEEN operation")
+            "CAST(properties.value AS DECIMAL(65, 10)) BETWEEN :betweenStart AND :betweenEnd"
+        } else {
+            bindings["betweenStart"] = first.value
+            bindings["betweenEnd"] = second.value
+            "properties.value BETWEEN :betweenStart AND :betweenEnd"
+        }
+
+        return QueryClause(
+            clause = "properties.key = :betweenKey AND $betweenClause",
+            bindings = bindings
+        )
     }
 }
