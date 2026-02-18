@@ -15,6 +15,15 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
+/**
+ * UC-USER-001
+ * Registers a new user or updates an existing user's attributes.
+ *
+ * Input: user id (optional), externalId, and user attributes containing required email.
+ * Success: persists the user state and returns persisted id/externalId/attributes.
+ * Failure: throws when target user id does not exist or required attributes are invalid.
+ * Side effects: publishes user cache invalidation for the persisted user id.
+ */
 @Service
 class EnrollUserUseCase(
     private val userRepository: UserRepository,

@@ -34,7 +34,7 @@ class PostTemplateUseCaseTest : BehaviorSpec({
         )
     }
 
-    given("PostTemplateUseCase") {
+    given("UC-EMAIL-001 PostTemplateUseCase") {
         `when`("create new template") {
             val useCaseIn = PostTemplateUseCaseIn(
                 id = null,

@@ -37,6 +37,15 @@ data class SavedEvent(
     constructor(id: Long, message: SaveEventMessage) : this(id, message.message)
 }
 
+/**
+ * UC-EVENT-001
+ * Records a user event and optionally links it to a campaign.
+ *
+ * Input: event name, user externalId, property list, and optional campaign name.
+ * Success: persists event and returns event id with result message.
+ * Failure: throws when user is not found by externalId.
+ * Side effects: may create campaign-event relation and publish dashboard stream event.
+ */
 @Service
 class PostEventUseCase(
     private val eventRepository: EventRepository,

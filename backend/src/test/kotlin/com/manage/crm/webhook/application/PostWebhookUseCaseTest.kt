@@ -34,7 +34,7 @@ class PostWebhookUseCaseTest : BehaviorSpec({
         clearMocks(webhookRepository)
     }
 
-    given("create webhook") {
+    given("UC-WEBHOOK-001 create webhook") {
         `when`("request is valid and name is unique") {
             then("persist webhook and return response") {
                 val request = PostWebhookUseCaseIn(
@@ -117,7 +117,7 @@ class PostWebhookUseCaseTest : BehaviorSpec({
         }
     }
 
-    given("update webhook") {
+    given("UC-WEBHOOK-001 update webhook") {
         `when`("webhook exists and partial fields are provided") {
             then("update only provided fields and return response") {
                 val webhookId = 10L

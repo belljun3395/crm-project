@@ -38,7 +38,7 @@ class EnrollUserUseCaseTest : BehaviorSpec({
         )
     }
 
-    given("EnrollUserUseCase") {
+    given("UC-USER-001 EnrollUserUseCase") {
         `when`("save new user") {
             val useCaseIn = EnrollUserUseCaseIn(
                 id = null,
