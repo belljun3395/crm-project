@@ -14,6 +14,15 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.format.DateTimeFormatter
 
+/**
+ * UC-WEBHOOK-001
+ * Creates or updates a webhook endpoint subscription.
+ *
+ * Input: webhook id (optional), name, url, subscribed events, and active flag.
+ * Success: persists webhook state and returns normalized webhook response.
+ * Failure: throws when update target does not exist or duplicate name is detected.
+ * Side effects: enforces unique webhook name through pre-check and DB constraint handling.
+ */
 @Service
 @ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
 class PostWebhookUseCase(
