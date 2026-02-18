@@ -48,7 +48,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             PostEventUseCase(eventRepository, campaignRepository, campaignEventsRepository, campaignCacheManager, userRepository, campaignDashboardService)
     }
 
-    given("PostEventUseCase") {
+    given("UC-EVENT-001 PostEventUseCase") {
         `when`("post event") {
             val useCaseIn = PostEventUseCaseIn(
                 name = "event",
