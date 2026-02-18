@@ -141,7 +141,7 @@ SET email_body = ''
 WHERE email_body IS NULL;
 
 UPDATE email_send_histories
-SET send_status = 'SENT'
+SET send_status = 'SEND'
 WHERE send_status IS NULL OR TRIM(send_status) = '';
 
 UPDATE email_send_histories
@@ -184,7 +184,7 @@ SET event_payload = '{}'
 WHERE event_payload IS NULL;
 
 UPDATE scheduled_events
-SET scheduled_at = 'IMMEDIATELY'
+SET scheduled_at = 'APP'
 WHERE scheduled_at IS NULL OR TRIM(scheduled_at) = '';
 
 UPDATE scheduled_events
