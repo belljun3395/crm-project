@@ -20,7 +20,10 @@ echo "📧 Setting up SES (Simple Email Service)..."
 VERIFIED_EMAILS="${VERIFIED_EMAILS:-test@example.com notification@example.com noreply@local.dev admin@local.dev}"
 
 # Verify email identities (idempotent - skip if already verified)
-for EMAIL in $VERIFIED_EMAILS; do
+for EMAIL in ${VERIFIED_EMAILS//,/ }; do
+  if [ -z "$EMAIL" ]; then
+    continue
+  fi
   if ! awslocal ses list-verified-email-addresses --query "VerifiedEmailAddresses[]" --output text 2>/dev/null | grep -Fxq "$EMAIL"; then
     awslocal ses verify-email-identity --email-address "$EMAIL" && echo "   ✓ Verified: $EMAIL" || echo "   ⚠ Failed to verify: $EMAIL"
   else
