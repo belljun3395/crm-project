@@ -15,15 +15,24 @@ echo "✅ LocalStack is ready. Setting up services..."
 
 # Create SES identity for local development
 echo "📧 Setting up SES (Simple Email Service)..."
-awslocal ses verify-email-identity --email-address test@example.com
-awslocal ses verify-email-identity --email-address notification@example.com
-awslocal ses verify-email-identity --email-address noreply@local.dev
-awslocal ses verify-email-identity --email-address admin@local.dev
 
-# Create SES configuration set for local development
-awslocal ses create-configuration-set --configuration-set Name=local-configuration-set
+# Verify email identities (idempotent - skip if already verified)
+for EMAIL in test@example.com notification@example.com noreply@local.dev admin@local.dev; do
+  if ! awslocal ses list-verified-email-addresses --query "VerifiedEmailAddresses[?contains(@, '$EMAIL')]" --output text 2>/dev/null | grep -q "$EMAIL"; then
+    awslocal ses verify-email-identity --email-address "$EMAIL" && echo "   ✓ Verified: $EMAIL" || echo "   ⚠ Failed to verify: $EMAIL"
+  else
+    echo "   ✓ Already verified: $EMAIL"
+  fi
+done
 
-echo "✅ SES email identities created"
+# Create SES configuration set (idempotent - check if exists first)
+if ! awslocal ses list-configuration-sets --query "ConfigurationSets[?Name=='local-configuration-set']" --output text 2>/dev/null | grep -q "local-configuration-set"; then
+  awslocal ses create-configuration-set --configuration-set Name=local-configuration-set && echo "   ✓ Configuration set created: local-configuration-set"
+else
+  echo "   ✓ Configuration set already exists: local-configuration-set"
+fi
+
+echo "✅ SES setup completed"
 
 # Create SQS queue for SES events and general messaging
 echo "📨 Setting up SQS (Simple Queue Service)..."
