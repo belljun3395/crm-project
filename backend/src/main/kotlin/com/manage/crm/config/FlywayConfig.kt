@@ -3,6 +3,7 @@ package com.manage.crm.config
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.configuration.FluentConfiguration
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.autoconfigure.flyway.FlywayMigrationInitializer
 import org.springframework.boot.autoconfigure.flyway.FlywayProperties
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.Profile
 import java.util.function.Consumer
 
 @Configuration
+@ConditionalOnProperty(name = ["spring.flyway.enabled"], havingValue = "true", matchIfMissing = true)
 class FlywayConfig {
     companion object {
         const val FLYWAY = "flyway"
