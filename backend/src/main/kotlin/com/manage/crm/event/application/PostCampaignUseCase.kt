@@ -51,8 +51,11 @@ class PostCampaignUseCase(
                     )
                 )
             )
-        } catch (_: DataIntegrityViolationException) {
-            throw AlreadyExistsException("Campaign", "name", campaignName)
+        } catch (e: DataIntegrityViolationException) {
+            if (isCampaignNameDuplicate(e)) {
+                throw AlreadyExistsException("Campaign", "name", campaignName)
+            }
+            throw e
         }
 
         transactionSynchronizationTemplate.afterCommit(Dispatchers.IO, "save campaign cache") {
@@ -71,5 +74,17 @@ class PostCampaignUseCase(
                 }.toList()
             )
         }
+    }
+
+    private fun isCampaignNameDuplicate(exception: DataIntegrityViolationException): Boolean {
+        var cause: Throwable? = exception
+        while (cause != null) {
+            val message = cause.message?.lowercase()
+            if (message != null && "uk_campaigns_name" in message) {
+                return true
+            }
+            cause = cause.cause
+        }
+        return false
     }
 }

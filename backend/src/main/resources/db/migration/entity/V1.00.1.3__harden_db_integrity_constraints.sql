@@ -87,7 +87,7 @@ UPDATE email_template_histories
 SET version = 1.0
 WHERE version IS NULL;
 
-DELETE h1
+DELETE h2
 FROM email_template_histories h1
          JOIN email_template_histories h2
               ON h1.template_id = h2.template_id
@@ -124,8 +124,7 @@ CREATE UNIQUE INDEX uk_campaign_events_campaign_event
     ON campaign_events (campaign_id, event_id);
 CREATE INDEX idx_campaign_events_event_id ON campaign_events (event_id);
 
-UPDATE email_send_histories
-SET user_id = 0
+DELETE FROM email_send_histories
 WHERE user_id IS NULL;
 
 UPDATE email_send_histories
@@ -140,8 +139,7 @@ UPDATE email_send_histories
 SET email_body = ''
 WHERE email_body IS NULL;
 
-UPDATE email_send_histories
-SET send_status = 'SEND'
+DELETE FROM email_send_histories
 WHERE send_status IS NULL OR TRIM(send_status) = '';
 
 UPDATE email_send_histories
