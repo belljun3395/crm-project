@@ -5,6 +5,9 @@ import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 import java.time.LocalDateTime
 
+/**
+ * Repository for querying campaign-linked events and aggregate counts.
+ */
 interface CampaignEventsRepository : CoroutineCrudRepository<CampaignEvents, Long> {
     suspend fun findAllByCampaignId(campaignId: Long): List<CampaignEvents>
 
