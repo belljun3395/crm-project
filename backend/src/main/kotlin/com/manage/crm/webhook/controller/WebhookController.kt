@@ -4,10 +4,13 @@ import com.manage.crm.config.SwaggerTag
 import com.manage.crm.support.web.ApiResponse
 import com.manage.crm.support.web.ApiResponseGenerator
 import com.manage.crm.webhook.application.BrowseWebhookUseCase
+import com.manage.crm.webhook.application.BrowseWebhookDeliveryLogsUseCase
 import com.manage.crm.webhook.application.DeleteWebhookUseCase
 import com.manage.crm.webhook.application.GetWebhookUseCase
 import com.manage.crm.webhook.application.PostWebhookUseCase
+import com.manage.crm.webhook.application.dto.BrowseWebhookDeliveryLogsUseCaseIn
 import com.manage.crm.webhook.application.dto.BrowseWebhookUseCaseIn
+import com.manage.crm.webhook.application.dto.WebhookDeliveryLogDto
 import com.manage.crm.webhook.application.dto.DeleteWebhookUseCaseIn
 import com.manage.crm.webhook.application.dto.GetWebhookUseCaseIn
 import com.manage.crm.webhook.application.dto.PostWebhookUseCaseIn
@@ -27,6 +30,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = SwaggerTag.WEBHOOKS_SWAGGER_TAG, description = "웹훅 API")
@@ -38,7 +42,8 @@ class WebhookController(
     private val postWebhookUseCase: PostWebhookUseCase,
     private val deleteWebhookUseCase: DeleteWebhookUseCase,
     private val browseWebhookUseCase: BrowseWebhookUseCase,
-    private val getWebhookUseCase: GetWebhookUseCase
+    private val getWebhookUseCase: GetWebhookUseCase,
+    private val browseWebhookDeliveryLogsUseCase: BrowseWebhookDeliveryLogsUseCase
 ) {
     @PostMapping
     suspend fun create(
@@ -91,5 +96,18 @@ class WebhookController(
     suspend fun get(@PathVariable id: Long): ApiResponse<ApiResponse.SuccessBody<WebhookDto>> {
         return getWebhookUseCase.execute(GetWebhookUseCaseIn(id))
             .let { ApiResponseGenerator.success(it.webhook, HttpStatus.OK) }
+    }
+
+    @GetMapping("/{id}/deliveries")
+    suspend fun listDeliveries(
+        @PathVariable id: Long,
+        @RequestParam(required = false, defaultValue = "50") limit: Int
+    ): ApiResponse<ApiResponse.SuccessBody<List<WebhookDeliveryLogDto>>> {
+        return browseWebhookDeliveryLogsUseCase.execute(
+            BrowseWebhookDeliveryLogsUseCaseIn(
+                webhookId = id,
+                limit = limit
+            )
+        ).let { ApiResponseGenerator.success(it.deliveries, HttpStatus.OK) }
     }
 }
