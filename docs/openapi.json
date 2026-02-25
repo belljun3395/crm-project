@@ -1254,9 +1254,7 @@
           }
         }
       },
-      "JsonNode": {
-        "type": "object"
-      },
+      "JsonNode": {},
       "PutSegmentRequest": {
         "type": "object",
         "properties": {
@@ -1489,6 +1487,8 @@
             "type": "boolean"
           },
           "conditions": {
+            "maxItems": 2147483647,
+            "minItems": 1,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SegmentConditionRequest"

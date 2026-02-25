@@ -1,8 +1,10 @@
 package com.manage.crm.config
 
+import com.fasterxml.jackson.databind.JsonNode
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Info
+import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
@@ -81,6 +83,15 @@ class SpringDocConfig(
                 if (path == "/api/v1/webhooks/{id}") {
                     addIdempotencyKeyParameter(pathItem.put)
                 }
+            }
+        }
+    }
+
+    @Bean
+    fun jsonNodeSchemaOpenApiCustomizer(): OpenApiCustomizer {
+        return OpenApiCustomizer { openApi ->
+            openApi.components?.schemas?.get(JsonNode::class.simpleName)?.let {
+                openApi.components.schemas[JsonNode::class.simpleName] = Schema<Any>()
             }
         }
     }

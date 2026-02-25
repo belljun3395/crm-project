@@ -3,9 +3,9 @@ package com.manage.crm.segment.controller.request
 import com.fasterxml.jackson.databind.JsonNode
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
+import jakarta.validation.constraints.Size
 
 data class SegmentConditionRequest(
     @field:NotBlank
@@ -23,6 +23,6 @@ data class PostSegmentRequest(
     val name: String,
     val description: String? = null,
     val active: Boolean? = true,
-    @field:NotEmpty
+    @field:Size(min = 1, message = "conditions must not be empty")
     val conditions: List<@Valid SegmentConditionRequest>
 )

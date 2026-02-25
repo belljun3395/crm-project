@@ -62,7 +62,7 @@ class PostSegmentUseCase(
             throw AlreadyExistsException("Segment", "name", useCaseIn.name)
         }
 
-        val segmentId = saved.id ?: throw NotFoundByIdException("Segment", -1)
+        val segmentId = saved.id ?: throw IllegalStateException("Saved segment id is null")
         replaceConditions(segmentId, useCaseIn.conditions)
 
         val conditionDtos = useCaseIn.conditions.mapIndexed { index, condition ->
