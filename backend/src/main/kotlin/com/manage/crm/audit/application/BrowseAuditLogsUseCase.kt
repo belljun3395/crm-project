@@ -14,6 +14,9 @@ import org.springframework.stereotype.Service
 import java.time.format.DateTimeFormatter
 
 @Service
+/**
+ * Lists audit log entries with optional action/resource/actor filters.
+ */
 class BrowseAuditLogsUseCase(
     private val auditLogRepository: AuditLogRepository
 ) {

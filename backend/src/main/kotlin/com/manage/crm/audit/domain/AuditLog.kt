@@ -7,6 +7,9 @@ import org.springframework.data.relational.core.mapping.Table
 import java.time.LocalDateTime
 
 @Table("audit_logs")
+/**
+ * Persistence model representing an immutable audit event record.
+ */
 class AuditLog(
     @Id
     var id: Long? = null,

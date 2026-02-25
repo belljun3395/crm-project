@@ -5,4 +5,7 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
 
 @Configuration
 @EnableR2dbcRepositories(basePackages = ["com.manage.crm.audit.domain.repository"])
+/**
+ * Enables R2DBC repositories for the audit bounded context.
+ */
 class EnableAuditRepositoriesConfig
