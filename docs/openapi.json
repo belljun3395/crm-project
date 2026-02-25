@@ -1585,8 +1585,7 @@
       "PostCampaignRequest": {
         "required": [
           "name",
-          "properties",
-          "segmentIds"
+          "properties"
         ],
         "type": "object",
         "properties": {
