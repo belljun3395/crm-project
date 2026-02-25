@@ -5,5 +5,8 @@ import kotlinx.coroutines.flow.Flow
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 
 interface WebhookDeliveryLogRepository : CoroutineCrudRepository<WebhookDeliveryLog, Long> {
+    /**
+     * Streams delivery logs for a webhook from newest to oldest.
+     */
     fun findByWebhookIdOrderByDeliveredAtDesc(webhookId: Long): Flow<WebhookDeliveryLog>
 }

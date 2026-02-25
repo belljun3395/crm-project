@@ -15,6 +15,9 @@ import java.time.format.DateTimeFormatter
 
 @Service
 @ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
+/**
+ * Retrieves recent delivery attempts for a webhook in reverse chronological order.
+ */
 class BrowseWebhookDeliveryLogsUseCase(
     private val webhookRepository: WebhookRepository,
     private val webhookDeliveryLogRepository: WebhookDeliveryLogRepository
