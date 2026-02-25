@@ -12,6 +12,7 @@ import kotlinx.coroutines.reactive.awaitFirst
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.r2dbc.core.DatabaseClient.GenericExecuteSpec
 import org.springframework.stereotype.Repository
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 /**
@@ -55,30 +56,127 @@ class EventRepositoryCustomImpl(
     }
 
     override suspend fun searchByProperties(queries: List<SearchByPropertyQuery>): List<Event> {
-        // TODO queries의 값을 한번에 질의하여 조회하는 방법으로 수정
-        val events = mutableSetOf<Event>()
-        var joinOperation: JoinOperation? = null
-        queries.forEach { query ->
-            val event = searchByProperty(query)
-            if (joinOperation == null) {
-                joinOperation = query.joinOperation
-                events.addAll(event)
-            } else {
-                when (joinOperation!!) {
-                    JoinOperation.AND -> {
-                        events.retainAll(event.toSet())
-                    }
-                    JoinOperation.OR -> {
-                        events.addAll(event)
-                    }
-                    JoinOperation.END -> {
-                        events.addAll(event)
-                    }
-                }
-                joinOperation = query.joinOperation
+        if (queries.isEmpty()) {
+            return emptyList()
+        }
+
+        val eventName = queries.first().eventName
+        if (queries.any { it.eventName != eventName }) {
+            throw InvalidSearchConditionException("All queries must have the same eventName")
+        }
+
+        // Fetch candidate events once, then evaluate query clauses in memory.
+        return fetchAllByEventName(eventName)
+            .filter { event -> matchesQueryChain(event, queries) }
+    }
+
+    private suspend fun fetchAllByEventName(eventName: String): List<Event> {
+        val query = """
+            SELECT * FROM events WHERE name = :eventName
+        """.trimIndent()
+        return fetchQuery(query, mapOf("eventName" to eventName))
+            .sortedBy { it.id }
+    }
+
+    private fun matchesQueryChain(event: Event, queries: List<SearchByPropertyQuery>): Boolean {
+        var accumulated = matchesSingleQuery(event, queries.first())
+        for (index in 1 until queries.size) {
+            val join = queries[index - 1].joinOperation
+            val current = matchesSingleQuery(event, queries[index])
+            accumulated = when (join) {
+                JoinOperation.AND -> accumulated && current
+                JoinOperation.OR, JoinOperation.END -> accumulated || current
             }
         }
-        return events.toList()
+        return accumulated
+    }
+
+    private fun matchesSingleQuery(event: Event, query: SearchByPropertyQuery): Boolean {
+        return when (query.operation) {
+            Operation.BETWEEN -> matchesBetween(event, query.properties)
+            else -> matchesSingleProperty(event, query.operation, query.properties)
+        }
+    }
+
+    private fun matchesSingleProperty(event: Event, operation: Operation, properties: EventProperties): Boolean {
+        val property = properties.value.firstOrNull()
+            ?: throw InvalidSearchConditionException("At least one property is required")
+        val values = event.properties.value
+            .filter { it.key == property.key }
+            .map { it.value }
+        if (values.isEmpty()) {
+            return false
+        }
+
+        return values.any { eventValue ->
+            compareValue(eventValue, property.value, operation)
+        }
+    }
+
+    private fun matchesBetween(event: Event, properties: EventProperties): Boolean {
+        if (properties.value.size != Operation.BETWEEN.paramsCnt) {
+            throw InvalidSearchConditionException("Operation BETWEEN needs ${Operation.BETWEEN.paramsCnt} params")
+        }
+
+        val first = properties.value.first()
+        val second = properties.value.last()
+        if (first.key != second.key) {
+            throw InvalidSearchConditionException("Between operation needs same key. But ${first.key} and ${second.key} are different")
+        }
+
+        val values = event.properties.value
+            .filter { it.key == first.key }
+            .map { it.value }
+        if (values.isEmpty()) {
+            return false
+        }
+
+        return values.any { eventValue ->
+            if (isNumeric(eventValue) && first.isNum() && second.isNum()) {
+                val numericValue = eventValue.toBigDecimalOrNull() ?: return@any false
+                val start = first.value.toBigDecimalOrNull() ?: return@any false
+                val end = second.value.toBigDecimalOrNull() ?: return@any false
+                numericValue >= start && numericValue <= end
+            } else {
+                eventValue >= first.value && eventValue <= second.value
+            }
+        }
+    }
+
+    private fun compareValue(eventValue: String, queryValue: String, operation: Operation): Boolean {
+        return when (operation) {
+            Operation.EQUALS -> eventValue == queryValue
+            Operation.NOT_EQUALS -> eventValue != queryValue
+            Operation.GREATER_THAN -> compareOrdering(eventValue, queryValue) > 0
+            Operation.GREATER_THAN_OR_EQUALS -> compareOrdering(eventValue, queryValue) >= 0
+            Operation.LESS_THAN -> compareOrdering(eventValue, queryValue) < 0
+            Operation.LESS_THAN_OR_EQUALS -> compareOrdering(eventValue, queryValue) <= 0
+            Operation.LIKE -> like(eventValue, queryValue)
+            Operation.BETWEEN -> throw InvalidSearchConditionException("BETWEEN is not supported in single value comparison")
+        }
+    }
+
+    private fun compareOrdering(left: String, right: String): Int {
+        if (isNumeric(left) && isNumeric(right)) {
+            return toBigDecimal(left).compareTo(toBigDecimal(right))
+        }
+        return left.compareTo(right)
+    }
+
+    private fun like(value: String, pattern: String): Boolean {
+        val regex = Regex(
+            "^" + Regex.escape(pattern)
+                .replace("%", ".*")
+                .replace("_", ".") + "$"
+        )
+        return regex.matches(value)
+    }
+
+    private fun isNumeric(value: String): Boolean = value.matches(Regex("-?\\d+(\\.\\d+)?"))
+
+    private fun toBigDecimal(value: String): BigDecimal {
+        return value.toBigDecimalOrNull()
+            ?: throw InvalidSearchConditionException("Numeric value expected but got: $value")
     }
 
     private suspend fun fetchQuery(selectQuery: String, bindings: Map<String, Any>): List<Event> {
