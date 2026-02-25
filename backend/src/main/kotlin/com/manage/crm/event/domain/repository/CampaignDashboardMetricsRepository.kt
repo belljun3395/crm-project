@@ -10,10 +10,10 @@ import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
-@Repository
 /**
  * Repository for persisted campaign dashboard metrics across configured time windows.
  */
+@Repository
 interface CampaignDashboardMetricsRepository : CoroutineCrudRepository<CampaignDashboardMetrics, Long> {
 
     suspend fun findByCampaignIdAndMetricTypeAndTimeWindowStartAndTimeWindowEnd(
