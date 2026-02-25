@@ -6,11 +6,20 @@ import type {
   ApiResponse
 } from 'shared/type';
 
+const createIdempotencyKey = (prefix: string): string => {
+  const random = Math.random().toString(36).slice(2, 10);
+  return `${prefix}-${Date.now()}-${random}`;
+};
+
 export const webhookAPI = {
   // 웹훅 생성
   async createWebhook(data: CreateWebhookRequest): Promise<WebhookResponse | null> {
     try {
-      const response = await crmApi.post<ApiResponse<WebhookResponse>>('/webhooks', data);
+      const response = await crmApi.post<ApiResponse<WebhookResponse>>('/webhooks', data, {
+        headers: {
+          'Idempotency-Key': createIdempotencyKey('webhook-create')
+        }
+      });
       return response.data.data;
     } catch (error) {
       console.error('Error creating webhook:', error);
@@ -21,7 +30,11 @@ export const webhookAPI = {
   // 웹훅 수정
   async updateWebhook(id: number, data: UpdateWebhookRequest): Promise<WebhookResponse | null> {
     try {
-      const response = await crmApi.put<ApiResponse<WebhookResponse>>(`/webhooks/${id}`, data);
+      const response = await crmApi.put<ApiResponse<WebhookResponse>>(`/webhooks/${id}`, data, {
+        headers: {
+          'Idempotency-Key': createIdempotencyKey(`webhook-update-${id}`)
+        }
+      });
       return response.data.data;
     } catch (error) {
       console.error('Error updating webhook:', error);

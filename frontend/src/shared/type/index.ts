@@ -181,7 +181,14 @@ export interface BrowseEmailSendHistoriesUseCaseOut {
 }
 
 // UI State Types
-export type TabType = 'dashboard' | 'user' | 'event' | 'email-template' | 'email-schedule';
+export type TabType =
+  | 'dashboard'
+  | 'campaign-dashboard'
+  | 'webhook'
+  | 'user'
+  | 'event'
+  | 'email-template'
+  | 'email-schedule';
 
 // Form State Types
 export interface UserFormData {
@@ -209,3 +216,12 @@ export interface EmailScheduleFormData {
   userIds: string;
   expiredTime: string;
 }
+
+// Dashboard Stream UI Types
+export type StreamConnectionStatus =
+  | 'idle'
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting'
+  | 'error'
+  | 'closed';

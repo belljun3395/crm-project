@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { DashboardPage } from 'page/dashboard';
+import { CampaignDashboardPage } from 'page/campaign-dashboard';
+import { WebhookManagementPage } from 'page/webhook';
 import { UserPage } from 'page/user';
 import { EventPage } from 'page/event';
 import { TemplateManagementPage } from 'page/email/template';
@@ -13,6 +15,10 @@ function App() {
     switch (activeTab) {
       case 'dashboard':
         return <DashboardPage />;
+      case 'campaign-dashboard':
+        return <CampaignDashboardPage />;
+      case 'webhook':
+        return <WebhookManagementPage />;
       case 'user':
         return <UserPage />;
       case 'event':
@@ -52,7 +58,31 @@ function App() {
                   }`}
                 >
                   <span className="text-lg">📊</span>
-                  Dashboard
+                  Overview
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('campaign-dashboard')}
+                  className={`flex items-center gap-3 rounded-lg px-4 py-2 font-semibold transition-colors text-left ${
+                    activeTab === 'campaign-dashboard'
+                      ? 'bg-gray-800 text-white'
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                  }`}
+                >
+                  <span className="text-lg">📈</span>
+                  Campaign Dashboard
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('webhook')}
+                  className={`flex items-center gap-3 rounded-lg px-4 py-2 font-semibold transition-colors text-left ${
+                    activeTab === 'webhook'
+                      ? 'bg-gray-800 text-white'
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                  }`}
+                >
+                  <span className="text-lg">🔗</span>
+                  Webhooks
                 </button>
                 
                 <button
