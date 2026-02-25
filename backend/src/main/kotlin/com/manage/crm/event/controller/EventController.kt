@@ -108,6 +108,7 @@ ex) key1&value1&operation&joinOperation,key2&value2&operation&joinOperation...
             .execute(
                 PostCampaignUseCaseIn(
                     name = request.name,
+                    segmentIds = request.segmentIds,
                     properties = request.properties.map {
                         PostCampaignPropertyDto(
                             key = it.key,

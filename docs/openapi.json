@@ -1585,7 +1585,8 @@
       "PostCampaignRequest": {
         "required": [
           "name",
-          "properties"
+          "properties",
+          "segmentIds"
         ],
         "type": "object",
         "properties": {
@@ -1597,6 +1598,13 @@
             "items": {
               "$ref": "#/components/schemas/PostCampaignPropertyDto"
             }
+          },
+          "segmentIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
           }
         }
       },
@@ -1604,7 +1612,8 @@
         "required": [
           "id",
           "name",
-          "properties"
+          "properties",
+          "segmentIds"
         ],
         "type": "object",
         "properties": {
@@ -1619,6 +1628,13 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PostCampaignPropertyDto"
+            }
+          },
+          "segmentIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
             }
           }
         }

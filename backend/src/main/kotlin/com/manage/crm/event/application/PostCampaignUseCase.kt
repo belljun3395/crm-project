@@ -4,13 +4,17 @@ import com.manage.crm.event.application.dto.PostCampaignPropertyDto
 import com.manage.crm.event.application.dto.PostCampaignUseCaseIn
 import com.manage.crm.event.application.dto.PostCampaignUseCaseOut
 import com.manage.crm.event.domain.Campaign
+import com.manage.crm.event.domain.CampaignSegments
 import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignRepository
+import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
 import com.manage.crm.event.domain.vo.CampaignProperties
 import com.manage.crm.event.domain.vo.CampaignProperty
 import com.manage.crm.support.exception.AlreadyExistsException
+import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
+import com.manage.crm.segment.domain.repository.SegmentRepository
 import kotlinx.coroutines.Dispatchers
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
@@ -28,6 +32,8 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class PostCampaignUseCase(
     private val campaignRepository: CampaignRepository,
+    private val campaignSegmentsRepository: CampaignSegmentsRepository,
+    private val segmentRepository: SegmentRepository,
     private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate,
     private val campaignCacheManager: CampaignCacheManager
 ) {
@@ -35,9 +41,16 @@ class PostCampaignUseCase(
     suspend fun execute(useCaseIn: PostCampaignUseCaseIn): PostCampaignUseCaseOut {
         val campaignName = useCaseIn.name
         val properties = useCaseIn.properties
+        val segmentIds = useCaseIn.segmentIds.distinct()
 
         if (campaignRepository.existsCampaignsByName(campaignName)) {
             throw AlreadyExistsException("Campaign", "name", campaignName)
+        }
+
+        segmentIds.forEach { segmentId ->
+            if (segmentRepository.findById(segmentId) == null) {
+                throw NotFoundByIdException("Segment", segmentId)
+            }
         }
 
         val savedCampaign = try {
@@ -58,6 +71,15 @@ class PostCampaignUseCase(
             throw e
         }
 
+        segmentIds.forEach { segmentId ->
+            campaignSegmentsRepository.save(
+                CampaignSegments.new(
+                    campaignId = savedCampaign.id!!,
+                    segmentId = segmentId
+                )
+            )
+        }
+
         transactionSynchronizationTemplate.afterCommit(Dispatchers.IO, "save campaign cache") {
             campaignCacheManager.save(savedCampaign)
         }
@@ -71,7 +93,8 @@ class PostCampaignUseCase(
                         key = it.key,
                         value = it.value
                     )
-                }.toList()
+                }.toList(),
+                segmentIds = segmentIds
             )
         }
     }
