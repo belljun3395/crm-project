@@ -14,10 +14,10 @@ import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
 import java.time.format.DateTimeFormatter
 
-@Service
 /**
  * Lists segments with their ordered condition set.
  */
+@Service
 class BrowseSegmentUseCase(
     private val segmentRepository: SegmentRepository,
     private val segmentConditionRepository: SegmentConditionRepository,
@@ -44,8 +44,8 @@ class BrowseSegmentUseCase(
         }
 
         val segmentDtos = segments
-            .map { segment ->
-                val segmentId = segment.id!!
+            .mapNotNull { segment ->
+                val segmentId = segment.id ?: return@mapNotNull null
                 val conditions = conditionsBySegmentId[segmentId].orEmpty()
                     .map { condition ->
                         SegmentConditionDto(

@@ -5,10 +5,10 @@ import com.manage.crm.support.exception.NotFoundByIdException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
-@Service
 /**
  * Deletes a segment and its associated conditions.
  */
+@Service
 class DeleteSegmentUseCase(
     private val segmentRepository: SegmentRepository
 ) {

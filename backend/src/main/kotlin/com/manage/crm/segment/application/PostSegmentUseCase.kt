@@ -13,15 +13,15 @@ import com.manage.crm.segment.exception.InvalidSegmentConditionException
 import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
-import org.springframework.stereotype.Service
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.format.DateTimeFormatter
 
-@Service
 /**
  * Creates or updates a segment and replaces its condition list atomically.
  */
+@Service
 class PostSegmentUseCase(
     private val segmentRepository: SegmentRepository,
     private val segmentConditionRepository: SegmentConditionRepository
