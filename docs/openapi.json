@@ -1261,7 +1261,7 @@
         "type": "object",
         "properties": {
           "name": {
-            "pattern": ".*\\S.*",
+            "pattern": "^[^\\r\\n]*\\S[^\\r\\n]*$",
             "type": "string"
           },
           "description": {
@@ -1479,6 +1479,7 @@
         "type": "object",
         "properties": {
           "name": {
+            "pattern": "^[^\\r\\n]*\\S[^\\r\\n]*$",
             "type": "string"
           },
           "description": {

@@ -5,6 +5,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Pattern
 
 data class SegmentConditionRequest(
     @field:NotBlank
@@ -18,7 +19,7 @@ data class SegmentConditionRequest(
 )
 
 data class PostSegmentRequest(
-    @field:NotBlank
+    @field:Pattern(regexp = SEGMENT_NAME_PATTERN, message = SEGMENT_NAME_PATTERN_MESSAGE)
     val name: String,
     val description: String? = null,
     val active: Boolean? = true,
