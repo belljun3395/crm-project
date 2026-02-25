@@ -178,6 +178,7 @@ class IdempotencyKeyFilter(
                 (path == "/api/v1/emails/send/notifications" || path == "/api/v1/emails/schedules/notifications/email") -> true
             method == HttpMethod.POST && path == "/api/v1/webhooks" -> true
             method == HttpMethod.POST && path == "/api/v1/actions/dispatch" -> true
+            method == HttpMethod.POST && path == "/api/v1/journeys" -> true
             method == HttpMethod.PUT && path.startsWith("/api/v1/webhooks/") -> true
             else -> false
         }
