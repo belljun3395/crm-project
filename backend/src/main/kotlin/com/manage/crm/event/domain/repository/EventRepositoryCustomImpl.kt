@@ -99,6 +99,10 @@ class EventRepositoryCustomImpl(
     }
 
     private fun matchesSingleProperty(event: Event, operation: Operation, properties: EventProperties): Boolean {
+        if (properties.value.size != operation.paramsCnt) {
+            throw InvalidSearchConditionException("Operation ${operation.name} needs ${operation.paramsCnt} params")
+        }
+
         val property = properties.value.firstOrNull()
             ?: throw InvalidSearchConditionException("At least one property is required")
         val values = event.properties.value
@@ -144,19 +148,26 @@ class EventRepositoryCustomImpl(
     }
 
     private fun compareValue(eventValue: String, queryValue: String, operation: Operation): Boolean {
+        val ordering = compareOrdering(eventValue, queryValue)
         return when (operation) {
-            Operation.EQUALS -> eventValue == queryValue
-            Operation.NOT_EQUALS -> eventValue != queryValue
-            Operation.GREATER_THAN -> compareOrdering(eventValue, queryValue) > 0
-            Operation.GREATER_THAN_OR_EQUALS -> compareOrdering(eventValue, queryValue) >= 0
-            Operation.LESS_THAN -> compareOrdering(eventValue, queryValue) < 0
-            Operation.LESS_THAN_OR_EQUALS -> compareOrdering(eventValue, queryValue) <= 0
+            Operation.EQUALS -> ordering == 0
+            Operation.NOT_EQUALS -> ordering != 0
+            Operation.GREATER_THAN -> ordering?.let { it > 0 } ?: false
+            Operation.GREATER_THAN_OR_EQUALS -> ordering?.let { it >= 0 } ?: false
+            Operation.LESS_THAN -> ordering?.let { it < 0 } ?: false
+            Operation.LESS_THAN_OR_EQUALS -> ordering?.let { it <= 0 } ?: false
             Operation.LIKE -> like(eventValue, queryValue)
             Operation.BETWEEN -> throw InvalidSearchConditionException("BETWEEN is not supported in single value comparison")
         }
     }
 
-    private fun compareOrdering(left: String, right: String): Int {
+    private fun compareOrdering(left: String, right: String): Int? {
+        val leftNumeric = isNumeric(left)
+        val rightNumeric = isNumeric(right)
+
+        if (leftNumeric != rightNumeric) {
+            return null
+        }
         if (isNumeric(left) && isNumeric(right)) {
             return toBigDecimal(left).compareTo(toBigDecimal(right))
         }
@@ -164,11 +175,17 @@ class EventRepositoryCustomImpl(
     }
 
     private fun like(value: String, pattern: String): Boolean {
-        val regex = Regex(
-            "^" + Regex.escape(pattern)
-                .replace("%", ".*")
-                .replace("_", ".") + "$"
-        )
+        val regex = buildString {
+            append("^")
+            pattern.forEach { char ->
+                when (char) {
+                    '%' -> append(".*")
+                    '_' -> append('.')
+                    else -> append(Regex.escape(char.toString()))
+                }
+            }
+            append("$")
+        }.let { Regex(it) }
         return regex.matches(value)
     }
 
