@@ -55,6 +55,7 @@ class EventController(
                     name = request.name,
                     campaignName = request.campaignName,
                     externalId = request.externalId,
+                    segmentId = request.segmentId,
                     properties = request.properties.map {
                         PostEventPropertyDto(
                             key = it.key,

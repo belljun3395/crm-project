@@ -1528,6 +1528,10 @@
           "externalId": {
             "type": "string"
           },
+          "segmentId": {
+            "type": "integer",
+            "format": "int64"
+          },
           "properties": {
             "type": "array",
             "items": {
@@ -1751,6 +1755,10 @@
               "type": "integer",
               "format": "int64"
             }
+          },
+          "segmentId": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },
@@ -1783,8 +1791,7 @@
       "PostNotificationEmailRequest": {
         "required": [
           "expiredTime",
-          "templateId",
-          "userIds"
+          "templateId"
         ],
         "type": "object",
         "properties": {
@@ -1802,6 +1809,10 @@
               "type": "integer",
               "format": "int64"
             }
+          },
+          "segmentId": {
+            "type": "integer",
+            "format": "int64"
           },
           "expiredTime": {
             "type": "string",

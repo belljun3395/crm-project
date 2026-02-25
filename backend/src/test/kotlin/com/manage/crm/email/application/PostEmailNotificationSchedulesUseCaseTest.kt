@@ -25,6 +25,7 @@ class PostEmailNotificationSchedulesUseCaseTest : BehaviorSpec({
                 templateId = 1,
                 templateVersion = 1.0f,
                 userIds = listOf(1, 2, 3),
+                segmentId = null,
                 expiredTime = LocalDateTime.now().plusDays(1)
             )
 
@@ -33,6 +34,7 @@ class PostEmailNotificationSchedulesUseCaseTest : BehaviorSpec({
                 templateId = 1,
                 templateVersion = 1.0f,
                 userIds = listOf(1, 2, 3),
+                segmentId = null,
                 eventId = eventId,
                 expiredTime = LocalDateTime.now().plusDays(1)
             )
@@ -49,6 +51,27 @@ class PostEmailNotificationSchedulesUseCaseTest : BehaviorSpec({
                         any(
                             NotificationEmailSendTimeOutEventInput::class
                         )
+                    )
+                }
+            }
+        }
+
+        `when`("segmentId is provided for scheduled notification") {
+            val useCaseIn = PostEmailNotificationSchedulesUseCaseIn(
+                templateId = 1,
+                templateVersion = 1.0f,
+                userIds = emptyList(),
+                segmentId = 77L,
+                expiredTime = LocalDateTime.now().plusDays(1)
+            )
+
+            coEvery { scheduleTaskService.newSchedule(any(NotificationEmailSendTimeOutEventInput::class)) } answers { firstArg<NotificationEmailSendTimeOutEventInput>().eventId.value }
+
+            then("forward segmentId to schedule payload") {
+                useCase.execute(useCaseIn)
+                coVerify(exactly = 1) {
+                    scheduleTaskService.newSchedule(
+                        match { it.segmentId == 77L && it.userIds.isEmpty() }
                     )
                 }
             }

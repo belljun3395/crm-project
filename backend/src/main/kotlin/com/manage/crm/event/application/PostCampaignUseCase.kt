@@ -10,11 +10,11 @@ import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
 import com.manage.crm.event.domain.vo.CampaignProperties
 import com.manage.crm.event.domain.vo.CampaignProperty
+import com.manage.crm.segment.domain.repository.SegmentRepository
 import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
-import com.manage.crm.segment.domain.repository.SegmentRepository
 import kotlinx.coroutines.Dispatchers
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service

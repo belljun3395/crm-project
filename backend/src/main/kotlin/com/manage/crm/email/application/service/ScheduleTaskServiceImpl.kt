@@ -69,6 +69,7 @@ class ScheduleTaskServiceImpl(
                     taskName = payload["eventId"] as String,
                     templateId = payload["templateId"].asLong(),
                     userIds = (payload["userIds"] as? List<*>)?.mapNotNull { it.asLong() } ?: emptyList(),
+                    segmentId = payload["segmentId"]?.asLong(),
                     expiredTime = (payload["expiredTime"] as String).parseISOExpiredTime()
                 )
             }.toList()

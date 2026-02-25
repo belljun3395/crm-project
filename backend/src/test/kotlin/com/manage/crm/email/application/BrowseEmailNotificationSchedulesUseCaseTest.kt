@@ -26,6 +26,7 @@ class BrowseEmailNotificationSchedulesUseCaseTest : BehaviorSpec({
             taskName = "task$it",
             templateId = it.toLong(),
             userIds = (1..it).map { it.toLong() },
+            segmentId = null,
             expiredTime = LocalDateTime.now().plusDays(it.toLong())
         )
     }
