@@ -264,14 +264,7 @@
             }
           },
           "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Success"
-                }
-              }
-            }
+            "description": "OK"
           }
         }
       }
@@ -1268,6 +1261,7 @@
         "type": "object",
         "properties": {
           "name": {
+            "pattern": ".*\\S.*",
             "type": "string"
           },
           "description": {
@@ -1277,6 +1271,8 @@
             "type": "boolean"
           },
           "conditions": {
+            "maxItems": 2147483647,
+            "minItems": 1,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SegmentConditionRequest"
