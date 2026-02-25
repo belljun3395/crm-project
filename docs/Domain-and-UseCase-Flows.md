@@ -1,243 +1,166 @@
-# Domain and UseCase Flows Documentation
+# Domain and UseCase Flows
 
-## 개요
+## 문서 목적
 
-이 문서는 CRM 시스템의 Domain Entity와 UseCase의 플로우를 정리한 문서입니다. 
+이 문서는 `main` 브랜치 기준 구현 상태를 기준으로 CRM의 도메인 모델/유즈케이스 흐름을 정리합니다.
 
-CRM 시스템은 **User**, **Email**, **Event** 세 가지 주요 모듈로 구성되며, Clean Architecture와 Domain-Driven Design (DDD) 원칙을 따라 설계되었습니다.
+- 기준일: 2026-02-25
+- 문서 대상: 현재 구현된 기능 + 명확히 분리된 로드맵
+- 아키텍처 스타일: Clean Architecture + DDD
 
-## 아키텍처 개요
+## 시스템 구성 요약
+
+현재 구현 도메인
+
+- User
+- Email (Template / Send / Schedule / History)
+- Event (Event/Campaign/Event Search)
+- Campaign Dashboard (Metrics + SSE)
+- Webhook
+
+로드맵 도메인(미구현)
+
+- Segment / Audience
+- Journey
+- Action Provider (Slack/Discord 등)
+- Delivery / DeliveryAttempt 고도화
+
+## 아키텍처 레이어
 
 ```mermaid
 graph TB
     subgraph "Interface Layer"
-        UC[UserController]
-        EC[EmailController]
-        EVC[EventController]
+        UC["UserController"]
+        EC["EmailController"]
+        EVC["EventController"]
+        CDC["CampaignDashboardController"]
+        WHC["WebhookController"]
     end
-    
+
     subgraph "Application Layer"
-        UUC[User UseCases]
-        EUC[Email UseCases]
-        EVUC[Event UseCases]
+        UUC["User UseCases"]
+        EUC["Email UseCases"]
+        EVUC["Event UseCases"]
+        CDUC["Campaign Dashboard UseCases"]
+        WHUC["Webhook UseCases"]
     end
-    
+
     subgraph "Domain Layer"
-        subgraph "User Module"
-            U[User]
-            UR[UserRepository]
-        end
-        
-        subgraph "Email Module"
-            ET[EmailTemplate]
-            ETH[EmailTemplateHistory]
-            ESH[EmailSendHistory]
-            SE[ScheduledEvent]
-            ER[EmailRepository]
-        end
-        
-        subgraph "Event Module"
-            E[Event]
-            C[Campaign]
-            CE[CampaignEvents]
-            EVR[EventRepository]
-        end
+        U["User"]
+        ET["EmailTemplate / History / SendHistory / ScheduledEvent"]
+        EV["Event / Campaign / CampaignEvents"]
+        CDM["CampaignDashboardMetrics"]
+        WH["Webhook"]
     end
-    
+
     subgraph "Infrastructure"
-        DB[(MySQL)]
-        REDIS[(Redis)]
-        MAIL[Mail Service]
+        MYSQL[("MySQL")]
+        REDIS[("Redis Cluster")]
+        AWS["AWS / LocalStack"]
+        KAFKA["Kafka"]
+        SMTP["SMTP / SES Provider"]
     end
-    
+
     UC --> UUC
     EC --> EUC
     EVC --> EVUC
-    
+    CDC --> CDUC
+    WHC --> WHUC
+
     UUC --> U
-    UUC --> UR
-    
     EUC --> ET
-    EUC --> ETH
-    EUC --> ESH
-    EUC --> SE
-    EUC --> ER
-    
-    EVUC --> E
-    EVUC --> C
-    EVUC --> CE
-    EVUC --> EVR
-    
-    UR --> DB
-    ER --> DB
-    EVR --> DB
-    
-    UUC --> REDIS
+    EVUC --> EV
+    CDUC --> CDM
+    WHUC --> WH
+
+    U --> MYSQL
+    ET --> MYSQL
+    EV --> MYSQL
+    CDM --> MYSQL
+    WH --> MYSQL
+
+    CDUC --> REDIS
     EVUC --> REDIS
-    EUC --> MAIL
+    EUC --> AWS
+    EUC --> SMTP
+    EUC --> KAFKA
 ```
 
-## Domain Entities
+## 데이터 모델(구현 기준)
 
-### User Module
+### User
 
-#### User Entity
-- **테이블**: `users`
-- **주요 속성**:
-  - `id`: 사용자 ID (PK)
-  - `externalId`: 외부 시스템 연동용 ID
-  - `userAttributes`: JSON 형태의 사용자 속성 (이메일, 기타 정보)
-  - `createdAt`, `updatedAt`: 생성/수정 시간
+- 테이블: `users`
+- 핵심 필드: `id`, `external_id(UK)`, `user_attributes(JSON)`, `created_at`, `updated_at`
 
-```mermaid
-erDiagram
-    User {
-        bigint id PK
-        varchar external_id
-        json user_attributes
-        datetime created_at
-        datetime updated_at
-    }
-```
+### Email
 
-### Email Module
+- `email_templates`
+- `email_template_histories`
+- `email_send_histories`
+- `scheduled_events`
 
-#### EmailTemplate Entity
-- **테이블**: `email_templates`
-- **주요 속성**:
-  - `id`: 템플릿 ID (PK)
-  - `templateName`: 템플릿 이름
-  - `subject`: 이메일 제목
-  - `body`: 이메일 본문 (HTML)
-  - `variables`: 템플릿 변수 정의
-  - `version`: 템플릿 버전
+### Event / Campaign
 
-#### EmailTemplateHistory Entity
-- **테이블**: `email_template_histories`
-- **용도**: 템플릿 버전 관리
+- `events`
+- `campaigns` (`name` unique)
+- `campaign_events` (campaign-event 매핑)
 
-#### EmailSendHistory Entity
-- **테이블**: `email_send_histories`
-- **주요 속성**:
-  - `userId`: 수신자 사용자 ID
-  - `userEmail`: 수신자 이메일
-  - `sendStatus`: 발송 상태
-  - `emailBody`: 발송된 이메일 본문
+### Campaign Dashboard
 
-#### ScheduledEvent Entity
-- **테이블**: `scheduled_events`
-- **주요 속성**:
-  - `eventId`: 스케줄 이벤트 ID
-  - `eventClass`: 이벤트 클래스명
-  - `completed`: 완료 여부
-  - `canceled`: 취소 여부
-  - `scheduledAt`: 스케줄 시간
+- `campaign_dashboard_metrics`
+- metric_type: `EVENT_COUNT`, `UNIQUE_USER_COUNT`, `TOTAL_USER_COUNT`
+- time_window_unit: `MINUTE`, `HOUR`, `DAY`, `WEEK`, `MONTH`
+- 현재 자동 집계는 `EVENT_COUNT`의 `HOUR`, `DAY` 중심
 
-```mermaid
-erDiagram
-    EmailTemplate {
-        bigint id PK
-        varchar template_name
-        varchar subject
-        text body
-        json variables
-        float version
-        datetime created_at
-    }
-    
-    EmailTemplateHistory {
-        bigint id PK
-        bigint template_id FK
-        varchar subject
-        text body
-        json variables
-        float version
-        datetime created_at
-    }
-    
-    EmailSendHistory {
-        bigint id PK
-        bigint user_id FK
-        varchar user_email
-        varchar email_message_id
-        text email_body
-        varchar send_status
-        datetime created_at
-        datetime updated_at
-    }
-    
-    ScheduledEvent {
-        bigint id PK
-        varchar event_id
-        varchar event_class
-        text event_payload
-        boolean completed
-        boolean is_not_consumed
-        boolean canceled
-        varchar scheduled_at
-        datetime created_at
-    }
-    
-    EmailTemplate ||--o{ EmailTemplateHistory : "has versions"
-    User ||--o{ EmailSendHistory : "receives emails"
-```
+### Webhook
 
-### Event Module
+- `webhooks`
+- 기능 토글: `webhook.enabled`
 
-#### Campaign Entity
-- **테이블**: `campaigns`
-- **주요 속성**:
-  - `id`: 캠페인 ID (PK)
-  - `name`: 캠페인 이름 (고유)
-  - `properties`: 캠페인 속성 정의 (JSON)
+## API 경계(Controller 기준)
 
-#### Event Entity
-- **테이블**: `events`
-- **주요 속성**:
-  - `id`: 이벤트 ID (PK)
-  - `name`: 이벤트 이름
-  - `userId`: 사용자 ID
-  - `properties`: 이벤트 속성 (JSON)
+### User API
 
-#### CampaignEvents Entity
-- **테이블**: `campaign_events`
-- **용도**: Campaign과 Event 간의 다대다 관계 매핑
+- `GET /api/v1/users`
+- `POST /api/v1/users`
+- `GET /api/v1/users/count`
 
-```mermaid
-erDiagram
-    Campaign {
-        bigint id PK
-        varchar name UK
-        json properties
-        datetime created_at
-    }
-    
-    Event {
-        bigint id PK
-        varchar name
-        bigint user_id FK
-        json properties
-        datetime created_at
-    }
-    
-    CampaignEvents {
-        bigint id PK
-        bigint campaign_id FK
-        bigint event_id FK
-        datetime created_at
-    }
-    
-    User ||--o{ Event : "generates"
-    Campaign ||--o{ CampaignEvents : "contains"
-    Event ||--o{ CampaignEvents : "belongs to"
-```
+### Email API
 
-## UseCase 플로우
+- `GET /api/v1/emails/templates`
+- `POST /api/v1/emails/templates`
+- `DELETE /api/v1/emails/templates/{templateId}`
+- `POST /api/v1/emails/send/notifications`
+- `GET /api/v1/emails/schedules/notifications/email`
+- `POST /api/v1/emails/schedules/notifications/email`
+- `DELETE /api/v1/emails/schedules/notifications/email/{scheduleId}`
+- `GET /api/v1/emails/histories`
 
-### User Module UseCases
+### Event API
 
-#### 1. EnrollUserUseCase
-사용자를 등록하거나 업데이트합니다.
+- `POST /api/v1/events`
+- `GET /api/v1/events`
+- `POST /api/v1/events/campaign`
+
+### Campaign Dashboard API
+
+- `GET /api/v1/campaigns/{campaignId}/dashboard`
+- `GET /api/v1/campaigns/{campaignId}/dashboard/stream` (SSE)
+- `GET /api/v1/campaigns/{campaignId}/dashboard/summary`
+- `GET /api/v1/campaigns/{campaignId}/dashboard/stream/status`
+
+### Webhook API
+
+- `POST /api/v1/webhooks`
+- `PUT /api/v1/webhooks/{id}`
+- `DELETE /api/v1/webhooks/{id}`
+- `GET /api/v1/webhooks`
+- `GET /api/v1/webhooks/{id}`
+
+## 유즈케이스 플로우
+
+### 1) 사용자 등록/갱신
 
 ```mermaid
 sequenceDiagram
@@ -245,239 +168,107 @@ sequenceDiagram
     participant UserController
     participant EnrollUserUseCase
     participant UserRepository
-    participant Database
-    
+    participant MySQL
+
     Client->>UserController: POST /api/v1/users
-    UserController->>EnrollUserUseCase: execute(EnrollUserUseCaseIn)
-    
-    alt ID가 제공된 경우
-        EnrollUserUseCase->>UserRepository: findById(id)
-        UserRepository->>Database: SELECT FROM users WHERE id = ?
-        Database-->>UserRepository: User entity
-        UserRepository-->>EnrollUserUseCase: User
-        EnrollUserUseCase->>EnrollUserUseCase: updateAttributes()
-        EnrollUserUseCase->>UserRepository: save(user)
-    else ID가 제공되지 않은 경우
-        EnrollUserUseCase->>EnrollUserUseCase: User.new()
-        EnrollUserUseCase->>UserRepository: save(newUser)
-    end
-    
-    UserRepository->>Database: INSERT/UPDATE users
-    Database-->>UserRepository: Saved user
+    UserController->>EnrollUserUseCase: execute()
+    EnrollUserUseCase->>UserRepository: save/find
+    UserRepository->>MySQL: INSERT/UPDATE users
+    MySQL-->>UserRepository: persisted row
     UserRepository-->>EnrollUserUseCase: User
-    EnrollUserUseCase-->>UserController: EnrollUserUseCaseOut
+    EnrollUserUseCase-->>UserController: result
     UserController-->>Client: ApiResponse
 ```
 
-#### 2. BrowseUserUseCase
-전체 사용자 목록을 조회합니다.
-
-#### 3. GetTotalUserCountUseCase
-총 사용자 수를 조회합니다.
-
-### Email Module UseCases
-
-#### 1. SendNotificationEmailUseCase
-사용자들에게 알림 이메일을 발송합니다.
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant EmailController
-    participant SendNotificationEmailUseCase
-    participant EmailTemplateRepository
-    participant UserRepository
-    participant MailService
-    participant Database
-    
-    Client->>EmailController: POST /api/v1/emails/send/notifications
-    EmailController->>SendNotificationEmailUseCase: execute(SendNotificationEmailUseCaseIn)
-    
-    SendNotificationEmailUseCase->>EmailTemplateRepository: findById(templateId)
-    EmailTemplateRepository->>Database: SELECT FROM email_templates
-    Database-->>EmailTemplateRepository: EmailTemplate
-    EmailTemplateRepository-->>SendNotificationEmailUseCase: NotificationEmailTemplatePropertiesModel
-    
-    SendNotificationEmailUseCase->>UserRepository: getTargetUsers()
-    UserRepository->>Database: SELECT FROM users
-    Database-->>UserRepository: List<User>
-    UserRepository-->>SendNotificationEmailUseCase: List<User>
-    
-    SendNotificationEmailUseCase->>SendNotificationEmailUseCase: generateNotificationDto()
-    
-    loop 각 사용자에 대해 (병렬 처리)
-        SendNotificationEmailUseCase->>MailService: send(SendEmailInDto)
-        MailService-->>SendNotificationEmailUseCase: 발송 결과
-    end
-    
-    SendNotificationEmailUseCase-->>EmailController: SendNotificationEmailUseCaseOut
-    EmailController-->>Client: ApiResponse
-```
-
-#### 2. PostTemplateUseCase
-이메일 템플릿을 생성하거나 수정합니다.
-
-#### 3. PostEmailNotificationSchedulesUseCase
-이메일 알림을 스케줄링합니다.
-
-#### 4. CancelNotificationEmailUseCase
-스케줄된 이메일 알림을 취소합니다.
-
-### Event Module UseCases
-
-#### 1. PostEventUseCase
-이벤트를 생성하고 캠페인과 연결합니다.
+### 2) 이벤트 적재 + 캠페인 대시보드 반영
 
 ```mermaid
 sequenceDiagram
     participant Client
     participant EventController
     participant PostEventUseCase
-    participant UserRepository
-    participant EventRepository
-    participant CampaignRepository
-    participant CampaignEventsRepository
-    participant CampaignCacheManager
-    participant Database
-    
+    participant EventRepo
+    participant DashboardService
+    participant Redis
+    participant MetricsRepo
+
     Client->>EventController: POST /api/v1/events
-    EventController->>PostEventUseCase: execute(PostEventUseCaseIn)
-    
-    PostEventUseCase->>UserRepository: findByExternalId(externalId)
-    UserRepository->>Database: SELECT FROM users WHERE external_id = ?
-    Database-->>UserRepository: User
-    UserRepository-->>PostEventUseCase: userId
-    
-    par 병렬 처리
-        PostEventUseCase->>EventRepository: save(Event.new())
-        EventRepository->>Database: INSERT INTO events
-        Database-->>EventRepository: Event
-        EventRepository-->>PostEventUseCase: savedEvent
-    and
-        alt campaignName이 제공된 경우
-            PostEventUseCase->>CampaignCacheManager: loadAndSaveIfMiss()
-            CampaignCacheManager->>CampaignRepository: findCampaignByName()
-            CampaignRepository->>Database: SELECT FROM campaigns WHERE name = ?
-            Database-->>CampaignRepository: Campaign
-            CampaignRepository-->>CampaignCacheManager: Campaign
-            CampaignCacheManager-->>PostEventUseCase: Campaign
-        end
-    end
-    
-    alt Campaign이 존재하고 속성이 일치하는 경우
-        PostEventUseCase->>PostEventUseCase: allMatchPropertyKeys() 검증
-        PostEventUseCase->>CampaignEventsRepository: save(CampaignEvents.new())
-        CampaignEventsRepository->>Database: INSERT INTO campaign_events
-        PostEventUseCase-->>EventController: EVENT_SAVE_WITH_CAMPAIGN
-    else 속성이 불일치하는 경우
-        PostEventUseCase-->>EventController: PROPERTIES_MISMATCH
-    else Campaign이 없는 경우
-        PostEventUseCase-->>EventController: EVENT_SAVE_BUT_NOT_CAMPAIGN
-    end
-    
+    EventController->>PostEventUseCase: execute()
+    PostEventUseCase->>EventRepo: save event/campaign_event
+    PostEventUseCase->>DashboardService: publishCampaignEvent()
+    DashboardService->>Redis: XADD campaign stream
+    DashboardService->>MetricsRepo: upsert EVENT_COUNT (HOUR, DAY)
     EventController-->>Client: ApiResponse
 ```
 
-#### 2. PostCampaignUseCase
-캠페인을 생성합니다.
-
-#### 3. SearchEventsUseCase
-이벤트를 검색합니다.
-
-## 주요 특징
-
-### 1. 반응형 프로그래밍
-- **Spring WebFlux** 사용으로 모든 데이터베이스 작업이 비동기(`suspend` functions)
-- **R2DBC**를 통한 반응형 데이터베이스 접근
-
-### 2. JSON 저장 패턴
-- **User.userAttributes**: 사용자의 동적 속성 저장 (이메일 등)
-- **Campaign.properties**: 캠페인의 속성 정의
-- **Event.properties**: 이벤트의 속성 값
-- **EmailTemplate.variables**: 템플릿 변수 정의
-
-### 3. 캐싱 전략
-- **Redis**를 통한 분산 캐싱
-- **CampaignCacheManager**: 캠페인 정보 캐싱
-- **UserCacheManager**: 사용자 정보 캐싱
-
-### 4. 이벤트 기반 아키텍처
-- **Domain Events**: 모듈 간 느슨한 결합
-- **PostEmailTemplateEvent**: 템플릿 수정 시 발생
-- 비동기 이벤트 처리
-
-### 5. 이메일 시스템
-- **다중 프로바이더 지원**: AWS SES, JavaMail
-- **템플릿 버전 관리**: EmailTemplateHistory를 통한 버전 관리
-- **스케줄링**: ScheduledEvent를 통한 예약 발송
-- **병렬 처리**: 대용량 이메일 발송 시 병렬 처리 (concurrency = 10)
-
-### 6. 캠페인-이벤트 연동
-- 이벤트 생성 시 캠페인과 자동 연결
-- 속성 키 검증을 통한 데이터 일관성 보장
-- 캐싱을 통한 성능 최적화
-
-## Entity 간의 관계도
+### 3) 이메일 발송
 
 ```mermaid
-graph TB
-    subgraph "User Module"
-        User[User<br/>- externalId<br/>- userAttributes JSON<br/>- 이메일 정보 포함]
-    end
-    
-    subgraph "Email Module"
-        EmailTemplate[EmailTemplate<br/>- templateName<br/>- subject, body<br/>- variables JSON<br/>- version]
-        EmailTemplateHistory[EmailTemplateHistory<br/>- 템플릿 버전 이력]
-        EmailSendHistory[EmailSendHistory<br/>- 발송 이력<br/>- sendStatus]
-        ScheduledEvent[ScheduledEvent<br/>- 예약 이벤트<br/>- scheduledAt]
-    end
-    
-    subgraph "Event Module"
-        Campaign[Campaign<br/>- name unique<br/>- properties JSON<br/>- 속성 정의]
-        Event[Event<br/>- name<br/>- properties JSON<br/>- 속성 값]
-        CampaignEvents[CampaignEvents<br/>- 연결 테이블]
-    end
-    
-    User -->|generates| Event
-    User -->|receives| EmailSendHistory
-    
-    EmailTemplate -->|has versions| EmailTemplateHistory
-    EmailTemplate -->|used for| EmailSendHistory
-    
-    Campaign -->|contains| CampaignEvents
-    Event -->|belongs to| CampaignEvents
-    
-    Event -.->|속성 검증| Campaign
+sequenceDiagram
+    participant Client
+    participant EmailController
+    participant SendUseCase
+    participant TemplateRepo
+    participant UserRepo
+    participant MailProvider
+
+    Client->>EmailController: POST /api/v1/emails/send/notifications
+    EmailController->>SendUseCase: execute()
+    SendUseCase->>TemplateRepo: load template/version
+    SendUseCase->>UserRepo: resolve targets
+    SendUseCase->>MailProvider: send notifications
+    EmailController-->>Client: ApiResponse
 ```
 
-## 데이터 플로우
+### 4) Webhook CRUD
 
 ```mermaid
-graph LR
-    subgraph "사용자 등록 플로우"
-        A1[사용자 등록 요청] --> A2[User Entity 생성]
-        A2 --> A3[JSON 속성 저장]
-        A3 --> A4[이메일 추출 가능]
-    end
-    
-    subgraph "이벤트 생성 플로우"
-        B1[이벤트 생성 요청] --> B2[User 검증]
-        B2 --> B3[Event Entity 생성]
-        B3 --> B4[Campaign 연결]
-        B4 --> B5[속성 일치 검증]
-        B5 --> B6[CampaignEvents 생성]
-    end
-    
-    subgraph "이메일 발송 플로우"
-        C1[이메일 발송 요청] --> C2[Template 조회]
-        C2 --> C3[Target User 조회]
-        C3 --> C4[이메일 내용 생성]
-        C4 --> C5[병렬 발송]
-        C5 --> C6[발송 이력 저장]
-    end
-    
-    A4 -.-> C3
-    B6 -.-> C3
+sequenceDiagram
+    participant Client
+    participant WebhookController
+    participant PostWebhookUseCase
+    participant WebhookRepo
+
+    Client->>WebhookController: POST/PUT /api/v1/webhooks
+    WebhookController->>PostWebhookUseCase: execute()
+    PostWebhookUseCase->>WebhookRepo: upsert webhook
+    WebhookController-->>Client: ApiResponse
 ```
 
-이 문서는 CRM 시스템의 현재 구현 상태를 반영하여 작성되었으며, 코드 변경 시 자동으로 업데이트됩니다.
+## Idempotency 정책(현재 적용 범위)
+
+`Idempotency-Key` 헤더는 아래 쓰기 API에서 요구됩니다.
+
+- `POST /api/v1/users`
+- `POST /api/v1/events`
+- `POST /api/v1/events/campaign`
+- `POST /api/v1/emails/send/notifications`
+- `POST /api/v1/emails/schedules/notifications/email`
+- `POST /api/v1/webhooks`
+- `PUT /api/v1/webhooks/{id}`
+
+정책 요약
+
+- 키 형식 검증 실패: `400`
+- 동일 키 + 동일 본문: 응답 재사용
+- 동일 키 + 다른 본문: `409`
+- 진행 중 동일 키 재요청: `409`
+
+## 마이그레이션/배포 기준
+
+- Flyway 마이그레이션 경로: `backend/src/main/resources/db/migration/entity`
+- 최신 무결성 보강 마이그레이션: `V1.00.1.3__harden_db_integrity_constraints.sql`
+- local 프로필 기준 DB: MySQL + Redis Cluster + LocalStack + Kafka
+
+## 로드맵(미구현) 명시
+
+아래 항목은 현재 코드베이스에 구현되지 않았으며, 별도 이슈에서 진행합니다.
+
+- Segment/Audience 도메인 및 CRUD (`#188`)
+- Campaign- Segment 타기팅 통합 (`#186`)
+- 멀티채널 Action Provider (`#185`)
+- Journey 자동화 엔진 (`#187`)
+- RBAC/컴플라이언스 (`#190`)
+- 개인정보 보존/삭제 정책 (`#198`)
+
+해당 기능은 구현 완료 전까지 이 문서의 "구현 기준" 섹션에 포함하지 않습니다.
