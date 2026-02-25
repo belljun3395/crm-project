@@ -13,11 +13,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Service
 import java.time.format.DateTimeFormatter
 
-@Service
-@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
 /**
  * Retrieves recent delivery attempts for a webhook in reverse chronological order.
  */
+@Service
+@ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
 class BrowseWebhookDeliveryLogsUseCase(
     private val webhookRepository: WebhookRepository,
     private val webhookDeliveryLogRepository: WebhookDeliveryLogRepository

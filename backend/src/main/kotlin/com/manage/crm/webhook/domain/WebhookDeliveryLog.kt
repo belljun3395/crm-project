@@ -6,10 +6,10 @@ import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
 import java.time.LocalDateTime
 
-@Table("webhook_delivery_logs")
 /**
  * Persistence model for a single webhook delivery attempt and its outcome.
  */
+@Table("webhook_delivery_logs")
 class WebhookDeliveryLog(
     @Id
     var id: Long? = null,
