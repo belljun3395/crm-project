@@ -1,6 +1,12 @@
 package com.manage.crm.webhook.infrastructure
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
+import io.github.resilience4j.ratelimiter.RateLimiterRegistry
+import io.github.resilience4j.ratelimiter.RequestNotPermitted
+import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator
+import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator
 import com.manage.crm.webhook.WebhookClient
 import com.manage.crm.webhook.WebhookDeliveryResult
 import com.manage.crm.webhook.WebhookDeliveryStatus
@@ -30,16 +36,28 @@ import javax.crypto.spec.SecretKeySpec
 class WebClientWebhookClient(
     webClientBuilder: WebClient.Builder,
     private val objectMapper: ObjectMapper,
+    private val circuitBreakerRegistry: CircuitBreakerRegistry,
+    private val rateLimiterRegistry: RateLimiterRegistry,
     @Value("\${webhook.delivery.max-attempts:3}")
     private val maxAttempts: Int,
     @Value("\${webhook.delivery.initial-backoff-millis:200}")
     private val initialBackoffMillis: Long,
+    @Value("\${webhook.resilience.circuit-breaker.instance-name:webhookDelivery}")
+    private val circuitBreakerInstanceName: String,
+    @Value("\${webhook.resilience.rate-limiter.instance-name:webhookDelivery}")
+    private val rateLimiterInstanceName: String,
     @Value("\${webhook.signing.enabled:false}")
     private val signingEnabled: Boolean,
     @Value("\${webhook.signing.secret:}")
     private val signingSecret: String
 ) : WebhookClient {
     private val log = KotlinLogging.logger {}
+    private val circuitBreaker by lazy {
+        circuitBreakerRegistry.circuitBreaker(circuitBreakerInstanceName)
+    }
+    private val rateLimiter by lazy {
+        rateLimiterRegistry.rateLimiter(rateLimiterInstanceName)
+    }
 
     private val webClient = webClientBuilder
         .clientConnector(
@@ -120,6 +138,8 @@ class WebClientWebhookClient(
                         .defaultIfEmpty("")
                         .map { response.statusCode().value() to it }
                 }
+                .transformDeferred(CircuitBreakerOperator.of(circuitBreaker))
+                .transformDeferred(RateLimiterOperator.of(rateLimiter))
                 .awaitSingleOrNull()
                 ?.first ?: 0
 
@@ -140,12 +160,26 @@ class WebClientWebhookClient(
                 )
             }
         }.getOrElse { error ->
-            log.error(error) { "Webhook delivery failed: id=${webhook.id}, url=${webhook.url}, attempt=$attempt" }
-            WebhookDeliveryResult(
-                status = WebhookDeliveryStatus.FAILED,
-                attemptCount = attempt,
-                errorMessage = error.message
-            )
+            when (error) {
+                is CallNotPermittedException, is RequestNotPermitted -> {
+                    log.warn(error) {
+                        "Webhook delivery blocked by resilience policy: id=${webhook.id}, url=${webhook.url}, attempt=$attempt"
+                    }
+                    WebhookDeliveryResult(
+                        status = WebhookDeliveryStatus.BLOCKED,
+                        attemptCount = attempt,
+                        errorMessage = error.message
+                    )
+                }
+                else -> {
+                    log.error(error) { "Webhook delivery failed: id=${webhook.id}, url=${webhook.url}, attempt=$attempt" }
+                    WebhookDeliveryResult(
+                        status = WebhookDeliveryStatus.FAILED,
+                        attemptCount = attempt,
+                        errorMessage = error.message
+                    )
+                }
+            }
         }
     }
 
