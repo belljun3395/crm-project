@@ -62,7 +62,15 @@ class WebClientWebhookClient(
         }
 
         val attempts = maxAttempts.coerceAtLeast(1)
-        val payloadJson = objectMapper.writeValueAsString(payload)
+        val payloadJson = runCatching { objectMapper.writeValueAsString(payload) }
+            .getOrElse { error ->
+                log.error(error) { "Failed to serialize webhook payload: id=${webhook.id}, url=${webhook.url}" }
+                return WebhookDeliveryResult(
+                    status = WebhookDeliveryStatus.FAILED,
+                    attemptCount = 0,
+                    errorMessage = error.message
+                )
+            }
 
         var finalResult = WebhookDeliveryResult(
             status = WebhookDeliveryStatus.FAILED,
