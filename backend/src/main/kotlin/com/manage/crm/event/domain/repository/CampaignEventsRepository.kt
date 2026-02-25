@@ -31,4 +31,32 @@ interface CampaignEventsRepository : CoroutineCrudRepository<CampaignEvents, Lon
         startTime: LocalDateTime,
         endTime: LocalDateTime
     ): List<CampaignEvents>
+
+    @Query(
+        """
+        SELECT COUNT(*) FROM campaign_events ce
+        LEFT JOIN events e ON ce.event_id = e.id
+        WHERE ce.campaign_id = :campaignId
+          AND e.created_at BETWEEN :startTime AND :endTime
+        """
+    )
+    suspend fun countAllByCampaignIdAndTimeRange(
+        campaignId: Long,
+        startTime: LocalDateTime,
+        endTime: LocalDateTime
+    ): Long
+
+    @Query(
+        """
+        SELECT COUNT(DISTINCT e.user_id) FROM campaign_events ce
+        LEFT JOIN events e ON ce.event_id = e.id
+        WHERE ce.campaign_id = :campaignId
+          AND e.created_at BETWEEN :startTime AND :endTime
+        """
+    )
+    suspend fun countDistinctUsersByCampaignIdAndTimeRange(
+        campaignId: Long,
+        startTime: LocalDateTime,
+        endTime: LocalDateTime
+    ): Long
 }

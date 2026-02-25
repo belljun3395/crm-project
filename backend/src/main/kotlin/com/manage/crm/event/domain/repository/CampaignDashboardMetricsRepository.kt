@@ -77,6 +77,27 @@ interface CampaignDashboardMetricsRepository : CoroutineCrudRepository<CampaignD
         timeWindowUnit: TimeWindowUnit
     ): Int
 
+    @Modifying
+    @Query(
+        """
+        INSERT INTO campaign_dashboard_metrics 
+            (campaign_id, metric_type, metric_value, time_window_start, time_window_end, time_window_unit, created_at, updated_at)
+        VALUES 
+            (:campaignId, :metricType, :metricValue, :timeWindowStart, :timeWindowEnd, :timeWindowUnit, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ON DUPLICATE KEY UPDATE 
+            metric_value = VALUES(metric_value),
+            updated_at = CURRENT_TIMESTAMP
+        """
+    )
+    suspend fun upsertMetricAbsolute(
+        campaignId: Long,
+        metricType: MetricType,
+        metricValue: Long,
+        timeWindowStart: LocalDateTime,
+        timeWindowEnd: LocalDateTime,
+        timeWindowUnit: TimeWindowUnit
+    ): Int
+
     @Query(
         """
         SELECT 
