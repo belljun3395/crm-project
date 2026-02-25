@@ -51,9 +51,14 @@ class CampaignDashboardService(
      */
     private suspend fun updateMetricsForEvent(event: CampaignDashboardEvent) {
         val timeWindows = listOf(
-            TimeWindowUnit.HOUR to calculateTimeWindow(event.timestamp, TimeWindowUnit.HOUR),
-            TimeWindowUnit.DAY to calculateTimeWindow(event.timestamp, TimeWindowUnit.DAY)
-        )
+            TimeWindowUnit.MINUTE,
+            TimeWindowUnit.HOUR,
+            TimeWindowUnit.DAY,
+            TimeWindowUnit.WEEK,
+            TimeWindowUnit.MONTH
+        ).map { unit ->
+            unit to calculateTimeWindow(event.timestamp, unit)
+        }
 
         timeWindows.forEach { (unit, window) ->
             val start = window.first

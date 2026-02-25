@@ -61,25 +61,25 @@ class CampaignDashboardServiceTest : BehaviorSpec({
             }
 
             then("should upsert metrics for each time window unit") {
-                coVerify(exactly = 1) {
-                    campaignDashboardMetricsRepository.upsertMetric(
-                        campaignId = 1L,
-                        metricType = MetricType.EVENT_COUNT,
-                        metricValue = 1L,
-                        timeWindowStart = any(),
-                        timeWindowEnd = any(),
-                        timeWindowUnit = TimeWindowUnit.HOUR
-                    )
-                }
-                coVerify(exactly = 1) {
-                    campaignDashboardMetricsRepository.upsertMetric(
-                        campaignId = 1L,
-                        metricType = MetricType.EVENT_COUNT,
-                        metricValue = 1L,
-                        timeWindowStart = any(),
-                        timeWindowEnd = any(),
-                        timeWindowUnit = TimeWindowUnit.DAY
-                    )
+                val expectedTimeUnits = listOf(
+                    TimeWindowUnit.MINUTE,
+                    TimeWindowUnit.HOUR,
+                    TimeWindowUnit.DAY,
+                    TimeWindowUnit.WEEK,
+                    TimeWindowUnit.MONTH
+                )
+
+                expectedTimeUnits.forEach { unit ->
+                    coVerify(exactly = 1) {
+                        campaignDashboardMetricsRepository.upsertMetric(
+                            campaignId = 1L,
+                            metricType = MetricType.EVENT_COUNT,
+                            metricValue = 1L,
+                            timeWindowStart = any(),
+                            timeWindowEnd = any(),
+                            timeWindowUnit = unit
+                        )
+                    }
                 }
             }
         }
