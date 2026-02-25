@@ -18,6 +18,10 @@ export const useWebhooks = () => {
     setError(null);
     try {
       const list = await webhookAPI.getWebhooks();
+      if (!list) {
+        setError('Failed to load webhooks');
+        return;
+      }
       setWebhooks(list);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load webhooks';

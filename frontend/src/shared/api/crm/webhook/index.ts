@@ -54,13 +54,13 @@ export const webhookAPI = {
   },
 
   // 웹훅 목록 조회
-  async getWebhooks(): Promise<WebhookResponse[]> {
+  async getWebhooks(): Promise<WebhookResponse[] | null> {
     try {
       const response = await crmApi.get<ApiResponse<WebhookResponse[]>>('/webhooks');
       return response.data.data;
     } catch (error) {
       console.error('Error fetching webhooks:', error);
-      return [];
+      return null;
     }
   },
 

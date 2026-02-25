@@ -30,6 +30,7 @@ export const useCampaignDashboard = () => {
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const lastEventIdRef = useRef<string | null>(null);
+  const connectedCampaignIdRef = useRef<number | null>(null);
 
   const fetchDashboard = useCallback(
     async (campaignId: number, params?: DashboardQueryParams): Promise<boolean> => {
@@ -79,6 +80,7 @@ export const useCampaignDashboard = () => {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
     }
+    connectedCampaignIdRef.current = null;
     setConnectionStatus('closed');
     setStreamMessage('Stream disconnected');
   }, []);
@@ -88,6 +90,12 @@ export const useCampaignDashboard = () => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
       }
+
+      if (connectedCampaignIdRef.current !== campaignId) {
+        lastEventIdRef.current = null;
+        setLiveEvents([]);
+      }
+      connectedCampaignIdRef.current = campaignId;
 
       setConnectionStatus('connecting');
       setStreamMessage('Connecting to stream...');
