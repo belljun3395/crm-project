@@ -7,7 +7,6 @@ import com.manage.crm.audit.domain.AuditLog
 import com.manage.crm.audit.domain.repository.AuditLogRepository
 import com.manage.crm.support.out
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
@@ -29,13 +28,7 @@ class BrowseAuditLogsUseCase(
     suspend fun execute(useCaseIn: BrowseAuditLogsUseCaseIn): BrowseAuditLogsUseCaseOut {
         val normalizedLimit = useCaseIn.limit.coerceIn(MIN_LIMIT, MAX_LIMIT)
 
-        val baseFlow = selectBaseFlow(useCaseIn)
-        val logs = baseFlow
-            .filter { log ->
-                (useCaseIn.action == null || log.action == useCaseIn.action) &&
-                    (useCaseIn.resourceType == null || log.resourceType == useCaseIn.resourceType) &&
-                    (useCaseIn.actorId == null || log.actorId == useCaseIn.actorId)
-            }
+        val logs = selectBaseFlow(useCaseIn)
             .take(normalizedLimit)
             .toList()
             .map { log ->
@@ -59,15 +52,41 @@ class BrowseAuditLogsUseCase(
     }
 
     private fun selectBaseFlow(useCaseIn: BrowseAuditLogsUseCaseIn): Flow<AuditLog> {
+        val action = useCaseIn.action
+        val resourceType = useCaseIn.resourceType
+        val actorId = useCaseIn.actorId
+
         return when {
-            useCaseIn.action != null && useCaseIn.resourceType == null && useCaseIn.actorId == null ->
-                auditLogRepository.findByActionOrderByCreatedAtDesc(useCaseIn.action)
+            action != null && resourceType != null && actorId != null ->
+                auditLogRepository.findByActionAndResourceTypeAndActorIdOrderByCreatedAtDesc(
+                    action = action,
+                    resourceType = resourceType,
+                    actorId = actorId
+                )
 
-            useCaseIn.resourceType != null && useCaseIn.action == null && useCaseIn.actorId == null ->
-                auditLogRepository.findByResourceTypeOrderByCreatedAtDesc(useCaseIn.resourceType)
+            action != null && resourceType != null ->
+                auditLogRepository.findByActionAndResourceTypeOrderByCreatedAtDesc(
+                    action = action,
+                    resourceType = resourceType
+                )
 
-            useCaseIn.actorId != null && useCaseIn.action == null && useCaseIn.resourceType == null ->
-                auditLogRepository.findByActorIdOrderByCreatedAtDesc(useCaseIn.actorId)
+            action != null && actorId != null ->
+                auditLogRepository.findByActionAndActorIdOrderByCreatedAtDesc(
+                    action = action,
+                    actorId = actorId
+                )
+
+            resourceType != null && actorId != null ->
+                auditLogRepository.findByResourceTypeAndActorIdOrderByCreatedAtDesc(
+                    resourceType = resourceType,
+                    actorId = actorId
+                )
+
+            action != null -> auditLogRepository.findByActionOrderByCreatedAtDesc(action)
+
+            resourceType != null -> auditLogRepository.findByResourceTypeOrderByCreatedAtDesc(resourceType)
+
+            actorId != null -> auditLogRepository.findByActorIdOrderByCreatedAtDesc(actorId)
 
             else -> auditLogRepository.findAllByOrderByCreatedAtDesc()
         }

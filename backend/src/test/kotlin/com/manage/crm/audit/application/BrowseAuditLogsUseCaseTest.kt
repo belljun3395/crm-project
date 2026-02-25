@@ -7,6 +7,7 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import java.time.LocalDateTime
 
@@ -87,6 +88,45 @@ class BrowseAuditLogsUseCaseTest : BehaviorSpec({
                 result.logs.size shouldBe 1
                 result.logs[0].id shouldBe 3L
                 result.logs[0].action shouldBe "WEBHOOK_DELETE"
+            }
+        }
+
+        `when`("multiple filters are provided") {
+            then("query combined filter flow without falling back to full scan") {
+                val combinedLog = AuditLog.new(
+                    actorId = "admin-4",
+                    action = "WEBHOOK_UPDATE",
+                    resourceType = "WEBHOOK",
+                    resourceId = "42",
+                    requestMethod = "PUT",
+                    requestPath = "/api/v1/webhooks/42",
+                    statusCode = 200,
+                    detail = "updated"
+                ).apply {
+                    id = 4L
+                    createdAt = LocalDateTime.of(2024, 1, 4, 10, 0)
+                }
+
+                every {
+                    auditLogRepository.findByActionAndResourceTypeOrderByCreatedAtDesc(
+                        action = "WEBHOOK_UPDATE",
+                        resourceType = "WEBHOOK"
+                    )
+                } returns flowOf(combinedLog)
+
+                val result = useCase.execute(
+                    BrowseAuditLogsUseCaseIn(
+                        limit = 50,
+                        action = "WEBHOOK_UPDATE",
+                        resourceType = "WEBHOOK"
+                    )
+                )
+
+                result.logs.size shouldBe 1
+                result.logs[0].id shouldBe 4L
+                result.logs[0].resourceType shouldBe "WEBHOOK"
+
+                verify(exactly = 0) { auditLogRepository.findAllByOrderByCreatedAtDesc() }
             }
         }
     }
