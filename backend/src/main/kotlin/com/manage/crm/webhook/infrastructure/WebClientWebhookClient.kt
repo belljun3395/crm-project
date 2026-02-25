@@ -23,6 +23,7 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
+import reactor.core.publisher.Mono
 import reactor.netty.http.client.HttpClient
 import java.net.URI
 import java.time.Duration
@@ -68,6 +69,11 @@ class WebClientWebhookClient(
             )
         )
         .build()
+
+    private class WebhookHttpStatusException(
+        val statusCode: Int,
+        message: String
+    ) : RuntimeException(message)
 
     override suspend fun send(webhook: Webhook, payload: WebhookEventPayload): WebhookDeliveryResult {
         if (!isUrlSafe(webhook.url)) {
@@ -136,29 +142,31 @@ class WebClientWebhookClient(
                 .exchangeToMono { response ->
                     response.bodyToMono(String::class.java)
                         .defaultIfEmpty("")
-                        .map { response.statusCode().value() to it }
+                        .flatMap {
+                            val status = response.statusCode().value()
+                            if (status in 200..299) {
+                                Mono.just(status)
+                            } else {
+                                Mono.error(
+                                    WebhookHttpStatusException(
+                                        statusCode = status,
+                                        message = "Webhook returned non-success status: $status"
+                                    )
+                                )
+                            }
+                        }
                 }
                 .transformDeferred(CircuitBreakerOperator.of(circuitBreaker))
                 .transformDeferred(RateLimiterOperator.of(rateLimiter))
                 .awaitSingleOrNull()
-                ?.first ?: 0
+                ?: 0
 
-            if (responseStatus in 200..299) {
-                log.info { "Webhook delivered: id=${webhook.id}, url=${webhook.url}, attempt=$attempt" }
-                WebhookDeliveryResult(
-                    status = WebhookDeliveryStatus.SUCCESS,
-                    attemptCount = attempt,
-                    responseStatus = responseStatus
-                )
-            } else {
-                log.warn { "Webhook returned non-success status: id=${webhook.id}, status=$responseStatus, attempt=$attempt" }
-                WebhookDeliveryResult(
-                    status = WebhookDeliveryStatus.FAILED,
-                    attemptCount = attempt,
-                    responseStatus = responseStatus,
-                    errorMessage = "Webhook returned non-success status: $responseStatus"
-                )
-            }
+            log.info { "Webhook delivered: id=${webhook.id}, url=${webhook.url}, attempt=$attempt" }
+            WebhookDeliveryResult(
+                status = WebhookDeliveryStatus.SUCCESS,
+                attemptCount = attempt,
+                responseStatus = responseStatus
+            )
         }.getOrElse { error ->
             when (error) {
                 is CallNotPermittedException, is RequestNotPermitted -> {
@@ -168,6 +176,17 @@ class WebClientWebhookClient(
                     WebhookDeliveryResult(
                         status = WebhookDeliveryStatus.BLOCKED,
                         attemptCount = attempt,
+                        errorMessage = error.message
+                    )
+                }
+                is WebhookHttpStatusException -> {
+                    log.warn {
+                        "Webhook returned non-success status: id=${webhook.id}, status=${error.statusCode}, attempt=$attempt"
+                    }
+                    WebhookDeliveryResult(
+                        status = WebhookDeliveryStatus.FAILED,
+                        attemptCount = attempt,
+                        responseStatus = error.statusCode,
                         errorMessage = error.message
                     )
                 }
