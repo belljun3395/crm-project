@@ -7,6 +7,9 @@ import org.springframework.data.relational.core.mapping.Table
 import java.time.LocalDateTime
 
 @Table("segments")
+/**
+ * Segment aggregate root persisted in the segments table.
+ */
 class Segment(
     @Id
     var id: Long? = null,

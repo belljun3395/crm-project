@@ -7,6 +7,9 @@ import org.springframework.data.relational.core.mapping.Table
 import java.time.LocalDateTime
 
 @Table("segment_conditions")
+/**
+ * Persisted condition row belonging to a segment definition.
+ */
 class SegmentCondition(
     @Id
     var id: Long? = null,

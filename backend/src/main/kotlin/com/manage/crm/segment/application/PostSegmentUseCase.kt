@@ -18,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.format.DateTimeFormatter
 
 @Service
+/**
+ * Creates or updates a segment and replaces its condition list atomically.
+ */
 class PostSegmentUseCase(
     private val segmentRepository: SegmentRepository,
     private val segmentConditionRepository: SegmentConditionRepository

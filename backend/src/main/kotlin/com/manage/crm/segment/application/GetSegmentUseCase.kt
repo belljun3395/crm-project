@@ -15,6 +15,9 @@ import org.springframework.stereotype.Service
 import java.time.format.DateTimeFormatter
 
 @Service
+/**
+ * Retrieves a single segment with its ordered conditions.
+ */
 class GetSegmentUseCase(
     private val segmentRepository: SegmentRepository,
     private val segmentConditionRepository: SegmentConditionRepository,

@@ -15,6 +15,9 @@ import org.springframework.stereotype.Service
 import java.time.format.DateTimeFormatter
 
 @Service
+/**
+ * Lists segments with their ordered condition set.
+ */
 class BrowseSegmentUseCase(
     private val segmentRepository: SegmentRepository,
     private val segmentConditionRepository: SegmentConditionRepository,
