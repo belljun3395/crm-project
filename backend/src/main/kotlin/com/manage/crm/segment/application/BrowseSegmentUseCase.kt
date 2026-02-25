@@ -34,9 +34,19 @@ class BrowseSegmentUseCase(
         val segments = segmentRepository.findAllByOrderByCreatedAtDesc()
             .take(normalizedLimit)
             .toList()
+        val segmentIds = segments.mapNotNull { it.id }
+        val conditionsBySegmentId = if (segmentIds.isEmpty()) {
+            emptyMap()
+        } else {
+            segmentConditionRepository.findBySegmentIdInOrderBySegmentIdAscPositionAsc(segmentIds)
+                .toList()
+                .groupBy { it.segmentId }
+        }
+
+        val segmentDtos = segments
             .map { segment ->
-                val conditions = segmentConditionRepository.findBySegmentIdOrderByPositionAsc(segment.id!!)
-                    .toList()
+                val segmentId = segment.id!!
+                val conditions = conditionsBySegmentId[segmentId].orEmpty()
                     .map { condition ->
                         SegmentConditionDto(
                             field = condition.fieldName,
@@ -47,7 +57,7 @@ class BrowseSegmentUseCase(
                         )
                     }
                 SegmentDto(
-                    id = segment.id!!,
+                    id = segmentId,
                     name = segment.name,
                     description = segment.description,
                     active = segment.active,
@@ -57,7 +67,7 @@ class BrowseSegmentUseCase(
             }
 
         return out {
-            BrowseSegmentUseCaseOut(segments = segments)
+            BrowseSegmentUseCaseOut(segments = segmentDtos)
         }
     }
 }

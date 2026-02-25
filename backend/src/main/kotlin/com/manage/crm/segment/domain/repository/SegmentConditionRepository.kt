@@ -9,4 +9,14 @@ interface SegmentConditionRepository : CoroutineCrudRepository<SegmentCondition,
      * Streams conditions for a segment in configured evaluation order.
      */
     fun findBySegmentIdOrderByPositionAsc(segmentId: Long): Flow<SegmentCondition>
+
+    /**
+     * Streams conditions for multiple segments, grouped by segment id and position order.
+     */
+    fun findBySegmentIdInOrderBySegmentIdAscPositionAsc(segmentIds: Collection<Long>): Flow<SegmentCondition>
+
+    /**
+     * Deletes all conditions belonging to a segment.
+     */
+    suspend fun deleteBySegmentId(segmentId: Long): Long
 }

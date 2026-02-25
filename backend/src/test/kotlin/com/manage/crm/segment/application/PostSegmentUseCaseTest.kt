@@ -13,9 +13,8 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.flow.emptyFlow
+import org.springframework.dao.DataIntegrityViolationException
 import java.time.LocalDateTime
 
 class PostSegmentUseCaseTest : BehaviorSpec({
@@ -82,6 +81,86 @@ class PostSegmentUseCaseTest : BehaviorSpec({
             }
         }
 
+        `when`("condition valueType does not match field") {
+            then("throw invalid condition exception") {
+                val request = PostSegmentUseCaseIn(
+                    name = "invalid-segment",
+                    conditions = listOf(
+                        PostSegmentConditionIn(
+                            field = "user.id",
+                            operator = "EQ",
+                            valueType = "STRING",
+                            value = jacksonObjectMapper().readTree("\"100\"")
+                        )
+                    )
+                )
+                coEvery { segmentRepository.findByName("invalid-segment") } returns null
+
+                shouldThrow<InvalidSegmentConditionException> {
+                    useCase.execute(request)
+                }
+            }
+        }
+
+        `when`("datetime condition has invalid format") {
+            then("throw invalid condition exception") {
+                val request = PostSegmentUseCaseIn(
+                    name = "invalid-segment",
+                    conditions = listOf(
+                        PostSegmentConditionIn(
+                            field = "event.occurredAt",
+                            operator = "EQ",
+                            valueType = "DATETIME",
+                            value = jacksonObjectMapper().readTree("\"not-a-date\"")
+                        )
+                    )
+                )
+                coEvery { segmentRepository.findByName("invalid-segment") } returns null
+
+                shouldThrow<InvalidSegmentConditionException> {
+                    useCase.execute(request)
+                }
+            }
+        }
+
+        `when`("condition list is empty") {
+            then("throw invalid condition exception") {
+                val request = PostSegmentUseCaseIn(
+                    name = "invalid-segment",
+                    conditions = emptyList()
+                )
+
+                shouldThrow<InvalidSegmentConditionException> {
+                    useCase.execute(request)
+                }
+            }
+        }
+
+        `when`("concurrent duplicate insert happens during save") {
+            then("translate integrity violation to already-exists error") {
+                val request = PostSegmentUseCaseIn(
+                    name = "active-users",
+                    description = "active users segment",
+                    active = true,
+                    conditions = listOf(
+                        PostSegmentConditionIn(
+                            field = "user.email",
+                            operator = "EQ",
+                            valueType = "STRING",
+                            value = jacksonObjectMapper().readTree("\"a@okestro.com\"")
+                        )
+                    )
+                )
+
+                coEvery { segmentRepository.findByName("active-users") } returns null
+                coEvery { segmentRepository.save(any()) } throws DataIntegrityViolationException("duplicate key")
+
+                shouldThrow<AlreadyExistsException> {
+                    useCase.execute(request)
+                }
+            }
+        }
+
         `when`("valid segment request is provided") {
             then("save segment and conditions") {
                 val objectMapper = jacksonObjectMapper()
@@ -112,7 +191,7 @@ class PostSegmentUseCaseTest : BehaviorSpec({
                         createdAt = LocalDateTime.of(2024, 1, 1, 10, 0)
                     }
                 }
-                every { segmentConditionRepository.findBySegmentIdOrderByPositionAsc(10L) } returns emptyFlow()
+                coEvery { segmentConditionRepository.deleteBySegmentId(10L) } returns 0L
                 coEvery { segmentConditionRepository.save(any()) } answers { firstArg() }
 
                 val result = useCase.execute(request)
@@ -121,6 +200,7 @@ class PostSegmentUseCaseTest : BehaviorSpec({
                 result.segment.conditions.size shouldBe 2
                 result.segment.conditions[0].position shouldBe 1
                 result.segment.conditions[1].position shouldBe 2
+                coVerify(exactly = 1) { segmentConditionRepository.deleteBySegmentId(10L) }
                 coVerify(exactly = 2) { segmentConditionRepository.save(any()) }
             }
         }

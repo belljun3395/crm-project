@@ -101,9 +101,9 @@ class SegmentController(
     }
 
     @DeleteMapping("/{id}")
-    suspend fun delete(@PathVariable id: Long): ApiResponse<ApiResponse.Success> {
+    suspend fun delete(@PathVariable id: Long): ApiResponse<Void> {
         deleteSegmentUseCase.execute(id)
-        return ApiResponseGenerator.success(HttpStatus.NO_CONTENT)
+        return ApiResponseGenerator.fail(HttpStatus.NO_CONTENT)
     }
 
     @GetMapping

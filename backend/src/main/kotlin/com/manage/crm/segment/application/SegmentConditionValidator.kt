@@ -2,6 +2,8 @@ package com.manage.crm.segment.application
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.manage.crm.segment.exception.InvalidSegmentConditionException
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 enum class SegmentValueType {
     STRING,
@@ -37,13 +39,13 @@ enum class SegmentOperator {
 }
 
 object SegmentConditionValidator {
-    private val allowedFields = setOf(
-        "user.id",
-        "user.email",
-        "user.name",
-        "user.createdAt",
-        "event.name",
-        "event.occurredAt"
+    private val fieldValueTypeMap = mapOf(
+        "user.id" to SegmentValueType.NUMBER,
+        "user.email" to SegmentValueType.STRING,
+        "user.name" to SegmentValueType.STRING,
+        "user.createdAt" to SegmentValueType.DATETIME,
+        "event.name" to SegmentValueType.STRING,
+        "event.occurredAt" to SegmentValueType.DATETIME
     )
 
     private val allowedOperatorsByType = mapOf(
@@ -86,11 +88,19 @@ object SegmentConditionValidator {
         if (field.isBlank()) {
             throw InvalidSegmentConditionException("field is required")
         }
-        if (field !in allowedFields) {
+        if (field !in fieldValueTypeMap.keys) {
             throw InvalidSegmentConditionException("Unsupported field: $field")
         }
 
         val parsedValueType = SegmentValueType.from(valueType)
+        val requiredValueType = fieldValueTypeMap[field]
+            ?: throw InvalidSegmentConditionException("Unsupported field: $field")
+        if (parsedValueType != requiredValueType) {
+            throw InvalidSegmentConditionException(
+                "Field $field requires valueType ${requiredValueType.name}"
+            )
+        }
+
         val parsedOperator = SegmentOperator.from(operator)
         val allowedOperators = allowedOperatorsByType[parsedValueType].orEmpty()
 
@@ -171,15 +181,24 @@ object SegmentConditionValidator {
     private fun validateDateTimeValue(operator: SegmentOperator, value: JsonNode) {
         when (operator) {
             SegmentOperator.BETWEEN -> {
-                if (!value.all { it.isTextual }) {
-                    throw InvalidSegmentConditionException("DATETIME BETWEEN value must contain only string items")
+                if (!value.all { it.isTextual && isIsoDateTime(it.asText()) }) {
+                    throw InvalidSegmentConditionException("DATETIME BETWEEN value must contain only ISO-8601 string items")
                 }
             }
             else -> {
-                if (!value.isTextual) {
-                    throw InvalidSegmentConditionException("DATETIME value must be string format")
+                if (!value.isTextual || !isIsoDateTime(value.asText())) {
+                    throw InvalidSegmentConditionException("DATETIME value must be ISO-8601 string format")
                 }
             }
+        }
+    }
+
+    private fun isIsoDateTime(value: String): Boolean {
+        return try {
+            DateTimeFormatter.ISO_DATE_TIME.parse(value)
+            true
+        } catch (_: DateTimeParseException) {
+            false
         }
     }
 

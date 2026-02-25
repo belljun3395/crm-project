@@ -9,11 +9,12 @@ import com.manage.crm.segment.domain.Segment
 import com.manage.crm.segment.domain.SegmentCondition
 import com.manage.crm.segment.domain.repository.SegmentConditionRepository
 import com.manage.crm.segment.domain.repository.SegmentRepository
+import com.manage.crm.segment.exception.InvalidSegmentConditionException
 import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
-import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.transaction.annotation.Transactional
 import java.time.format.DateTimeFormatter
 
@@ -41,20 +42,24 @@ class PostSegmentUseCase(
             throw AlreadyExistsException("Segment", "name", useCaseIn.name)
         }
 
-        val saved = if (useCaseIn.id != null) {
-            val existing = segmentRepository.findById(useCaseIn.id) ?: throw NotFoundByIdException("Segment", useCaseIn.id)
-            existing.name = useCaseIn.name
-            existing.description = useCaseIn.description
-            existing.active = useCaseIn.active
-            segmentRepository.save(existing)
-        } else {
-            segmentRepository.save(
-                Segment.new(
-                    name = useCaseIn.name,
-                    description = useCaseIn.description,
-                    active = useCaseIn.active
+        val saved = try {
+            if (useCaseIn.id != null) {
+                val existing = segmentRepository.findById(useCaseIn.id) ?: throw NotFoundByIdException("Segment", useCaseIn.id)
+                existing.name = useCaseIn.name
+                existing.description = useCaseIn.description
+                existing.active = useCaseIn.active
+                segmentRepository.save(existing)
+            } else {
+                segmentRepository.save(
+                    Segment.new(
+                        name = useCaseIn.name,
+                        description = useCaseIn.description,
+                        active = useCaseIn.active
+                    )
                 )
-            )
+            }
+        } catch (_: DataIntegrityViolationException) {
+            throw AlreadyExistsException("Segment", "name", useCaseIn.name)
         }
 
         val segmentId = saved.id ?: throw NotFoundByIdException("Segment", -1)
@@ -87,9 +92,7 @@ class PostSegmentUseCase(
         segmentId: Long,
         conditions: List<PostSegmentConditionIn>
     ) {
-        segmentConditionRepository.findBySegmentIdOrderByPositionAsc(segmentId)
-            .toList()
-            .forEach { segmentConditionRepository.delete(it) }
+        segmentConditionRepository.deleteBySegmentId(segmentId)
 
         conditions.forEachIndexed { index, condition ->
             segmentConditionRepository.save(
@@ -107,7 +110,7 @@ class PostSegmentUseCase(
 
     private fun validateConditions(conditions: List<PostSegmentConditionIn>) {
         if (conditions.isEmpty()) {
-            throw IllegalArgumentException("conditions must not be empty")
+            throw InvalidSegmentConditionException("conditions must not be empty")
         }
         conditions.forEach { condition ->
             SegmentConditionValidator.validate(
