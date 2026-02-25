@@ -1,4 +1,5 @@
 import { crmApi } from '../instance';
+import { createIdempotencyHeaders } from '../idempotency';
 import type { 
   User, 
   CreateUserRequest, 
@@ -20,7 +21,9 @@ export const userAPI = {
   // 사용자 등록
   async enrollUser(user: CreateUserRequest): Promise<User | null> {
     try {
-      const response = await crmApi.post<ApiResponse<User>>('/users', user);
+      const response = await crmApi.post<ApiResponse<User>>('/users', user, {
+        headers: createIdempotencyHeaders('user-enroll')
+      });
       return response.data.data;
     } catch (error) {
       console.error('Error enrolling user:', error);

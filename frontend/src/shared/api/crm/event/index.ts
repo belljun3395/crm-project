@@ -1,4 +1,5 @@
 import { crmApi } from '../instance';
+import { createIdempotencyHeaders } from '../idempotency';
 import type { 
   Event, 
   CreateEventRequest,
@@ -23,7 +24,9 @@ export const eventAPI = {
   // 이벤트 생성
   async postEvent(event: CreateEventRequest): Promise<any> {
     try {
-      const response = await crmApi.post<ApiResponse<any>>('/events', event);
+      const response = await crmApi.post<ApiResponse<any>>('/events', event, {
+        headers: createIdempotencyHeaders('event-create')
+      });
       return response.data.data;
     } catch (error) {
       console.error('Error posting event:', error);
@@ -34,7 +37,9 @@ export const eventAPI = {
   // 캠페인 생성
   async postCampaign(campaign: CreateCampaignRequest): Promise<any> {
     try {
-      const response = await crmApi.post<ApiResponse<any>>('/events/campaign', campaign);
+      const response = await crmApi.post<ApiResponse<any>>('/events/campaign', campaign, {
+        headers: createIdempotencyHeaders('campaign-create')
+      });
       return response.data.data;
     } catch (error) {
       console.error('Error posting campaign:', error);
