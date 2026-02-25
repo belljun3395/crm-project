@@ -12,10 +12,10 @@ import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
 import java.time.format.DateTimeFormatter
 
-@Service
 /**
  * Lists audit log entries with optional action/resource/actor filters.
  */
+@Service
 class BrowseAuditLogsUseCase(
     private val auditLogRepository: AuditLogRepository
 ) {
