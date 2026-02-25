@@ -11,7 +11,6 @@ import com.manage.crm.infrastructure.scheduler.provider.SchedulerProvider
 import com.manage.crm.support.asLong
 import com.manage.crm.support.parseISOExpiredTime
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
 
 @Component
@@ -22,32 +21,28 @@ class ScheduleTaskServiceImpl(
 ) : ScheduleTaskAllService {
     val log = KotlinLogging.logger {}
 
-    override fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String {
-        return runBlocking {
-            when (
-                val result = schedulerProvider.createSchedule(
-                    name = input.eventId.value,
-                    scheduleTime = input.expiredTime,
-                    input = input
-                )
-            ) {
-                is ScheduleCreationResult.Success -> result.scheduleId
-                is ScheduleCreationResult.Failure -> {
-                    log.error { "Failed to create schedule: ${result.reason}" }
-                    throw RuntimeException("Failed to create schedule: ${result.reason}", result.cause)
-                }
+    override suspend fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String {
+        return when (
+            val result = schedulerProvider.createSchedule(
+                name = input.eventId.value,
+                scheduleTime = input.expiredTime,
+                input = input
+            )
+        ) {
+            is ScheduleCreationResult.Success -> result.scheduleId
+            is ScheduleCreationResult.Failure -> {
+                log.error { "Failed to create schedule: ${result.reason}" }
+                throw RuntimeException("Failed to create schedule: ${result.reason}", result.cause)
             }
         }
     }
 
-    override fun cancel(scheduleName: String) {
-        runBlocking {
-            schedulerProvider.deleteSchedule(ScheduleName(scheduleName))
-        }
+    override suspend fun cancel(scheduleName: String) {
+        schedulerProvider.deleteSchedule(ScheduleName(scheduleName))
         log.info { "Task $scheduleName is cancelled" }
     }
 
-    override fun reSchedule(input: NotificationEmailSendTimeOutEventInput) {
+    override suspend fun reSchedule(input: NotificationEmailSendTimeOutEventInput) {
         cancel(input.eventId.value)
         newSchedule(input)
     }
