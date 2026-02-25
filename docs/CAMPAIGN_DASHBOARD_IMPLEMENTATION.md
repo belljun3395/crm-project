@@ -28,8 +28,8 @@ graph LR
     B --> D["CampaignDashboardService.publishCampaignEvent"]
     D --> E["Redis Stream XADD"]
     D --> F["campaign_dashboard_metrics UPSERT"]
-    G["GET /campaigns/{id}/dashboard/stream"] --> H["Redis Stream read -> SSE"]
-    I["GET /campaigns/{id}/dashboard"] --> J["Metrics query"]
+    G["GET /api/v1/campaigns/{id}/dashboard/stream"] --> H["Redis Stream read -> SSE"]
+    I["GET /api/v1/campaigns/{id}/dashboard"] --> J["Metrics query"]
 ```
 
 ## 저장소
