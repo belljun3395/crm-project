@@ -26,7 +26,8 @@ interface CampaignEventsRepository : CoroutineCrudRepository<CampaignEvents, Lon
         SELECT ce.* FROM campaign_events ce
         LEFT JOIN events e ON ce.event_id = e.id
         WHERE ce.campaign_id = :campaignId
-        AND e.created_at BETWEEN :startTime AND :endTime
+        AND e.created_at >= :startTime
+        AND e.created_at < :endTime
         """
     )
     suspend fun findAllByCampaignIdAndTimeRange(
@@ -40,7 +41,8 @@ interface CampaignEventsRepository : CoroutineCrudRepository<CampaignEvents, Lon
         SELECT COUNT(*) FROM campaign_events ce
         LEFT JOIN events e ON ce.event_id = e.id
         WHERE ce.campaign_id = :campaignId
-          AND e.created_at BETWEEN :startTime AND :endTime
+          AND e.created_at >= :startTime
+          AND e.created_at < :endTime
         """
     )
     suspend fun countAllByCampaignIdAndTimeRange(
@@ -54,7 +56,8 @@ interface CampaignEventsRepository : CoroutineCrudRepository<CampaignEvents, Lon
         SELECT COUNT(DISTINCT e.user_id) FROM campaign_events ce
         LEFT JOIN events e ON ce.event_id = e.id
         WHERE ce.campaign_id = :campaignId
-          AND e.created_at BETWEEN :startTime AND :endTime
+          AND e.created_at >= :startTime
+          AND e.created_at < :endTime
         """
     )
     suspend fun countDistinctUsersByCampaignIdAndTimeRange(

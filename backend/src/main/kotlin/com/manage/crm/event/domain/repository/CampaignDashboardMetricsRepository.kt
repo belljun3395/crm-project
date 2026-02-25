@@ -88,7 +88,7 @@ interface CampaignDashboardMetricsRepository : CoroutineCrudRepository<CampaignD
         VALUES 
             (:campaignId, :metricType, :metricValue, :timeWindowStart, :timeWindowEnd, :timeWindowUnit, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         ON DUPLICATE KEY UPDATE 
-            metric_value = VALUES(metric_value),
+            metric_value = GREATEST(metric_value, VALUES(metric_value)),
             updated_at = CURRENT_TIMESTAMP
         """
     )
