@@ -124,4 +124,5 @@ object SwaggerTag {
     const val EMAILS_SWAGGER_TAG = "Emails API"
     const val EVENT_SWAGGER_TAG = "Event API"
     const val WEBHOOKS_SWAGGER_TAG = "Webhooks API"
+    const val SEGMENTS_SWAGGER_TAG = "Segments API"
 }
