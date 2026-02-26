@@ -34,6 +34,13 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
+interface NavSection {
+  id: string;
+  label: string;
+  description: string;
+  itemIds: TabType[];
+}
+
 const navItems: NavItem[] = [
   {
     id: 'dashboard',
@@ -109,12 +116,43 @@ const navItems: NavItem[] = [
   }
 ];
 
+const navSections: NavSection[] = [
+  {
+    id: 'overview',
+    label: '개요',
+    description: '상태 모니터링',
+    itemIds: ['dashboard', 'campaign-dashboard', 'audit-logs']
+  },
+  {
+    id: 'customer',
+    label: '고객 관리',
+    description: '고객/행동/여정',
+    itemIds: ['user', 'event', 'segments', 'journeys', 'actions']
+  },
+  {
+    id: 'messaging',
+    label: '메시지 운영',
+    description: '템플릿/발송',
+    itemIds: ['email-template', 'email-history', 'email-schedule']
+  },
+  {
+    id: 'integration',
+    label: '연동',
+    description: '외부 전송',
+    itemIds: ['webhook']
+  }
+];
+
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
 
+  const navItemMap = useMemo(() => {
+    return new Map(navItems.map((item) => [item.id, item]));
+  }, []);
+
   const activeNav = useMemo(() => {
-    return navItems.find((item) => item.id === activeTab) ?? navItems[0];
-  }, [activeTab]);
+    return navItemMap.get(activeTab) ?? navItems[0];
+  }, [activeTab, navItemMap]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -163,23 +201,40 @@ function App() {
             </div>
           </div>
 
-          <nav className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`rounded-xl border px-3 py-2 text-left transition ${
-                  activeTab === item.id
-                    ? 'border-cyan-400/80 bg-cyan-400/10 text-white shadow-[0_0_0_1px_rgba(34,211,238,0.15)]'
-                    : 'border-slate-800 bg-slate-900/60 text-slate-300 hover:border-slate-700 hover:bg-slate-800/70 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  {item.icon}
-                  {item.label}
+          <nav className="space-y-3">
+            {navSections.map((section) => (
+              <section key={section.id} className="rounded-xl border border-slate-800/80 bg-slate-900/55 p-2">
+                <div className="px-2 pb-2 pt-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-cyan-300">{section.label}</p>
+                  <p className="text-[11px] text-slate-400">{section.description}</p>
                 </div>
-                <p className="mt-1 text-xs text-slate-400">{item.description}</p>
-              </button>
+                <div className="space-y-1">
+                  {section.itemIds.map((itemId) => {
+                    const item = navItemMap.get(itemId);
+                    if (!item) {
+                      return null;
+                    }
+
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => setActiveTab(item.id)}
+                        className={`w-full rounded-lg border px-3 py-2 text-left transition ${
+                          activeTab === item.id
+                            ? 'border-cyan-400/80 bg-cyan-400/10 text-white shadow-[0_0_0_1px_rgba(34,211,238,0.15)]'
+                            : 'border-slate-800 bg-slate-900/70 text-slate-300 hover:border-slate-700 hover:bg-slate-800/70 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 text-sm font-semibold">
+                          {item.icon}
+                          {item.label}
+                        </div>
+                        <p className="mt-1 pl-6 text-xs text-slate-400">{item.description}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
             ))}
           </nav>
         </aside>
