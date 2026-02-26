@@ -5,6 +5,7 @@ import io.awspring.cloud.sqs.config.SqsMessageListenerContainerFactory
 import io.awspring.cloud.sqs.listener.acknowledgement.handler.AcknowledgementMode
 import io.awspring.cloud.sqs.operations.SqsTemplate
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import software.amazon.awssdk.auth.credentials.AwsCredentials
@@ -12,6 +13,7 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 
 @Configuration
+@ConditionalOnProperty(name = ["cloud.provider"], havingValue = "aws", matchIfMissing = true)
 class MessageConfig {
     companion object {
         const val SQS_ASYNC_CLIENT = "sqsAsyncClient"
