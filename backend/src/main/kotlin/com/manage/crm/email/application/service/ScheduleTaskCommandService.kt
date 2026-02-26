@@ -9,15 +9,15 @@ interface ScheduleTaskCommandService {
     /**
      * 새로운 스케줄을 등록합니다.
      */
-    fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String
+    suspend fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String
 
     /**
      * 등록한 스케줄을 취소합니다.
      */
-    fun cancel(scheduleName: String)
+    suspend fun cancel(scheduleName: String)
 
     /**
      * 등록한 스케줄을 재등록합니다.
      */
-    fun reSchedule(input: NotificationEmailSendTimeOutEventInput)
+    suspend fun reSchedule(input: NotificationEmailSendTimeOutEventInput)
 }

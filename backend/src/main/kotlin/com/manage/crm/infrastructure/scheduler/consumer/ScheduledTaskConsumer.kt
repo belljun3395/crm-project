@@ -4,7 +4,6 @@ import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInp
 import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
 import com.manage.crm.infrastructure.scheduler.event.ScheduledTaskEvent
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.runBlocking
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.kafka.annotation.KafkaListener
@@ -28,28 +27,26 @@ class ScheduledTaskConsumer(
         containerFactory = "scheduledTaskKafkaListenerContainerFactory"
     )
     fun consume(event: ScheduledTaskEvent, acknowledgment: Acknowledgment) {
-        runBlocking {
-            try {
-                log.info { "Received scheduled task event: ${event.scheduleName}" }
+        try {
+            log.info { "Received scheduled task event: ${event.scheduleName}" }
 
-                when (val payload = event.payload) {
-                    is NotificationEmailSendTimeOutEventInput -> {
-                        processNotificationEmailTimeout(payload)
-                    }
-                    else -> {
-                        log.warn { "Unknown schedule payload type: ${payload::class.simpleName}" }
-                    }
+            when (val payload = event.payload) {
+                is NotificationEmailSendTimeOutEventInput -> {
+                    processNotificationEmailTimeout(payload)
                 }
-
-                // Manual acknowledgment after successful processing
-                acknowledgment.acknowledge()
-                log.info { "Successfully processed scheduled task: ${event.scheduleName}" }
-            } catch (ex: Exception) {
-                log.error(ex) { "Failed to process scheduled task: ${event.scheduleName}" }
-                // Note: With manual acknowledgment, failed messages will be reprocessed
-                // Consider implementing DLQ (Dead Letter Queue) for repeatedly failing messages
-                throw ex
+                else -> {
+                    log.warn { "Unknown schedule payload type: ${payload::class.simpleName}" }
+                }
             }
+
+            // Manual acknowledgment after successful processing
+            acknowledgment.acknowledge()
+            log.info { "Successfully processed scheduled task: ${event.scheduleName}" }
+        } catch (ex: Exception) {
+            log.error(ex) { "Failed to process scheduled task: ${event.scheduleName}" }
+            // Note: With manual acknowledgment, failed messages will be reprocessed
+            // Consider implementing DLQ (Dead Letter Queue) for repeatedly failing messages
+            throw ex
         }
     }
 
