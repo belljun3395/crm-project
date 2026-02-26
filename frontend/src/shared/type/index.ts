@@ -4,6 +4,14 @@ export interface ApiResponse<T> {
   message: string;
 }
 
+export interface PageResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
 // User Types
 export interface User {
   id: number;
@@ -18,7 +26,20 @@ export interface CreateUserRequest {
   userAttributes: string;
 }
 
+export interface BrowseUsersUseCaseOut {
+  users: PageResponse<User>;
+}
+
+export interface GetTotalUserCountUseCaseOut {
+  totalCount: number;
+}
+
 // Event Types
+export interface EventProperty {
+  key: string;
+  value: string;
+}
+
 export interface Event {
   id: number;
   name: string;
@@ -27,22 +48,18 @@ export interface Event {
   createdAt: string;
 }
 
-export interface EventProperty {
-  key: string;
-  value: string;
-}
-
 export interface CreateEventRequest {
   name: string;
   campaignName?: string;
   externalId: string;
+  segmentId?: number;
   properties: EventProperty[];
 }
 
-// Campaign Types
 export interface CreateCampaignRequest {
   name: string;
   properties: EventProperty[];
+  segmentIds?: number[];
 }
 
 // Template Types
@@ -108,6 +125,186 @@ export interface UpdateWebhookRequest {
   url?: string;
   events?: string[];
   active?: boolean;
+}
+
+export interface WebhookDeliveryLog {
+  id: number;
+  webhookId: number;
+  eventId: string;
+  eventType: string;
+  deliveryStatus: string;
+  attemptCount: number;
+  responseStatus?: number;
+  errorMessage?: string;
+  deliveredAt?: string;
+}
+
+export interface WebhookDeadLetter {
+  id: number;
+  webhookId: number;
+  eventId: string;
+  eventType: string;
+  payloadJson: string;
+  deliveryStatus: string;
+  attemptCount: number;
+  responseStatus?: number;
+  errorMessage?: string;
+  createdAt?: string;
+}
+
+// Segment Types
+export interface SegmentCondition {
+  field: string;
+  operator: string;
+  valueType: string;
+  value: unknown;
+}
+
+export interface Segment {
+  id: number;
+  name: string;
+  description?: string;
+  active: boolean;
+  conditions: SegmentCondition[];
+  createdAt?: string;
+}
+
+export interface SegmentRequest {
+  name: string;
+  description?: string;
+  active?: boolean;
+  conditions: SegmentCondition[];
+}
+
+export interface SegmentUpdateRequest {
+  name?: string;
+  description?: string;
+  active?: boolean;
+  conditions?: SegmentCondition[];
+}
+
+// Journey Types
+export interface JourneyStepRequest {
+  stepOrder: number;
+  stepType: string;
+  channel?: string;
+  destination?: string;
+  subject?: string;
+  body?: string;
+  variables?: Record<string, string>;
+  delayMillis?: number;
+  conditionExpression?: string;
+  retryCount?: number;
+}
+
+export interface CreateJourneyRequest {
+  name: string;
+  triggerType: string;
+  triggerEventName?: string;
+  triggerSegmentId?: number;
+  active?: boolean;
+  steps: JourneyStepRequest[];
+}
+
+export interface JourneyStep {
+  id: number;
+  stepOrder: number;
+  stepType: string;
+  channel?: string;
+  destination?: string;
+  subject?: string;
+  body?: string;
+  variables?: Record<string, string>;
+  delayMillis?: number;
+  conditionExpression?: string;
+  retryCount?: number;
+}
+
+export interface Journey {
+  id: number;
+  name: string;
+  triggerType: string;
+  triggerEventName?: string;
+  triggerSegmentId?: number;
+  active: boolean;
+  steps: JourneyStep[];
+  createdAt: string;
+}
+
+export interface JourneyExecution {
+  id: number;
+  journeyId: number;
+  eventId: number;
+  userId: number;
+  status: string;
+  currentStepOrder: number;
+  lastError?: string;
+  triggerKey: string;
+  startedAt: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface JourneyExecutionHistory {
+  id: number;
+  journeyExecutionId: number;
+  journeyStepId: number;
+  status: string;
+  attempt: number;
+  message?: string;
+  idempotencyKey?: string;
+  createdAt: string;
+}
+
+// Action Types
+export interface ActionDispatchRequest {
+  channel: string;
+  destination: string;
+  subject?: string;
+  body: string;
+  variables?: Record<string, string>;
+  campaignId?: number;
+  journeyExecutionId?: number;
+}
+
+export interface ActionDispatchOut {
+  status: 'SUCCESS' | 'FAILED' | string;
+  channel: 'EMAIL' | 'SLACK' | 'DISCORD' | string;
+  destination: string;
+  providerMessageId?: string;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+export interface ActionDispatchHistory {
+  id: number;
+  channel: string;
+  status: string;
+  destination: string;
+  subject?: string;
+  body: string;
+  variables: Record<string, string>;
+  providerMessageId?: string;
+  errorCode?: string;
+  errorMessage?: string;
+  campaignId?: number;
+  journeyExecutionId?: number;
+  createdAt: string;
+}
+
+// Audit Types
+export interface AuditLog {
+  id: number;
+  actorId?: string;
+  action: string;
+  resourceType: string;
+  resourceId?: string;
+  requestMethod?: string;
+  requestPath?: string;
+  statusCode?: number;
+  detail?: string;
+  createdAt?: string;
 }
 
 // Campaign Dashboard Types
@@ -188,7 +385,12 @@ export type TabType =
   | 'user'
   | 'event'
   | 'email-template'
-  | 'email-schedule';
+  | 'email-history'
+  | 'email-schedule'
+  | 'segments'
+  | 'journeys'
+  | 'actions'
+  | 'audit-logs';
 
 // Form State Types
 export interface UserFormData {
