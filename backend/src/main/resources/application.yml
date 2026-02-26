@@ -24,6 +24,12 @@ spring:
                 - prd
             dev:
                 - dev
+    cloud:
+        gcp:
+            pubsub:
+                # Disabled by default to prevent GCP auto-configuration in AWS environments.
+                # Set to true via SPRING_CLOUD_GCP_PUBSUB_ENABLED=true when cloud.provider=gcp.
+                enabled: false
 
 mail:
     # Mail send provider.

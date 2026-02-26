@@ -53,6 +53,7 @@ dependencyManagement {
         mavenBom("org.springframework.modulith:spring-modulith-bom:${DependencyVersion.SPRING_MODULITH}")
         mavenBom("org.springframework.cloud:spring-cloud-dependencies:${DependencyVersion.SPRING_CLOUD}")
         mavenBom("software.amazon.awssdk:bom:${DependencyVersion.AWS_SDK}")
+        mavenBom("com.google.cloud:spring-cloud-gcp-dependencies:${DependencyVersion.SPRING_CLOUD_GCP}")
     }
 }
 
@@ -112,6 +113,9 @@ dependencies {
     implementation("software.amazon.awssdk:scheduler")
     implementation("com.amazonaws:aws-java-sdk-ses:${DependencyVersion.AWS_SES}")
     implementation("software.amazon.awssdk:aws-query-protocol")
+
+    /** gcp */
+    implementation("com.google.cloud:spring-cloud-gcp-starter-pubsub")
 
     /** docs */
     runtimeOnly("com.github.therapi:therapi-runtime-javadoc-scribe:${DependencyVersion.JAVADOC_SCRIBE}")
@@ -173,6 +177,7 @@ ktlint {
 }
 
 openApi {
+    waitTimeInSeconds.set(90)
     customBootRun {
         jvmArgs = listOf("-Dspring.profiles.active=local,new,openapi")
     }
