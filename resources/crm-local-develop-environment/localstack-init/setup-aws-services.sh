@@ -46,9 +46,9 @@ awslocal sqs create-queue --queue-name ses_sqs
 awslocal sqs create-queue --queue-name notification_queue
 awslocal sqs create-queue --queue-name event_processing_queue
 
-# Create SQS queues for cache invalidation (DR strategy)
+# Create SQS queue for cache invalidation (AWS DR strategy)
+# Note: GCP environments use GCP Pub/Sub instead - see pubsub-init/setup-gcp-services.sh
 awslocal sqs create-queue --queue-name crm-dr-cache-invalidation-queue-aws
-awslocal sqs create-queue --queue-name crm-dr-cache-invalidation-queue-gcp
 
 # Get SQS queue URLs and ARNs
 SES_SQS_URL=$(awslocal sqs get-queue-url --queue-name ses_sqs --query 'QueueUrl' --output text)
@@ -63,15 +63,11 @@ EVENT_SQS_ARN=$(awslocal sqs get-queue-attributes --queue-url $EVENT_SQS_URL --a
 CACHE_AWS_SQS_URL=$(awslocal sqs get-queue-url --queue-name crm-dr-cache-invalidation-queue-aws --query 'QueueUrl' --output text)
 CACHE_AWS_SQS_ARN=$(awslocal sqs get-queue-attributes --queue-url $CACHE_AWS_SQS_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
 
-CACHE_GCP_SQS_URL=$(awslocal sqs get-queue-url --queue-name crm-dr-cache-invalidation-queue-gcp --query 'QueueUrl' --output text)
-CACHE_GCP_SQS_ARN=$(awslocal sqs get-queue-attributes --queue-url $CACHE_GCP_SQS_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
-
 echo "✅ SQS queues created"
 echo "   📋 SES SQS ARN: $SES_SQS_ARN"
 echo "   📋 Notification SQS ARN: $NOTIFICATION_SQS_ARN"
 echo "   📋 Event Processing SQS ARN: $EVENT_SQS_ARN"
 echo "   📋 Cache Invalidation AWS SQS ARN: $CACHE_AWS_SQS_ARN"
-echo "   📋 Cache Invalidation GCP SQS ARN: $CACHE_GCP_SQS_ARN"
 
 # Create SNS topics for different types of notifications
 echo "📢 Setting up SNS (Simple Notification Service)..."
@@ -98,7 +94,6 @@ awslocal sns subscribe --topic-arn $SES_SNS_ARN --protocol sqs --notification-en
 awslocal sns subscribe --topic-arn $USER_SNS_ARN --protocol sqs --notification-endpoint $NOTIFICATION_SQS_ARN
 awslocal sns subscribe --topic-arn $CAMPAIGN_SNS_ARN --protocol sqs --notification-endpoint $EVENT_SQS_ARN
 awslocal sns subscribe --topic-arn $CACHE_SNS_ARN --protocol sqs --notification-endpoint $CACHE_AWS_SQS_ARN
-awslocal sns subscribe --topic-arn $CACHE_SNS_ARN --protocol sqs --notification-endpoint $CACHE_GCP_SQS_ARN
 
 # Set SQS policies to allow SNS to send messages
 echo "🔐 Setting up SQS policies..."
@@ -182,31 +177,10 @@ CACHE_AWS_SQS_POLICY=$(cat <<EOF
 EOF
 )
 
-CACHE_GCP_SQS_POLICY=$(cat <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": "*",
-      "Action": "sqs:SendMessage",
-      "Resource": "$CACHE_GCP_SQS_ARN",
-      "Condition": {
-        "ArnEquals": {
-          "aws:SourceArn": "$CACHE_SNS_ARN"
-        }
-      }
-    }
-  ]
-}
-EOF
-)
-
 awslocal sqs set-queue-attributes --queue-url $SES_SQS_URL --attributes Policy="$SES_SQS_POLICY"
 awslocal sqs set-queue-attributes --queue-url $NOTIFICATION_SQS_URL --attributes Policy="$NOTIFICATION_SQS_POLICY"
 awslocal sqs set-queue-attributes --queue-url $EVENT_SQS_URL --attributes Policy="$EVENT_SQS_POLICY"
 awslocal sqs set-queue-attributes --queue-url $CACHE_AWS_SQS_URL --attributes Policy="$CACHE_AWS_SQS_POLICY"
-awslocal sqs set-queue-attributes --queue-url $CACHE_GCP_SQS_URL --attributes Policy="$CACHE_GCP_SQS_POLICY"
 
 echo "✅ SQS policies configured"
 
@@ -351,7 +325,6 @@ echo "   ✓ ses_sqs ($SES_SQS_ARN)"
 echo "   ✓ notification_queue ($NOTIFICATION_SQS_ARN)"
 echo "   ✓ event_processing_queue ($EVENT_SQS_ARN)"
 echo "   ✓ crm-dr-cache-invalidation-queue-aws ($CACHE_AWS_SQS_ARN)"
-echo "   ✓ crm-dr-cache-invalidation-queue-gcp ($CACHE_GCP_SQS_ARN)"
 echo ""
 echo "📢 SNS (Simple Notification Service):"
 echo "   ✓ ses-events-topic ($SES_SNS_ARN)"
