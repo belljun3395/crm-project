@@ -3,6 +3,8 @@ import { createIdempotencyHeaders } from '../idempotency';
 import type { 
   User, 
   CreateUserRequest, 
+  BrowseUsersUseCaseOut,
+  GetTotalUserCountUseCaseOut,
   ApiResponse 
 } from 'shared/type';
 
@@ -10,8 +12,8 @@ export const userAPI = {
   // 사용자 목록 조회
   async getUsers(): Promise<User[]> {
     try {
-      const response = await crmApi.get<ApiResponse<{ users: User[] }>>('/users');
-      return response.data.data.users;
+      const response = await crmApi.get<ApiResponse<BrowseUsersUseCaseOut>>('/users');
+      return response.data.data.users.content;
     } catch (error) {
       console.error('Error fetching users:', error);
       return [];
@@ -34,7 +36,7 @@ export const userAPI = {
   // 사용자 수 조회
   async getUserCount(): Promise<number> {
     try {
-      const response = await crmApi.get<ApiResponse<{ totalCount: number }>>('/users/count');
+      const response = await crmApi.get<ApiResponse<GetTotalUserCountUseCaseOut>>('/users/count');
       return response.data.data.totalCount;
     } catch (error) {
       console.error('Error fetching user count:', error);

@@ -1,0 +1,1 @@
+export { JourneyManagementPage } from './JourneyManagementPage';

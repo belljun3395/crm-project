@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Button, Input, Modal } from 'common/component';
 import { useWebhooks } from 'shared/hook';
 import type { CreateWebhookRequest, UpdateWebhookRequest, WebhookResponse } from 'shared/type';
@@ -40,18 +40,56 @@ const toForm = (webhook: WebhookResponse): WebhookFormState => ({
 });
 
 export const WebhookManagementPage: React.FC = () => {
-  const { webhooks, loading, saving, deletingId, error, createWebhook, updateWebhook, deleteWebhook } = useWebhooks();
+  const {
+    webhooks,
+    deliveriesByWebhook,
+    deadLettersByWebhook,
+    loading,
+    saving,
+    deletingId,
+    deliveryLoadingId,
+    deadLetterLoadingId,
+    error,
+    createWebhook,
+    updateWebhook,
+    deleteWebhook,
+    fetchDeliveries,
+    fetchDeadLetters
+  } = useWebhooks();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingWebhook, setEditingWebhook] = useState<WebhookResponse | null>(null);
-
+  const [selectedWebhookId, setSelectedWebhookId] = useState<number | null>(null);
   const [createForm, setCreateForm] = useState<WebhookFormState>(initialFormState);
   const [editForm, setEditForm] = useState<WebhookFormState>(initialFormState);
   const [formError, setFormError] = useState<string | null>(null);
 
   const sortedWebhooks = useMemo(() => {
-    return [...webhooks].sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
+    return [...webhooks].sort((a, b) => b.id - a.id);
   }, [webhooks]);
+
+  useEffect(() => {
+    if (sortedWebhooks.length === 0) {
+      setSelectedWebhookId(null);
+      return;
+    }
+
+    if (!selectedWebhookId || !sortedWebhooks.find((webhook) => webhook.id === selectedWebhookId)) {
+      setSelectedWebhookId(sortedWebhooks[0]?.id ?? null);
+    }
+  }, [sortedWebhooks, selectedWebhookId]);
+
+  useEffect(() => {
+    if (!selectedWebhookId) {
+      return;
+    }
+
+    fetchDeliveries(selectedWebhookId);
+    fetchDeadLetters(selectedWebhookId);
+  }, [selectedWebhookId, fetchDeliveries, fetchDeadLetters]);
+
+  const deliveries = selectedWebhookId ? deliveriesByWebhook[selectedWebhookId] ?? [] : [];
+  const deadLetters = selectedWebhookId ? deadLettersByWebhook[selectedWebhookId] ?? [] : [];
 
   const validateForm = (form: WebhookFormState): string | null => {
     if (!form.name.trim()) {
@@ -133,18 +171,6 @@ export const WebhookManagementPage: React.FC = () => {
     await deleteWebhook(webhookId);
   };
 
-  const handleCloseCreateModal = () => {
-    setIsCreateModalOpen(false);
-    setFormError(null);
-    setCreateForm(initialFormState);
-  };
-
-  const handleCloseEditModal = () => {
-    setEditingWebhook(null);
-    setFormError(null);
-    setEditForm(initialFormState);
-  };
-
   const renderForm = (
     form: WebhookFormState,
     setForm: React.Dispatch<React.SetStateAction<WebhookFormState>>,
@@ -154,7 +180,7 @@ export const WebhookManagementPage: React.FC = () => {
   ) => (
     <div className="space-y-4">
       {formError && (
-        <div className="rounded-lg border border-red-700 bg-red-900/40 p-3 text-sm text-red-200">{formError}</div>
+        <div className="rounded-xl border border-rose-700/60 bg-rose-900/20 p-3 text-sm text-rose-100">{formError}</div>
       )}
 
       <Input
@@ -182,21 +208,21 @@ export const WebhookManagementPage: React.FC = () => {
         required
       />
 
-      <label className="flex items-center gap-2 text-sm text-gray-300">
+      <label className="flex items-center gap-2 text-sm text-slate-300">
         <input
           type="checkbox"
           checked={form.active}
           onChange={(e) => setForm((prev) => ({ ...prev, active: e.target.checked }))}
-          className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-[#22c55e]"
+          className="h-4 w-4 rounded border-slate-600 bg-slate-800"
         />
         Active
       </label>
 
-      <div className="flex gap-3 pt-3">
-        <Button onClick={onSubmit} loading={saving} className="flex-1">
+      <div className="grid grid-cols-2 gap-3 pt-2">
+        <Button onClick={onSubmit} loading={saving}>
           {submitLabel}
         </Button>
-        <Button variant="secondary" onClick={onCancel} className="flex-1">
+        <Button variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
       </div>
@@ -206,60 +232,66 @@ export const WebhookManagementPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Webhook Management</h1>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <span className="mr-2 text-lg">+</span>
-          New Webhook
-        </Button>
+        <div>
+          <h2 className="text-2xl font-semibold text-white">Webhooks</h2>
+          <p className="text-sm text-slate-300">`/webhooks`, `/deliveries`, `/dead-letters` API 연동</p>
+        </div>
+        <Button onClick={() => setIsCreateModalOpen(true)}>New Webhook</Button>
       </div>
 
       {(error || formError) && !isCreateModalOpen && !editingWebhook && (
-        <div className="rounded-lg border border-red-700 bg-red-900/40 p-3 text-sm text-red-200">{error || formError}</div>
+        <div className="rounded-xl border border-rose-700/60 bg-rose-900/20 p-3 text-sm text-rose-100">{error || formError}</div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-gray-800 bg-gray-900">
-        <table className="min-w-full divide-y divide-gray-800">
-          <thead className="bg-gray-800/50">
+      <section className="overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur">
+        <table className="min-w-full divide-y divide-slate-800">
+          <thead className="bg-slate-800/60">
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-white">ID</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-white">Name</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-white">URL</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-white">Events</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-white">Status</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-white">Actions</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">ID</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Name</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">URL</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Events</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-800">
+          <tbody className="divide-y divide-slate-800">
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-slate-300">
                   Loading webhooks...
                 </td>
               </tr>
             ) : sortedWebhooks.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-slate-300">
                   No webhooks configured
                 </td>
               </tr>
             ) : (
               sortedWebhooks.map((webhook) => (
-                <tr key={webhook.id} className="hover:bg-gray-800/40">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-400">{webhook.id}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-semibold text-white">{webhook.name}</td>
-                  <td className="max-w-xs truncate px-6 py-4 text-sm text-gray-300">{webhook.url}</td>
-                  <td className="max-w-xs truncate px-6 py-4 text-sm text-gray-300">{webhook.events.join(', ')}</td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                <tr
+                  key={webhook.id}
+                  className={`hover:bg-slate-800/40 ${selectedWebhookId === webhook.id ? 'bg-slate-800/30' : ''}`}
+                >
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">{webhook.id}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-white">{webhook.name}</td>
+                  <td className="max-w-xs truncate px-4 py-3 text-sm text-slate-300">{webhook.url}</td>
+                  <td className="max-w-xs truncate px-4 py-3 text-sm text-slate-300">{webhook.events.join(', ')}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm">
                     <span
                       className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                        webhook.active ? 'bg-green-700 text-green-100' : 'bg-gray-700 text-gray-200'
+                        webhook.active ? 'bg-emerald-500/20 text-emerald-200' : 'bg-slate-700 text-slate-200'
                       }`}
                     >
                       {webhook.active ? 'ACTIVE' : 'INACTIVE'}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm">
                     <div className="flex gap-2">
+                      <Button size="sm" variant="secondary" onClick={() => setSelectedWebhookId(webhook.id)}>
+                        Logs
+                      </Button>
                       <Button size="sm" variant="secondary" onClick={() => handleEdit(webhook)}>
                         Edit
                       </Button>
@@ -278,19 +310,137 @@ export const WebhookManagementPage: React.FC = () => {
             )}
           </tbody>
         </table>
-      </div>
+      </section>
 
-      <Modal isOpen={isCreateModalOpen} onClose={handleCloseCreateModal} title="Create Webhook" size="lg">
-        {renderForm(createForm, setCreateForm, 'Create', handleCreate, handleCloseCreateModal)}
+      <section className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <div className="overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur">
+          <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Delivery Logs</h3>
+            {selectedWebhookId && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => fetchDeliveries(selectedWebhookId)}
+                loading={deliveryLoadingId === selectedWebhookId}
+              >
+                Refresh
+              </Button>
+            )}
+          </div>
+          <div className="max-h-[320px] overflow-auto">
+            <table className="min-w-full divide-y divide-slate-800">
+              <thead className="bg-slate-800/60">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">ID</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Event</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Attempt</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {!selectedWebhookId ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-300">
+                      Select webhook
+                    </td>
+                  </tr>
+                ) : deliveryLoadingId === selectedWebhookId ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-300">
+                      Loading deliveries...
+                    </td>
+                  </tr>
+                ) : deliveries.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-300">
+                      No delivery logs
+                    </td>
+                  </tr>
+                ) : (
+                  deliveries.map((log) => (
+                    <tr key={log.id} className="hover:bg-slate-800/30">
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">{log.id}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{log.eventType}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-white">{log.deliveryStatus}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{log.attemptCount}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur">
+          <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Dead Letters</h3>
+            {selectedWebhookId && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => fetchDeadLetters(selectedWebhookId)}
+                loading={deadLetterLoadingId === selectedWebhookId}
+              >
+                Refresh
+              </Button>
+            )}
+          </div>
+          <div className="max-h-[320px] overflow-auto">
+            <table className="min-w-full divide-y divide-slate-800">
+              <thead className="bg-slate-800/60">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">ID</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Event</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Error</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {!selectedWebhookId ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-300">
+                      Select webhook
+                    </td>
+                  </tr>
+                ) : deadLetterLoadingId === selectedWebhookId ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-300">
+                      Loading dead letters...
+                    </td>
+                  </tr>
+                ) : deadLetters.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-300">
+                      No dead letters
+                    </td>
+                  </tr>
+                ) : (
+                  deadLetters.map((log) => (
+                    <tr key={log.id} className="hover:bg-slate-800/30">
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">{log.id}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{log.eventType}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-white">{log.deliveryStatus}</td>
+                      <td className="px-4 py-3 text-sm text-slate-300">{log.errorMessage || '-'}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Create Webhook" size="lg">
+        {renderForm(createForm, setCreateForm, 'Create', handleCreate, () => setIsCreateModalOpen(false))}
       </Modal>
 
       <Modal
         isOpen={Boolean(editingWebhook)}
-        onClose={handleCloseEditModal}
+        onClose={() => setEditingWebhook(null)}
         title={`Edit Webhook${editingWebhook ? ` #${editingWebhook.id}` : ''}`}
         size="lg"
       >
-        {renderForm(editForm, setEditForm, 'Update', handleUpdate, handleCloseEditModal)}
+        {renderForm(editForm, setEditForm, 'Update', handleUpdate, () => setEditingWebhook(null))}
       </Modal>
     </div>
   );
