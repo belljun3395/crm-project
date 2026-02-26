@@ -3,12 +3,14 @@ package com.manage.crm.infrastructure.cache.listener
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.annotation.SqsListener
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Profile
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 
 @Profile("!test & !openapi")
 @Component
+@ConditionalOnProperty(name = ["cloud.provider"], havingValue = "aws", matchIfMissing = true)
 class CacheInvalidationListener(
     private val redisTemplate: RedisTemplate<String, Any>,
     private val objectMapper: ObjectMapper
@@ -16,28 +18,18 @@ class CacheInvalidationListener(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    // AWS EKS 앱을 위한 SQS 큐 리스너
     @SqsListener(
-        value = ["crm-dr-cache-invalidation-queue-aws"] // SQS 큐 이름
+        value = ["crm-dr-cache-invalidation-queue-aws"]
     )
-    fun listenAwsQueue(messageJson: String) {
-        log.info("Received message from AWS SQS: {}", messageJson)
-        processMessage(messageJson)
-    }
-
-    // GCP GKE 앱을 위한 SQS 큐 리스너 (GCP 앱도 AWS SQS를 리스닝)
-    @SqsListener(
-        value = ["crm-dr-cache-invalidation-queue-gcp"] // SQS 큐 이름
-    )
-    fun listenGcpQueue(messageJson: String) {
-        log.info("Received message from GCP SQS: {}", messageJson)
+    fun listen(messageJson: String) {
+        log.info("Received cache invalidation message from SQS: {}", messageJson)
         processMessage(messageJson)
     }
 
     private fun processMessage(messageJson: String) {
         try {
             val messageMap = objectMapper.readValue(messageJson, Map::class.java) as Map<*, *>
-            val snsMessage = messageMap["Message"] as String // SNS 메시지 구조에서 실제 메시지 추출
+            val snsMessage = messageMap["Message"] as String
             val payload = objectMapper.readValue(snsMessage, Map::class.java) as Map<*, *>
 
             if (payload["action"] == "invalidate") {

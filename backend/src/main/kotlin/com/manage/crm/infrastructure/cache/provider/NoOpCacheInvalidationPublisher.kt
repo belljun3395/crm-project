@@ -4,11 +4,10 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import software.amazon.awssdk.services.sns.SnsClient
 
 @Component
 @Profile("local || test")
-@ConditionalOnMissingBean(SnsClient::class)
+@ConditionalOnMissingBean(CacheInvalidationPublisher::class)
 class NoOpCacheInvalidationPublisher : CacheInvalidationPublisher {
 
     private val log = KotlinLogging.logger {}
