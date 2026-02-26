@@ -33,6 +33,14 @@ scheduler:
 webhook:
     # Enable/disable webhook feature globally (dispatching events to registered URLs)
     enabled: ${WEBHOOK_ENABLED:true}
+    delivery:
+        # Retry configuration for webhook delivery attempts
+        max-attempts: ${WEBHOOK_DELIVERY_MAX_ATTEMPTS:3}
+        initial-backoff-millis: ${WEBHOOK_DELIVERY_INITIAL_BACKOFF_MILLIS:200}
+    signing:
+        # Optional request signing (HMAC SHA-256)
+        enabled: ${WEBHOOK_SIGNING_ENABLED:false}
+        secret: ${WEBHOOK_SIGNING_SECRET:}
 
 idempotency:
     enabled: ${IDEMPOTENCY_ENABLED:true}
