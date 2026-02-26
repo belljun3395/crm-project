@@ -2,55 +2,76 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/belljun3395/crm-project)
 
-## 임시 리드미
+CRM API 서버(백엔드)와 운영 콘솔(프론트엔드)로 구성된 CRM 프로젝트입니다.
+현재 메인 도메인은 `User`, `Email`, `Event`, `Webhook`, `Campaign Dashboard` 입니다.
 
-**!! 아래 스크립트는 루트 디렉토리를 기준으로 합니다 !!**
+## Repository Structure
 
-### 실행을 위한 로컬 개발 환경 설정
+- `backend/`: Spring Boot 3 + Kotlin + WebFlux + R2DBC(MySQL)
+- `frontend/`: React 기반 운영 콘솔
+- `docs/`: 아키텍처/플로우/대시보드/OpenAPI 산출물
+- `scripts/`: 개발 환경 초기화/검증 스크립트
+- `resources/crm-local-develop-environment/`: 로컬 docker-compose 환경
 
-docker 및 docker-compose 설치가 필요합니다.
+## Local Development
 
-```bash
-cd ./scripts && bash local-develop-env-reset
-```
+모든 명령은 저장소 루트 기준입니다.
 
-### 로컬 개발 환경 실행
-
-```bash
-# build
-cd ./backend && ./gradlew bootJar && cd ..
-```
+### 1. 로컬 의존성 환경 실행
 
 ```bash
-# run
-cd ./backend && java -jar ./build/libs/crm-0.0.1-SNAPSHOT.jar --spring.profiles.active=local,new
+cd scripts && bash local-develop-env-reset
 ```
 
-### API 문서
+### 2. 백엔드 빌드/실행
 
 ```bash
-# API 문서 생성
-cd ./backend && ./gradlew generateOpenApiDocs && cd ..
+cd backend
+./gradlew bootJar
+java -jar ./build/libs/crm-0.0.1-SNAPSHOT.jar --spring.profiles.active=local
 ```
+
+### 3. 프론트엔드 실행
 
 ```bash
-# API 문서 복사
-cd ./backend && cp ./build/openapi.json ../docs/ && cd ..
+cd frontend
+npm install
+npm run dev
 ```
 
-### 테스트 실행
+## Test
+
+### Backend
 
 ```bash
-cd ./backend && ./gradlew test && cd ..
+cd backend
+./gradlew test
 ```
 
-![image](docs/images/test-result.png)
+### Frontend
 
-- 테스트 종류
-  - UseCase Test
-    - UseCase BDD 테스트
-      - 요청에 따라 동작을 검증하는 테스트
-  - Service 로직 테스트
-    - 요청에 따른 Service 로직을 검증하는 테스트
-  - Listener 테스트
-    - 이벤트 발행 상황에 따라 Listener가 올바르게 동작하는지 검증하는 테스트
+```bash
+cd frontend
+npm run test:ci
+```
+
+## OpenAPI
+
+```bash
+cd backend
+./gradlew generateOpenApiDocs
+cp ./build/openapi.json ../docs/openapi.json
+```
+
+## Core Documents
+
+- [도메인/유즈케이스 플로우](./docs/Domain-and-UseCase-Flows.md)
+- [캠페인 대시보드 구현 문서](./docs/CAMPAIGN_DASHBOARD_IMPLEMENTATION.md)
+- [백엔드 대시보드 운영 문서](./backend/docs/campaign-dashboard/README.md)
+- [OpenAPI 산출물](./docs/openapi.json)
+
+## Notes
+
+- 쓰기 API 일부는 `Idempotency-Key` 헤더를 요구합니다.
+- Webhook 기능은 `webhook.enabled` 설정으로 토글됩니다.
+- Flyway 마이그레이션 위치는 `backend/src/main/resources/db/migration/entity` 입니다.
