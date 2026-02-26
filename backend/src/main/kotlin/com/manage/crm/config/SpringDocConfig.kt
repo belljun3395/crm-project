@@ -140,4 +140,5 @@ object SwaggerTag {
     const val SEGMENTS_SWAGGER_TAG = "Segments API"
     const val ACTIONS_SWAGGER_TAG = "Actions API"
     const val JOURNEYS_SWAGGER_TAG = "Journeys API"
+    const val AUDIT_SWAGGER_TAG = "Audit Logs API"
 }

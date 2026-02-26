@@ -25,6 +25,10 @@
       "description": "웹훅 API"
     },
     {
+      "name": "Audit Logs API",
+      "description": "감사 로그 API"
+    },
+    {
       "name": "Event API",
       "description": "캠페인 대시보드 API"
     },
@@ -1407,6 +1411,62 @@
                   "items": {
                     "$ref": "#/components/schemas/ServerSentEventCampaignEventData"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/audit-logs": {
+      "get": {
+        "tags": [
+          "Audit Logs API"
+        ],
+        "operationId": "list_2",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resourceType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyListAuditLogDto"
                 }
               }
             }
@@ -3540,6 +3600,66 @@
       },
       "ServerSentEventCampaignEventData": {
         "type": "object"
+      },
+      "AuditLogDto": {
+        "required": [
+          "action",
+          "id",
+          "resourceType"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "actorId": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "resourceType": {
+            "type": "string"
+          },
+          "resourceId": {
+            "type": "string"
+          },
+          "requestMethod": {
+            "type": "string"
+          },
+          "requestPath": {
+            "type": "string"
+          },
+          "statusCode": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyListAuditLogDto": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditLogDto"
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
       },
       "ActionDispatchHistoryDto": {
         "required": [
