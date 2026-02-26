@@ -4,7 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.services.sns.SnsClient
@@ -14,7 +14,7 @@ import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
 
 @Component
 @Profile("!test & !openapi")
-@ConditionalOnBean(SnsClient::class, SqsClient::class)
+@ConditionalOnProperty(name = ["cloud.provider"], havingValue = "aws", matchIfMissing = true)
 class AwsResourceValidator(
     private val snsClient: SnsClient,
     private val sqsClient: SqsClient,
@@ -26,8 +26,7 @@ class AwsResourceValidator(
 
     // SQS Queue names from CacheInvalidationListener
     private val sqsQueueNames = listOf(
-        "crm-dr-cache-invalidation-queue-aws",
-        "crm-dr-cache-invalidation-queue-gcp"
+        "crm-dr-cache-invalidation-queue-aws"
     )
 
     override fun run(args: ApplicationArguments?) {
