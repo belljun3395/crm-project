@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Button, Input, Modal } from 'common/component';
 import { useToggle } from 'common/hook';
 import { useEvents } from 'shared/hook';
@@ -7,6 +7,8 @@ import type { EventFormData } from 'shared/type';
 export const EventPage: React.FC = () => {
   const { events, loading, error, createEvent, searchEvents } = useEvents();
   const { value: isModalOpen, setTrue: openModal, setFalse: closeModal } = useToggle();
+  const [eventNameQuery, setEventNameQuery] = useState('');
+  const [whereQuery, setWhereQuery] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<EventFormData>({
     name: '',
@@ -15,17 +17,15 @@ export const EventPage: React.FC = () => {
     properties: [{ key: '', value: '' }]
   });
 
-  // 초기 데이터 로드
-  useEffect(() => {
-    // 전체 이벤트 조회 (빈 문자열로 검색)
-    searchEvents('', '');
-  }, [searchEvents]);
-
   // 검색 필터링
-  const filteredEvents = events.filter(event => 
+  const filteredEvents = events.filter(event =>
     event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (event.externalId && event.externalId.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const handleSearch = async () => {
+    await searchEvents(eventNameQuery, whereQuery);
+  };
 
   // 폼 제출
   const handleSubmit = async () => {
@@ -40,8 +40,10 @@ export const EventPage: React.FC = () => {
         properties: [{ key: '', value: '' }]
       });
       closeModal();
-      // 이벤트 생성 후 목록 새로고침
-      searchEvents('', '');
+      // 검색 조건이 유효할 때만 서버 재조회
+      if (eventNameQuery.trim() && whereQuery.trim()) {
+        await searchEvents(eventNameQuery, whereQuery);
+      }
     }
   };
 
@@ -69,13 +71,39 @@ export const EventPage: React.FC = () => {
         </div>
       )}
 
-      {/* 검색 */}
+      {/* 서버 검색 */}
+      <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+        <div className="grid gap-3 md:grid-cols-[1fr,2fr,auto]">
+          <Input
+            label="Event Name"
+            value={eventNameQuery}
+            onChange={(e) => setEventNameQuery(e.target.value)}
+            placeholder="view_product"
+            required
+          />
+          <Input
+            label="Where"
+            value={whereQuery}
+            onChange={(e) => setWhereQuery(e.target.value)}
+            placeholder="category&electronics&=&end"
+            required
+          />
+          <Button onClick={handleSearch} loading={loading} className="md:self-end">
+            Search
+          </Button>
+        </div>
+        <p className="mt-2 text-xs text-slate-400">
+          where 예시: <code>category&electronics&=&end</code>
+        </p>
+      </div>
+
+      {/* 로컬 필터 */}
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
         <Input
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search events..."
+          placeholder="Filter loaded events..."
           className="pl-12"
         />
       </div>

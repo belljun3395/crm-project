@@ -10,6 +10,21 @@ export const useEvents = () => {
 
   // 이벤트 검색
   const searchEvents = useCallback(async (eventName: string, where: string) => {
+    const normalizedEventName = eventName.trim();
+    const normalizedWhere = where.trim();
+
+    if (!normalizedEventName) {
+      setError('eventName은 필수입니다.');
+      setEvents([]);
+      return [];
+    }
+
+    if (!normalizedWhere) {
+      setError('where는 필수입니다. 예: category&electronics&=&end');
+      setEvents([]);
+      return [];
+    }
+
     // Cancel previous request if still pending
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -21,7 +36,7 @@ export const useEvents = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await eventAPI.searchEvents(eventName, where);
+      const data = await eventAPI.searchEvents(normalizedEventName, normalizedWhere);
       if (!abortController.signal.aborted) {
         setEvents(data);
         return data;
