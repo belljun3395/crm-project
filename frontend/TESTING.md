@@ -44,6 +44,23 @@ npm run test:coverage
 npm run test:ci
 ```
 
+### E2E 실행 (Playwright)
+```bash
+# 브라우저 엔진 1회 설치
+npx playwright install --with-deps chromium
+
+# E2E 테스트 실행
+npm run test:e2e
+
+# E2E + HTML 리포트 생성
+npm run test:e2e:record
+```
+
+실행 후 생성물:
+- 리포트: `frontend/playwright-report/index.html`
+- 실패 아티팩트: `frontend/test-results/`
+- 캡처 기록: `frontend/e2e/screenshots/`
+
 ### Storybook 실행
 ```bash
 # Storybook 개발 서버 시작
@@ -166,6 +183,13 @@ src/
     └── mocks/
         ├── server.ts
         └── handlers.ts
+
+e2e/
+├── fixtures/
+│   └── apiMocks.ts
+├── screenshots/
+│   └── 01-dashboard-overview.png
+└── navigation-and-capture.spec.ts
 ```
 
 ## Best Practices
