@@ -10,3 +10,4 @@ export { SegmentManagementPage } from './segment';
 export { JourneyManagementPage } from './journey';
 export { ActionDispatchPage } from './action';
 export { AuditLogPage } from './audit-log';
+export { FeatureGuidePage } from './feature-guide';
