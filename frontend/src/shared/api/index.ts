@@ -6,6 +6,10 @@ export { emailScheduleAPI } from './crm/email/schedule';
 export { webhookAPI } from './crm/webhook';
 export { campaignAPI } from './crm/campaign';
 export { emailHistoryAPI } from './crm/email/history';
+export { segmentAPI } from './crm/segment';
+export { journeyAPI } from './crm/journey';
+export { actionAPI } from './crm/action';
+export { auditAPI } from './crm/audit';
 
 // Instance export (필요시 사용)
 export { crmApi } from './crm/instance';

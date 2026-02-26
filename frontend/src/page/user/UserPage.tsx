@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Input, Modal } from 'common/component';
+import { Button, GuidePanel, Input, Modal } from 'common/component';
 import { useToggle } from 'common/hook';
 import { useUsers } from 'shared/hook';
 import type { UserFormData } from 'shared/type';
@@ -55,6 +55,16 @@ export const UserPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <GuidePanel
+        description="고객 식별값과 고객 속성 정보를 등록하고 조회하는 화면입니다."
+        items={[
+          'Enroll User 버튼으로 새 사용자를 등록합니다.',
+          'External ID는 고객을 구분하는 고유 값으로 사용됩니다.',
+          '검색창에서 외부 ID나 속성 텍스트로 빠르게 찾을 수 있습니다.'
+        ]}
+        note="속성은 JSON 텍스트로 저장되므로, 키 이름을 일관되게 입력하면 검색과 분석이 쉬워집니다."
+      />
 
       {/* 검색 */}
       <div className="relative">

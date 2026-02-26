@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Button, Input, Modal } from 'common/component';
+import React, { useState } from 'react';
+import { Button, GuidePanel, Input, Modal } from 'common/component';
 import { useToggle } from 'common/hook';
 import { useEvents } from 'shared/hook';
 import type { EventFormData } from 'shared/type';
@@ -7,7 +7,10 @@ import type { EventFormData } from 'shared/type';
 export const EventPage: React.FC = () => {
   const { events, loading, error, createEvent, searchEvents } = useEvents();
   const { value: isModalOpen, setTrue: openModal, setFalse: closeModal } = useToggle();
+  const [eventNameQuery, setEventNameQuery] = useState('');
+  const [whereQuery, setWhereQuery] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [hasSearched, setHasSearched] = useState(false);
   const [formData, setFormData] = useState<EventFormData>({
     name: '',
     campaignName: '',
@@ -15,17 +18,16 @@ export const EventPage: React.FC = () => {
     properties: [{ key: '', value: '' }]
   });
 
-  // 초기 데이터 로드
-  useEffect(() => {
-    // 전체 이벤트 조회 (빈 문자열로 검색)
-    searchEvents('', '');
-  }, [searchEvents]);
-
   // 검색 필터링
-  const filteredEvents = events.filter(event => 
+  const filteredEvents = events.filter(event =>
     event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (event.externalId && event.externalId.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const handleSearch = async () => {
+    setHasSearched(true);
+    await searchEvents(eventNameQuery, whereQuery);
+  };
 
   // 폼 제출
   const handleSubmit = async () => {
@@ -40,8 +42,11 @@ export const EventPage: React.FC = () => {
         properties: [{ key: '', value: '' }]
       });
       closeModal();
-      // 이벤트 생성 후 목록 새로고침
-      searchEvents('', '');
+      // 검색 조건이 유효할 때만 서버 재조회
+      if (eventNameQuery.trim() && whereQuery.trim()) {
+        setHasSearched(true);
+        await searchEvents(eventNameQuery, whereQuery);
+      }
     }
   };
 
@@ -69,13 +74,53 @@ export const EventPage: React.FC = () => {
         </div>
       )}
 
-      {/* 검색 */}
+      <GuidePanel
+        title="이벤트 검색 가이드"
+        description="이벤트 조회는 Event Name과 Where를 함께 입력해야 합니다."
+        items={[
+          '단일 조건: category&electronics&=&end',
+          '다중 조건: category&electronics&=&and,brand&samsung&=&end',
+          '범위 조건: amount&100&amount&200&between&end'
+        ]}
+        note="연산자: =, !=, >, >=, <, <=, like, between / 연결: and, or, end"
+      />
+
+      {/* 서버 검색 */}
+      <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+        <div className="grid gap-3 md:grid-cols-[1fr,2fr,auto]">
+          <Input
+            label="Event Name"
+            value={eventNameQuery}
+            onChange={(e) => setEventNameQuery(e.target.value)}
+            placeholder="view_product"
+            required
+          />
+          <Input
+            label="Where"
+            value={whereQuery}
+            onChange={(e) => setWhereQuery(e.target.value)}
+            placeholder="category&electronics&=&end"
+            required
+          />
+          <Button onClick={handleSearch} loading={loading} className="md:self-end">
+            Search
+          </Button>
+        </div>
+        <p className="mt-2 text-xs text-slate-400">
+          where 예시: <code>category&electronics&=&end</code>
+        </p>
+        <p className="mt-1 text-xs text-slate-500">
+          검색 후 아래 결과를 필요하면 로컬 필터로 추가 좁힐 수 있습니다.
+        </p>
+      </div>
+
+      {/* 로컬 필터 */}
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
         <Input
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search events..."
+          placeholder="Filter loaded events..."
           className="pl-12"
         />
       </div>
@@ -115,10 +160,16 @@ export const EventPage: React.FC = () => {
                   </td>
                 </tr>
               ))
-            ) : (
+            ) : hasSearched ? (
               <tr>
                 <td colSpan={4} className="px-6 py-8 text-center text-gray-400">
                   No events found
+                </td>
+              </tr>
+            ) : (
+              <tr>
+                <td colSpan={4} className="px-6 py-8 text-center text-slate-400">
+                  Event Name과 Where를 입력하고 Search를 눌러주세요.
                 </td>
               </tr>
             )}
