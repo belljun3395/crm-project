@@ -7,6 +7,12 @@ import com.manage.crm.webhook.WebhookDeliveryStatus
 import com.manage.crm.webhook.domain.Webhook
 import com.manage.crm.webhook.domain.WebhookEventPayload
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
+import io.github.resilience4j.ratelimiter.RateLimiterRegistry
+import io.github.resilience4j.ratelimiter.RequestNotPermitted
+import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator
+import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator
 import io.netty.channel.ChannelOption
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactor.awaitSingleOrNull
@@ -17,6 +23,7 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
+import reactor.core.publisher.Mono
 import reactor.netty.http.client.HttpClient
 import java.net.URI
 import java.time.Duration
@@ -30,16 +37,28 @@ import javax.crypto.spec.SecretKeySpec
 class WebClientWebhookClient(
     webClientBuilder: WebClient.Builder,
     private val objectMapper: ObjectMapper,
+    private val circuitBreakerRegistry: CircuitBreakerRegistry,
+    private val rateLimiterRegistry: RateLimiterRegistry,
     @Value("\${webhook.delivery.max-attempts:3}")
     private val maxAttempts: Int,
     @Value("\${webhook.delivery.initial-backoff-millis:200}")
     private val initialBackoffMillis: Long,
+    @Value("\${webhook.resilience.circuit-breaker.instance-name:webhookDelivery}")
+    private val circuitBreakerInstanceName: String,
+    @Value("\${webhook.resilience.rate-limiter.instance-name:webhookDelivery}")
+    private val rateLimiterInstanceName: String,
     @Value("\${webhook.signing.enabled:false}")
     private val signingEnabled: Boolean,
     @Value("\${webhook.signing.secret:}")
     private val signingSecret: String
 ) : WebhookClient {
     private val log = KotlinLogging.logger {}
+    private val circuitBreaker by lazy {
+        circuitBreakerRegistry.circuitBreaker(circuitBreakerInstanceName)
+    }
+    private val rateLimiter by lazy {
+        rateLimiterRegistry.rateLimiter(rateLimiterInstanceName)
+    }
 
     private val webClient = webClientBuilder
         .clientConnector(
@@ -50,6 +69,11 @@ class WebClientWebhookClient(
             )
         )
         .build()
+
+    private class WebhookHttpStatusException(
+        val statusCode: Int,
+        message: String
+    ) : RuntimeException(message)
 
     override suspend fun send(webhook: Webhook, payload: WebhookEventPayload): WebhookDeliveryResult {
         if (!isUrlSafe(webhook.url)) {
@@ -118,34 +142,63 @@ class WebClientWebhookClient(
                 .exchangeToMono { response ->
                     response.bodyToMono(String::class.java)
                         .defaultIfEmpty("")
-                        .map { response.statusCode().value() to it }
+                        .flatMap {
+                            val status = response.statusCode().value()
+                            if (status in 200..299) {
+                                Mono.just(status)
+                            } else {
+                                Mono.error(
+                                    WebhookHttpStatusException(
+                                        statusCode = status,
+                                        message = "Webhook returned non-success status: $status"
+                                    )
+                                )
+                            }
+                        }
                 }
+                .transformDeferred(CircuitBreakerOperator.of(circuitBreaker))
+                .transformDeferred(RateLimiterOperator.of(rateLimiter))
                 .awaitSingleOrNull()
-                ?.first ?: 0
+                ?: 0
 
-            if (responseStatus in 200..299) {
-                log.info { "Webhook delivered: id=${webhook.id}, url=${webhook.url}, attempt=$attempt" }
-                WebhookDeliveryResult(
-                    status = WebhookDeliveryStatus.SUCCESS,
-                    attemptCount = attempt,
-                    responseStatus = responseStatus
-                )
-            } else {
-                log.warn { "Webhook returned non-success status: id=${webhook.id}, status=$responseStatus, attempt=$attempt" }
-                WebhookDeliveryResult(
-                    status = WebhookDeliveryStatus.FAILED,
-                    attemptCount = attempt,
-                    responseStatus = responseStatus,
-                    errorMessage = "Webhook returned non-success status: $responseStatus"
-                )
-            }
-        }.getOrElse { error ->
-            log.error(error) { "Webhook delivery failed: id=${webhook.id}, url=${webhook.url}, attempt=$attempt" }
+            log.info { "Webhook delivered: id=${webhook.id}, url=${webhook.url}, attempt=$attempt" }
             WebhookDeliveryResult(
-                status = WebhookDeliveryStatus.FAILED,
+                status = WebhookDeliveryStatus.SUCCESS,
                 attemptCount = attempt,
-                errorMessage = error.message
+                responseStatus = responseStatus
             )
+        }.getOrElse { error ->
+            when (error) {
+                is CallNotPermittedException, is RequestNotPermitted -> {
+                    log.warn(error) {
+                        "Webhook delivery blocked by resilience policy: id=${webhook.id}, url=${webhook.url}, attempt=$attempt"
+                    }
+                    WebhookDeliveryResult(
+                        status = WebhookDeliveryStatus.BLOCKED,
+                        attemptCount = attempt,
+                        errorMessage = error.message
+                    )
+                }
+                is WebhookHttpStatusException -> {
+                    log.warn {
+                        "Webhook returned non-success status: id=${webhook.id}, status=${error.statusCode}, attempt=$attempt"
+                    }
+                    WebhookDeliveryResult(
+                        status = WebhookDeliveryStatus.FAILED,
+                        attemptCount = attempt,
+                        responseStatus = error.statusCode,
+                        errorMessage = error.message
+                    )
+                }
+                else -> {
+                    log.error(error) { "Webhook delivery failed: id=${webhook.id}, url=${webhook.url}, attempt=$attempt" }
+                    WebhookDeliveryResult(
+                        status = WebhookDeliveryStatus.FAILED,
+                        attemptCount = attempt,
+                        errorMessage = error.message
+                    )
+                }
+            }
         }
     }
 

@@ -41,6 +41,30 @@ webhook:
         # Optional request signing (HMAC SHA-256)
         enabled: ${WEBHOOK_SIGNING_ENABLED:false}
         secret: ${WEBHOOK_SIGNING_SECRET:}
+    resilience:
+        circuit-breaker:
+            instance-name: ${WEBHOOK_CIRCUIT_BREAKER_INSTANCE:webhookDelivery}
+        rate-limiter:
+            instance-name: ${WEBHOOK_RATE_LIMITER_INSTANCE:webhookDelivery}
+
+resilience4j:
+    circuitbreaker:
+        instances:
+            webhookDelivery:
+                sliding-window-type: COUNT_BASED
+                sliding-window-size: 20
+                minimum-number-of-calls: 10
+                failure-rate-threshold: 50
+                wait-duration-in-open-state: 30s
+                permitted-number-of-calls-in-half-open-state: 5
+                automatic-transition-from-open-to-half-open-enabled: true
+    ratelimiter:
+        instances:
+            webhookDelivery:
+                limit-for-period: 50
+                limit-refresh-period: 1s
+                timeout-duration: 0
+                register-health-indicator: true
 
 idempotency:
     enabled: ${IDEMPOTENCY_ENABLED:true}

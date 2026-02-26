@@ -3,17 +3,20 @@ package com.manage.crm.webhook.controller
 import com.manage.crm.config.SwaggerTag
 import com.manage.crm.support.web.ApiResponse
 import com.manage.crm.support.web.ApiResponseGenerator
+import com.manage.crm.webhook.application.BrowseWebhookDeadLettersUseCase
 import com.manage.crm.webhook.application.BrowseWebhookDeliveryLogsUseCase
 import com.manage.crm.webhook.application.BrowseWebhookUseCase
 import com.manage.crm.webhook.application.DeleteWebhookUseCase
 import com.manage.crm.webhook.application.GetWebhookUseCase
 import com.manage.crm.webhook.application.PostWebhookUseCase
+import com.manage.crm.webhook.application.dto.BrowseWebhookDeadLettersUseCaseIn
 import com.manage.crm.webhook.application.dto.BrowseWebhookDeliveryLogsUseCaseIn
 import com.manage.crm.webhook.application.dto.BrowseWebhookUseCaseIn
 import com.manage.crm.webhook.application.dto.DeleteWebhookUseCaseIn
 import com.manage.crm.webhook.application.dto.GetWebhookUseCaseIn
 import com.manage.crm.webhook.application.dto.PostWebhookUseCaseIn
 import com.manage.crm.webhook.application.dto.PostWebhookUseCaseOut
+import com.manage.crm.webhook.application.dto.WebhookDeadLetterDto
 import com.manage.crm.webhook.application.dto.WebhookDeliveryLogDto
 import com.manage.crm.webhook.application.dto.WebhookDto
 import com.manage.crm.webhook.controller.request.PostWebhookRequest
@@ -43,7 +46,8 @@ class WebhookController(
     private val deleteWebhookUseCase: DeleteWebhookUseCase,
     private val browseWebhookUseCase: BrowseWebhookUseCase,
     private val getWebhookUseCase: GetWebhookUseCase,
-    private val browseWebhookDeliveryLogsUseCase: BrowseWebhookDeliveryLogsUseCase
+    private val browseWebhookDeliveryLogsUseCase: BrowseWebhookDeliveryLogsUseCase,
+    private val browseWebhookDeadLettersUseCase: BrowseWebhookDeadLettersUseCase
 ) {
     @PostMapping
     suspend fun create(
@@ -109,5 +113,18 @@ class WebhookController(
                 limit = limit
             )
         ).let { ApiResponseGenerator.success(it.deliveries, HttpStatus.OK) }
+    }
+
+    @GetMapping("/{id}/dead-letters")
+    suspend fun listDeadLetters(
+        @PathVariable id: Long,
+        @RequestParam(required = false, defaultValue = "50") limit: Int
+    ): ApiResponse<ApiResponse.SuccessBody<List<WebhookDeadLetterDto>>> {
+        return browseWebhookDeadLettersUseCase.execute(
+            BrowseWebhookDeadLettersUseCaseIn(
+                webhookId = id,
+                limit = limit
+            )
+        ).let { ApiResponseGenerator.success(it.deadLetters, HttpStatus.OK) }
     }
 }
