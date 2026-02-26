@@ -43,6 +43,10 @@
     {
       "name": "Actions API",
       "description": "액션 API"
+    },
+    {
+      "name": "Journeys API",
+      "description": "여정 API"
     }
   ],
   "paths": {
@@ -520,6 +524,82 @@
         }
       }
     },
+    "/api/v1/journeys": {
+      "get": {
+        "tags": [
+          "Journeys API"
+        ],
+        "operationId": "browseJourneys",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyListJourneyDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Journeys API"
+        ],
+        "operationId": "createJourney",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Idempotency key for write request replay and duplicate prevention",
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostJourneyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyJourneyDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/events": {
       "get": {
         "tags": [
@@ -886,6 +966,106 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessBodyGetTotalUserCountUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/journeys/executions": {
+      "get": {
+        "tags": [
+          "Journeys API"
+        ],
+        "operationId": "browseExecutions",
+        "parameters": [
+          {
+            "name": "journeyId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "eventId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyListJourneyExecutionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/journeys/executions/{executionId}/histories": {
+      "get": {
+        "tags": [
+          "Journeys API"
+        ],
+        "operationId": "browseExecutionHistories",
+        "parameters": [
+          {
+            "name": "executionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyListJourneyExecutionHistoryDto"
                 }
               }
             }
@@ -1598,6 +1778,198 @@
           }
         }
       },
+      "PostJourneyRequest": {
+        "required": [
+          "name",
+          "steps",
+          "triggerType"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "triggerType": {
+            "type": "string"
+          },
+          "triggerEventName": {
+            "type": "string"
+          },
+          "triggerSegmentId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostJourneyStepRequest"
+            }
+          }
+        }
+      },
+      "PostJourneyStepRequest": {
+        "required": [
+          "stepOrder",
+          "stepType"
+        ],
+        "type": "object",
+        "properties": {
+          "stepOrder": {
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "stepType": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "variables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "delayMillis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "conditionExpression": {
+            "type": "string"
+          },
+          "retryCount": {
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "JourneyDto": {
+        "required": [
+          "active",
+          "createdAt",
+          "id",
+          "name",
+          "steps",
+          "triggerType"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "triggerType": {
+            "type": "string"
+          },
+          "triggerEventName": {
+            "type": "string"
+          },
+          "triggerSegmentId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JourneyStepDto"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      },
+      "JourneyStepDto": {
+        "required": [
+          "createdAt",
+          "id",
+          "retryCount",
+          "stepOrder",
+          "stepType",
+          "variables"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "stepOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stepType": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "variables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "delayMillis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "conditionExpression": {
+            "type": "string"
+          },
+          "retryCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyJourneyDto": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/JourneyDto"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
       "PostEventPropertyDto": {
         "required": [
           "key",
@@ -2251,6 +2623,158 @@
         "properties": {
           "data": {
             "$ref": "#/components/schemas/SegmentDto"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyListJourneyDto": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JourneyDto"
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "JourneyExecutionDto": {
+        "required": [
+          "createdAt",
+          "currentStepOrder",
+          "eventId",
+          "id",
+          "journeyId",
+          "startedAt",
+          "status",
+          "triggerKey",
+          "userId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "journeyId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "eventId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "type": "string"
+          },
+          "currentStepOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastError": {
+            "type": "string"
+          },
+          "triggerKey": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string"
+          },
+          "completedAt": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyListJourneyExecutionDto": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JourneyExecutionDto"
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "JourneyExecutionHistoryDto": {
+        "required": [
+          "attempt",
+          "createdAt",
+          "id",
+          "journeyExecutionId",
+          "journeyStepId",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "journeyExecutionId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "journeyStepId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "type": "string"
+          },
+          "attempt": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyListJourneyExecutionHistoryDto": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JourneyExecutionHistoryDto"
+            }
           },
           "message": {
             "type": "string"
