@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { campaignAPI } from 'shared/api';
 import type {
+  CampaignSummaryResponse,
   CampaignEventData,
   GetCampaignDashboardUseCaseOut,
   StreamConnectionStatus,
@@ -18,6 +19,7 @@ interface DashboardQueryParams {
 
 export const useCampaignDashboard = () => {
   const [dashboard, setDashboard] = useState<GetCampaignDashboardUseCaseOut | null>(null);
+  const [summary, setSummary] = useState<CampaignSummaryResponse | null>(null);
   const [streamStatus, setStreamStatus] = useState<StreamStatusResponse | null>(null);
   const [liveEvents, setLiveEvents] = useState<CampaignEventData[]>([]);
 
@@ -54,6 +56,23 @@ export const useCampaignDashboard = () => {
     },
     []
   );
+
+  const fetchSummary = useCallback(async (campaignId: number): Promise<boolean> => {
+    setError(null);
+    try {
+      const data = await campaignAPI.getSummary(campaignId);
+      if (!data) {
+        setError('Failed to load campaign summary');
+        return false;
+      }
+      setSummary(data);
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load campaign summary';
+      setError(message);
+      return false;
+    }
+  }, []);
 
   const fetchStreamStatus = useCallback(async (campaignId: number): Promise<boolean> => {
     setLoadingStreamStatus(true);
@@ -169,6 +188,7 @@ export const useCampaignDashboard = () => {
 
   return {
     dashboard,
+    summary,
     streamStatus,
     liveEvents,
     loadingDashboard,
@@ -177,6 +197,7 @@ export const useCampaignDashboard = () => {
     connectionStatus,
     streamMessage,
     fetchDashboard,
+    fetchSummary,
     fetchStreamStatus,
     connectStream,
     disconnectStream,
