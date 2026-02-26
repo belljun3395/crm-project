@@ -10,6 +10,7 @@ export const EventPage: React.FC = () => {
   const [eventNameQuery, setEventNameQuery] = useState('');
   const [whereQuery, setWhereQuery] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [hasSearched, setHasSearched] = useState(false);
   const [formData, setFormData] = useState<EventFormData>({
     name: '',
     campaignName: '',
@@ -24,6 +25,7 @@ export const EventPage: React.FC = () => {
   );
 
   const handleSearch = async () => {
+    setHasSearched(true);
     await searchEvents(eventNameQuery, whereQuery);
   };
 
@@ -42,6 +44,7 @@ export const EventPage: React.FC = () => {
       closeModal();
       // 검색 조건이 유효할 때만 서버 재조회
       if (eventNameQuery.trim() && whereQuery.trim()) {
+        setHasSearched(true);
         await searchEvents(eventNameQuery, whereQuery);
       }
     }
@@ -71,6 +74,29 @@ export const EventPage: React.FC = () => {
         </div>
       )}
 
+      <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-4">
+        <h2 className="text-sm font-semibold text-cyan-100">처음 사용하는 분을 위한 검색 가이드</h2>
+        <p className="mt-2 text-sm text-cyan-50/90">
+          Event 검색 API는 <code>eventName</code>과 <code>where</code>가 모두 필수입니다.
+        </p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-cyan-50/90">
+          <li>
+            단일 조건: <code>category&electronics&=&end</code>
+          </li>
+          <li>
+            다중 조건: <code>category&electronics&=&and,brand&samsung&=&end</code>
+          </li>
+          <li>
+            범위 조건: <code>amount&100&amount&200&between&end</code>
+          </li>
+        </ul>
+        <p className="mt-2 text-xs text-cyan-50/80">
+          연산자: <code>=</code>, <code>!=</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>,{' '}
+          <code>&lt;=</code>, <code>like</code>, <code>between</code> / 연결: <code>and</code>, <code>or</code>,{' '}
+          <code>end</code>
+        </p>
+      </div>
+
       {/* 서버 검색 */}
       <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
         <div className="grid gap-3 md:grid-cols-[1fr,2fr,auto]">
@@ -94,6 +120,9 @@ export const EventPage: React.FC = () => {
         </div>
         <p className="mt-2 text-xs text-slate-400">
           where 예시: <code>category&electronics&=&end</code>
+        </p>
+        <p className="mt-1 text-xs text-slate-500">
+          검색 후 아래 결과를 필요하면 로컬 필터로 추가 좁힐 수 있습니다.
         </p>
       </div>
 
@@ -143,10 +172,16 @@ export const EventPage: React.FC = () => {
                   </td>
                 </tr>
               ))
-            ) : (
+            ) : hasSearched ? (
               <tr>
                 <td colSpan={4} className="px-6 py-8 text-center text-gray-400">
                   No events found
+                </td>
+              </tr>
+            ) : (
+              <tr>
+                <td colSpan={4} className="px-6 py-8 text-center text-slate-400">
+                  Event Name과 Where를 입력하고 Search를 눌러주세요.
                 </td>
               </tr>
             )}
