@@ -390,7 +390,8 @@ export type TabType =
   | 'segments'
   | 'journeys'
   | 'actions'
-  | 'audit-logs';
+  | 'audit-logs'
+  | 'feature-guide';
 
 // Form State Types
 export interface UserFormData {
