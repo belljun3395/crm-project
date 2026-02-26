@@ -17,7 +17,7 @@ export const eventAPI = {
       return response.data.data.events;
     } catch (error) {
       console.error('Error searching events:', error);
-      return [];
+      throw error;
     }
   },
 

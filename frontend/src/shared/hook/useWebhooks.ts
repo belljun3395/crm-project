@@ -3,14 +3,20 @@ import { webhookAPI } from 'shared/api';
 import type {
   CreateWebhookRequest,
   UpdateWebhookRequest,
-  WebhookResponse
+  WebhookResponse,
+  WebhookDeliveryLog,
+  WebhookDeadLetter
 } from 'shared/type';
 
 export const useWebhooks = () => {
   const [webhooks, setWebhooks] = useState<WebhookResponse[]>([]);
+  const [deliveriesByWebhook, setDeliveriesByWebhook] = useState<Record<number, WebhookDeliveryLog[]>>({});
+  const [deadLettersByWebhook, setDeadLettersByWebhook] = useState<Record<number, WebhookDeadLetter[]>>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deliveryLoadingId, setDeliveryLoadingId] = useState<number | null>(null);
+  const [deadLetterLoadingId, setDeadLetterLoadingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchWebhooks = useCallback(async (): Promise<void> => {
@@ -91,19 +97,53 @@ export const useWebhooks = () => {
     }
   }, [fetchWebhooks]);
 
+  const fetchDeliveries = useCallback(async (webhookId: number): Promise<void> => {
+    setDeliveryLoadingId(webhookId);
+    setError(null);
+    try {
+      const data = await webhookAPI.getWebhookDeliveries(webhookId);
+      setDeliveriesByWebhook((prev) => ({ ...prev, [webhookId]: data }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load webhook deliveries';
+      setError(message);
+    } finally {
+      setDeliveryLoadingId(null);
+    }
+  }, []);
+
+  const fetchDeadLetters = useCallback(async (webhookId: number): Promise<void> => {
+    setDeadLetterLoadingId(webhookId);
+    setError(null);
+    try {
+      const data = await webhookAPI.getWebhookDeadLetters(webhookId);
+      setDeadLettersByWebhook((prev) => ({ ...prev, [webhookId]: data }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load webhook dead letters';
+      setError(message);
+    } finally {
+      setDeadLetterLoadingId(null);
+    }
+  }, []);
+
   useEffect(() => {
     fetchWebhooks();
   }, [fetchWebhooks]);
 
   return {
     webhooks,
+    deliveriesByWebhook,
+    deadLettersByWebhook,
     loading,
     saving,
     deletingId,
+    deliveryLoadingId,
+    deadLetterLoadingId,
     error,
     fetchWebhooks,
     createWebhook,
     updateWebhook,
-    deleteWebhook
+    deleteWebhook,
+    fetchDeliveries,
+    fetchDeadLetters
   };
 };

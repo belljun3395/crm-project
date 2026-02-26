@@ -1,3 +1,24 @@
+@import 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap';
+
+/* stylelint-disable scss/at-rule-no-unknown */
+/* biome-ignore lint/suspicious/noUnknownAtRules: Tailwind directive */
 @tailwind base;
+/* biome-ignore lint/suspicious/noUnknownAtRules: Tailwind directive */
 @tailwind components;
+/* biome-ignore lint/suspicious/noUnknownAtRules: Tailwind directive */
 @tailwind utilities;
+/* stylelint-enable scss/at-rule-no-unknown */
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: #020617;
+  color: #f1f5f9;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

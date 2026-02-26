@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Input, Modal } from 'common/component';
+import { Button, GuidePanel, Input, Modal } from 'common/component';
 import { useToggle } from 'common/hook';
 import { useEmailSchedules, useTemplates } from 'shared/hook';
 import type { EmailScheduleFormData } from 'shared/type';
@@ -53,6 +53,16 @@ export const ScheduleManagementPage: React.FC = () => {
           Schedule Email
         </Button>
       </div>
+
+      <GuidePanel
+        description="특정 시점까지 반복 또는 예약 발송할 이메일 작업을 등록하는 화면입니다."
+        items={[
+          'Schedule Email에서 템플릿, 대상 사용자 ID, 만료 시간을 입력합니다.',
+          'User IDs는 쉼표로 여러 명을 입력할 수 있습니다.',
+          '목록에서 Cancel을 누르면 예약 작업을 중지합니다.'
+        ]}
+        note="만료 시간이 지나면 해당 스케줄은 자동 종료됩니다."
+      />
 
       {/* 스케줄 테이블 */}
       <div className="overflow-hidden rounded-xl border border-gray-800 bg-gray-900">

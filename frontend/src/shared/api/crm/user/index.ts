@@ -1,17 +1,17 @@
 import { crmApi } from '../instance';
 import { createIdempotencyHeaders } from '../idempotency';
-import type { 
-  User, 
-  CreateUserRequest, 
-  ApiResponse 
+import type {
+  User,
+  CreateUserRequest,
+  ApiResponse
 } from 'shared/type';
 
 export const userAPI = {
   // 사용자 목록 조회
   async getUsers(): Promise<User[]> {
     try {
-      const response = await crmApi.get<ApiResponse<{ users: User[] }>>('/users');
-      return response.data.data.users;
+      const response = await crmApi.get<ApiResponse<{ users?: { content?: User[] } }>>('/users');
+      return response.data.data.users?.content ?? [];
     } catch (error) {
       console.error('Error fetching users:', error);
       return [];
