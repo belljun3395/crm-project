@@ -1,11 +1,16 @@
 package com.manage.crm.webhook.infrastructure
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.webhook.WebhookClient
+import com.manage.crm.webhook.WebhookDeliveryResult
+import com.manage.crm.webhook.WebhookDeliveryStatus
 import com.manage.crm.webhook.domain.Webhook
 import com.manage.crm.webhook.domain.WebhookEventPayload
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.netty.channel.ChannelOption
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactor.awaitSingleOrNull
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.MediaType
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
@@ -15,11 +20,24 @@ import org.springframework.web.reactive.function.client.bodyToMono
 import reactor.netty.http.client.HttpClient
 import java.net.URI
 import java.time.Duration
+import java.time.OffsetDateTime
+import java.util.UUID
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
 @Component
 @ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
 class WebClientWebhookClient(
-    webClientBuilder: WebClient.Builder
+    webClientBuilder: WebClient.Builder,
+    private val objectMapper: ObjectMapper,
+    @Value("\${webhook.delivery.max-attempts:3}")
+    private val maxAttempts: Int,
+    @Value("\${webhook.delivery.initial-backoff-millis:200}")
+    private val initialBackoffMillis: Long,
+    @Value("\${webhook.signing.enabled:false}")
+    private val signingEnabled: Boolean,
+    @Value("\${webhook.signing.secret:}")
+    private val signingSecret: String
 ) : WebhookClient {
     private val log = KotlinLogging.logger {}
 
@@ -33,28 +51,114 @@ class WebClientWebhookClient(
         )
         .build()
 
-    override suspend fun send(webhook: Webhook, payload: WebhookEventPayload) {
+    override suspend fun send(webhook: Webhook, payload: WebhookEventPayload): WebhookDeliveryResult {
         if (!isUrlSafe(webhook.url)) {
             log.warn { "Blocked webhook to unsafe URL: ${webhook.url}" }
-            return
+            return WebhookDeliveryResult(
+                status = WebhookDeliveryStatus.BLOCKED,
+                attemptCount = 0,
+                errorMessage = "Blocked webhook to unsafe URL"
+            )
         }
 
-        runCatching {
-            webClient.post()
+        val attempts = maxAttempts.coerceAtLeast(1)
+        val payloadJson = runCatching { objectMapper.writeValueAsString(payload) }
+            .getOrElse { error ->
+                log.error(error) { "Failed to serialize webhook payload: id=${webhook.id}, url=${webhook.url}" }
+                return WebhookDeliveryResult(
+                    status = WebhookDeliveryStatus.FAILED,
+                    attemptCount = 0,
+                    errorMessage = error.message
+                )
+            }
+
+        var finalResult = WebhookDeliveryResult(
+            status = WebhookDeliveryStatus.FAILED,
+            attemptCount = attempts,
+            errorMessage = "Webhook delivery failed"
+        )
+
+        for (attempt in 1..attempts) {
+            val result = sendOnce(webhook, payloadJson, attempt)
+            if (result.status == WebhookDeliveryStatus.SUCCESS || result.status == WebhookDeliveryStatus.BLOCKED) {
+                return result
+            }
+            finalResult = result
+
+            if (attempt < attempts) {
+                val backoffMillis = initialBackoffMillis * (1L shl (attempt - 1))
+                delay(backoffMillis)
+            }
+        }
+
+        return finalResult
+    }
+
+    private suspend fun sendOnce(
+        webhook: Webhook,
+        payloadJson: String,
+        attempt: Int
+    ): WebhookDeliveryResult {
+        return runCatching {
+            val timestamp = OffsetDateTime.now().toString()
+            val nonce = UUID.randomUUID().toString()
+            val signature = createSignature(timestamp, nonce, payloadJson)
+
+            val responseStatus = webClient.post()
                 .uri(webhook.url)
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(payload)
-                .retrieve()
-                .onStatus({ it.isError }) { response ->
-                    throw RuntimeException("Webhook returned error status: ${response.statusCode()}")
+                .headers { headers ->
+                    if (signingEnabled && signature != null) {
+                        headers.add("X-Webhook-Timestamp", timestamp)
+                        headers.add("X-Webhook-Nonce", nonce)
+                        headers.add("X-Webhook-Signature", signature)
+                    }
                 }
-                .bodyToMono(String::class.java)
+                .bodyValue(payloadJson)
+                .exchangeToMono { response ->
+                    response.bodyToMono(String::class.java)
+                        .defaultIfEmpty("")
+                        .map { response.statusCode().value() to it }
+                }
                 .awaitSingleOrNull()
-        }.onSuccess {
-            log.info { "Webhook delivered: id=${webhook.id}, url=${webhook.url}" }
-        }.onFailure { error ->
-            log.error(error) { "Webhook delivery failed: id=${webhook.id}, url=${webhook.url}" }
+                ?.first ?: 0
+
+            if (responseStatus in 200..299) {
+                log.info { "Webhook delivered: id=${webhook.id}, url=${webhook.url}, attempt=$attempt" }
+                WebhookDeliveryResult(
+                    status = WebhookDeliveryStatus.SUCCESS,
+                    attemptCount = attempt,
+                    responseStatus = responseStatus
+                )
+            } else {
+                log.warn { "Webhook returned non-success status: id=${webhook.id}, status=$responseStatus, attempt=$attempt" }
+                WebhookDeliveryResult(
+                    status = WebhookDeliveryStatus.FAILED,
+                    attemptCount = attempt,
+                    responseStatus = responseStatus,
+                    errorMessage = "Webhook returned non-success status: $responseStatus"
+                )
+            }
+        }.getOrElse { error ->
+            log.error(error) { "Webhook delivery failed: id=${webhook.id}, url=${webhook.url}, attempt=$attempt" }
+            WebhookDeliveryResult(
+                status = WebhookDeliveryStatus.FAILED,
+                attemptCount = attempt,
+                errorMessage = error.message
+            )
         }
+    }
+
+    private fun createSignature(timestamp: String, nonce: String, body: String): String? {
+        if (!signingEnabled || signingSecret.isBlank()) {
+            return null
+        }
+        val payload = "$timestamp.$nonce.$body"
+        val secretKeySpec = SecretKeySpec(signingSecret.toByteArray(Charsets.UTF_8), "HmacSHA256")
+        val mac = Mac.getInstance("HmacSHA256").apply { init(secretKeySpec) }
+        val digest = mac.doFinal(payload.toByteArray(Charsets.UTF_8))
+        val hex = digest.joinToString("") { "%02x".format(it) }
+        return "sha256=$hex"
     }
 
     private fun isUrlSafe(url: String): Boolean {
