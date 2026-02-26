@@ -1,8 +1,10 @@
 package com.manage.crm.config
 
+import com.fasterxml.jackson.databind.JsonNode
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Info
+import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
@@ -85,6 +87,15 @@ class SpringDocConfig(
         }
     }
 
+    @Bean
+    fun jsonNodeSchemaOpenApiCustomizer(): OpenApiCustomizer {
+        return OpenApiCustomizer { openApi ->
+            openApi.components?.schemas?.get(JsonNode::class.simpleName)?.let {
+                openApi.components.schemas[JsonNode::class.simpleName] = Schema<Any>()
+            }
+        }
+    }
+
     private fun authSetting(): Components {
         return Components()
             .addSecuritySchemes(
@@ -124,4 +135,5 @@ object SwaggerTag {
     const val EMAILS_SWAGGER_TAG = "Emails API"
     const val EVENT_SWAGGER_TAG = "Event API"
     const val WEBHOOKS_SWAGGER_TAG = "Webhooks API"
+    const val SEGMENTS_SWAGGER_TAG = "Segments API"
 }

@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
 
-@Profile("!test")
+@Profile("!test & !openapi")
 @Component
 class CacheInvalidationListener(
     private val redisTemplate: RedisTemplate<String, Any>,
