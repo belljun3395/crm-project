@@ -18,7 +18,7 @@ export const auditAPI = {
       return response.data.data;
     } catch (error) {
       console.error('Error fetching audit logs:', error);
-      return [];
+      throw error;
     }
   }
 };

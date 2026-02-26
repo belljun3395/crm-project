@@ -24,6 +24,8 @@ export const useEmailHistories = () => {
       if (!response) {
         setHistories([]);
         setTotalCount(0);
+        setPage(params?.page ?? 0);
+        setSize(params?.size ?? 20);
         return;
       }
 

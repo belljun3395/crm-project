@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   useUsers,
   useTemplates,
@@ -16,7 +16,7 @@ const formatNumber = (value: number): string => new Intl.NumberFormat('ko-KR').f
 export const DashboardPage: React.FC = () => {
   const { users, userCount } = useUsers();
   const { templates } = useTemplates();
-  const { histories: emailHistories } = useEmailHistories();
+  const { totalCount: emailHistoriesTotalCount } = useEmailHistories();
   const { schedules } = useEmailSchedules();
   const { webhooks } = useWebhooks();
   const { segments } = useSegments();
@@ -24,18 +24,32 @@ export const DashboardPage: React.FC = () => {
   const { histories } = useActions();
   const { logs } = useAuditLogs();
 
-  const cards = [
-    { label: 'Total Users', value: formatNumber(userCount), accent: 'from-cyan-400/20 to-cyan-500/0' },
-    { label: 'Email Templates', value: formatNumber(templates.length), accent: 'from-emerald-400/20 to-emerald-500/0' },
-    { label: 'Scheduled Emails', value: formatNumber(schedules.length), accent: 'from-amber-400/20 to-amber-500/0' },
-    { label: 'Email Histories', value: formatNumber(emailHistories.length), accent: 'from-orange-400/20 to-orange-500/0' },
-    { label: 'Webhooks', value: formatNumber(webhooks.length), accent: 'from-fuchsia-400/20 to-fuchsia-500/0' },
-    { label: 'Segments', value: formatNumber(segments.length), accent: 'from-sky-400/20 to-sky-500/0' },
-    { label: 'Journeys', value: formatNumber(journeys.length), accent: 'from-indigo-400/20 to-indigo-500/0' },
-    { label: 'Journey Executions', value: formatNumber(executions.length), accent: 'from-teal-400/20 to-teal-500/0' },
-    { label: 'Action Histories', value: formatNumber(histories.length), accent: 'from-rose-400/20 to-rose-500/0' },
-    { label: 'Audit Logs', value: formatNumber(logs.length), accent: 'from-violet-400/20 to-violet-500/0' }
-  ];
+  const cards = useMemo(
+    () => [
+      { label: 'Total Users', value: formatNumber(userCount), accent: 'from-cyan-400/20 to-cyan-500/0' },
+      { label: 'Email Templates', value: formatNumber(templates.length), accent: 'from-emerald-400/20 to-emerald-500/0' },
+      { label: 'Scheduled Emails', value: formatNumber(schedules.length), accent: 'from-amber-400/20 to-amber-500/0' },
+      { label: 'Email Histories', value: formatNumber(emailHistoriesTotalCount), accent: 'from-orange-400/20 to-orange-500/0' },
+      { label: 'Webhooks', value: formatNumber(webhooks.length), accent: 'from-fuchsia-400/20 to-fuchsia-500/0' },
+      { label: 'Segments', value: formatNumber(segments.length), accent: 'from-sky-400/20 to-sky-500/0' },
+      { label: 'Journeys', value: formatNumber(journeys.length), accent: 'from-indigo-400/20 to-indigo-500/0' },
+      { label: 'Journey Executions', value: formatNumber(executions.length), accent: 'from-teal-400/20 to-teal-500/0' },
+      { label: 'Action Histories', value: formatNumber(histories.length), accent: 'from-rose-400/20 to-rose-500/0' },
+      { label: 'Audit Logs', value: formatNumber(logs.length), accent: 'from-violet-400/20 to-violet-500/0' }
+    ],
+    [
+      userCount,
+      templates.length,
+      schedules.length,
+      emailHistoriesTotalCount,
+      webhooks.length,
+      segments.length,
+      journeys.length,
+      executions.length,
+      histories.length,
+      logs.length
+    ]
+  );
 
   return (
     <div className="space-y-7">
@@ -111,7 +125,7 @@ export const DashboardPage: React.FC = () => {
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-white">{history.channel}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{history.status}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
-                    {new Date(history.createdAt).toLocaleString()}
+                    {history.createdAt ? new Date(history.createdAt).toLocaleString() : '-'}
                   </td>
                 </tr>
               ))}

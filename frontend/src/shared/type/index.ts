@@ -284,7 +284,7 @@ export interface ActionDispatchHistory {
   destination: string;
   subject?: string;
   body: string;
-  variables: Record<string, string>;
+  variables?: Record<string, string>;
   providerMessageId?: string;
   errorCode?: string;
   errorMessage?: string;

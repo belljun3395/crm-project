@@ -10,6 +10,7 @@ export const useSegments = () => {
   const [segments, setSegments] = useState<Segment[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchSegments = useCallback(async (limit = 50): Promise<void> => {
@@ -67,7 +68,7 @@ export const useSegments = () => {
   }, [fetchSegments]);
 
   const deleteSegment = useCallback(async (id: number): Promise<boolean> => {
-    setSaving(true);
+    setDeletingId(id);
     setError(null);
     try {
       const success = await segmentAPI.deleteSegment(id);
@@ -82,7 +83,7 @@ export const useSegments = () => {
       setError(message);
       return false;
     } finally {
-      setSaving(false);
+      setDeletingId(null);
     }
   }, [fetchSegments]);
 
@@ -94,6 +95,7 @@ export const useSegments = () => {
     segments,
     loading,
     saving,
+    deletingId,
     error,
     fetchSegments,
     createSegment,
