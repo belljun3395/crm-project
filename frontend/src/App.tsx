@@ -11,7 +11,8 @@ import {
   FunnelIcon,
   SparklesIcon,
   BoltIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  BookOpenIcon
 } from '@heroicons/react/24/outline';
 import { DashboardPage } from 'page/dashboard';
 import { CampaignDashboardPage } from 'page/campaign-dashboard';
@@ -25,6 +26,7 @@ import { SegmentManagementPage } from 'page/segment';
 import { JourneyManagementPage } from 'page/journey';
 import { ActionDispatchPage } from 'page/action';
 import { AuditLogPage } from 'page/audit-log';
+import { FeatureGuidePage } from 'page/feature-guide';
 import type { TabType } from 'shared/type';
 
 interface NavItem {
@@ -113,6 +115,12 @@ const navItems: NavItem[] = [
     label: 'Audit Logs',
     description: '운영 감사 로그',
     icon: <DocumentTextIcon className="h-4 w-4" />
+  },
+  {
+    id: 'feature-guide',
+    label: 'Feature Guide',
+    description: '기능 설명/명세',
+    icon: <BookOpenIcon className="h-4 w-4" />
   }
 ];
 
@@ -121,7 +129,7 @@ const navSections: NavSection[] = [
     id: 'overview',
     label: '개요',
     description: '상태 모니터링',
-    itemIds: ['dashboard', 'campaign-dashboard', 'audit-logs']
+    itemIds: ['dashboard', 'campaign-dashboard', 'audit-logs', 'feature-guide']
   },
   {
     id: 'customer',
@@ -180,6 +188,8 @@ function App() {
         return <ActionDispatchPage />;
       case 'audit-logs':
         return <AuditLogPage />;
+      case 'feature-guide':
+        return <FeatureGuidePage />;
       default:
         return <DashboardPage />;
     }
