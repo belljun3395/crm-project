@@ -7,6 +7,7 @@ import com.manage.crm.event.domain.Operation
 import com.manage.crm.event.domain.repository.query.SearchByPropertyQuery
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
+import com.manage.crm.event.exception.InvalidSearchConditionException
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Nested
@@ -696,6 +697,122 @@ class EventRepositoryCustomTest(
                 assert(result.size == 2)
                 assert(result[0].userId == 1L)
                 assert(result[1].userId == 8L)
+            }
+        }
+
+        @Test
+        fun `search events by multiple properties with like wildcard semantics`() {
+            runTest {
+                // given
+                (1..10).map { it ->
+                    Event.new(
+                        name = "event",
+                        userId = it.toLong(),
+                        properties = EventProperties(
+                            listOf(
+                                EventProperty(
+                                    key = "propertyKey",
+                                    value = "value$it"
+                                )
+                            )
+                        )
+                    ).let { eventRepository.save(it) }
+                }
+
+                // when
+                val result = eventRepository.searchByProperties(
+                    listOf(
+                        SearchByPropertyQuery(
+                            "event",
+                            EventProperties(
+                                listOf(
+                                    EventProperty("propertyKey", "%e1%")
+                                )
+                            ),
+                            Operation.LIKE
+                        )
+                    )
+                )
+
+                // then
+                assert(result.size == 2)
+            }
+        }
+
+        @Test
+        fun `search events by multiple properties compares numeric values numerically`() {
+            runTest {
+                // given
+                listOf("2", "10").forEachIndexed { index, value ->
+                    Event.new(
+                        name = "event",
+                        userId = (index + 1).toLong(),
+                        properties = EventProperties(
+                            listOf(
+                                EventProperty(
+                                    key = "propertyKey",
+                                    value = value
+                                )
+                            )
+                        )
+                    ).let { eventRepository.save(it) }
+                }
+
+                // when
+                val result = eventRepository.searchByProperties(
+                    listOf(
+                        SearchByPropertyQuery(
+                            "event",
+                            EventProperties(
+                                listOf(
+                                    EventProperty("propertyKey", "9")
+                                )
+                            ),
+                            Operation.GREATER_THAN
+                        )
+                    )
+                )
+
+                // then
+                assert(result.size == 1)
+                assert(result.first().properties.value.first().value == "10")
+            }
+        }
+
+        @Test
+        fun `search events by multiple properties validates param count for single-value operation`() {
+            runTest {
+                // given
+                Event.new(
+                    name = "event",
+                    userId = 1L,
+                    properties = EventProperties(
+                        listOf(
+                            EventProperty(
+                                key = "propertyKey",
+                                value = "1"
+                            )
+                        )
+                    )
+                ).let { eventRepository.save(it) }
+
+                // when
+                assertThrows<InvalidSearchConditionException> {
+                    eventRepository.searchByProperties(
+                        listOf(
+                            SearchByPropertyQuery(
+                                "event",
+                                EventProperties(
+                                    listOf(
+                                        EventProperty("propertyKey", "1"),
+                                        EventProperty("propertyKey", "2")
+                                    )
+                                ),
+                                Operation.EQUALS
+                            )
+                        )
+                    )
+                }
             }
         }
     }
