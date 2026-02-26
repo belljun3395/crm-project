@@ -1,5 +1,6 @@
 package com.manage.crm.infrastructure.cache.provider
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.cloud.spring.pubsub.core.PubSubTemplate
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component
 @ConditionalOnProperty(name = ["cloud.provider"], havingValue = "gcp")
 class PubSubCacheInvalidationPublisher(
     private val pubSubTemplate: PubSubTemplate,
+    private val objectMapper: ObjectMapper,
     @Value("\${gcp.pubsub.cache-invalidation-topic}") private val topicId: String
 ) : CacheInvalidationPublisher {
 
@@ -21,7 +23,7 @@ class PubSubCacheInvalidationPublisher(
             return
         }
 
-        val message = """{"action":"invalidate", "keys":${keys.joinToString(prefix = "[", postfix = "]") { "\"$it\"" }}}"""
+        val message = objectMapper.writeValueAsString(mapOf("action" to "invalidate", "keys" to keys))
 
         runCatching {
             pubSubTemplate.publish(topicId, message)

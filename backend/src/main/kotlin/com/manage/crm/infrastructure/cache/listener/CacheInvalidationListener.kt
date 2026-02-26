@@ -29,7 +29,11 @@ class CacheInvalidationListener(
     private fun processMessage(messageJson: String) {
         try {
             val messageMap = objectMapper.readValue(messageJson, Map::class.java) as Map<*, *>
-            val snsMessage = messageMap["Message"] as String
+            val snsMessage = messageMap["Message"] as? String
+                ?: run {
+                    log.warn("Missing or non-string 'Message' field in SQS message: {}", messageJson)
+                    return
+                }
             val payload = objectMapper.readValue(snsMessage, Map::class.java) as Map<*, *>
 
             if (payload["action"] == "invalidate") {

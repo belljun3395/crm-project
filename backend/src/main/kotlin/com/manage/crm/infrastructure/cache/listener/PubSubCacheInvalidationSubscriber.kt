@@ -37,8 +37,11 @@ class PubSubCacheInvalidationSubscriber(
         subscriber = pubSubTemplate.subscribe(subscriptionId) { message ->
             val data = message.pubsubMessage.data.toStringUtf8()
             log.info { "Received cache invalidation message from Pub/Sub: $data" }
-            processMessage(data)
-            message.ack()
+            if (processMessage(data)) {
+                message.ack()
+            } else {
+                message.nack()
+            }
         }
     }
 
@@ -48,8 +51,8 @@ class PubSubCacheInvalidationSubscriber(
         log.info { "Stopped Pub/Sub cache invalidation subscriber" }
     }
 
-    private fun processMessage(data: String) {
-        try {
+    private fun processMessage(data: String): Boolean {
+        return try {
             val payload = objectMapper.readValue(data, Map::class.java) as Map<*, *>
 
             if (payload["action"] == "invalidate") {
@@ -59,14 +62,18 @@ class PubSubCacheInvalidationSubscriber(
                     log.info { "Invalidating cache keys: $keys" }
                     redisTemplate.delete(keys)
                     log.info { "Successfully invalidated cache keys: $keys" }
+                    true
                 } else {
                     log.warn { "No keys found in Pub/Sub invalidation message payload: $payload" }
+                    false
                 }
             } else {
                 log.warn { "Unknown action in Pub/Sub message payload: $payload" }
+                false
             }
         } catch (e: Exception) {
             log.error(e) { "Error processing cache invalidation message from Pub/Sub: $data" }
+            false
         }
     }
 }
