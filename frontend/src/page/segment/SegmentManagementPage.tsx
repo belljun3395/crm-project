@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Button, Input, Modal, Textarea } from 'common/component';
+import { Button, GuidePanel, Input, Modal, Textarea } from 'common/component';
 import { useSegments } from 'shared/hook';
 import type { Segment, SegmentCondition, SegmentRequest, SegmentUpdateRequest } from 'shared/type';
 
@@ -233,7 +233,7 @@ export const SegmentManagementPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-white">Segments</h2>
-          <p className="text-sm text-slate-300">OpenAPI `/segments` 기반 세그먼트 관리</p>
+          <p className="text-sm text-slate-300">조건 기반 고객 그룹을 만들고 관리합니다.</p>
         </div>
         <Button onClick={() => setIsCreateOpen(true)}>새 세그먼트</Button>
       </div>
@@ -241,6 +241,16 @@ export const SegmentManagementPage: React.FC = () => {
       {error && (
         <div className="rounded-xl border border-rose-700/60 bg-rose-900/20 p-3 text-sm text-rose-100">{error}</div>
       )}
+
+      <GuidePanel
+        description="조건을 기준으로 고객 묶음(세그먼트)을 만들어 타겟팅에 사용하는 화면입니다."
+        items={[
+          '새 세그먼트에서 이름과 설명을 입력하고 조건 JSON을 작성합니다.',
+          '조건은 배열 형태로 입력하며, 각 항목에 field/operator/valueType/value가 필요합니다.',
+          'Active를 켜면 다른 기능(여정/캠페인)에서 즉시 사용할 수 있습니다.'
+        ]}
+        note="처음에는 기본 예시 JSON을 복사해 값만 바꾸는 방식이 가장 안전합니다."
+      />
 
       <div className="overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur">
         <table className="min-w-full divide-y divide-slate-800">

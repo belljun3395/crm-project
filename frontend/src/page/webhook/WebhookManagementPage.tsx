@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Input, Modal } from 'common/component';
+import { Button, GuidePanel, Input, Modal } from 'common/component';
 import { useWebhooks } from 'shared/hook';
 import type { CreateWebhookRequest, UpdateWebhookRequest, WebhookResponse } from 'shared/type';
 
@@ -234,7 +234,7 @@ export const WebhookManagementPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-white">Webhooks</h2>
-          <p className="text-sm text-slate-300">`/webhooks`, `/deliveries`, `/dead-letters` API 연동</p>
+          <p className="text-sm text-slate-300">외부 시스템 연동과 전달 상태를 관리합니다.</p>
         </div>
         <Button onClick={() => setIsCreateModalOpen(true)}>New Webhook</Button>
       </div>
@@ -242,6 +242,16 @@ export const WebhookManagementPage: React.FC = () => {
       {(error || formError) && !isCreateModalOpen && !editingWebhook && (
         <div className="rounded-xl border border-rose-700/60 bg-rose-900/20 p-3 text-sm text-rose-100">{error || formError}</div>
       )}
+
+      <GuidePanel
+        description="외부 시스템으로 이벤트를 자동 전달하는 연결을 관리하는 화면입니다."
+        items={[
+          'New Webhook에서 이름, 수신 URL, 이벤트 종류를 입력해 등록합니다.',
+          'Active를 끄면 해당 Webhook 전달을 일시 중지할 수 있습니다.',
+          '아래 Delivery와 Dead Letter를 확인해 전달 성공/실패를 추적합니다.'
+        ]}
+        note="URL은 http 또는 https 형식만 허용됩니다."
+      />
 
       <section className="overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur">
         <table className="min-w-full divide-y divide-slate-800">

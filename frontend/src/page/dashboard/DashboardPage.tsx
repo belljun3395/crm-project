@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { GuidePanel } from 'common/component';
 import {
   useUsers,
   useTemplates,
@@ -57,6 +58,16 @@ export const DashboardPage: React.FC = () => {
         <h2 className="text-2xl font-semibold text-white">Overview</h2>
         <p className="text-sm text-slate-300">운영 API 상태를 한눈에 보는 대시보드</p>
       </div>
+
+      <GuidePanel
+        description="서비스 전체 상태를 빠르게 파악하는 화면입니다."
+        items={[
+          '상단 카드 숫자로 전체 규모를 확인합니다.',
+          '아래 표에서 최근 사용자와 최근 발송 이력을 확인합니다.',
+          '문제가 보이면 좌측 메뉴에서 해당 상세 화면으로 이동해 원인을 확인합니다.'
+        ]}
+        note="이 화면은 요약 화면이며, 상세 수정은 각 기능 화면에서 진행합니다."
+      />
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map((card) => (

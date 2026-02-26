@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Input, Textarea, Modal } from 'common/component';
+import { Button, GuidePanel, Input, Textarea, Modal } from 'common/component';
 import { useToggle } from 'common/hook';
 import { useTemplates } from 'shared/hook';
 import type { TemplateFormData } from 'shared/type';
@@ -58,6 +58,16 @@ export const TemplateManagementPage: React.FC = () => {
           New Template
         </Button>
       </div>
+
+      <GuidePanel
+        description="반복 발송에 사용할 이메일 문구를 미리 만들어 관리하는 화면입니다."
+        items={[
+          'New Template에서 제목과 본문을 입력해 템플릿을 등록합니다.',
+          'Variables에 변수 이름을 입력하면 발송 시 개인화 값으로 대체할 수 있습니다.',
+          '검색창으로 템플릿 이름이나 제목을 빠르게 찾을 수 있습니다.'
+        ]}
+        note="자주 바뀌는 문구를 템플릿으로 분리해두면 운영 속도가 빨라집니다."
+      />
 
       {/* 검색 */}
       <div className="relative">

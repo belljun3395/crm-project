@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Input, Textarea } from 'common/component';
+import { Button, GuidePanel, Input, Textarea } from 'common/component';
 import { useActions } from 'shared/hook';
 import type { ActionDispatchRequest } from 'shared/type';
 
@@ -96,8 +96,18 @@ export const ActionDispatchPage: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold text-white">Action Dispatch</h2>
-        <p className="text-sm text-slate-300">`/actions/dispatch`, `/actions/dispatch/histories` API 연동</p>
+        <p className="text-sm text-slate-300">즉시 메시지를 발송하고 결과를 확인합니다.</p>
       </div>
+
+      <GuidePanel
+        description="이메일, 슬랙, 디스코드로 즉시 메시지를 보내는 화면입니다."
+        items={[
+          '채널과 수신 대상을 입력한 뒤 메시지 본문을 작성합니다.',
+          'Variables JSON에는 치환할 값을 key-value 형태로 입력합니다.',
+          '전송 후 아래 이력에서 성공/실패 상태를 확인합니다.'
+        ]}
+        note="긴급 공지나 운영 알림처럼 즉시 전달이 필요한 상황에서 사용합니다."
+      />
 
       <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur">
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-300">Dispatch Form</h3>
