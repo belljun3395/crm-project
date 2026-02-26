@@ -1,4 +1,5 @@
 import { crmApi } from '../../instance';
+import { createIdempotencyHeaders } from '../../idempotency';
 import type { 
   EmailSchedule,
   CreateEmailScheduleRequest,
@@ -10,7 +11,9 @@ export const emailScheduleAPI = {
   // 알림 이메일 전송
   async sendNotificationEmail(data: SendEmailRequest): Promise<boolean> {
     try {
-      const response = await crmApi.post<ApiResponse<{ isSuccess: boolean }>>('/emails/send/notifications', data);
+      const response = await crmApi.post<ApiResponse<{ isSuccess: boolean }>>('/emails/send/notifications', data, {
+        headers: createIdempotencyHeaders('email-send-notification')
+      });
       return response.data.data.isSuccess;
     } catch (error) {
       console.error('Error sending notification email:', error);
@@ -32,7 +35,9 @@ export const emailScheduleAPI = {
   // 이메일 스케줄 생성
   async postEmailSchedule(data: CreateEmailScheduleRequest): Promise<string | null> {
     try {
-      const response = await crmApi.post<ApiResponse<{ newSchedule: string }>>('/emails/schedules/notifications/email', data);
+      const response = await crmApi.post<ApiResponse<{ newSchedule: string }>>('/emails/schedules/notifications/email', data, {
+        headers: createIdempotencyHeaders('email-schedule-create')
+      });
       return response.data.data.newSchedule;
     } catch (error) {
       console.error('Error posting email schedule:', error);
