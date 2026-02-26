@@ -59,3 +59,5 @@ sketch
 
 **/.adminjs
 coverage/
+frontend/playwright-report/
+frontend/test-results/
