@@ -23,6 +23,13 @@ spring:
             dev:
                 - dev
 
+mail:
+    # Mail send provider.
+    # Supported values:
+    # - 'ses': Uses AWS Simple Email Service (Default, uses LocalStack in local profile)
+    # - 'smtp': Uses SMTP via JavaMail (cloud-neutral, requires spring.mail.* settings)
+    provider: ${MAIL_PROVIDER:ses}
+
 scheduler:
     # Scheduler implementation provider.
     # Supported values:

@@ -8,11 +8,11 @@ import com.amazonaws.services.simpleemail.model.Message
 import com.amazonaws.services.simpleemail.model.SendEmailRequest
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.annotation.Primary
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
-@Primary
 @Component
+@ConditionalOnProperty(name = ["mail.provider"], havingValue = "ses")
 class SesMailSendProvider(
     private val amazonSimpleEmailService: AmazonSimpleEmailService,
     @Value("\${spring.aws.mail.configuration-set.default}") private val configurationSetName: String
