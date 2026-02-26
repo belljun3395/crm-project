@@ -87,6 +87,7 @@ export interface SendEmailRequest {
   templateId: number;
   templateVersion?: number;
   userIds?: number[];
+  segmentId?: number;
 }
 
 export interface EmailSchedule {
@@ -100,6 +101,7 @@ export interface CreateEmailScheduleRequest {
   templateId: number;
   templateVersion?: number;
   userIds: number[];
+  segmentId?: number;
   expiredTime: string;
 }
 
@@ -390,7 +392,8 @@ export type TabType =
   | 'segments'
   | 'journeys'
   | 'actions'
-  | 'audit-logs';
+  | 'audit-logs'
+  | 'feature-guide';
 
 // Form State Types
 export interface UserFormData {
@@ -416,6 +419,7 @@ export interface TemplateFormData {
 export interface EmailScheduleFormData {
   templateId: number;
   userIds: string;
+  segmentId: string;
   expiredTime: string;
 }
 
