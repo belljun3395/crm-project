@@ -62,4 +62,7 @@ object DependencyVersion {
 
     /** commons-io **/
     const val COMMONS_IO = "2.19.0"
+
+    /** gcp **/
+    const val SPRING_CLOUD_GCP = "5.6.0"
 }
