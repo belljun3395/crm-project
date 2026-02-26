@@ -21,14 +21,14 @@ class ScheduleTaskServicePostEventProcessor(
     /**
      * 새로운 스케줄을 등록하고 이벤트 관련 후처리를 수행합니다.
      */
-    override fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String {
+    override suspend fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String {
         return newScheduleEventProcess(scheduleTaskService.newSchedule(input), input)
     }
 
     /**
      * 등록한 스케줄을 취소하고 이벤트 관련 후처리를 수행합니다.
      */
-    override fun cancel(scheduleName: String) {
+    override suspend fun cancel(scheduleName: String) {
         scheduleTaskService.cancel(scheduleName).let {
             cancelEventProcess(scheduleName)
         }
@@ -37,7 +37,7 @@ class ScheduleTaskServicePostEventProcessor(
     /**
      * 등록한 스케줄을 재등록하고 이벤트 관련 후처리를 수행합니다.
      */
-    override fun reSchedule(input: NotificationEmailSendTimeOutEventInput) {
+    override suspend fun reSchedule(input: NotificationEmailSendTimeOutEventInput) {
         scheduleTaskService.reSchedule(input).let {
             reScheduleEventProcess(input)
         }
