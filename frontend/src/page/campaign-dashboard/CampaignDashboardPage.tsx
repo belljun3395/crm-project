@@ -22,6 +22,7 @@ const statusBadgeClass: Record<string, string> = {
 export const CampaignDashboardPage: React.FC = () => {
   const {
     dashboard,
+    summary,
     streamStatus,
     liveEvents,
     loadingDashboard,
@@ -30,6 +31,7 @@ export const CampaignDashboardPage: React.FC = () => {
     connectionStatus,
     streamMessage,
     fetchDashboard,
+    fetchSummary,
     fetchStreamStatus,
     connectStream,
     disconnectStream,
@@ -51,6 +53,7 @@ export const CampaignDashboardPage: React.FC = () => {
     }
     return [...dashboard.metrics].sort((a, b) => b.timeWindowStart.localeCompare(a.timeWindowStart));
   }, [dashboard]);
+  const summaryData = summary ?? dashboard?.summary;
 
   const handleRefresh = async () => {
     if (!isCampaignIdValid) {
@@ -76,6 +79,7 @@ export const CampaignDashboardPage: React.FC = () => {
 
     await Promise.all([
       fetchDashboard(campaignId, params),
+      fetchSummary(campaignId),
       fetchStreamStatus(campaignId)
     ]);
   };
@@ -163,15 +167,15 @@ export const CampaignDashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
         <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
           <p className="text-sm text-gray-400">Total Events</p>
-          <p className="mt-2 text-2xl font-bold text-white">{dashboard?.summary.totalEvents ?? '-'}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{summaryData?.totalEvents ?? '-'}</p>
         </div>
         <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
           <p className="text-sm text-gray-400">Last 24 Hours</p>
-          <p className="mt-2 text-2xl font-bold text-white">{dashboard?.summary.eventsLast24Hours ?? '-'}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{summaryData?.eventsLast24Hours ?? '-'}</p>
         </div>
         <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
           <p className="text-sm text-gray-400">Last 7 Days</p>
-          <p className="mt-2 text-2xl font-bold text-white">{dashboard?.summary.eventsLast7Days ?? '-'}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{summaryData?.eventsLast7Days ?? '-'}</p>
         </div>
         <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
           <p className="text-sm text-gray-400">Stream Length</p>

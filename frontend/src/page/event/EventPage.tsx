@@ -4,9 +4,17 @@ import { useToggle } from 'common/hook';
 import { useEvents } from 'shared/hook';
 import type { EventFormData } from 'shared/type';
 
+interface CampaignFormState {
+  name: string;
+  segmentIds: string;
+  propertyKey: string;
+  propertyValue: string;
+}
+
 export const EventPage: React.FC = () => {
-  const { events, loading, error, createEvent, searchEvents } = useEvents();
+  const { events, loading, error, createEvent, createCampaign, searchEvents } = useEvents();
   const { value: isModalOpen, setTrue: openModal, setFalse: closeModal } = useToggle();
+  const { value: isCampaignModalOpen, setTrue: openCampaignModal, setFalse: closeCampaignModal } = useToggle();
   const [eventNameQuery, setEventNameQuery] = useState('');
   const [whereQuery, setWhereQuery] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,6 +24,12 @@ export const EventPage: React.FC = () => {
     campaignName: '',
     externalId: '',
     properties: [{ key: '', value: '' }]
+  });
+  const [campaignForm, setCampaignForm] = useState<CampaignFormState>({
+    name: '',
+    segmentIds: '',
+    propertyKey: '',
+    propertyValue: ''
   });
 
   // 검색 필터링
@@ -50,14 +64,54 @@ export const EventPage: React.FC = () => {
     }
   };
 
+  const handleCampaignSubmit = async () => {
+    if (!campaignForm.name.trim()) return;
+
+    const segmentIds = campaignForm.segmentIds
+      .split(',')
+      .map((id) => Number(id.trim()))
+      .filter((id) => Number.isInteger(id) && id > 0);
+
+    const properties =
+      campaignForm.propertyKey.trim() && campaignForm.propertyValue.trim()
+        ? [
+            {
+              key: campaignForm.propertyKey.trim(),
+              value: campaignForm.propertyValue.trim()
+            }
+          ]
+        : [];
+
+    const success = await createCampaign({
+      name: campaignForm.name.trim(),
+      segmentIds,
+      properties
+    });
+
+    if (success) {
+      setCampaignForm({
+        name: '',
+        segmentIds: '',
+        propertyKey: '',
+        propertyValue: ''
+      });
+      closeCampaignModal();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Events</h1>
-        <Button onClick={openModal}>
-          <span className="text-lg mr-2">+</span>
-          New Event
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={openCampaignModal}>
+            New Campaign
+          </Button>
+          <Button onClick={openModal}>
+            <span className="text-lg mr-2">+</span>
+            New Event
+          </Button>
+        </div>
       </div>
 
       {/* Error Message */}
@@ -225,6 +279,47 @@ export const EventPage: React.FC = () => {
               Create
             </Button>
             <Button onClick={closeModal} variant="secondary" className="flex-1">
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={isCampaignModalOpen} onClose={closeCampaignModal} title="Create Campaign">
+        <div className="space-y-4">
+          <Input
+            label="Campaign Name"
+            value={campaignForm.name}
+            onChange={(e) => setCampaignForm({ ...campaignForm, name: e.target.value })}
+            placeholder="campaign_black_friday"
+            required
+          />
+          <Input
+            label="Segment IDs"
+            value={campaignForm.segmentIds}
+            onChange={(e) => setCampaignForm({ ...campaignForm, segmentIds: e.target.value })}
+            placeholder="1,2"
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              label="Property Key"
+              value={campaignForm.propertyKey}
+              onChange={(e) => setCampaignForm({ ...campaignForm, propertyKey: e.target.value })}
+              placeholder="channel"
+            />
+            <Input
+              label="Property Value"
+              value={campaignForm.propertyValue}
+              onChange={(e) => setCampaignForm({ ...campaignForm, propertyValue: e.target.value })}
+              placeholder="email"
+            />
+          </div>
+          <p className="text-xs text-slate-400">Property는 선택값입니다.</p>
+          <div className="flex gap-3 pt-4">
+            <Button onClick={handleCampaignSubmit} loading={loading} className="flex-1">
+              Create Campaign
+            </Button>
+            <Button onClick={closeCampaignModal} variant="secondary" className="flex-1">
               Cancel
             </Button>
           </div>
