@@ -6,6 +6,7 @@ class PostEmailNotificationSchedulesUseCaseIn(
     val templateId: Long,
     val templateVersion: Float? = 1.0f,
     val userIds: List<Long>,
+    val segmentId: Long? = null,
     val expiredTime: LocalDateTime
 )
 

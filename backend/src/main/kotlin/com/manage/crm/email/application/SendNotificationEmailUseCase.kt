@@ -15,6 +15,7 @@ import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.vo.Email
 import com.manage.crm.email.domain.vo.NotificationType
 import com.manage.crm.email.domain.vo.SentEmailStatus
+import com.manage.crm.event.application.SegmentTargetingService
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.support.exception.NotFoundByException
@@ -37,6 +38,7 @@ class SendNotificationEmailUseCase(
     private val campaignEventsService: CampaignEventsService,
     private val campaignRepository: CampaignRepository,
     private val userRepository: UserRepository,
+    private val segmentTargetingService: SegmentTargetingService,
     private val objectMapper: ObjectMapper
 ) {
     val log = KotlinLogging.logger { }
@@ -46,6 +48,12 @@ class SendNotificationEmailUseCase(
         val templateId = useCaseIn.templateId
         val templateVersion: Float? = useCaseIn.templateVersion
         val userIds = useCaseIn.userIds
+        val segmentId = useCaseIn.segmentId
+        val requestedUserIds = if (segmentId != null) {
+            segmentTargetingService.resolveUserIds(segmentId)
+        } else {
+            userIds
+        }
 
         val campaign = campaignId?.let { cId ->
             campaignRepository.findById(cId)
@@ -61,12 +69,15 @@ class SendNotificationEmailUseCase(
         }
 
         val notificationEmailType = NotificationType.EMAIL.name.lowercase()
-        val targetUsers = getTargetUsers(userIds, notificationEmailType, campaign?.id)
+        val targetUsers = getTargetUsers(requestedUserIds, notificationEmailType, campaign?.id)
             .mapNotNull { user -> extractEmailAndUser(user, notificationEmailType) }
             .toMap()
 
         if (targetUsers.isEmpty()) {
-            log.warn { "No target users found for email notification. CampaignId: $campaignId, templateId: $templateId, userIds: $userIds" }
+            log.warn {
+                "No target users found for email notification. " +
+                    "CampaignId: $campaignId, templateId: $templateId, userIds: $userIds, segmentId: $segmentId"
+            }
             return out {
                 SendNotificationEmailUseCaseOut(
                     isSuccess = false

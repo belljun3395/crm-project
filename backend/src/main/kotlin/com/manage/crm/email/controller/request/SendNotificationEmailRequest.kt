@@ -4,5 +4,6 @@ data class SendNotificationEmailRequest(
     val campaignId: Long?,
     val templateId: Long,
     val templateVersion: Float?,
-    val userIds: List<Long>?
+    val userIds: List<Long>?,
+    val segmentId: Long? = null
 )

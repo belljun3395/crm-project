@@ -12,6 +12,7 @@ import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.repository.ScheduledEventRepository
 import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
+import com.manage.crm.event.application.SegmentTargetingService
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
 import org.springframework.beans.factory.annotation.Qualifier
@@ -25,6 +26,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
     private val emailTemplateHistoryRepository: EmailTemplateHistoryRepository,
     private val emailSendHistoryRepository: EmailSendHistoryRepository,
     private val userRepository: UserRepository,
+    private val segmentTargetingService: SegmentTargetingService,
     @Qualifier("mailServiceImpl")
     private val mailService: MailService,
     private val emailContentService: EmailContentService,
@@ -46,7 +48,11 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
 
         val templateId = event.templateId
         val templateVersion = event.templateVersion
-        val userIds = event.userIds
+        val userIds = if (event.segmentId != null) {
+            segmentTargetingService.resolveUserIds(event.segmentId)
+        } else {
+            event.userIds
+        }
         val template = run {
             when {
                 (templateVersion != null) -> {

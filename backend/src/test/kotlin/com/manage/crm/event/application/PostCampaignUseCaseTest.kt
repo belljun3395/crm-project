@@ -8,7 +8,11 @@ import com.manage.crm.event.domain.PropertiesFixtures
 import com.manage.crm.event.domain.PropertyFixtures
 import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignRepository
+import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
+import com.manage.crm.segment.domain.Segment
+import com.manage.crm.segment.domain.repository.SegmentRepository
 import com.manage.crm.support.exception.AlreadyExistsException
+import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -23,16 +27,26 @@ import org.springframework.dao.DataIntegrityViolationException
 
 class PostCampaignUseCaseTest : BehaviorSpec({
     lateinit var campaignRepository: CampaignRepository
+    lateinit var campaignSegmentsRepository: CampaignSegmentsRepository
+    lateinit var segmentRepository: SegmentRepository
     lateinit var transactionSynchronizationTemplate: TransactionSynchronizationTemplate
     lateinit var campaignCacheManager: CampaignCacheManager
     lateinit var postCampaignUseCase: PostCampaignUseCase
 
     beforeContainer {
         campaignRepository = mockk()
+        campaignSegmentsRepository = mockk(relaxed = true)
+        segmentRepository = mockk()
         transactionSynchronizationTemplate = mockk()
         campaignCacheManager = mockk()
         postCampaignUseCase =
-            PostCampaignUseCase(campaignRepository, transactionSynchronizationTemplate, campaignCacheManager)
+            PostCampaignUseCase(
+                campaignRepository = campaignRepository,
+                campaignSegmentsRepository = campaignSegmentsRepository,
+                segmentRepository = segmentRepository,
+                transactionSynchronizationTemplate = transactionSynchronizationTemplate,
+                campaignCacheManager = campaignCacheManager
+            )
     }
 
     given("PostCampaignUseCase") {
@@ -91,6 +105,7 @@ class PostCampaignUseCaseTest : BehaviorSpec({
                 result.id shouldBe savedCampaignId
                 result.name shouldBe useCaseIn.name
                 result.properties.size shouldBe useCaseIn.properties.size
+                result.segmentIds shouldBe emptyList()
             }
 
             then("check campaign name is exists") {
@@ -99,6 +114,10 @@ class PostCampaignUseCaseTest : BehaviorSpec({
 
             then("save campaign") {
                 coVerify(exactly = 1) { campaignRepository.save(any()) }
+            }
+
+            then("skip campaign-segment linkage when no segments are provided") {
+                coVerify(exactly = 0) { campaignSegmentsRepository.save(any()) }
             }
 
             then("register transaction synchronization after commit for save campaign cache") {
@@ -196,6 +215,86 @@ class PostCampaignUseCaseTest : BehaviorSpec({
                     )
                 }
                 coVerify(exactly = 0) { campaignCacheManager.save(any()) }
+            }
+        }
+
+        `when`("post campaign with segment targets") {
+            val useCaseIn = PostCampaignUseCaseIn(
+                name = "targeted_campaign",
+                properties = listOf(
+                    PostCampaignPropertyDto(
+                        key = "key1",
+                        value = "value1"
+                    )
+                ),
+                segmentIds = listOf(10L, 20L, 10L)
+            )
+
+            coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
+            coEvery { segmentRepository.findById(10L) } returns Segment.new(
+                id = 10L,
+                name = "segment-10",
+                description = null,
+                active = true
+            )
+            coEvery { segmentRepository.findById(20L) } returns Segment.new(
+                id = 20L,
+                name = "segment-20",
+                description = null,
+                active = true
+            )
+
+            val savedCampaign = CampaignFixtures.giveMeOne()
+                .withId(100L)
+                .withName(useCaseIn.name)
+                .build()
+            coEvery { campaignRepository.save(any()) } returns savedCampaign
+            coEvery { campaignSegmentsRepository.save(any()) } answers { firstArg() }
+            coEvery { campaignCacheManager.save(any()) } returns savedCampaign
+            coEvery {
+                transactionSynchronizationTemplate.afterCommit(
+                    eq(Dispatchers.IO),
+                    eq("save campaign cache"),
+                    captureLambda<suspend () -> Unit>()
+                )
+            } coAnswers {
+                lambda<suspend () -> Unit>().coInvoke()
+            }
+
+            val result = postCampaignUseCase.execute(useCaseIn)
+
+            then("return distinct segment ids in campaign response") {
+                result.segmentIds shouldBe listOf(10L, 20L)
+            }
+
+            then("save campaign-segment links") {
+                coVerify(exactly = 2) { campaignSegmentsRepository.save(any()) }
+            }
+        }
+
+        `when`("post campaign with missing segment id") {
+            val useCaseIn = PostCampaignUseCaseIn(
+                name = "invalid_target_campaign",
+                properties = listOf(
+                    PostCampaignPropertyDto(
+                        key = "key1",
+                        value = "value1"
+                    )
+                ),
+                segmentIds = listOf(999L)
+            )
+
+            coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
+            coEvery { segmentRepository.findById(999L) } returns null
+
+            then("throw not found before saving campaign") {
+                shouldThrow<NotFoundByIdException> {
+                    postCampaignUseCase.execute(useCaseIn)
+                }
+            }
+
+            then("do not save campaign when segment is missing") {
+                coVerify(exactly = 0) { campaignRepository.save(any()) }
             }
         }
     }

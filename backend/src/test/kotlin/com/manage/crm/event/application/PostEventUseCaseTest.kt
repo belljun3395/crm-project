@@ -34,6 +34,7 @@ class PostEventUseCaseTest : BehaviorSpec({
     lateinit var campaignEventsRepository: CampaignEventsRepository
     lateinit var campaignCacheManager: CampaignCacheManager
     lateinit var userRepository: UserRepository
+    lateinit var segmentTargetingService: SegmentTargetingService
     lateinit var campaignDashboardService: CampaignDashboardService
     lateinit var postEventUseCase: PostEventUseCase
 
@@ -43,9 +44,18 @@ class PostEventUseCaseTest : BehaviorSpec({
         campaignEventsRepository = mockk()
         campaignCacheManager = mockk()
         userRepository = mockk()
+        segmentTargetingService = mockk()
         campaignDashboardService = mockk(relaxed = true)
         postEventUseCase =
-            PostEventUseCase(eventRepository, campaignRepository, campaignEventsRepository, campaignCacheManager, userRepository, campaignDashboardService)
+            PostEventUseCase(
+                eventRepository,
+                campaignRepository,
+                campaignEventsRepository,
+                campaignCacheManager,
+                userRepository,
+                segmentTargetingService,
+                campaignDashboardService
+            )
     }
 
     given("UC-EVENT-001 PostEventUseCase") {
@@ -537,6 +547,37 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             then("should not publish to dashboard stream when property keys mismatch") {
                 coVerify(exactly = 0) { campaignDashboardService.publishCampaignEvent(any()) }
+            }
+        }
+
+        `when`("segmentId is provided") {
+            val useCaseIn = PostEventUseCaseIn(
+                name = "event",
+                externalId = "ignored-user",
+                segmentId = 55L,
+                properties = listOf(
+                    PostEventPropertyDto(
+                        key = "key1",
+                        value = "value1"
+                    )
+                ),
+                campaignName = null
+            )
+
+            coEvery { segmentTargetingService.resolveUserIds(55L) } returns listOf(1L, 2L)
+            coEvery { eventRepository.save(any(Event::class)) } answers {
+                firstArg<Event>().apply {
+                    id = if (userId == 1L) 101L else 102L
+                }
+            }
+
+            then("save events for all users in segment and ignore externalId lookup") {
+                val result = postEventUseCase.execute(useCaseIn)
+                result.id shouldBe 101L
+                result.message shouldBe "Event saved for segment users (2)"
+                coVerify(exactly = 1) { segmentTargetingService.resolveUserIds(55L) }
+                coVerify(exactly = 0) { userRepository.findByExternalId(any()) }
+                coVerify(exactly = 2) { eventRepository.save(any(Event::class)) }
             }
         }
 
