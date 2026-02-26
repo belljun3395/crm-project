@@ -6,4 +6,5 @@ import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 interface EventRepository : CoroutineCrudRepository<Event, Long>, EventRepositoryCustom {
     suspend fun findAllByName(name: String): List<Event>
     suspend fun findAllByIdIn(ids: List<Long>): List<Event>
+    suspend fun findAllByUserIdIn(userIds: List<Long>): List<Event>
 }

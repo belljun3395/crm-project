@@ -16,6 +16,7 @@ import com.manage.crm.email.domain.vo.CampaignVariable
 import com.manage.crm.email.domain.vo.EmailProviderType
 import com.manage.crm.email.domain.vo.UserVariable
 import com.manage.crm.email.domain.vo.Variables
+import com.manage.crm.event.application.SegmentTargetingService
 import com.manage.crm.event.domain.Campaign
 import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.repository.CampaignRepository
@@ -45,6 +46,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
     lateinit var campaignEventsService: CampaignEventsService
     lateinit var campaignRepository: CampaignRepository
     lateinit var userRepository: UserRepository
+    lateinit var segmentTargetingService: SegmentTargetingService
     lateinit var useCase: SendNotificationEmailUseCase
 
     beforeContainer {
@@ -55,6 +57,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
         campaignEventsService = mockk()
         campaignRepository = mockk()
         userRepository = mockk()
+        segmentTargetingService = mockk()
         useCase = SendNotificationEmailUseCase(
             emailTemplateRepository,
             emailTemplateHistoryRepository,
@@ -63,6 +66,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             campaignEventsService,
             campaignRepository,
             userRepository,
+            segmentTargetingService,
             ObjectMapper()
         )
     }
@@ -629,6 +633,47 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
             then("send notification email") {
                 coVerify(exactly = 2) { mailService.send(any(SendEmailInDto::class)) }
+            }
+        }
+
+        `when`("segmentId is provided") {
+            val useCaseIn = SendNotificationEmailUseCaseIn(
+                campaignId = null,
+                templateId = 1,
+                templateVersion = null,
+                userIds = listOf(999L),
+                segmentId = 123L
+            )
+
+            coEvery { segmentTargetingService.resolveUserIds(123L) } returns listOf(1L, 2L)
+            coEvery { emailTemplateRepository.findById(useCaseIn.templateId) } answers {
+                EmailTemplate.new(
+                    id = 1,
+                    templateName = "templateName",
+                    subject = "subject",
+                    body = "body",
+                    variables = Variables(),
+                    version = 1.0f,
+                    createdAt = LocalDateTime.now()
+                )
+            }
+            coEvery { userRepository.findAllByIdIn(listOf(1L, 2L)) } answers { userSubs(2) }
+            coEvery { campaignRepository.findById(any()) } returns null
+            coEvery { emailContentService.genUserEmailContent(any(), any(), any()) } answers { NonContent() }
+            coEvery { mailService.send(any(SendEmailInDto::class)) } returns SendEmailOutDto(
+                userId = 1L,
+                emailBody = "emailBody",
+                messageId = "messageId",
+                destination = "destination",
+                provider = EmailProviderType.JAVA
+            )
+
+            then("resolve target users from segment and ignore direct userIds") {
+                val result = useCase.execute(useCaseIn)
+                result.isSuccess shouldBe true
+                coVerify(exactly = 1) { segmentTargetingService.resolveUserIds(123L) }
+                coVerify(exactly = 1) { userRepository.findAllByIdIn(listOf(1L, 2L)) }
+                coVerify(exactly = 0) { userRepository.findAllByIdIn(listOf(999L)) }
             }
         }
     }

@@ -93,7 +93,8 @@ class EmailController(
                     templateId = request.templateId,
                     templateVersion = request.templateVersion,
                     userIds = request.userIds ?: emptyList(),
-                    campaignId = request.campaignId
+                    campaignId = request.campaignId,
+                    segmentId = request.segmentId
                 )
             )
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
@@ -130,7 +131,8 @@ class EmailController(
                 PostEmailNotificationSchedulesUseCaseIn(
                     templateId = request.templateId,
                     templateVersion = request.templateVersion,
-                    userIds = request.userIds,
+                    userIds = request.userIds ?: emptyList(),
+                    segmentId = request.segmentId,
                     expiredTime = request.expiredTime
                 )
             )

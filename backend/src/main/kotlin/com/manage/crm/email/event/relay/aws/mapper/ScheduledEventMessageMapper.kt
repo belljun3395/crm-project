@@ -9,6 +9,7 @@ data class ScheduledEventMessage(
     val templateId: Long,
     val templateVersion: Float?,
     val userIds: List<Long>,
+    val segmentId: Long?,
     val eventId: String
 )
 
@@ -21,12 +22,14 @@ class ScheduledEventMessageMapper(
             val templateId = jsonNode["templateId"].asLong()
             val templateVersion = jsonNode["templateVersion"]?.asDouble()?.toFloat()?.let { if (it == 0.0f) null else it }
             val userIds = jsonNode["userIds"].map { it.asLong() }
+            val segmentId = jsonNode["segmentId"]?.asLong()
             val eventId = jsonNode["eventId"].asText()
 
             return ScheduledEventMessage(
                 templateId = templateId,
                 templateVersion = templateVersion,
                 userIds = userIds,
+                segmentId = segmentId,
                 eventId = eventId
             )
         }
@@ -37,7 +40,8 @@ class ScheduledEventMessageMapper(
             timeOutEventId = EventId(message.eventId),
             templateId = message.templateId,
             templateVersion = message.templateVersion,
-            userIds = message.userIds
+            userIds = message.userIds,
+            segmentId = message.segmentId
         )
     }
 }

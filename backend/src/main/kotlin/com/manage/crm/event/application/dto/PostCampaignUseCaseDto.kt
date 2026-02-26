@@ -2,7 +2,8 @@ package com.manage.crm.event.application.dto
 
 data class PostCampaignUseCaseIn(
     val name: String,
-    val properties: List<PostCampaignPropertyDto>
+    val properties: List<PostCampaignPropertyDto>,
+    val segmentIds: List<Long> = emptyList()
 )
 
 data class PostCampaignPropertyDto(
@@ -13,7 +14,6 @@ data class PostCampaignPropertyDto(
 data class PostCampaignUseCaseOut(
     val id: Long,
     val name: String,
-    val properties: List<PostCampaignPropertyDto>
+    val properties: List<PostCampaignPropertyDto>,
+    val segmentIds: List<Long>
 )
-
-class PostCampaignUseCaseDto

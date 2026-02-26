@@ -21,9 +21,11 @@ import org.springframework.transaction.reactive.executeAndAwait
 
 fun JsonNode.templateId() = this["templateId"].asLong()
 
-fun JsonNode.templateVersion() = (this["templateVersion"].asDouble()).toFloat()
+fun JsonNode.templateVersion() = this["templateVersion"]?.asDouble()?.toFloat()
 
 fun JsonNode.userIds() = this["userIds"].map { it.asLong() }
+
+fun JsonNode.segmentId() = this["segmentId"]?.asLong()
 
 fun JsonNode.expiredTime() = LocalDateTimeExtension().parseExpiredTime(this["expiredTime"].asText())
 
@@ -57,6 +59,7 @@ class NotificationEmailSendTimeOutEventRePlayer(
                                         templateId = payload.templateId(),
                                         templateVersion = payload.templateVersion(),
                                         userIds = payload.userIds(),
+                                        segmentId = payload.segmentId(),
                                         expiredTime = payload.expiredTime()
                                     )
                                 if (event.isExpired()) {
@@ -71,6 +74,7 @@ class NotificationEmailSendTimeOutEventRePlayer(
                                             templateId = event.templateId,
                                             templateVersion = event.templateVersion,
                                             userIds = event.userIds,
+                                            segmentId = event.segmentId,
                                             eventId = event.eventId,
                                             expiredTime = event.expiredTime
                                         )

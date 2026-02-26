@@ -18,8 +18,6 @@ import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.repository.UserRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.async
-import kotlinx.coroutines.supervisorScope
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -28,13 +26,6 @@ enum class SaveEventMessage(val message: String) {
     EVENT_SAVE_WITH_CAMPAIGN("Event saved with campaign"),
     EVENT_SAVE_BUT_NOT_CAMPAIGN("Event saved but not in campaign"),
     PROPERTIES_MISMATCH("Campaign properties and Event properties mismatch")
-}
-
-data class SavedEvent(
-    val id: Long,
-    val message: String
-) {
-    constructor(id: Long, message: SaveEventMessage) : this(id, message.message)
 }
 
 /**
@@ -53,6 +44,7 @@ class PostEventUseCase(
     private val campaignEventsRepository: CampaignEventsRepository,
     private val campaignCacheManager: CampaignCacheManager,
     private val userRepository: UserRepository,
+    private val segmentTargetingService: SegmentTargetingService,
     private val campaignDashboardService: CampaignDashboardService
 ) {
     val log = KotlinLogging.logger {}
@@ -60,48 +52,68 @@ class PostEventUseCase(
     suspend fun execute(useCaseIn: PostEventUseCaseIn): PostEventUseCaseOut {
         val eventName = useCaseIn.name
         val externalId = useCaseIn.externalId
+        val segmentId = useCaseIn.segmentId
         val properties = useCaseIn.properties
         val campaignName = useCaseIn.campaignName
 
-        val userId = userRepository.findByExternalId(externalId)?.id
-            ?: throw NotFoundByException("User", "externalId", externalId)
+        val targetUserIds = resolveTargetUserIds(externalId, segmentId)
+        val savedEvents = targetUserIds.map { userId ->
+            saveEvent(eventName, userId, properties)
+        }
+        val firstSavedEvent = savedEvents.firstOrNull()
+            ?: throw NotFoundByException("User", "segmentId", segmentId ?: -1L)
+        val firstSavedEventId = requireNotNull(firstSavedEvent.id)
 
-        val savedEvent = getSavedEvent(eventName, userId, properties, campaignName)
+        val campaign = try {
+            findCampaign(campaignName)
+        } catch (e: NotFoundByException) {
+            log.warn { "Campaign not found: ${e.message}" }
+            return out {
+                PostEventUseCaseOut(
+                    firstSavedEventId,
+                    if (segmentId != null) {
+                        "Event saved for segment users (${savedEvents.size}) but not in campaign"
+                    } else {
+                        SaveEventMessage.EVENT_SAVE_BUT_NOT_CAMPAIGN.message
+                    }
+                )
+            }
+        }
+
+        if (campaign != null) {
+            val eventProperties = requireNotNull(firstSavedEvent.properties) { "Event properties cannot be null" }
+            if (!campaign.allMatchPropertyKeys(eventProperties.getKeys())) {
+                log.warn { "Properties mismatch between campaign and event. Campaign: ${campaign.properties.getKeys()}, Event: ${eventProperties.getKeys()}" }
+                return out {
+                    PostEventUseCaseOut(firstSavedEventId, SaveEventMessage.PROPERTIES_MISMATCH.message)
+                }
+            }
+
+            savedEvents.forEach { savedEvent ->
+                setCampaignEvent(campaign, savedEvent)
+            }
+        }
+
+        val message = when {
+            segmentId != null && campaign != null -> "Event saved with campaign for segment users (${savedEvents.size})"
+            segmentId != null -> "Event saved for segment users (${savedEvents.size})"
+            campaign != null -> SaveEventMessage.EVENT_SAVE_WITH_CAMPAIGN.message
+            else -> SaveEventMessage.EVENT_SAVE_SUCCESS.message
+        }
 
         return out {
-            PostEventUseCaseOut(savedEvent.id, savedEvent.message)
+            PostEventUseCaseOut(firstSavedEventId, message)
         }
     }
 
-    private suspend fun getSavedEvent(eventName: String, userId: Long, properties: List<PostEventPropertyDto>, campaignName: String?): SavedEvent {
-        return supervisorScope {
-            val eventDeferred = async {
-                saveEvent(eventName, userId, properties)
-            }
-            val campaignDeferred = async {
-                findCampaign(campaignName)
-            }
-
-            val event = eventDeferred.await()
-            val eventId = requireNotNull(event.id)
-            val campaign = try {
-                campaignDeferred.await()
-            } catch (e: NotFoundByException) {
-                log.warn { "Campaign not found: ${e.message}" }
-                return@supervisorScope SavedEvent(eventId, SaveEventMessage.EVENT_SAVE_BUT_NOT_CAMPAIGN)
-            }
-
-            campaign
-                ?.let {
-                    val eventProperties = requireNotNull(event.properties) { "Event properties cannot be null" }
-                    if (!it.allMatchPropertyKeys(eventProperties.getKeys())) {
-                        log.warn { "Properties mismatch between campaign and event. Campaign: ${it.properties.getKeys()}, Event: ${eventProperties.getKeys()}" }
-                        return@let SavedEvent(eventId, SaveEventMessage.PROPERTIES_MISMATCH)
-                    }
-                    setCampaignEvent(campaign, event)
-                    SavedEvent(eventId, SaveEventMessage.EVENT_SAVE_WITH_CAMPAIGN)
-                } ?: SavedEvent(eventId, SaveEventMessage.EVENT_SAVE_SUCCESS)
+    private suspend fun resolveTargetUserIds(externalId: String, segmentId: Long?): List<Long> {
+        if (segmentId != null) {
+            return segmentTargetingService.resolveUserIds(segmentId)
         }
+
+        val userId = userRepository.findByExternalId(externalId)?.id
+            ?: throw NotFoundByException("User", "externalId", externalId)
+        return listOf(userId)
     }
 
     private suspend fun saveEvent(
