@@ -1,5 +1,7 @@
 package com.manage.crm.webhook.controller
 
+import com.manage.crm.audit.application.AuditLogService
+import com.manage.crm.audit.application.dto.RecordAuditLogCommand
 import com.manage.crm.config.SwaggerTag
 import com.manage.crm.support.web.ApiResponse
 import com.manage.crm.support.web.ApiResponseGenerator
@@ -25,6 +27,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.HttpStatus
+import org.springframework.http.server.reactive.ServerHttpRequest
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -47,22 +50,37 @@ class WebhookController(
     private val browseWebhookUseCase: BrowseWebhookUseCase,
     private val getWebhookUseCase: GetWebhookUseCase,
     private val browseWebhookDeliveryLogsUseCase: BrowseWebhookDeliveryLogsUseCase,
-    private val browseWebhookDeadLettersUseCase: BrowseWebhookDeadLettersUseCase
+    private val browseWebhookDeadLettersUseCase: BrowseWebhookDeadLettersUseCase,
+    private val auditLogService: AuditLogService
 ) {
     @PostMapping
     suspend fun create(
         @Valid
         @RequestBody
-        request: PostWebhookRequest
+        request: PostWebhookRequest,
+        httpRequest: ServerHttpRequest
     ): ApiResponse<ApiResponse.SuccessBody<PostWebhookUseCaseOut>> {
-        return postWebhookUseCase.execute(
+        val result = postWebhookUseCase.execute(
             PostWebhookUseCaseIn(
                 name = request.name,
                 url = request.url,
                 events = request.events,
                 active = request.active
             )
-        ).let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
+        )
+        auditLogService.record(
+            RecordAuditLogCommand(
+                actorId = extractActorId(httpRequest),
+                action = "WEBHOOK_CREATE",
+                resourceType = "WEBHOOK",
+                resourceId = result.id.toString(),
+                requestMethod = httpRequest.method.name(),
+                requestPath = httpRequest.path.value(),
+                statusCode = HttpStatus.CREATED.value(),
+                detail = "created webhook name=${result.name}"
+            )
+        )
+        return ApiResponseGenerator.success(result, HttpStatus.CREATED)
     }
 
     @PutMapping("/{id}")
@@ -70,10 +88,11 @@ class WebhookController(
         @PathVariable id: Long,
         @Valid
         @RequestBody
-        request: PutWebhookRequest
+        request: PutWebhookRequest,
+        httpRequest: ServerHttpRequest
     ): ApiResponse<ApiResponse.SuccessBody<PostWebhookUseCaseOut>> {
         val existing = getWebhookUseCase.execute(GetWebhookUseCaseIn(id)).webhook
-        return postWebhookUseCase.execute(
+        val result = postWebhookUseCase.execute(
             PostWebhookUseCaseIn(
                 id = id,
                 name = request.name ?: existing.name,
@@ -81,12 +100,40 @@ class WebhookController(
                 events = request.events ?: existing.events,
                 active = request.active ?: existing.active
             )
-        ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+        )
+        auditLogService.record(
+            RecordAuditLogCommand(
+                actorId = extractActorId(httpRequest),
+                action = "WEBHOOK_UPDATE",
+                resourceType = "WEBHOOK",
+                resourceId = result.id.toString(),
+                requestMethod = httpRequest.method.name(),
+                requestPath = httpRequest.path.value(),
+                statusCode = HttpStatus.OK.value(),
+                detail = "updated webhook name=${result.name}"
+            )
+        )
+        return ApiResponseGenerator.success(result, HttpStatus.OK)
     }
 
     @DeleteMapping("/{id}")
-    suspend fun delete(@PathVariable id: Long): ApiResponse<ApiResponse.Success> {
+    suspend fun delete(
+        @PathVariable id: Long,
+        httpRequest: ServerHttpRequest
+    ): ApiResponse<ApiResponse.Success> {
         deleteWebhookUseCase.execute(DeleteWebhookUseCaseIn(id))
+        auditLogService.record(
+            RecordAuditLogCommand(
+                actorId = extractActorId(httpRequest),
+                action = "WEBHOOK_DELETE",
+                resourceType = "WEBHOOK",
+                resourceId = id.toString(),
+                requestMethod = httpRequest.method.name(),
+                requestPath = httpRequest.path.value(),
+                statusCode = HttpStatus.NO_CONTENT.value(),
+                detail = "deleted webhook"
+            )
+        )
         return ApiResponseGenerator.success(HttpStatus.NO_CONTENT)
     }
 
@@ -126,5 +173,9 @@ class WebhookController(
                 limit = limit
             )
         ).let { ApiResponseGenerator.success(it.deadLetters, HttpStatus.OK) }
+    }
+
+    private fun extractActorId(httpRequest: ServerHttpRequest): String? {
+        return httpRequest.headers.getFirst("X-Actor-Id")
     }
 }
