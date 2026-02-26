@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { emailHistoryAPI } from 'shared/api';
 import type { EmailSendHistoryDto } from 'shared/type';
 
@@ -9,6 +9,7 @@ export const useEmailHistories = () => {
   const [size, setSize] = useState(20);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const latestRequestIdRef = useRef(0);
 
   const fetchHistories = useCallback(async (params?: {
     userId?: number;
@@ -16,11 +17,18 @@ export const useEmailHistories = () => {
     page?: number;
     size?: number;
   }): Promise<void> => {
+    const requestId = latestRequestIdRef.current + 1;
+    latestRequestIdRef.current = requestId;
+
     setLoading(true);
     setError(null);
 
     try {
       const response = await emailHistoryAPI.getHistories(params);
+      if (latestRequestIdRef.current !== requestId) {
+        return;
+      }
+
       if (!response) {
         setHistories([]);
         setTotalCount(0);
@@ -34,10 +42,16 @@ export const useEmailHistories = () => {
       setPage(response.page);
       setSize(response.size);
     } catch (err) {
+      if (latestRequestIdRef.current !== requestId) {
+        return;
+      }
+
       const message = err instanceof Error ? err.message : 'Failed to fetch email histories';
       setError(message);
     } finally {
-      setLoading(false);
+      if (latestRequestIdRef.current === requestId) {
+        setLoading(false);
+      }
     }
   }, []);
 

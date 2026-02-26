@@ -13,6 +13,14 @@ import {
 } from 'shared/hook';
 
 const formatNumber = (value: number): string => new Intl.NumberFormat('ko-KR').format(value);
+const formatDateTime = (value?: string): string => {
+  if (!value) {
+    return '-';
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? '-' : parsed.toLocaleString();
+};
 
 export const DashboardPage: React.FC = () => {
   const { users, userCount } = useUsers();
@@ -101,7 +109,7 @@ export const DashboardPage: React.FC = () => {
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-white">{user.externalId}</td>
                   <td className="max-w-xs truncate px-4 py-3 text-sm text-slate-300">{user.userAttributes}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
-                    {user.createdAt ? new Date(user.createdAt).toLocaleString() : '-'}
+                    {formatDateTime(user.createdAt)}
                   </td>
                 </tr>
               ))}
@@ -136,7 +144,7 @@ export const DashboardPage: React.FC = () => {
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-white">{history.channel}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{history.status}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
-                    {history.createdAt ? new Date(history.createdAt).toLocaleString() : '-'}
+                    {formatDateTime(history.createdAt)}
                   </td>
                 </tr>
               ))}
