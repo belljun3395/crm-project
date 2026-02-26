@@ -64,6 +64,16 @@ spring:
         sql-migration-suffixes: sql
         baseline-on-migrate: true
         baseline-version: 0
+    cloud:
+        gcp:
+            project-id: local-project
+            pubsub:
+                emulator-host: localhost:8085
+
+gcp:
+    pubsub:
+        cache-invalidation-topic: cache-invalidation-topic
+        cache-invalidation-subscription: cache-invalidation-subscription
 
 springdoc:
     swagger-ui:
