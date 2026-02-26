@@ -55,6 +55,7 @@ class EventController(
                     name = request.name,
                     campaignName = request.campaignName,
                     externalId = request.externalId,
+                    segmentId = request.segmentId,
                     properties = request.properties.map {
                         PostEventPropertyDto(
                             key = it.key,
@@ -108,6 +109,7 @@ ex) key1&value1&operation&joinOperation,key2&value2&operation&joinOperation...
             .execute(
                 PostCampaignUseCaseIn(
                     name = request.name,
+                    segmentIds = request.segmentIds ?: emptyList(),
                     properties = request.properties.map {
                         PostCampaignPropertyDto(
                             key = it.key,

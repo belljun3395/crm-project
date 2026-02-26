@@ -4,6 +4,7 @@ data class PostEventUseCaseIn(
     val name: String,
     val campaignName: String?,
     val externalId: String,
+    val segmentId: Long? = null,
     val properties: List<PostEventPropertyDto>
 )
 

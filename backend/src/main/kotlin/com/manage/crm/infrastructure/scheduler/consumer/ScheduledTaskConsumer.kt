@@ -65,7 +65,8 @@ class ScheduledTaskConsumer(
                 timeOutEventId = input.eventId,
                 templateId = input.templateId,
                 templateVersion = input.templateVersion,
-                userIds = input.userIds
+                userIds = input.userIds,
+                segmentId = input.segmentId
             )
         )
     }

@@ -19,6 +19,7 @@ class PostEmailNotificationSchedulesUseCase(
         val templateId = useCaseIn.templateId
         val templateVersion = useCaseIn.templateVersion
         val userIds = useCaseIn.userIds
+        val segmentId = useCaseIn.segmentId
         val expiredTime = useCaseIn.expiredTime
 
         val eventId = EventId()
@@ -27,6 +28,7 @@ class PostEmailNotificationSchedulesUseCase(
                 templateId = templateId,
                 templateVersion = templateVersion,
                 userIds = userIds,
+                segmentId = segmentId,
                 eventId = eventId,
                 expiredTime = expiredTime
             )

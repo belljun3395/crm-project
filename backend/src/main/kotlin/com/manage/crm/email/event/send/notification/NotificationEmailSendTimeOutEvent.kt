@@ -8,6 +8,7 @@ open class NotificationEmailSendTimeOutEvent(
     val templateId: Long,
     val templateVersion: Float? = 1.0f,
     val userIds: List<Long>,
+    val segmentId: Long? = null,
     val expiredTime: LocalDateTime
 ) {
     companion object {
@@ -39,5 +40,6 @@ open class NotificationEmailSendTimeOutInvokeEvent(
     val timeOutEventId: EventId,
     val templateId: Long,
     val templateVersion: Float?,
-    val userIds: List<Long>
+    val userIds: List<Long>,
+    val segmentId: Long? = null
 )
