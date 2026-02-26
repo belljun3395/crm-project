@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: crm-redis-insight
+  namespace: crm-local
+spec:
+  selector:
+    app: crm-redis-insight
+  ports:
+    - port: 5540
+      targetPort: 5540

@@ -72,13 +72,16 @@ class RedisConfig {
             .socketOptions(socketOptions)
             .build()
 
-        val resolver = MappingSocketAddressResolver.create(
-            DnsResolvers.UNRESOLVED
-        ) { hostAndPort -> HostAndPort.of(rcp.connectIp, hostAndPort.port) }
-
-        val clientResources = ClientResources.builder()
-            .socketAddressResolver(resolver)
-            .build()
+        val clientResources = if (rcp.connectIp != null) {
+            val resolver = MappingSocketAddressResolver.create(
+                DnsResolvers.UNRESOLVED
+            ) { hostAndPort -> HostAndPort.of(rcp.connectIp, hostAndPort.port) }
+            ClientResources.builder()
+                .socketAddressResolver(resolver)
+                .build()
+        } else {
+            ClientResources.create()
+        }
 
         val clientConfiguration = LettuceClientConfiguration.builder()
             .clientOptions(clientOptions)

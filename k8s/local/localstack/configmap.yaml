@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crm-localstack-init
+  namespace: crm-local
+data:
+  setup-aws-services.sh: |
+    #!/bin/bash
+    echo "🚀 Setting up AWS services for local development environment..."
+
+    echo "⏳ Waiting for LocalStack to be ready..."
+    while ! curl -s http://localhost:4566/health > /dev/null; do
+      echo "   Still waiting for LocalStack..."
+      sleep 3
+    done
+
+    echo "✅ LocalStack is ready. Setting up services..."
+
+    echo "📧 Setting up SES..."
+    VERIFIED_EMAILS="${VERIFIED_EMAILS:-test@example.com notification@example.com noreply@local.dev admin@local.dev}"
+    for EMAIL in ${VERIFIED_EMAILS//,/ }; do
+      [ -z "$EMAIL" ] && continue
+      if ! awslocal ses list-verified-email-addresses --query "VerifiedEmailAddresses[]" --output text 2>/dev/null | grep -Fxq "$EMAIL"; then
+        awslocal ses verify-email-identity --email-address "$EMAIL" && echo "   ✓ Verified: $EMAIL"
+      else
+        echo "   ✓ Already verified: $EMAIL"
+      fi
+    done
+    awslocal ses create-configuration-set --configuration-set Name=local-configuration-set 2>/dev/null || true
+    echo "✅ SES setup completed"
+
+    echo "📨 Setting up SQS..."
+    awslocal sqs create-queue --queue-name ses_sqs
+    awslocal sqs create-queue --queue-name notification_queue
+    awslocal sqs create-queue --queue-name event_processing_queue
+    awslocal sqs create-queue --queue-name crm-dr-cache-invalidation-queue-aws
+    awslocal sqs create-queue --queue-name crm-dr-cache-invalidation-queue-gcp
+
+    SES_SQS_URL=$(awslocal sqs get-queue-url --queue-name ses_sqs --query 'QueueUrl' --output text)
+    SES_SQS_ARN=$(awslocal sqs get-queue-attributes --queue-url $SES_SQS_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
+    NOTIFICATION_SQS_URL=$(awslocal sqs get-queue-url --queue-name notification_queue --query 'QueueUrl' --output text)
+    NOTIFICATION_SQS_ARN=$(awslocal sqs get-queue-attributes --queue-url $NOTIFICATION_SQS_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
+    EVENT_SQS_URL=$(awslocal sqs get-queue-url --queue-name event_processing_queue --query 'QueueUrl' --output text)
+    EVENT_SQS_ARN=$(awslocal sqs get-queue-attributes --queue-url $EVENT_SQS_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
+    CACHE_AWS_SQS_URL=$(awslocal sqs get-queue-url --queue-name crm-dr-cache-invalidation-queue-aws --query 'QueueUrl' --output text)
+    CACHE_AWS_SQS_ARN=$(awslocal sqs get-queue-attributes --queue-url $CACHE_AWS_SQS_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
+    CACHE_GCP_SQS_URL=$(awslocal sqs get-queue-url --queue-name crm-dr-cache-invalidation-queue-gcp --query 'QueueUrl' --output text)
+    CACHE_GCP_SQS_ARN=$(awslocal sqs get-queue-attributes --queue-url $CACHE_GCP_SQS_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
+    echo "✅ SQS queues created"
+
+    echo "📢 Setting up SNS..."
+    awslocal sns create-topic --name ses-events-topic
+    awslocal sns create-topic --name user-events-topic
+    awslocal sns create-topic --name campaign-events-topic
+    awslocal sns create-topic --name cache-invalidation-topic
+
+    SES_SNS_ARN=$(awslocal sns list-topics --query 'Topics[?contains(TopicArn,`ses-events-topic`)].TopicArn' --output text)
+    USER_SNS_ARN=$(awslocal sns list-topics --query 'Topics[?contains(TopicArn,`user-events-topic`)].TopicArn' --output text)
+    CAMPAIGN_SNS_ARN=$(awslocal sns list-topics --query 'Topics[?contains(TopicArn,`campaign-events-topic`)].TopicArn' --output text)
+    CACHE_SNS_ARN=$(awslocal sns list-topics --query 'Topics[?contains(TopicArn,`cache-invalidation-topic`)].TopicArn' --output text)
+    echo "✅ SNS topics created"
+
+    echo "🔗 Connecting SNS → SQS..."
+    awslocal sns subscribe --topic-arn $SES_SNS_ARN --protocol sqs --notification-endpoint $SES_SQS_ARN
+    awslocal sns subscribe --topic-arn $USER_SNS_ARN --protocol sqs --notification-endpoint $NOTIFICATION_SQS_ARN
+    awslocal sns subscribe --topic-arn $CAMPAIGN_SNS_ARN --protocol sqs --notification-endpoint $EVENT_SQS_ARN
+    awslocal sns subscribe --topic-arn $CACHE_SNS_ARN --protocol sqs --notification-endpoint $CACHE_AWS_SQS_ARN
+    awslocal sns subscribe --topic-arn $CACHE_SNS_ARN --protocol sqs --notification-endpoint $CACHE_GCP_SQS_ARN
+
+    echo "🎯 Setting up EventBridge..."
+    awslocal events create-event-bus --name local-event-bus
+    awslocal events create-event-bus --name user-event-bus
+    awslocal events create-event-bus --name campaign-event-bus
+
+    awslocal events put-rule --event-bus-name user-event-bus --name user-activity-rule \
+      --event-pattern '{"source":["local.user"],"detail-type":["User Activity","User Registration","User Update"]}'
+    awslocal events put-rule --event-bus-name campaign-event-bus --name campaign-activity-rule \
+      --event-pattern '{"source":["local.campaign"],"detail-type":["Campaign Created","Campaign Updated","Event Created"]}'
+    awslocal events put-rule --event-bus-name local-event-bus --name email-activity-rule \
+      --event-pattern '{"source":["local.email"],"detail-type":["Email Sent","Email Delivered","Email Bounced"]}'
+
+    awslocal events put-targets --event-bus-name user-event-bus --rule user-activity-rule \
+      --targets "Id=1,Arn=$NOTIFICATION_SQS_ARN"
+    awslocal events put-targets --event-bus-name campaign-event-bus --rule campaign-activity-rule \
+      --targets "Id=1,Arn=$EVENT_SQS_ARN"
+    awslocal events put-targets --event-bus-name local-event-bus --rule email-activity-rule \
+      --targets "Id=1,Arn=$SES_SQS_ARN"
+    echo "✅ EventBridge setup completed"
+
+    echo "🔑 Setting up IAM roles..."
+    awslocal iam create-role --role-name LocalEventBridgeSchedulerRole \
+      --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"scheduler.amazonaws.com"},"Action":"sts:AssumeRole"}]}' 2>/dev/null || true
+    awslocal iam create-role --role-name LocalSESRole \
+      --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ses.amazonaws.com"},"Action":"sts:AssumeRole"}]}' 2>/dev/null || true
+    echo "✅ IAM roles created"
+
+    echo "📅 Setting up EventBridge Scheduler..."
+    awslocal scheduler create-schedule-group --name local-schedule-group 2>/dev/null || true
+    awslocal scheduler create-schedule-group --name notification-schedule-group 2>/dev/null || true
+    awslocal scheduler create-schedule-group --name campaign-schedule-group 2>/dev/null || true
+    echo "✅ EventBridge Scheduler groups created"
+
+    echo ""
+    echo "🎉 LocalStack AWS services setup completed!"
