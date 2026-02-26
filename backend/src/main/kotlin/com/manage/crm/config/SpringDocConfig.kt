@@ -73,7 +73,8 @@ class SpringDocConfig(
                 "/api/v1/events/campaign",
                 "/api/v1/emails/send/notifications",
                 "/api/v1/emails/schedules/notifications/email",
-                "/api/v1/webhooks"
+                "/api/v1/webhooks",
+                "/api/v1/actions/dispatch"
             )
 
             openApi.paths?.forEach { (path, pathItem) ->
@@ -136,4 +137,5 @@ object SwaggerTag {
     const val EVENT_SWAGGER_TAG = "Event API"
     const val WEBHOOKS_SWAGGER_TAG = "Webhooks API"
     const val SEGMENTS_SWAGGER_TAG = "Segments API"
+    const val ACTIONS_SWAGGER_TAG = "Actions API"
 }
