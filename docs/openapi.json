@@ -39,6 +39,10 @@
     {
       "name": "Emails API",
       "description": "이메일 API"
+    },
+    {
+      "name": "Actions API",
+      "description": "액션 API"
     }
   ],
   "paths": {
@@ -811,6 +815,54 @@
         }
       }
     },
+    "/api/v1/actions/dispatch": {
+      "post": {
+        "tags": [
+          "Actions API"
+        ],
+        "operationId": "dispatch",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Idempotency key for write request replay and duplicate prevention",
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostActionDispatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyActionDispatchOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/users/count": {
       "get": {
         "tags": [
@@ -1093,6 +1145,56 @@
                   "items": {
                     "$ref": "#/components/schemas/ServerSentEventCampaignEventData"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/actions/dispatch/histories": {
+      "get": {
+        "tags": [
+          "Actions API"
+        ],
+        "operationId": "browseDispatchHistories",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "journeyExecutionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyListActionDispatchHistoryDto"
                 }
               }
             }
@@ -1840,6 +1942,98 @@
         "properties": {
           "data": {
             "$ref": "#/components/schemas/PostEmailNotificationSchedulesUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "PostActionDispatchRequest": {
+        "required": [
+          "body",
+          "channel",
+          "destination"
+        ],
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string"
+          },
+          "destination": {
+            "maxLength": 1024,
+            "minLength": 0,
+            "type": "string"
+          },
+          "subject": {
+            "maxLength": 255,
+            "minLength": 0,
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "variables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "campaignId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "journeyExecutionId": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ActionDispatchOut": {
+        "required": [
+          "channel",
+          "destination",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "FAILED"
+            ]
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "EMAIL",
+              "SLACK",
+              "DISCORD"
+            ]
+          },
+          "destination": {
+            "type": "string"
+          },
+          "providerMessageId": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyActionDispatchOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ActionDispatchOut"
           },
           "message": {
             "type": "string"
@@ -2612,6 +2806,83 @@
       },
       "ServerSentEventCampaignEventData": {
         "type": "object"
+      },
+      "ActionDispatchHistoryDto": {
+        "required": [
+          "body",
+          "channel",
+          "createdAt",
+          "destination",
+          "id",
+          "status",
+          "variables"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "channel": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "variables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "providerMessageId": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "campaignId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "journeyExecutionId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyListActionDispatchHistoryDto": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActionDispatchHistoryDto"
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
       },
       "Success": {
         "required": [
