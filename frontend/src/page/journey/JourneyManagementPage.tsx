@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Button, Input, Modal, Textarea } from 'common/component';
+import { Button, GuidePanel, Input, Modal, Textarea } from 'common/component';
 import { useJourneys } from 'shared/hook';
 import type { CreateJourneyRequest, JourneyStepRequest } from 'shared/type';
 
@@ -132,7 +132,7 @@ export const JourneyManagementPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-white">Journeys</h2>
-          <p className="text-sm text-slate-300">`/journeys`, `/journeys/executions` API 연동</p>
+          <p className="text-sm text-slate-300">자동화 여정과 실행 상태를 관리합니다.</p>
         </div>
         <Button onClick={() => setIsCreateOpen(true)}>새 여정</Button>
       </div>
@@ -140,6 +140,16 @@ export const JourneyManagementPage: React.FC = () => {
       {error && (
         <div className="rounded-xl border border-rose-700/60 bg-rose-900/20 p-3 text-sm text-rose-100">{error}</div>
       )}
+
+      <GuidePanel
+        description="고객 행동에 따라 자동 메시지 흐름(여정)을 만드는 화면입니다."
+        items={[
+          '새 여정에서 Trigger를 정하고 Steps JSON으로 실행 단계를 정의합니다.',
+          '생성 후 Execution List에서 실제 실행 상태를 확인합니다.',
+          'History 버튼으로 각 단계 성공/실패 이력을 상세 확인할 수 있습니다.'
+        ]}
+        note="Trigger와 Steps 조건이 맞아야 실행이 시작됩니다."
+      />
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <div className="overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur">

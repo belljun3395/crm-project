@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Button, Input } from 'common/component';
+import { Button, GuidePanel, Input } from 'common/component';
 import { useCampaignDashboard } from 'shared/hook';
 import type { TimeWindowUnit } from 'shared/type';
 
@@ -104,6 +104,16 @@ export const CampaignDashboardPage: React.FC = () => {
           {error}
         </div>
       )}
+
+      <GuidePanel
+        description="특정 캠페인의 성과를 기간별로 보고, 실시간 이벤트 흐름까지 확인하는 화면입니다."
+        items={[
+          '먼저 Campaign ID를 입력한 뒤 Refresh를 눌러 최신 집계를 조회합니다.',
+          'Connect를 누르면 실시간 이벤트가 Live Stream에 쌓입니다.',
+          'Start/End Time을 채우면 원하는 기간만 좁혀서 볼 수 있습니다.'
+        ]}
+        note="실시간 연결이 길어지면 Disconnect로 종료하고 다시 연결할 수 있습니다."
+      />
 
       <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">

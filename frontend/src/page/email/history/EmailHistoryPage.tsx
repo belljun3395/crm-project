@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Input } from 'common/component';
+import { Button, GuidePanel, Input } from 'common/component';
 import { useEmailHistories } from 'shared/hook';
 
 const formatDateTime = (value?: string): string => {
@@ -36,8 +36,18 @@ export const EmailHistoryPage: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold text-white">Email Histories</h2>
-        <p className="text-sm text-slate-300">`/emails/histories` API 연동</p>
+        <p className="text-sm text-slate-300">메일 발송 결과를 조회하고 상태를 점검합니다.</p>
       </div>
+
+      <GuidePanel
+        description="이미 발송된 이메일 결과를 조회하는 화면입니다."
+        items={[
+          '필요한 조건(User ID, 상태, 페이지)을 넣고 조회를 누릅니다.',
+          '상태값으로 성공/실패 발송만 골라 볼 수 있습니다.',
+          'total, page, size를 보고 현재 조회 범위를 확인합니다.'
+        ]}
+        note="이 화면은 조회 전용이며, 발송 재시도/수정은 관련 기능 화면에서 진행합니다."
+      />
 
       <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur">
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-300">Filter</h3>

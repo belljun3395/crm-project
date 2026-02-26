@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Input } from 'common/component';
+import { Button, GuidePanel, Input } from 'common/component';
 import { useAuditLogs } from 'shared/hook';
 
 const formatDateTime = (value?: string): string => {
@@ -34,8 +34,18 @@ export const AuditLogPage: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold text-white">Audit Logs</h2>
-        <p className="text-sm text-slate-300">`/audit-logs` API 연동</p>
+        <p className="text-sm text-slate-300">운영 작업 이력을 조회하고 점검합니다.</p>
       </div>
+
+      <GuidePanel
+        description="시스템에서 누가 어떤 작업을 했는지 확인하는 기록 화면입니다."
+        items={[
+          'Action, Resource Type, Actor ID로 필요한 기록만 좁혀 조회합니다.',
+          'Limit 값을 조정하면 한 번에 가져오는 기록 수를 바꿀 수 있습니다.',
+          '문제 발생 시 상태 코드와 시간 정보를 함께 확인해 원인을 추적합니다.'
+        ]}
+        note="운영 감사와 장애 분석 시 가장 먼저 확인하는 화면입니다."
+      />
 
       <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur">
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-300">Filter</h3>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Input, Modal } from 'common/component';
+import { Button, GuidePanel, Input, Modal } from 'common/component';
 import { useToggle } from 'common/hook';
 import { useEvents } from 'shared/hook';
 import type { EventFormData } from 'shared/type';
@@ -74,28 +74,16 @@ export const EventPage: React.FC = () => {
         </div>
       )}
 
-      <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-4">
-        <h2 className="text-sm font-semibold text-cyan-100">처음 사용하는 분을 위한 검색 가이드</h2>
-        <p className="mt-2 text-sm text-cyan-50/90">
-          Event 검색 API는 <code>eventName</code>과 <code>where</code>가 모두 필수입니다.
-        </p>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-cyan-50/90">
-          <li>
-            단일 조건: <code>category&electronics&=&end</code>
-          </li>
-          <li>
-            다중 조건: <code>category&electronics&=&and,brand&samsung&=&end</code>
-          </li>
-          <li>
-            범위 조건: <code>amount&100&amount&200&between&end</code>
-          </li>
-        </ul>
-        <p className="mt-2 text-xs text-cyan-50/80">
-          연산자: <code>=</code>, <code>!=</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>,{' '}
-          <code>&lt;=</code>, <code>like</code>, <code>between</code> / 연결: <code>and</code>, <code>or</code>,{' '}
-          <code>end</code>
-        </p>
-      </div>
+      <GuidePanel
+        title="이벤트 검색 가이드"
+        description="이벤트 조회는 Event Name과 Where를 함께 입력해야 합니다."
+        items={[
+          '단일 조건: category&electronics&=&end',
+          '다중 조건: category&electronics&=&and,brand&samsung&=&end',
+          '범위 조건: amount&100&amount&200&between&end'
+        ]}
+        note="연산자: =, !=, >, >=, <, <=, like, between / 연결: and, or, end"
+      />
 
       {/* 서버 검색 */}
       <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
