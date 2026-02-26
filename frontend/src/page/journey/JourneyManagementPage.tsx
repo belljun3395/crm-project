@@ -43,17 +43,39 @@ const parseSteps = (raw: string): JourneyStepRequest[] | null => {
     }
 
     const normalized = parsed.map((step) => {
-      const candidate = step as JourneyStepRequest;
-      if (typeof candidate.stepOrder !== 'number' || !candidate.stepType) {
-        throw new Error('Invalid step');
+      if (typeof step !== 'object' || step === null) {
+        throw new Error('Invalid step: step must be an object');
       }
-      return candidate;
+
+      const candidate = step as JourneyStepRequest;
+      if (
+        !Number.isFinite(candidate.stepOrder) ||
+        candidate.stepOrder <= 0 ||
+        typeof candidate.stepType !== 'string' ||
+        candidate.stepType.trim().length === 0
+      ) {
+        throw new Error('Invalid step: missing or invalid stepOrder/stepType');
+      }
+
+      return {
+        ...candidate,
+        stepType: candidate.stepType.trim()
+      };
     });
 
     return normalized;
   } catch {
     return null;
   }
+};
+
+const formatDateTime = (value?: string): string => {
+  if (!value) {
+    return '-';
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? '-' : parsed.toLocaleString();
 };
 
 export const JourneyManagementPage: React.FC = () => {
@@ -273,7 +295,7 @@ export const JourneyManagementPage: React.FC = () => {
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-white">{history.status}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{history.attempt}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
-                      {new Date(history.createdAt).toLocaleString()}
+                      {formatDateTime(history.createdAt)}
                     </td>
                   </tr>
                 ))

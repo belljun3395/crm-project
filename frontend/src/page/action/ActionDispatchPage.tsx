@@ -39,6 +39,15 @@ const parseVariables = (raw: string): Record<string, string> | null => {
   }
 };
 
+const formatDateTime = (value?: string): string => {
+  if (!value) {
+    return '-';
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? '-' : parsed.toLocaleString();
+};
+
 export const ActionDispatchPage: React.FC = () => {
   const { histories, loading, dispatching, error, dispatchAction } = useActions();
   const [form, setForm] = useState<DispatchFormState>(initialForm);
@@ -222,7 +231,7 @@ export const ActionDispatchPage: React.FC = () => {
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{history.status}</td>
                     <td className="px-4 py-3 text-sm text-slate-300">{history.destination}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
-                      {history.createdAt ? new Date(history.createdAt).toLocaleString() : '-'}
+                      {formatDateTime(history.createdAt)}
                     </td>
                   </tr>
                 ))

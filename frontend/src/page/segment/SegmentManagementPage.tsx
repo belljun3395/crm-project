@@ -135,6 +135,18 @@ export const SegmentManagementPage: React.FC = () => {
     }
 
     setCreateForm(initialForm);
+    setFormError(null);
+    setIsCreateOpen(false);
+  };
+
+  const openCreateModal = () => {
+    setFormError(null);
+    setCreateForm(initialForm);
+    setIsCreateOpen(true);
+  };
+
+  const closeCreateModal = () => {
+    setFormError(null);
     setIsCreateOpen(false);
   };
 
@@ -142,6 +154,11 @@ export const SegmentManagementPage: React.FC = () => {
     setEditingSegment(segment);
     setEditForm(toForm(segment));
     setFormError(null);
+  };
+
+  const closeEditModal = () => {
+    setFormError(null);
+    setEditingSegment(null);
   };
 
   const handleUpdate = async () => {
@@ -159,6 +176,7 @@ export const SegmentManagementPage: React.FC = () => {
       return;
     }
 
+    setFormError(null);
     setEditingSegment(null);
     setEditForm(initialForm);
   };
@@ -235,7 +253,7 @@ export const SegmentManagementPage: React.FC = () => {
           <h2 className="text-2xl font-semibold text-white">Segments</h2>
           <p className="text-sm text-slate-300">조건 기반 고객 그룹을 만들고 관리합니다.</p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)}>새 세그먼트</Button>
+        <Button onClick={openCreateModal}>새 세그먼트</Button>
       </div>
 
       {error && (
@@ -319,17 +337,17 @@ export const SegmentManagementPage: React.FC = () => {
         </table>
       </div>
 
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create Segment" size="lg">
-        {renderForm(createForm, setCreateForm, '생성', handleCreate, () => setIsCreateOpen(false))}
+      <Modal isOpen={isCreateOpen} onClose={closeCreateModal} title="Create Segment" size="lg">
+        {renderForm(createForm, setCreateForm, '생성', handleCreate, closeCreateModal)}
       </Modal>
 
       <Modal
         isOpen={Boolean(editingSegment)}
-        onClose={() => setEditingSegment(null)}
+        onClose={closeEditModal}
         title={editingSegment ? `Edit Segment #${editingSegment.id}` : 'Edit Segment'}
         size="lg"
       >
-        {renderForm(editForm, setEditForm, '수정', handleUpdate, () => setEditingSegment(null))}
+        {renderForm(editForm, setEditForm, '수정', handleUpdate, closeEditModal)}
       </Modal>
     </div>
   );
