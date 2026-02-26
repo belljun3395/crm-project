@@ -71,6 +71,34 @@ class CampaignDashboardService(
                 timeWindowEnd = end,
                 incrementBy = 1
             )
+
+            val totalUserCount = campaignEventsRepository.countAllByCampaignIdAndTimeRange(
+                campaignId = event.campaignId,
+                startTime = start,
+                endTime = end
+            )
+            val uniqueUserCount = campaignEventsRepository.countDistinctUsersByCampaignIdAndTimeRange(
+                campaignId = event.campaignId,
+                startTime = start,
+                endTime = end
+            )
+
+            upsertAbsoluteMetric(
+                campaignId = event.campaignId,
+                metricType = MetricType.TOTAL_USER_COUNT,
+                timeWindowUnit = unit,
+                timeWindowStart = start,
+                timeWindowEnd = end,
+                metricValue = totalUserCount
+            )
+            upsertAbsoluteMetric(
+                campaignId = event.campaignId,
+                metricType = MetricType.UNIQUE_USER_COUNT,
+                timeWindowUnit = unit,
+                timeWindowStart = start,
+                timeWindowEnd = end,
+                metricValue = uniqueUserCount
+            )
         }
 
         log.debug { "Updated metrics for campaign event: campaignId=${event.campaignId}, eventId=${event.eventId}" }
@@ -88,6 +116,24 @@ class CampaignDashboardService(
             campaignId = campaignId,
             metricType = metricType,
             metricValue = incrementBy,
+            timeWindowStart = timeWindowStart,
+            timeWindowEnd = timeWindowEnd,
+            timeWindowUnit = timeWindowUnit
+        )
+    }
+
+    private suspend fun upsertAbsoluteMetric(
+        campaignId: Long,
+        metricType: MetricType,
+        timeWindowUnit: TimeWindowUnit,
+        timeWindowStart: LocalDateTime,
+        timeWindowEnd: LocalDateTime,
+        metricValue: Long
+    ) {
+        campaignDashboardMetricsRepository.upsertMetricAbsolute(
+            campaignId = campaignId,
+            metricType = metricType,
+            metricValue = metricValue,
             timeWindowStart = timeWindowStart,
             timeWindowEnd = timeWindowEnd,
             timeWindowUnit = timeWindowUnit
