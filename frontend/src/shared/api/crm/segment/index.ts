@@ -20,7 +20,7 @@ export const segmentAPI = {
       return response.data.data;
     } catch (error) {
       console.error('Error fetching segments:', error);
-      return [];
+      throw error;
     }
   },
 

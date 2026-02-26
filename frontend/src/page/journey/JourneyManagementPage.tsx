@@ -92,13 +92,22 @@ export const JourneyManagementPage: React.FC = () => {
       return;
     }
 
-    const triggerSegmentId = form.triggerSegmentId ? Number(form.triggerSegmentId) : undefined;
+    const parsedTriggerSegmentId = form.triggerSegmentId ? Number(form.triggerSegmentId) : undefined;
+    if (
+      parsedTriggerSegmentId !== undefined &&
+      (!Number.isFinite(parsedTriggerSegmentId) || parsedTriggerSegmentId <= 0)
+    ) {
+      setFormError('Trigger Segment ID는 유효한 양수여야 합니다.');
+      return;
+    }
+
+    setFormError(null);
 
     const payload: CreateJourneyRequest = {
       name: form.name.trim(),
       triggerType: form.triggerType,
       triggerEventName: form.triggerEventName.trim() || undefined,
-      triggerSegmentId,
+      triggerSegmentId: parsedTriggerSegmentId,
       active: form.active,
       steps: parsedSteps
     };
@@ -289,6 +298,7 @@ export const JourneyManagementPage: React.FC = () => {
             >
               <option value="EVENT">EVENT</option>
               <option value="SEGMENT">SEGMENT</option>
+              <option value="CONDITION">CONDITION</option>
             </select>
           </div>
 

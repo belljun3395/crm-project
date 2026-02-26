@@ -76,7 +76,7 @@ export const webhookAPI = {
       return response.data.data;
     } catch (error) {
       console.error('Error fetching webhook deliveries:', error);
-      return [];
+      throw error;
     }
   },
 
@@ -87,7 +87,7 @@ export const webhookAPI = {
       return response.data.data;
     } catch (error) {
       console.error('Error fetching webhook dead letters:', error);
-      return [];
+      throw error;
     }
   }
 };

@@ -2,6 +2,15 @@ import React, { useState } from 'react';
 import { Button, Input } from 'common/component';
 import { useEmailHistories } from 'shared/hook';
 
+const formatDateTime = (value?: string): string => {
+  if (!value) {
+    return '-';
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? '-' : parsed.toLocaleString();
+};
+
 export const EmailHistoryPage: React.FC = () => {
   const { histories, totalCount, page, size, loading, error, fetchHistories } = useEmailHistories();
 
@@ -11,11 +20,15 @@ export const EmailHistoryPage: React.FC = () => {
   const [sizeInput, setSizeInput] = useState('20');
 
   const handleSearch = async () => {
+    const parsedUserId = Number(userId);
+    const parsedPage = Number(pageInput);
+    const parsedSize = Number(sizeInput);
+
     await fetchHistories({
-      userId: userId ? Number(userId) : undefined,
+      userId: Number.isFinite(parsedUserId) && parsedUserId > 0 ? parsedUserId : undefined,
       sendStatus: sendStatus.trim() || undefined,
-      page: pageInput ? Number(pageInput) : 0,
-      size: sizeInput ? Number(sizeInput) : 20
+      page: Number.isFinite(parsedPage) && parsedPage >= 0 ? parsedPage : 0,
+      size: Number.isFinite(parsedSize) && parsedSize > 0 ? parsedSize : 20
     });
   };
 
@@ -100,7 +113,7 @@ export const EmailHistoryPage: React.FC = () => {
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{history.sendStatus}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{history.emailMessageId}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
-                    {new Date(history.createdAt).toLocaleString()}
+                    {formatDateTime(history.createdAt)}
                   </td>
                 </tr>
               ))

@@ -56,14 +56,31 @@ export const ActionDispatchPage: React.FC = () => {
       return;
     }
 
+    const parsedCampaignId = form.campaignId ? Number(form.campaignId) : undefined;
+    if (parsedCampaignId !== undefined && (!Number.isFinite(parsedCampaignId) || parsedCampaignId <= 0)) {
+      setFormError('Campaign ID는 유효한 양수여야 합니다.');
+      return;
+    }
+
+    const parsedJourneyExecutionId = form.journeyExecutionId ? Number(form.journeyExecutionId) : undefined;
+    if (
+      parsedJourneyExecutionId !== undefined &&
+      (!Number.isFinite(parsedJourneyExecutionId) || parsedJourneyExecutionId <= 0)
+    ) {
+      setFormError('Journey Execution ID는 유효한 양수여야 합니다.');
+      return;
+    }
+
+    setFormError(null);
+
     const payload: ActionDispatchRequest = {
       channel: form.channel,
       destination: form.destination.trim(),
       subject: form.subject.trim() || undefined,
-      body: form.body,
+      body: form.body.trim(),
       variables,
-      campaignId: form.campaignId ? Number(form.campaignId) : undefined,
-      journeyExecutionId: form.journeyExecutionId ? Number(form.journeyExecutionId) : undefined
+      campaignId: parsedCampaignId,
+      journeyExecutionId: parsedJourneyExecutionId
     };
 
     const success = await dispatchAction(payload);
@@ -195,7 +212,7 @@ export const ActionDispatchPage: React.FC = () => {
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{history.status}</td>
                     <td className="px-4 py-3 text-sm text-slate-300">{history.destination}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
-                      {new Date(history.createdAt).toLocaleString()}
+                      {history.createdAt ? new Date(history.createdAt).toLocaleString() : '-'}
                     </td>
                   </tr>
                 ))

@@ -2,6 +2,15 @@ import React, { useState } from 'react';
 import { Button, Input } from 'common/component';
 import { useAuditLogs } from 'shared/hook';
 
+const formatDateTime = (value?: string): string => {
+  if (!value) {
+    return '-';
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? '-' : parsed.toLocaleString();
+};
+
 export const AuditLogPage: React.FC = () => {
   const { logs, loading, error, fetchLogs } = useAuditLogs();
 
@@ -11,8 +20,10 @@ export const AuditLogPage: React.FC = () => {
   const [actorId, setActorId] = useState('');
 
   const handleSearch = async () => {
+    const parsedLimit = Number(limit);
+
     await fetchLogs({
-      limit: limit ? Number(limit) : undefined,
+      limit: Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : undefined,
       action: action.trim() || undefined,
       resourceType: resourceType.trim() || undefined,
       actorId: actorId.trim() || undefined
@@ -104,7 +115,7 @@ export const AuditLogPage: React.FC = () => {
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{log.actorId ?? '-'}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{log.statusCode ?? '-'}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
-                      {log.createdAt ? new Date(log.createdAt).toLocaleString() : '-'}
+                      {formatDateTime(log.createdAt)}
                     </td>
                   </tr>
                 ))

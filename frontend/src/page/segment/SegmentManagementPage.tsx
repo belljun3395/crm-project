@@ -40,6 +40,9 @@ const parseConditions = (raw: string): SegmentCondition[] | null => {
       if (!condition.field || !condition.operator || !condition.valueType) {
         throw new Error('Invalid condition');
       }
+      if (condition.value === null || condition.value === undefined) {
+        throw new Error('Invalid condition: missing value');
+      }
       return condition;
     });
 
@@ -61,6 +64,7 @@ export const SegmentManagementPage: React.FC = () => {
     segments,
     loading,
     saving,
+    deletingId,
     error,
     createSegment,
     updateSegment,
@@ -77,7 +81,28 @@ export const SegmentManagementPage: React.FC = () => {
     return [...segments].sort((a, b) => b.id - a.id);
   }, [segments]);
 
-  const buildPayload = (form: SegmentFormState): SegmentRequest | SegmentUpdateRequest | null => {
+  const buildCreatePayload = (form: SegmentFormState): SegmentRequest | null => {
+    if (!form.name.trim()) {
+      setFormError('세그먼트 이름은 필수입니다.');
+      return null;
+    }
+
+    const parsedConditions = parseConditions(form.conditionsJson);
+    if (!parsedConditions) {
+      setFormError('conditions JSON 형식을 확인해주세요. 최소 1개 조건이 필요합니다.');
+      return null;
+    }
+
+    setFormError(null);
+    return {
+      name: form.name.trim(),
+      description: form.description.trim() || undefined,
+      active: form.active,
+      conditions: parsedConditions
+    };
+  };
+
+  const buildUpdatePayload = (form: SegmentFormState): SegmentUpdateRequest | null => {
     if (!form.name.trim()) {
       setFormError('세그먼트 이름은 필수입니다.');
       return null;
@@ -99,12 +124,12 @@ export const SegmentManagementPage: React.FC = () => {
   };
 
   const handleCreate = async () => {
-    const payload = buildPayload(createForm);
+    const payload = buildCreatePayload(createForm);
     if (!payload) {
       return;
     }
 
-    const success = await createSegment(payload as SegmentRequest);
+    const success = await createSegment(payload);
     if (!success) {
       return;
     }
@@ -124,12 +149,12 @@ export const SegmentManagementPage: React.FC = () => {
       return;
     }
 
-    const payload = buildPayload(editForm);
+    const payload = buildUpdatePayload(editForm);
     if (!payload) {
       return;
     }
 
-    const success = await updateSegment(editingSegment.id, payload as SegmentUpdateRequest);
+    const success = await updateSegment(editingSegment.id, payload);
     if (!success) {
       return;
     }
@@ -267,7 +292,12 @@ export const SegmentManagementPage: React.FC = () => {
                       <Button size="sm" variant="secondary" onClick={() => openEdit(segment)}>
                         Edit
                       </Button>
-                      <Button size="sm" variant="danger" onClick={() => handleDelete(segment.id)} loading={saving}>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => handleDelete(segment.id)}
+                        loading={deletingId === segment.id}
+                      >
                         Delete
                       </Button>
                     </div>
