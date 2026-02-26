@@ -32,6 +32,13 @@ mail:
     # - 'smtp': Uses SMTP via JavaMail (cloud-neutral, requires spring.mail.* settings)
     provider: ${MAIL_PROVIDER:ses}
 
+cloud:
+    # Cloud provider for infrastructure services (messaging, pubsub, etc.)
+    # Supported values:
+    # - 'aws': Uses AWS services (SQS, SNS) — Default
+    # - 'gcp': Uses GCP services (Pub/Sub)
+    provider: ${CLOUD_PROVIDER:aws}
+
 scheduler:
     # Scheduler implementation provider.
     # Supported values:
