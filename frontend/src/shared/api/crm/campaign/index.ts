@@ -53,5 +53,33 @@ export const campaignAPI = {
       console.error('Error fetching stream status:', error);
       return null;
     }
+  },
+
+  // SSE stream URL 생성 (EventSource용)
+  getStreamUrl(
+    campaignId: number,
+    params?: {
+      durationSeconds?: number;
+      lastEventId?: string;
+    }
+  ): string {
+    const baseURL = (crmApi.defaults.baseURL || '/api/v1').replace(/\/$/, '');
+    const url = new URL(
+      `${baseURL}/campaigns/${campaignId}/dashboard/stream`,
+      window.location.origin
+    );
+
+    if (params?.durationSeconds) {
+      url.searchParams.set('durationSeconds', String(params.durationSeconds));
+    }
+    if (params?.lastEventId) {
+      url.searchParams.set('lastEventId', params.lastEventId);
+    }
+
+    if (baseURL.startsWith('http://') || baseURL.startsWith('https://')) {
+      return url.toString();
+    }
+
+    return `${url.pathname}${url.search}`;
   }
 };
