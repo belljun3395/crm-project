@@ -75,3 +75,11 @@ cp ./build/openapi.json ../docs/openapi.json
 - 쓰기 API 일부는 `Idempotency-Key` 헤더를 요구합니다.
 - Webhook 기능은 `webhook.enabled` 설정으로 토글됩니다.
 - Flyway 마이그레이션 위치는 `backend/src/main/resources/db/migration/entity` 입니다.
+
+## Seed Test Data
+
+```bash
+bash scripts/test-data/seed-all.sh
+```
+
+- API 단위 개별 실행은 `scripts/test-data/README.md`를 참고하세요.
