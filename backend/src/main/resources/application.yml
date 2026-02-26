@@ -18,6 +18,8 @@ spring:
         group:
             local:
                 - local
+            k8s:
+                - k8s
             prd:
                 - prd
             dev:

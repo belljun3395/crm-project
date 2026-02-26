@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: crm-kafka-ui
+  namespace: crm-local
+spec:
+  selector:
+    app: crm-kafka-ui
+  ports:
+    - port: 8080
+      targetPort: 8080

@@ -1,0 +1,48 @@
+## Bitnami Kafka Helm values for local K8s development (KRaft mode)
+## helm install crm-kafka bitnami/kafka -n crm-local -f k8s/local/helm-values/kafka.yaml
+##
+## 생성되는 K8s 리소스:
+##   Service: crm-kafka (포트 9092)
+
+fullnameOverride: crm-kafka
+
+kraft:
+  enabled: true
+
+controller:
+  replicaCount: 1
+  persistence:
+    enabled: false
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+
+broker:
+  replicaCount: 0  # KRaft combined 모드: controller가 broker 역할도 수행
+
+listeners:
+  client:
+    protocol: PLAINTEXT
+  controller:
+    protocol: PLAINTEXT
+  interbroker:
+    protocol: PLAINTEXT
+
+extraConfig: |
+  auto.create.topics.enable=true
+  num.partitions=3
+  default.replication.factor=1
+  offsets.topic.replication.factor=1
+  transaction.state.log.replication.factor=1
+  transaction.state.log.min.isr=1
+
+externalAccess:
+  enabled: false
+
+metrics:
+  jmx:
+    enabled: false

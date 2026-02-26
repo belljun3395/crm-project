@@ -1,0 +1,84 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: crm
+
+build:
+  artifacts:
+    - image: crm-backend
+      context: backend
+      docker:
+        dockerfile: Dockerfile
+    - image: crm-frontend
+      context: frontend
+      docker:
+        dockerfile: Dockerfile
+  local:
+    push: false
+    # minikube docker-env를 통해 minikube 내부 Docker daemon에 빌드
+    useBuildkit: true
+
+deploy:
+  kubectl:
+    manifests:
+      - k8s/local/namespace.yaml
+      - k8s/local/mysql-init/configmap.yaml
+      - k8s/local/localstack/configmap.yaml
+      - k8s/local/localstack/deployment.yaml
+      - k8s/local/localstack/service.yaml
+      - k8s/local/adminer/deployment.yaml
+      - k8s/local/adminer/service.yaml
+      - k8s/local/kafka-ui/deployment.yaml
+      - k8s/local/kafka-ui/service.yaml
+      - k8s/local/redis-insight/deployment.yaml
+      - k8s/local/redis-insight/service.yaml
+      - k8s/local/backend/deployment.yaml
+      - k8s/local/backend/service.yaml
+      - k8s/local/frontend/nginx-configmap.yaml
+      - k8s/local/frontend/deployment.yaml
+      - k8s/local/frontend/service.yaml
+    defaultNamespace: crm-local
+
+portForward:
+  # 인프라 서비스 (Docker Compose 포트와 동일하게 맞춤)
+  - resourceType: service
+    resourceName: crm-mysql
+    namespace: crm-local
+    port: 3306
+    localPort: 13306
+  - resourceType: service
+    resourceName: crm-adminer
+    namespace: crm-local
+    port: 8080
+    localPort: 18080
+  - resourceType: service
+    resourceName: crm-redis-insight
+    namespace: crm-local
+    port: 5540
+    localPort: 18081
+  - resourceType: service
+    resourceName: crm-localstack
+    namespace: crm-local
+    port: 4566
+    localPort: 4566
+  - resourceType: service
+    resourceName: crm-kafka
+    namespace: crm-local
+    port: 9092
+    localPort: 9092
+  - resourceType: service
+    resourceName: crm-kafka-ui
+    namespace: crm-local
+    port: 8080
+    localPort: 18082
+  # 앱 서비스
+  - resourceType: service
+    resourceName: crm-backend
+    namespace: crm-local
+    port: 8080
+    localPort: 8080
+  - resourceType: service
+    resourceName: crm-frontend
+    namespace: crm-local
+    port: 80
+    localPort: 3000

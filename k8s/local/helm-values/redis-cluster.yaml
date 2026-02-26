@@ -1,0 +1,33 @@
+## Bitnami Redis Cluster Helm values for local K8s development
+## helm install crm-redis bitnami/redis-cluster -n crm-local -f k8s/local/helm-values/redis-cluster.yaml
+##
+## 생성되는 K8s 리소스:
+##   StatefulSet:      crm-redis
+##   Service(ClusterIP): crm-redis
+##   Service(Headless):  crm-redis-headless
+##   Pods: crm-redis-0 ~ crm-redis-5
+##
+## 백엔드 연결 노드 주소:
+##   crm-redis-{0..5}.crm-redis-headless.crm-local.svc.cluster.local:6379
+
+fullnameOverride: crm-redis
+
+cluster:
+  nodes: 6       # 3 master + 3 replica
+  replicas: 1
+
+password: password
+
+redis:
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 200m
+
+persistence:
+  enabled: false  # 로컬 개발용: 데이터 영속성 비활성화
+
+useExternalDNS: false
