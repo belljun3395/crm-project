@@ -1,0 +1,35 @@
+## Bitnami MySQL Helm values for local K8s development
+## helm install crm-mysql bitnami/mysql -n crm-local -f k8s/local/helm-values/mysql.yaml
+
+fullnameOverride: crm-mysql
+
+auth:
+  rootPassword: root
+  createDatabase: false  # DB는 initdb 스크립트에서 생성
+
+primary:
+  persistence:
+    enabled: true
+    size: 2Gi
+  configuration: |-
+    [mysqld]
+    character-set-server=utf8mb4
+    collation-server=utf8mb4_unicode_ci
+    lower_case_table_names=1
+    max_connections=2048
+    wait_timeout=3600
+  initdb:
+    scriptsConfigMap: crm-mysql-initdb
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+
+secondary:
+  replicaCount: 0
+
+metrics:
+  enabled: false

@@ -1,0 +1,83 @@
+spring:
+    main:
+        web-application-type: reactive
+    application:
+        name: crm
+    r2dbc:
+        url: r2dbc:pool:mysql://crm-mysql:3306/crm
+        username: root
+        password: root
+        routing:
+            master-url: r2dbc:pool:mysql://crm-mysql:3306/crm
+            replica-url: r2dbc:pool:mysql://crm-mysql:3306/crm
+            username: root
+            password: root
+    data:
+        redis:
+            cluster:
+                # connect-ip 미설정: K8s 환경에서는 pod IP 직접 라우팅 사용
+                max-redirects: 3
+                password: password
+                nodes:
+                    - crm-redis-0.crm-redis-headless.crm-local.svc.cluster.local:6379
+                    - crm-redis-1.crm-redis-headless.crm-local.svc.cluster.local:6379
+                    - crm-redis-2.crm-redis-headless.crm-local.svc.cluster.local:6379
+                    - crm-redis-3.crm-redis-headless.crm-local.svc.cluster.local:6379
+                    - crm-redis-4.crm-redis-headless.crm-local.svc.cluster.local:6379
+                    - crm-redis-5.crm-redis-headless.crm-local.svc.cluster.local:6379
+    mail:
+        protocol: smtp
+        host: smtp.gmail.com
+        port: 587
+        username: example@example.com
+        password: password
+        properties:
+            mail:
+                smtp:
+                    auth: true
+                    debug: true
+                    starttls:
+                        enable: true
+                    EnableSSL:
+                        enable: true
+    aws:
+        region: ap-northeast-2
+        endpoint-url: http://crm-localstack:4566
+        credentials:
+            access-key: test
+            secret-key: test
+        mail:
+            configuration-set:
+                default: local-configuration-set
+        schedule:
+            role-arn: arn:aws:iam::000000000000:role/LocalEventBridgeSchedulerRole
+            sqs-arn: arn:aws:sqs:ap-northeast-2:000000000000:ses_sqs
+            group-name: local-schedule-group
+        sns:
+            cache-invalidation-topic-arn: arn:aws:sns:ap-northeast-2:000000000000:cache-invalidation-topic
+    kafka:
+        bootstrap-servers: crm-kafka:9092
+        consumer:
+            group-id: crm-scheduled-tasks-consumer
+    flyway:
+        locations: classpath:db/migration/entity
+        sql-migration-suffixes: sql
+        baseline-on-migrate: true
+        baseline-version: 0
+
+springdoc:
+    swagger-ui:
+        operations-sorter: alpha
+    model-and-view-allowed: true
+    packages-to-scan: com.manage.crm
+
+logging:
+    config: classpath:logback-spring.xml
+    level:
+        org.springframework.r2dbc.core: debug
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: prometheus

@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crm-kafka-ui
+  namespace: crm-local
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crm-kafka-ui
+  template:
+    metadata:
+      labels:
+        app: crm-kafka-ui
+    spec:
+      containers:
+        - name: kafka-ui
+          image: provectuslabs/kafka-ui:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: KAFKA_CLUSTERS_0_NAME
+              value: "crm-kafka"
+            - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+              value: "crm-kafka:9092"
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 512Mi
+              cpu: 200m

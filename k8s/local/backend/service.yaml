@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: crm-backend
+  namespace: crm-local
+spec:
+  selector:
+    app: crm-backend
+  ports:
+    - port: 8080
+      targetPort: 8080
