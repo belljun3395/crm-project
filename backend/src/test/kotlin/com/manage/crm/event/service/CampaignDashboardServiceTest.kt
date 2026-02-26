@@ -44,7 +44,23 @@ class CampaignDashboardServiceTest : BehaviorSpec({
             coEvery { streamService.getStreamLength(any()) } returns 50L
             coEvery { streamService.trimStream(any(), any()) } returns Unit
             coEvery {
+                campaignEventsRepository.countAllByCampaignIdAndTimeRange(any(), any(), any())
+            } returns 1L
+            coEvery {
+                campaignEventsRepository.countDistinctUsersByCampaignIdAndTimeRange(any(), any(), any())
+            } returns 1L
+            coEvery {
                 campaignDashboardMetricsRepository.upsertMetric(
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns 1
+            coEvery {
+                campaignDashboardMetricsRepository.upsertMetricAbsolute(
                     any(),
                     any(),
                     any(),
@@ -74,6 +90,26 @@ class CampaignDashboardServiceTest : BehaviorSpec({
                         campaignDashboardMetricsRepository.upsertMetric(
                             campaignId = 1L,
                             metricType = MetricType.EVENT_COUNT,
+                            metricValue = 1L,
+                            timeWindowStart = any(),
+                            timeWindowEnd = any(),
+                            timeWindowUnit = unit
+                        )
+                    }
+                    coVerify(exactly = 1) {
+                        campaignDashboardMetricsRepository.upsertMetricAbsolute(
+                            campaignId = 1L,
+                            metricType = MetricType.TOTAL_USER_COUNT,
+                            metricValue = 1L,
+                            timeWindowStart = any(),
+                            timeWindowEnd = any(),
+                            timeWindowUnit = unit
+                        )
+                    }
+                    coVerify(exactly = 1) {
+                        campaignDashboardMetricsRepository.upsertMetricAbsolute(
+                            campaignId = 1L,
+                            metricType = MetricType.UNIQUE_USER_COUNT,
                             metricValue = 1L,
                             timeWindowStart = any(),
                             timeWindowEnd = any(),
