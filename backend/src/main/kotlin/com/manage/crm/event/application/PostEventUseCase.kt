@@ -14,6 +14,7 @@ import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.event.service.CampaignDashboardEvent
 import com.manage.crm.event.service.CampaignDashboardService
+import com.manage.crm.journey.application.JourneyAutomationService
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.repository.UserRepository
@@ -45,7 +46,8 @@ class PostEventUseCase(
     private val campaignCacheManager: CampaignCacheManager,
     private val userRepository: UserRepository,
     private val segmentTargetingService: SegmentTargetingService,
-    private val campaignDashboardService: CampaignDashboardService
+    private val campaignDashboardService: CampaignDashboardService,
+    private val journeyAutomationService: JourneyAutomationService? = null
 ) {
     val log = KotlinLogging.logger {}
 
@@ -63,6 +65,8 @@ class PostEventUseCase(
         val firstSavedEvent = savedEvents.firstOrNull()
             ?: throw NotFoundByException("User", "segmentId", segmentId ?: -1L)
         val firstSavedEventId = requireNotNull(firstSavedEvent.id)
+
+        triggerJourneyAutomation(savedEvents)
 
         val campaign = try {
             findCampaign(campaignName)
@@ -103,6 +107,16 @@ class PostEventUseCase(
 
         return out {
             PostEventUseCaseOut(firstSavedEventId, message)
+        }
+    }
+
+    private suspend fun triggerJourneyAutomation(savedEvents: List<Event>) {
+        savedEvents.forEach { savedEvent ->
+            runCatching {
+                journeyAutomationService?.onEvent(savedEvent)
+            }.onFailure {
+                log.error(it) { "Failed to execute journey automation for eventId=${savedEvent.id}" }
+            }
         }
     }
 
