@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
-import { GuidePanel } from 'common/component';
+import React, { useMemo, useState } from 'react';
+import { GuidePanel, Modal } from 'common/component';
 import {
   useUsers,
+  useCampaigns,
   useTemplates,
   useEmailHistories,
   useEmailSchedules,
@@ -24,6 +25,7 @@ const formatDateTime = (value?: string): string => {
 
 export const DashboardPage: React.FC = () => {
   const { users, userCount } = useUsers();
+  const { campaigns } = useCampaigns();
   const { templates } = useTemplates();
   const { totalCount: emailHistoriesTotalCount } = useEmailHistories();
   const { schedules } = useEmailSchedules();
@@ -32,10 +34,13 @@ export const DashboardPage: React.FC = () => {
   const { journeys, executions } = useJourneys();
   const { histories } = useActions();
   const { logs } = useAuditLogs();
+  const [selectedUser, setSelectedUser] = useState<(typeof users)[number] | null>(null);
+  const [selectedHistory, setSelectedHistory] = useState<(typeof histories)[number] | null>(null);
 
   const cards = useMemo(
     () => [
       { label: 'Total Users', value: formatNumber(userCount), accent: 'from-cyan-400/20 to-cyan-500/0' },
+      { label: 'Campaigns', value: formatNumber(campaigns.length), accent: 'from-lime-400/20 to-lime-500/0' },
       { label: 'Email Templates', value: formatNumber(templates.length), accent: 'from-emerald-400/20 to-emerald-500/0' },
       { label: 'Scheduled Emails', value: formatNumber(schedules.length), accent: 'from-amber-400/20 to-amber-500/0' },
       { label: 'Email Histories', value: formatNumber(emailHistoriesTotalCount), accent: 'from-orange-400/20 to-orange-500/0' },
@@ -48,6 +53,7 @@ export const DashboardPage: React.FC = () => {
     ],
     [
       userCount,
+      campaigns.length,
       templates.length,
       schedules.length,
       emailHistoriesTotalCount,
@@ -105,7 +111,11 @@ export const DashboardPage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-800">
               {users.slice(0, 8).map((user) => (
-                <tr key={user.id} className="hover:bg-slate-800/30">
+                <tr
+                  key={user.id}
+                  className="cursor-pointer hover:bg-slate-800/30"
+                  onClick={() => setSelectedUser(user)}
+                >
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-white">{user.externalId}</td>
                   <td className="max-w-xs truncate px-4 py-3 text-sm text-slate-300">{user.userAttributes}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
@@ -139,7 +149,11 @@ export const DashboardPage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-800">
               {histories.slice(0, 8).map((history) => (
-                <tr key={history.id} className="hover:bg-slate-800/30">
+                <tr
+                  key={history.id}
+                  className="cursor-pointer hover:bg-slate-800/30"
+                  onClick={() => setSelectedHistory(history)}
+                >
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">{history.id}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-white">{history.channel}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{history.status}</td>
@@ -159,6 +173,72 @@ export const DashboardPage: React.FC = () => {
           </table>
         </div>
       </section>
+
+      <Modal
+        isOpen={Boolean(selectedUser)}
+        onClose={() => setSelectedUser(null)}
+        title={selectedUser ? `Recent User #${selectedUser.id}` : 'Recent User'}
+        size="lg"
+      >
+        {selectedUser && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 text-sm text-slate-200 md:grid-cols-2">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">External ID</p>
+                <p>{selectedUser.externalId}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Created</p>
+                <p>{formatDateTime(selectedUser.createdAt)}</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Attributes</p>
+              <pre className="mt-2 max-h-[300px] overflow-auto rounded-lg border border-slate-700 bg-slate-950/80 p-3 text-xs text-slate-200">
+                {selectedUser.userAttributes}
+              </pre>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Raw JSON</p>
+              <pre className="mt-2 max-h-[220px] overflow-auto rounded-lg border border-slate-700 bg-slate-950/80 p-3 text-xs text-slate-200">
+                {JSON.stringify(selectedUser, null, 2)}
+              </pre>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={Boolean(selectedHistory)}
+        onClose={() => setSelectedHistory(null)}
+        title={selectedHistory ? `Recent Dispatch #${selectedHistory.id}` : 'Recent Dispatch'}
+        size="lg"
+      >
+        {selectedHistory && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 text-sm text-slate-200 md:grid-cols-2">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Channel</p>
+                <p>{selectedHistory.channel}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Status</p>
+                <p>{selectedHistory.status}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Created</p>
+                <p>{formatDateTime(selectedHistory.createdAt)}</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Raw JSON</p>
+              <pre className="mt-2 max-h-[260px] overflow-auto rounded-lg border border-slate-700 bg-slate-950/80 p-3 text-xs text-slate-200">
+                {JSON.stringify(selectedHistory, null, 2)}
+              </pre>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

@@ -1,13 +1,27 @@
 import React, { useState } from 'react';
-import { Button, GuidePanel, Input, Modal } from 'common/component';
+import { Button, GuidePanel, Input, Modal, Textarea } from 'common/component';
 import { useToggle } from 'common/hook';
 import { useUsers } from 'shared/hook';
+import { COLLECTED_USER_FIELDS } from 'shared/variableGuide';
 import type { UserFormData } from 'shared/type';
+
+const formatUserAttributes = (raw?: string): string => {
+  if (!raw) {
+    return '';
+  }
+
+  try {
+    return JSON.stringify(JSON.parse(raw), null, 2);
+  } catch {
+    return raw;
+  }
+};
 
 export const UserPage: React.FC = () => {
   const { users, loading, enrolling, error, enrollUser } = useUsers();
   const { value: isModalOpen, setTrue: openModal, setFalse: closeModal } = useToggle();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState<(typeof users)[number] | null>(null);
   const [formData, setFormData] = useState<UserFormData>({
     externalId: '',
     userAttributes: ''
@@ -61,9 +75,10 @@ export const UserPage: React.FC = () => {
         items={[
           'Enroll User 버튼으로 새 사용자를 등록합니다.',
           'External ID는 고객을 구분하는 고유 값으로 사용됩니다.',
+          'userAttributes.email은 필수 키입니다.',
           '검색창에서 외부 ID나 속성 텍스트로 빠르게 찾을 수 있습니다.'
         ]}
-        note="속성은 JSON 텍스트로 저장되므로, 키 이름을 일관되게 입력하면 검색과 분석이 쉬워집니다."
+        note="공통으로 externalId, userAttributes.email을 사용합니다. name은 개인화에 권장됩니다."
       />
 
       {/* 검색 */}
@@ -97,7 +112,11 @@ export const UserPage: React.FC = () => {
               </tr>
             ) : filteredUsers.length > 0 ? (
               filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-800/50">
+                <tr
+                  key={user.id}
+                  className="cursor-pointer hover:bg-gray-800/50"
+                  onClick={() => setSelectedUser(user)}
+                >
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-400">{user.id}</td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-white">
                     {user.externalId}
@@ -121,9 +140,61 @@ export const UserPage: React.FC = () => {
         </table>
       </div>
 
+      <Modal
+        isOpen={Boolean(selectedUser)}
+        onClose={() => setSelectedUser(null)}
+        title={selectedUser ? `User #${selectedUser.id}` : 'User Detail'}
+        size="lg"
+      >
+        {selectedUser && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 text-sm text-slate-200 md:grid-cols-2">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">ID</p>
+                <p>{selectedUser.id}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">External ID</p>
+                <p>{selectedUser.externalId}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Created</p>
+                <p>{selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleString() : '-'}</p>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">User Attributes</p>
+              <pre className="mt-2 max-h-[300px] overflow-auto rounded-lg border border-slate-700 bg-slate-950/80 p-3 text-xs text-slate-200">
+                {formatUserAttributes(selectedUser.userAttributes)}
+              </pre>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Raw JSON</p>
+              <pre className="mt-2 max-h-[220px] overflow-auto rounded-lg border border-slate-700 bg-slate-950/80 p-3 text-xs text-slate-200">
+                {JSON.stringify(selectedUser, null, 2)}
+              </pre>
+            </div>
+          </div>
+        )}
+      </Modal>
+
       {/* 사용자 등록 모달 */}
       <Modal isOpen={isModalOpen} onClose={closeModal} title="Enroll User">
         <div className="space-y-4">
+          <div className="rounded-lg border border-slate-700/70 bg-slate-900/60 p-3">
+            <p className="text-sm font-semibold text-slate-100">공통 수집 필드</p>
+            <ul className="mt-2 space-y-1 text-xs text-slate-300">
+              {COLLECTED_USER_FIELDS.map((field) => (
+                <li key={field.key}>
+                  <span className="font-mono text-slate-200">{field.key}</span>
+                  {' '}({field.required ? '필수' : '선택'}) - {field.description}
+                </li>
+              ))}
+            </ul>
+          </div>
+
           <Input
             label="External ID"
             value={formData.externalId}
@@ -131,11 +202,12 @@ export const UserPage: React.FC = () => {
             placeholder="Enter external ID"
             required
           />
-          <Input
+          <Textarea
             label="User Attributes"
             value={formData.userAttributes}
             onChange={(e) => setFormData({...formData, userAttributes: e.target.value})}
-            placeholder="Enter user attributes (JSON format)"
+            placeholder='{"email":"user@example.com","name":"홍길동","tier":"BETA"}'
+            rows={5}
             required
           />
           <div className="flex gap-3 pt-4">

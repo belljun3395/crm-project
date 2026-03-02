@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { segmentAPI } from 'shared/api';
 import type {
   Segment,
+  SegmentMatchedUser,
   SegmentRequest,
   SegmentUpdateRequest
 } from 'shared/type';
@@ -11,6 +12,8 @@ export const useSegments = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [segmentUsersById, setSegmentUsersById] = useState<Record<number, SegmentMatchedUser[]>>({});
+  const [userLoadingSegmentId, setUserLoadingSegmentId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchSegments = useCallback(async (limit = 50): Promise<void> => {
@@ -87,6 +90,22 @@ export const useSegments = () => {
     }
   }, [fetchSegments]);
 
+  const fetchSegmentUsers = useCallback(async (segmentId: number, campaignId?: number): Promise<SegmentMatchedUser[]> => {
+    setUserLoadingSegmentId(segmentId);
+    setError(null);
+    try {
+      const users = await segmentAPI.getSegmentUsers(segmentId, campaignId);
+      setSegmentUsersById((prev) => ({ ...prev, [segmentId]: users }));
+      return users;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch segment users';
+      setError(message);
+      return [];
+    } finally {
+      setUserLoadingSegmentId(null);
+    }
+  }, []);
+
   useEffect(() => {
     fetchSegments();
   }, [fetchSegments]);
@@ -96,8 +115,11 @@ export const useSegments = () => {
     loading,
     saving,
     deletingId,
+    segmentUsersById,
+    userLoadingSegmentId,
     error,
     fetchSegments,
+    fetchSegmentUsers,
     createSegment,
     updateSegment,
     deleteSegment

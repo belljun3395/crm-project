@@ -1,10 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { templateAPI } from 'shared/api';
-import type { Template, CreateTemplateRequest } from 'shared/type';
+import type { Template, CreateTemplateRequest, TemplateVariableCatalog } from 'shared/type';
 
 export const useTemplates = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [variableCatalog, setVariableCatalog] = useState<TemplateVariableCatalog>({
+    userVariables: [],
+    campaignVariables: []
+  });
   const [loading, setLoading] = useState(false);
+  const [catalogLoading, setCatalogLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // 템플릿 목록 조회
@@ -66,11 +71,24 @@ export const useTemplates = () => {
     fetchTemplates();
   }, [fetchTemplates]);
 
+  const fetchVariableCatalog = useCallback(async (campaignId?: number) => {
+    setCatalogLoading(true);
+    try {
+      const data = await templateAPI.getVariableCatalog(campaignId);
+      setVariableCatalog(data);
+    } finally {
+      setCatalogLoading(false);
+    }
+  }, []);
+
   return {
     templates,
+    variableCatalog,
     loading,
+    catalogLoading,
     error,
     fetchTemplates,
+    fetchVariableCatalog,
     createTemplate,
     deleteTemplate,
   };

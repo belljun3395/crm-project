@@ -56,6 +56,37 @@ export const useEvents = () => {
     }
   }, []);
 
+  const browseAllEvents = useCallback(async (limit = 200) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await eventAPI.getAllEvents(limit);
+      if (!abortController.signal.aborted) {
+        setEvents(data);
+        return data;
+      }
+      return [];
+    } catch (err) {
+      if (!abortController.signal.aborted) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to browse events';
+        setError(errorMessage);
+        console.error('Failed to browse events:', err);
+      }
+      return [];
+    } finally {
+      if (!abortController.signal.aborted) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
   // 이벤트 생성
   const createEvent = useCallback(async (eventData: CreateEventRequest): Promise<boolean> => {
     setLoading(true);
@@ -110,6 +141,7 @@ export const useEvents = () => {
     events,
     loading,
     error,
+    browseAllEvents,
     searchEvents,
     createEvent,
     createCampaign,

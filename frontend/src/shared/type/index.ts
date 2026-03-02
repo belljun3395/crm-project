@@ -81,6 +81,18 @@ export interface CreateTemplateRequest {
   version?: number;
 }
 
+export interface TemplateVariableCatalogItem {
+  key: string;
+  source: 'USER' | 'CAMPAIGN' | string;
+  description: string;
+  required?: boolean;
+}
+
+export interface TemplateVariableCatalog {
+  userVariables: TemplateVariableCatalogItem[];
+  campaignVariables: TemplateVariableCatalogItem[];
+}
+
 // Email Types
 export interface SendEmailRequest {
   campaignId?: number;
@@ -92,12 +104,15 @@ export interface SendEmailRequest {
 
 export interface EmailSchedule {
   taskName: string;
+  campaignId?: number;
   templateId: number;
   userIds: number[];
+  segmentId?: number;
   expiredTime: string;
 }
 
 export interface CreateEmailScheduleRequest {
+  campaignId?: number;
   templateId: number;
   templateVersion?: number;
   userIds: number[];
@@ -171,6 +186,14 @@ export interface Segment {
   createdAt?: string;
 }
 
+export interface SegmentMatchedUser {
+  id: number;
+  externalId: string;
+  email?: string;
+  name?: string;
+  createdAt?: string;
+}
+
 export interface SegmentRequest {
   name: string;
   description?: string;
@@ -204,6 +227,9 @@ export interface CreateJourneyRequest {
   triggerType: string;
   triggerEventName?: string;
   triggerSegmentId?: number;
+  triggerSegmentEvent?: string;
+  triggerSegmentWatchFields?: string[];
+  triggerSegmentCountThreshold?: number;
   active?: boolean;
   steps: JourneyStepRequest[];
 }
@@ -228,6 +254,9 @@ export interface Journey {
   triggerType: string;
   triggerEventName?: string;
   triggerSegmentId?: number;
+  triggerSegmentEvent?: string;
+  triggerSegmentWatchFields?: string[];
+  triggerSegmentCountThreshold?: number;
   active: boolean;
   steps: JourneyStep[];
   createdAt: string;
@@ -360,6 +389,20 @@ export interface StreamStatusResponse {
   checkedAt: string;
 }
 
+export interface CampaignOption {
+  id: number;
+  name: string;
+  createdAt?: string;
+}
+
+export interface CampaignDetail {
+  id: number;
+  name: string;
+  properties: EventProperty[];
+  segmentIds: number[];
+  createdAt?: string;
+}
+
 // Email History Types
 export interface EmailSendHistoryDto {
   id: number;
@@ -383,6 +426,7 @@ export interface BrowseEmailSendHistoriesUseCaseOut {
 export type TabType =
   | 'dashboard'
   | 'campaign-dashboard'
+  | 'campaigns'
   | 'webhook'
   | 'user'
   | 'event'
@@ -419,6 +463,7 @@ export interface TemplateFormData {
 export interface EmailScheduleFormData {
   templateId: number;
   userIds: string;
+  campaignId: string;
   segmentId: string;
   expiredTime: string;
 }

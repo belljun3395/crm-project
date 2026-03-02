@@ -3,6 +3,7 @@ import { createIdempotencyHeaders } from '../idempotency';
 import type {
   ApiResponse,
   Segment,
+  SegmentMatchedUser,
   SegmentRequest,
   SegmentUpdateRequest
 } from 'shared/type';
@@ -31,6 +32,18 @@ export const segmentAPI = {
     } catch (error) {
       console.error('Error fetching segment:', error);
       return null;
+    }
+  },
+
+  async getSegmentUsers(id: number, campaignId?: number): Promise<SegmentMatchedUser[]> {
+    try {
+      const response = await crmApi.get<ApiResponse<SegmentMatchedUser[]>>(`/segments/${id}/users`, {
+        params: campaignId !== undefined ? { campaignId } : undefined
+      });
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching segment users:', error);
+      return [];
     }
   },
 

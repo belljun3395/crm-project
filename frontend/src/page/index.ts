@@ -1,5 +1,6 @@
 export { DashboardPage } from './dashboard';
 export { CampaignDashboardPage } from './campaign-dashboard';
+export { CampaignManagementPage } from './campaign';
 export { WebhookManagementPage } from './webhook';
 export { UserPage } from './user';
 export { EventPage } from './event';

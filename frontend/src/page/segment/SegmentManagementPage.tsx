@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Button, GuidePanel, Input, Modal, Textarea } from 'common/component';
-import { useSegments } from 'shared/hook';
+import { useCampaigns, useSegments } from 'shared/hook';
 import type { Segment, SegmentCondition, SegmentRequest, SegmentUpdateRequest } from 'shared/type';
 
 interface SegmentFormState {
@@ -65,14 +65,20 @@ export const SegmentManagementPage: React.FC = () => {
     loading,
     saving,
     deletingId,
+    segmentUsersById,
+    userLoadingSegmentId,
     error,
+    fetchSegmentUsers,
     createSegment,
     updateSegment,
     deleteSegment
   } = useSegments();
+  const { campaigns } = useCampaigns();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSegment, setEditingSegment] = useState<Segment | null>(null);
+  const [selectedSegment, setSelectedSegment] = useState<Segment | null>(null);
+  const [selectedCampaignScopeId, setSelectedCampaignScopeId] = useState<number | null>(null);
   const [createForm, setCreateForm] = useState<SegmentFormState>(initialForm);
   const [editForm, setEditForm] = useState<SegmentFormState>(initialForm);
   const [formError, setFormError] = useState<string | null>(null);
@@ -80,6 +86,12 @@ export const SegmentManagementPage: React.FC = () => {
   const sortedSegments = useMemo(() => {
     return [...segments].sort((a, b) => b.id - a.id);
   }, [segments]);
+  const selectedSegmentUsers = useMemo(() => {
+    if (!selectedSegment) {
+      return [];
+    }
+    return segmentUsersById[selectedSegment.id] ?? [];
+  }, [segmentUsersById, selectedSegment]);
 
   const buildCreatePayload = (form: SegmentFormState): SegmentRequest | null => {
     if (!form.name.trim()) {
@@ -154,6 +166,37 @@ export const SegmentManagementPage: React.FC = () => {
     setEditingSegment(segment);
     setEditForm(toForm(segment));
     setFormError(null);
+  };
+
+  const openDetail = (segment: Segment) => {
+    setSelectedSegment(segment);
+    setSelectedCampaignScopeId(null);
+    void fetchSegmentUsers(segment.id);
+  };
+
+  const closeDetailModal = () => {
+    setSelectedSegment(null);
+    setSelectedCampaignScopeId(null);
+  };
+
+  const handleCampaignScopeChange = (value: string) => {
+    if (!selectedSegment) {
+      return;
+    }
+
+    if (!value) {
+      setSelectedCampaignScopeId(null);
+      void fetchSegmentUsers(selectedSegment.id);
+      return;
+    }
+
+    const parsedCampaignId = Number(value);
+    if (Number.isNaN(parsedCampaignId)) {
+      return;
+    }
+
+    setSelectedCampaignScopeId(parsedCampaignId);
+    void fetchSegmentUsers(selectedSegment.id, parsedCampaignId);
   };
 
   const closeEditModal = () => {
@@ -297,7 +340,11 @@ export const SegmentManagementPage: React.FC = () => {
               </tr>
             ) : (
               sortedSegments.map((segment) => (
-                <tr key={segment.id} className="hover:bg-slate-800/40">
+                <tr
+                  key={segment.id}
+                  className="cursor-pointer hover:bg-slate-800/40"
+                  onClick={() => openDetail(segment)}
+                >
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">{segment.id}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-white">{segment.name}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{segment.conditions.length}</td>
@@ -317,13 +364,23 @@ export const SegmentManagementPage: React.FC = () => {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
                     <div className="flex gap-2">
-                      <Button size="sm" variant="secondary" onClick={() => openEdit(segment)}>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEdit(segment);
+                        }}
+                      >
                         Edit
                       </Button>
                       <Button
                         size="sm"
                         variant="danger"
-                        onClick={() => handleDelete(segment.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleDelete(segment.id);
+                        }}
                         loading={deletingId === segment.id}
                       >
                         Delete
@@ -348,6 +405,128 @@ export const SegmentManagementPage: React.FC = () => {
         size="lg"
       >
         {renderForm(editForm, setEditForm, '수정', handleUpdate, closeEditModal)}
+      </Modal>
+
+      <Modal
+        isOpen={Boolean(selectedSegment)}
+        onClose={closeDetailModal}
+        title={selectedSegment ? `Segment #${selectedSegment.id}` : 'Segment Detail'}
+        size="xl"
+      >
+        {selectedSegment ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="rounded-lg border border-slate-700/80 bg-slate-900/60 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Name</p>
+                <p className="mt-1 text-sm text-white">{selectedSegment.name}</p>
+              </div>
+              <div className="rounded-lg border border-slate-700/80 bg-slate-900/60 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Status</p>
+                <p className="mt-1 text-sm text-white">{selectedSegment.active ? 'ACTIVE' : 'INACTIVE'}</p>
+              </div>
+              <div className="rounded-lg border border-slate-700/80 bg-slate-900/60 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Description</p>
+                <p className="mt-1 text-sm text-white">{selectedSegment.description || '-'}</p>
+              </div>
+              <div className="rounded-lg border border-slate-700/80 bg-slate-900/60 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Created</p>
+                <p className="mt-1 text-sm text-white">
+                  {selectedSegment.createdAt ? new Date(selectedSegment.createdAt).toLocaleString() : '-'}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-700/80 bg-slate-900/60 p-3">
+              <p className="text-sm font-semibold text-slate-100">Conditions JSON</p>
+              <pre className="mt-2 max-h-56 overflow-auto rounded-lg border border-slate-700 bg-slate-950/60 p-3 text-xs text-slate-200">
+                {JSON.stringify(selectedSegment.conditions, null, 2)}
+              </pre>
+            </div>
+
+            <div className="rounded-xl border border-slate-700/80 bg-slate-900/60">
+              <div className="space-y-3 border-b border-slate-700 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-slate-100">Matched Users</p>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => void fetchSegmentUsers(selectedSegment.id, selectedCampaignScopeId ?? undefined)}
+                  >
+                    Refresh
+                  </Button>
+                </div>
+                <div className="grid gap-2 md:grid-cols-[180px_1fr] md:items-center">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Campaign Scope</p>
+                  <select
+                    value={selectedCampaignScopeId ?? ''}
+                    onChange={(e) => handleCampaignScopeChange(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-400"
+                  >
+                    <option value="">전체 이벤트 범위</option>
+                    {campaigns.map((campaign) => (
+                      <option key={campaign.id} value={campaign.id}>
+                        #{campaign.id} - {campaign.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <p className="text-xs text-slate-400">
+                  캠페인을 선택하면 해당 캠페인에 포함된 이벤트 기준으로 세그먼트 사용자 미리보기를 좁혀서 조회합니다.
+                </p>
+              </div>
+              <div className="max-h-[280px] overflow-auto">
+                <table className="min-w-full divide-y divide-slate-800">
+                  <thead className="bg-slate-800/60">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">
+                        ID
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">
+                        External ID
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">
+                        Email
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">
+                        Name
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">
+                        Created
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {userLoadingSegmentId === selectedSegment.id ? (
+                      <tr>
+                        <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-300">
+                          Loading matched users...
+                        </td>
+                      </tr>
+                    ) : selectedSegmentUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-300">
+                          매칭된 유저가 없습니다.
+                        </td>
+                      </tr>
+                    ) : (
+                      selectedSegmentUsers.map((user) => (
+                        <tr key={user.id}>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{user.id}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{user.externalId}</td>
+                          <td className="px-4 py-3 text-sm text-slate-300">{user.email || '-'}</td>
+                          <td className="px-4 py-3 text-sm text-slate-300">{user.name || '-'}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
+                            {user.createdAt ? new Date(user.createdAt).toLocaleString() : '-'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </Modal>
     </div>
   );

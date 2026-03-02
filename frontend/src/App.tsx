@@ -3,6 +3,7 @@ import {
   HomeModernIcon,
   Squares2X2Icon,
   ChartBarSquareIcon,
+  PresentationChartLineIcon,
   LinkIcon,
   UsersIcon,
   CalendarDaysIcon,
@@ -16,6 +17,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { DashboardPage } from 'page/dashboard';
 import { CampaignDashboardPage } from 'page/campaign-dashboard';
+import { CampaignManagementPage } from 'page/campaign';
 import { WebhookManagementPage } from 'page/webhook';
 import { UserPage } from 'page/user';
 import { EventPage } from 'page/event';
@@ -55,6 +57,12 @@ const navItems: NavItem[] = [
     label: 'Campaign',
     description: '캠페인 대시보드',
     icon: <ChartBarSquareIcon className="h-4 w-4" />
+  },
+  {
+    id: 'campaigns',
+    label: 'Campaigns',
+    description: '캠페인 관리',
+    icon: <PresentationChartLineIcon className="h-4 w-4" />
   },
   {
     id: 'webhook',
@@ -135,7 +143,7 @@ const navSections: NavSection[] = [
     id: 'customer',
     label: '고객 관리',
     description: '고객/행동/여정',
-    itemIds: ['user', 'event', 'segments', 'journeys', 'actions']
+    itemIds: ['user', 'segments', 'campaigns', 'event', 'journeys', 'actions']
   },
   {
     id: 'messaging',
@@ -168,6 +176,8 @@ function App() {
         return <DashboardPage />;
       case 'campaign-dashboard':
         return <CampaignDashboardPage />;
+      case 'campaigns':
+        return <CampaignManagementPage />;
       case 'webhook':
         return <WebhookManagementPage />;
       case 'user':

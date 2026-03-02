@@ -1,13 +1,68 @@
 import { crmApi } from '../instance';
 import type {
+  CreateCampaignRequest,
   GetCampaignDashboardUseCaseOut,
   CampaignSummaryResponse,
+  CampaignDetail,
+  CampaignOption,
   StreamStatusResponse,
   TimeWindowUnit,
   ApiResponse
 } from 'shared/type';
 
 export const campaignAPI = {
+  async getCampaigns(limit = 100): Promise<CampaignOption[]> {
+    try {
+      const response = await crmApi.get<ApiResponse<CampaignOption[]>>('/campaigns', {
+        params: { limit }
+      });
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+      return [];
+    }
+  },
+
+  async getCampaign(campaignId: number): Promise<CampaignDetail | null> {
+    try {
+      const response = await crmApi.get<ApiResponse<CampaignDetail>>(`/campaigns/${campaignId}`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching campaign detail:', error);
+      return null;
+    }
+  },
+
+  async postCampaign(payload: CreateCampaignRequest): Promise<CampaignDetail | null> {
+    try {
+      const response = await crmApi.post<ApiResponse<CampaignDetail>>('/campaigns', payload);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      return null;
+    }
+  },
+
+  async putCampaign(campaignId: number, payload: CreateCampaignRequest): Promise<CampaignDetail | null> {
+    try {
+      const response = await crmApi.put<ApiResponse<CampaignDetail>>(`/campaigns/${campaignId}`, payload);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error updating campaign:', error);
+      return null;
+    }
+  },
+
+  async deleteCampaign(campaignId: number): Promise<boolean> {
+    try {
+      await crmApi.delete(`/campaigns/${campaignId}`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      return false;
+    }
+  },
+
   // 캠페인 대시보드 조회
   async getDashboard(
     campaignId: number,

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, GuidePanel, Input, Modal } from 'common/component';
 import { useToggle } from 'common/hook';
-import { useEmailSchedules, useTemplates } from 'shared/hook';
+import { useCampaigns, useEmailSchedules, useSegments, useTemplates } from 'shared/hook';
 import type { EmailScheduleFormData } from 'shared/type';
 
 interface SendNowFormState {
@@ -28,11 +28,14 @@ const parseOptionalPositiveNumber = (raw: string): number | undefined => {
 export const ScheduleManagementPage: React.FC = () => {
   const { schedules, loading, createSchedule, cancelSchedule, sendNotificationEmail } = useEmailSchedules();
   const { templates } = useTemplates();
+  const { segments } = useSegments();
+  const { campaigns } = useCampaigns();
   const { value: isModalOpen, setTrue: openModal, setFalse: closeModal } = useToggle();
   const [isSendNowOpen, setIsSendNowOpen] = useState(false);
   const [formData, setFormData] = useState<EmailScheduleFormData>({
     templateId: 0,
     userIds: '',
+    campaignId: '',
     segmentId: '',
     expiredTime: ''
   });
@@ -42,16 +45,19 @@ export const ScheduleManagementPage: React.FC = () => {
     campaignId: '',
     segmentId: ''
   });
+  const [selectedSchedule, setSelectedSchedule] = useState<(typeof schedules)[number] | null>(null);
 
   // 폼 제출
   const handleSubmit = async () => {
     if (!formData.templateId || !formData.expiredTime) return;
 
     const userIds = parseIdList(formData.userIds);
+    const campaignId = parseOptionalPositiveNumber(formData.campaignId);
     const segmentId = parseOptionalPositiveNumber(formData.segmentId);
     if (userIds.length === 0 && !segmentId) return;
 
     const success = await createSchedule({
+      campaignId,
       templateId: formData.templateId,
       userIds,
       segmentId,
@@ -62,6 +68,7 @@ export const ScheduleManagementPage: React.FC = () => {
       setFormData({
         templateId: 0,
         userIds: '',
+        campaignId: '',
         segmentId: '',
         expiredTime: ''
       });
@@ -136,6 +143,7 @@ export const ScheduleManagementPage: React.FC = () => {
             <tr>
               <th className="px-6 py-3 text-left text-sm font-semibold text-white">Task Name</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-white">Template ID</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-white">Campaign</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-white">User IDs</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-white">Expiry Time</th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-white">Actions</th>
@@ -144,18 +152,25 @@ export const ScheduleManagementPage: React.FC = () => {
           <tbody className="divide-y divide-gray-800">
             {loading ? (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
+                <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
                   Loading schedules...
                 </td>
               </tr>
             ) : schedules.length > 0 ? (
               schedules.map((schedule, index) => (
-                <tr key={index} className="hover:bg-gray-800/50">
+                <tr
+                  key={index}
+                  className="cursor-pointer hover:bg-gray-800/50"
+                  onClick={() => setSelectedSchedule(schedule)}
+                >
                   <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-white">
                     {schedule.taskName}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-400">
                     {schedule.templateId}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-400">
+                    {schedule.campaignId ? `#${schedule.campaignId}` : '-'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-400 max-w-xs truncate">
                     {schedule.userIds.join(', ')}
@@ -167,7 +182,10 @@ export const ScheduleManagementPage: React.FC = () => {
                     <Button
                       variant="danger"
                       size="sm"
-                      onClick={() => handleCancel(schedule.taskName)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCancel(schedule.taskName);
+                      }}
                     >
                       Cancel
                     </Button>
@@ -176,7 +194,7 @@ export const ScheduleManagementPage: React.FC = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
+                <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
                   No email schedules found
                 </td>
               </tr>
@@ -184,6 +202,47 @@ export const ScheduleManagementPage: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      <Modal
+        isOpen={Boolean(selectedSchedule)}
+        onClose={() => setSelectedSchedule(null)}
+        title={selectedSchedule ? `Schedule ${selectedSchedule.taskName}` : 'Schedule Detail'}
+        size="lg"
+      >
+        {selectedSchedule && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 text-sm text-slate-200 md:grid-cols-2">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Task Name</p>
+                <p>{selectedSchedule.taskName}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Template ID</p>
+                <p>{selectedSchedule.templateId}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Campaign</p>
+                <p>{selectedSchedule.campaignId ? `#${selectedSchedule.campaignId}` : '-'}</p>
+              </div>
+              <div className="md:col-span-2">
+                <p className="text-xs uppercase tracking-wide text-slate-400">User IDs</p>
+                <p>{selectedSchedule.userIds.join(', ') || '-'}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Expired Time</p>
+                <p>{new Date(selectedSchedule.expiredTime).toLocaleString()}</p>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Raw JSON</p>
+              <pre className="mt-2 max-h-[300px] overflow-auto rounded-lg border border-slate-700 bg-slate-950/80 p-3 text-xs text-slate-200">
+                {JSON.stringify(selectedSchedule, null, 2)}
+              </pre>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* 이메일 스케줄 생성 모달 */}
       <Modal isOpen={isModalOpen} onClose={closeModal} title="Schedule Email">
@@ -214,13 +273,40 @@ export const ScheduleManagementPage: React.FC = () => {
             placeholder="Enter user IDs (comma-separated)"
           />
 
-          <Input
-            label="Segment ID (optional)"
-            type="number"
-            value={formData.segmentId}
-            onChange={(e) => setFormData({...formData, segmentId: e.target.value})}
-            placeholder="1"
-          />
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-300">Campaign (optional)</label>
+            <select
+              value={formData.campaignId}
+              onChange={(e) => setFormData({ ...formData, campaignId: e.target.value })}
+              className="w-full rounded-lg border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-[#22c55e] focus:ring-[#22c55e]"
+            >
+              <option value="">선택 안함</option>
+              {campaigns.map((campaign) => (
+                <option key={campaign.id} value={campaign.id}>
+                  #{campaign.id} - {campaign.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-2 text-xs text-slate-400">
+              Segment를 함께 선택하면 해당 Segment가 Campaign에 연결된 경우에만 예약 생성됩니다.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-300">Segment (optional)</label>
+            <select
+              value={formData.segmentId}
+              onChange={(e) => setFormData({ ...formData, segmentId: e.target.value })}
+              className="w-full rounded-lg border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-[#22c55e] focus:ring-[#22c55e]"
+            >
+              <option value="">선택 안함</option>
+              {segments.filter((segment) => segment.active).map((segment) => (
+                <option key={segment.id} value={segment.id}>
+                  #{segment.id} - {segment.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <Input
             label="Expiry Time"
@@ -269,21 +355,37 @@ export const ScheduleManagementPage: React.FC = () => {
             placeholder="1001, 1002"
           />
 
-          <Input
-            label="Segment ID (optional)"
-            type="number"
-            value={sendNowForm.segmentId}
-            onChange={(e) => setSendNowForm({ ...sendNowForm, segmentId: e.target.value })}
-            placeholder="1"
-          />
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-300">Segment (optional)</label>
+            <select
+              value={sendNowForm.segmentId}
+              onChange={(e) => setSendNowForm({ ...sendNowForm, segmentId: e.target.value })}
+              className="w-full rounded-lg border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-[#22c55e] focus:ring-[#22c55e]"
+            >
+              <option value="">선택 안함</option>
+              {segments.filter((segment) => segment.active).map((segment) => (
+                <option key={segment.id} value={segment.id}>
+                  #{segment.id} - {segment.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <Input
-            label="Campaign ID (optional)"
-            type="number"
-            value={sendNowForm.campaignId}
-            onChange={(e) => setSendNowForm({ ...sendNowForm, campaignId: e.target.value })}
-            placeholder="1"
-          />
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-300">Campaign (optional)</label>
+            <select
+              value={sendNowForm.campaignId}
+              onChange={(e) => setSendNowForm({ ...sendNowForm, campaignId: e.target.value })}
+              className="w-full rounded-lg border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-[#22c55e] focus:ring-[#22c55e]"
+            >
+              <option value="">선택 안함</option>
+              {campaigns.map((campaign) => (
+                <option key={campaign.id} value={campaign.id}>
+                  #{campaign.id} - {campaign.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <p className="text-xs text-slate-400">
             User IDs 또는 Segment ID 중 하나는 필수입니다.
