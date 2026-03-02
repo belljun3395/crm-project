@@ -5,6 +5,7 @@ import java.time.LocalDateTime
 
 open class NotificationEmailSendTimeOutEvent(
     val eventId: EventId,
+    val campaignId: Long? = null,
     val templateId: Long,
     val templateVersion: Float? = 1.0f,
     val userIds: List<Long>,
@@ -38,6 +39,7 @@ open class NotificationEmailSendTimeOutEvent(
 // ----------------- TimeOutInvokeEvent -----------------
 open class NotificationEmailSendTimeOutInvokeEvent(
     val timeOutEventId: EventId,
+    val campaignId: Long? = null,
     val templateId: Long,
     val templateVersion: Float?,
     val userIds: List<Long>,

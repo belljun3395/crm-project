@@ -27,6 +27,8 @@ fun JsonNode.userIds() = this["userIds"].map { it.asLong() }
 
 fun JsonNode.segmentId() = this["segmentId"]?.asLong()
 
+fun JsonNode.campaignId() = this["campaignId"]?.asLong()
+
 fun JsonNode.expiredTime() = LocalDateTimeExtension().parseExpiredTime(this["expiredTime"].asText())
 
 @Profile("!test")
@@ -56,6 +58,7 @@ class NotificationEmailSendTimeOutEventRePlayer(
                                 val event =
                                     NotificationEmailSendTimeOutEvent(
                                         eventId = it.eventId,
+                                        campaignId = payload.campaignId(),
                                         templateId = payload.templateId(),
                                         templateVersion = payload.templateVersion(),
                                         userIds = payload.userIds(),
@@ -71,6 +74,7 @@ class NotificationEmailSendTimeOutEventRePlayer(
                                     replayedEventsLogBuffer.appendLine("  - eventId: ${event.eventId} expiredTime: ${event.expiredTime}")
                                     val notificationEmailSendTimeOutEventInput =
                                         NotificationEmailSendTimeOutEventInput(
+                                            campaignId = event.campaignId,
                                             templateId = event.templateId,
                                             templateVersion = event.templateVersion,
                                             userIds = event.userIds,

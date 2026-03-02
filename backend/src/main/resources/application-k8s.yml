@@ -74,7 +74,14 @@ springdoc:
 logging:
     config: classpath:logback-spring.xml
     level:
-        org.springframework.r2dbc.core: debug
+        root: INFO
+        com.manage.crm: INFO
+        org.springframework.r2dbc.core: WARN
+        org.springframework.data.redis: WARN
+        org.springframework.kafka: WARN
+        org.apache.kafka: WARN
+        reactor.kafka: WARN
+        io.lettuce.core: WARN
 
 management:
     endpoints:

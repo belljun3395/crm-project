@@ -7,6 +7,7 @@ import java.time.LocalDateTime
 
 data class ScheduleTaskView(
     val taskName: String,
+    val campaignId: Long?,
     val templateId: Long,
     val userIds: List<Long>,
     val segmentId: Long?,
@@ -15,6 +16,7 @@ data class ScheduleTaskView(
 
 @JsonTypeName("notification-email-timeout")
 data class NotificationEmailSendTimeOutEventInput(
+    val campaignId: Long? = null,
     val templateId: Long,
     val templateVersion: Float?,
     val userIds: List<Long>,

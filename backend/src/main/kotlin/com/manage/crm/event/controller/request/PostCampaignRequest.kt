@@ -6,6 +6,12 @@ data class PostCampaignRequest(
     val segmentIds: List<Long>? = null
 )
 
+data class PutCampaignRequest(
+    val name: String,
+    val properties: List<PostCampaignPropertyDto>,
+    val segmentIds: List<Long>? = null
+)
+
 data class PostCampaignPropertyDto(
     val key: String,
     val value: String

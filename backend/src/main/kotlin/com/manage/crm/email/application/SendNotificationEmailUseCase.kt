@@ -17,6 +17,7 @@ import com.manage.crm.email.domain.vo.NotificationType
 import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.event.application.SegmentTargetingService
 import com.manage.crm.event.domain.repository.CampaignRepository
+import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
 import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.exception.NotFoundByIdException
@@ -37,6 +38,7 @@ class SendNotificationEmailUseCase(
     private val emailContentService: EmailContentService,
     private val campaignEventsService: CampaignEventsService,
     private val campaignRepository: CampaignRepository,
+    private val campaignSegmentsRepository: CampaignSegmentsRepository,
     private val userRepository: UserRepository,
     private val segmentTargetingService: SegmentTargetingService,
     private val objectMapper: ObjectMapper
@@ -49,8 +51,9 @@ class SendNotificationEmailUseCase(
         val templateVersion: Float? = useCaseIn.templateVersion
         val userIds = useCaseIn.userIds
         val segmentId = useCaseIn.segmentId
+        validateCampaignSegmentLink(campaignId = campaignId, segmentId = segmentId)
         val requestedUserIds = if (segmentId != null) {
-            segmentTargetingService.resolveUserIds(segmentId)
+            segmentTargetingService.resolveUserIds(segmentId, campaignId)
         } else {
             userIds
         }
@@ -222,5 +225,19 @@ class SendNotificationEmailUseCase(
                 eventType = SentEmailStatus.SEND
             )
         }
+    }
+
+    private suspend fun validateCampaignSegmentLink(campaignId: Long?, segmentId: Long?) {
+        if (campaignId == null || segmentId == null) {
+            return
+        }
+
+        val linked = campaignSegmentsRepository.existsByCampaignIdAndSegmentId(campaignId, segmentId)
+        if (linked) {
+            return
+        }
+
+        log.error { "Invalid request: segmentId $segmentId is not linked to campaignId $campaignId" }
+        throw IllegalArgumentException("segmentId $segmentId is not linked to campaignId $campaignId")
     }
 }

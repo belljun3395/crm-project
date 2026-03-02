@@ -13,6 +13,7 @@ import com.manage.crm.email.domain.repository.ScheduledEventRepository
 import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
 import com.manage.crm.event.application.SegmentTargetingService
+import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
 import org.springframework.beans.factory.annotation.Qualifier
@@ -27,6 +28,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
     private val emailSendHistoryRepository: EmailSendHistoryRepository,
     private val userRepository: UserRepository,
     private val segmentTargetingService: SegmentTargetingService,
+    private val campaignSegmentsRepository: CampaignSegmentsRepository,
     @Qualifier("mailServiceImpl")
     private val mailService: MailService,
     private val emailContentService: EmailContentService,
@@ -48,8 +50,10 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
 
         val templateId = event.templateId
         val templateVersion = event.templateVersion
+        val campaignId = event.campaignId
+        validateCampaignSegmentLink(campaignId = campaignId, segmentId = event.segmentId)
         val userIds = if (event.segmentId != null) {
-            segmentTargetingService.resolveUserIds(event.segmentId)
+            segmentTargetingService.resolveUserIds(event.segmentId, campaignId)
         } else {
             event.userIds
         }
@@ -88,7 +92,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
             val email =
                 user.userAttributes.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)
             // TODO check if notification need to send to user filter by campaign
-            val content = emailContentService.genUserEmailContent(user, template, null) ?: return@collect
+            val content = emailContentService.genUserEmailContent(user, template, campaignId) ?: return@collect
             val emailMessageId =
                 mailService.send(
                     SendEmailInDto(
@@ -112,5 +116,18 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
                 )
             )
         }
+    }
+
+    private suspend fun validateCampaignSegmentLink(campaignId: Long?, segmentId: Long?) {
+        if (campaignId == null || segmentId == null) {
+            return
+        }
+
+        val linked = campaignSegmentsRepository.existsByCampaignIdAndSegmentId(campaignId, segmentId)
+        if (linked) {
+            return
+        }
+
+        throw IllegalArgumentException("segmentId $segmentId is not linked to campaignId $campaignId")
     }
 }

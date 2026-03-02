@@ -121,4 +121,17 @@ class RedisConfig {
             .build()
         return ReactiveRedisTemplate(redisConnectionFactory, context)
     }
+
+    @Bean
+    fun reactiveStringRedisTemplate(redisConnectionFactory: ReactiveRedisConnectionFactory): ReactiveRedisTemplate<String, String> {
+        val serializer = StringRedisSerializer()
+        val builder = newSerializationContext<String, String>(serializer)
+        val context = builder
+            .key(serializer)
+            .value(serializer)
+            .hashKey(serializer)
+            .hashValue(serializer)
+            .build()
+        return ReactiveRedisTemplate(redisConnectionFactory, context)
+    }
 }

@@ -62,6 +62,7 @@ class ScheduleTaskServiceImpl(
             }.map { payload ->
                 ScheduleTaskView(
                     taskName = payload["eventId"] as String,
+                    campaignId = payload["campaignId"]?.asLong(),
                     templateId = payload["templateId"].asLong(),
                     userIds = (payload["userIds"] as? List<*>)?.mapNotNull { it.asLong() } ?: emptyList(),
                     segmentId = payload["segmentId"]?.asLong(),

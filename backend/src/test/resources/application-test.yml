@@ -80,10 +80,14 @@ idempotency:
 logging:
     level:
         root: INFO
-        org.springframework.r2dbc.core: debug
-        org.springframework.web.reactive: debug
-        com.manage.crm: debug
-        com.amazonaws: debug
-        org.testcontainers: debug
+        com.manage.crm: INFO
+        org.springframework.r2dbc.core: WARN
+        org.springframework.web.reactive: INFO
+        org.springframework.kafka: WARN
+        org.apache.kafka: WARN
+        reactor.kafka: WARN
+        io.lettuce.core: WARN
+        com.amazonaws: INFO
+        org.testcontainers: INFO
         # LocalStack specific logging
-        localstack: debug
+        localstack: INFO

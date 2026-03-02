@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<configuration debug="true">
+<configuration debug="false">
     <property resource="application.yml"/>
     <property name="TRACE_ID_CONSOLE_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %magenta([%thread]) %highlight([%-3level]) [%X{traceId}] %logger{5} - %msg %n" />
     <springProperty name="LOGS_ABSOLUTE_PATH" source="log.file.path"/>
@@ -29,11 +29,20 @@
         </format>
     </appender>
 
+    <logger name="org.apache.kafka" level="WARN"/>
+    <logger name="org.springframework.kafka" level="WARN"/>
+    <logger name="reactor.kafka" level="WARN"/>
+    <logger name="io.lettuce.core" level="WARN"/>
+    <logger name="org.springframework.data.redis" level="WARN"/>
+    <logger name="org.springframework.r2dbc.core" level="WARN"/>
+    <logger name="org.springframework.web.reactive" level="INFO"/>
+    <logger name="com.manage.crm.infrastructure.cache.listener.CacheInvalidationListener" level="WARN"/>
+    <logger name="com.manage.crm.infrastructure.cache.provider.SnsCacheInvalidationPublisher" level="WARN"/>
+    <logger name="org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport" level="WARN"/>
+
     <springProfile name="dev">
-        <root level="DEBUG">
+        <root level="INFO">
             <appender-ref ref="CONSOLE"/>
-        </root>
-        <root level="DEBUG">
             <appender-ref ref="LOKI"/>
         </root>
     </springProfile>
@@ -41,17 +50,13 @@
     <springProfile name="prd">
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
-        </root>
-        <root level="INFO">
             <appender-ref ref="LOKI"/>
         </root>
     </springProfile>
 
     <springProfile name="local">
-        <root level="DEBUG">
+        <root level="INFO">
             <appender-ref ref="CONSOLE"/>
-        </root>
-        <root level="DEBUG">
             <appender-ref ref="LOKI"/>
         </root>
     </springProfile>

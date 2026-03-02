@@ -1,9 +1,12 @@
 package com.manage.crm.event.controller
 
 import com.manage.crm.config.SwaggerTag
+import com.manage.crm.event.application.BrowseEventsUseCase
 import com.manage.crm.event.application.PostCampaignUseCase
 import com.manage.crm.event.application.PostEventUseCase
 import com.manage.crm.event.application.SearchEventsUseCase
+import com.manage.crm.event.application.dto.BrowseEventsUseCaseIn
+import com.manage.crm.event.application.dto.BrowseEventsUseCaseOut
 import com.manage.crm.event.application.dto.PostCampaignPropertyDto
 import com.manage.crm.event.application.dto.PostCampaignUseCaseIn
 import com.manage.crm.event.application.dto.PostCampaignUseCaseOut
@@ -40,10 +43,20 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping(value = ["/api/v1/events"])
 class EventController(
+    private val browseEventsUseCase: BrowseEventsUseCase,
     private val postEventUseCase: PostEventUseCase,
     private val searchEventsUseCase: SearchEventsUseCase,
     private val postCampaignUseCase: PostCampaignUseCase
 ) {
+
+    @GetMapping("/all")
+    suspend fun browseEvents(
+        @RequestParam(required = false, defaultValue = "200") limit: Int
+    ): ApiResponse<ApiResponse.SuccessBody<BrowseEventsUseCaseOut>> {
+        return browseEventsUseCase
+            .execute(BrowseEventsUseCaseIn(limit = limit))
+            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+    }
 
     @PostMapping
     suspend fun postEvent(

@@ -4,15 +4,30 @@ import com.manage.crm.config.SwaggerTag
 import com.manage.crm.event.application.GetCampaignDashboardUseCase
 import com.manage.crm.event.application.GetCampaignSummaryUseCase
 import com.manage.crm.event.application.GetStreamStatusUseCase
+import com.manage.crm.event.application.PostCampaignUseCase
+import com.manage.crm.event.application.dto.PostCampaignPropertyDto
+import com.manage.crm.event.application.dto.PostCampaignUseCaseIn
+import com.manage.crm.event.application.dto.PostCampaignUseCaseOut
 import com.manage.crm.event.application.dto.GetCampaignDashboardUseCaseIn
 import com.manage.crm.event.application.dto.GetCampaignDashboardUseCaseOut
 import com.manage.crm.event.application.dto.GetCampaignSummaryUseCaseIn
 import com.manage.crm.event.application.dto.GetStreamStatusUseCaseIn
+import com.manage.crm.event.controller.request.PostCampaignRequest
+import com.manage.crm.event.controller.request.PutCampaignRequest
 import com.manage.crm.event.controller.dto.CampaignEventData
 import com.manage.crm.event.controller.dto.CampaignSummaryResponse
 import com.manage.crm.event.controller.dto.StreamStatusResponse
 import com.manage.crm.event.domain.TimeWindowUnit
+import com.manage.crm.event.domain.CampaignSegments
+import com.manage.crm.event.domain.cache.CampaignCacheManager
+import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
+import com.manage.crm.event.domain.repository.CampaignRepository
+import com.manage.crm.event.domain.vo.CampaignProperties
+import com.manage.crm.event.domain.vo.CampaignProperty
 import com.manage.crm.event.service.CampaignDashboardService
+import com.manage.crm.segment.domain.repository.SegmentRepository
+import com.manage.crm.support.exception.AlreadyExistsException
+import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.web.ApiResponse
 import com.manage.crm.support.web.ApiResponseGenerator
 import io.swagger.v3.oas.annotations.Operation
@@ -25,13 +40,20 @@ import org.springframework.http.codec.ServerSentEvent
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.transaction.annotation.Transactional
+import kotlinx.coroutines.flow.toList
 import reactor.core.publisher.Flux
 import java.time.Duration
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @Tag(name = SwaggerTag.EVENT_SWAGGER_TAG, description = "캠페인 대시보드 API")
 @Validated
@@ -41,8 +63,142 @@ class CampaignDashboardController(
     private val getCampaignDashboardUseCase: GetCampaignDashboardUseCase,
     private val getCampaignSummaryUseCase: GetCampaignSummaryUseCase,
     private val getStreamStatusUseCase: GetStreamStatusUseCase,
-    private val campaignDashboardService: CampaignDashboardService
+    private val postCampaignUseCase: PostCampaignUseCase,
+    private val campaignDashboardService: CampaignDashboardService,
+    private val campaignRepository: CampaignRepository,
+    private val campaignSegmentsRepository: CampaignSegmentsRepository,
+    private val segmentRepository: SegmentRepository,
+    private val campaignCacheManager: CampaignCacheManager
 ) {
+    companion object {
+        private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    }
+
+    @GetMapping
+    suspend fun listCampaigns(
+        @RequestParam(required = false, defaultValue = "100") limit: Int
+    ): ApiResponse<ApiResponse.SuccessBody<List<CampaignListItemDto>>> {
+        val campaigns = campaignRepository.findAll()
+            .toList()
+            .sortedByDescending { it.createdAt }
+            .take(limit.coerceAtLeast(1))
+            .mapNotNull { campaign ->
+                val campaignId = campaign.id ?: return@mapNotNull null
+                CampaignListItemDto(
+                    id = campaignId,
+                    name = campaign.name,
+                    createdAt = campaign.createdAt?.format(formatter)
+                )
+            }
+        return ApiResponseGenerator.success(campaigns, HttpStatus.OK)
+    }
+
+    @GetMapping("/{campaignId}")
+    suspend fun getCampaign(
+        @PathVariable campaignId: Long
+    ): ApiResponse<ApiResponse.SuccessBody<CampaignDetailDto>> {
+        val campaign = campaignRepository.findById(campaignId)
+            ?: throw NotFoundByIdException("Campaign", campaignId)
+        val segmentIds = campaignSegmentsRepository.findAllByCampaignId(campaignId)
+            .map { it.segmentId }
+
+        return ApiResponseGenerator.success(
+            CampaignDetailDto(
+                id = campaign.id ?: campaignId,
+                name = campaign.name,
+                properties = campaign.properties.value.map {
+                    CampaignPropertyDto(key = it.key, value = it.value)
+                },
+                segmentIds = segmentIds,
+                createdAt = campaign.createdAt?.format(formatter)
+            ),
+            HttpStatus.OK
+        )
+    }
+
+    @PostMapping
+    suspend fun postCampaign(
+        @RequestBody request: PostCampaignRequest
+    ): ApiResponse<ApiResponse.SuccessBody<PostCampaignUseCaseOut>> {
+        return postCampaignUseCase
+            .execute(
+                PostCampaignUseCaseIn(
+                    name = request.name,
+                    segmentIds = request.segmentIds ?: emptyList(),
+                    properties = request.properties.map {
+                        PostCampaignPropertyDto(key = it.key, value = it.value)
+                    }
+                )
+            )
+            .let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
+    }
+
+    @Transactional
+    @PutMapping("/{campaignId}")
+    suspend fun updateCampaign(
+        @PathVariable campaignId: Long,
+        @RequestBody request: PutCampaignRequest
+    ): ApiResponse<ApiResponse.SuccessBody<CampaignDetailDto>> {
+        val campaign = campaignRepository.findById(campaignId)
+            ?: throw NotFoundByIdException("Campaign", campaignId)
+
+        val normalizedName = request.name.trim()
+        val duplicated = campaignRepository.findCampaignByName(normalizedName)
+        if (duplicated != null && duplicated.id != campaignId) {
+            throw AlreadyExistsException("Campaign", "name", normalizedName)
+        }
+
+        val segmentIds = (request.segmentIds ?: emptyList()).distinct()
+        segmentIds.forEach { segmentId ->
+            if (segmentRepository.findById(segmentId) == null) {
+                throw NotFoundByIdException("Segment", segmentId)
+            }
+        }
+
+        val previousName = campaign.name
+        campaign.name = normalizedName
+        campaign.properties = CampaignProperties(
+            request.properties.map { CampaignProperty(key = it.key, value = it.value) }
+        )
+
+        val updatedCampaign = campaignRepository.save(campaign)
+        campaignSegmentsRepository.deleteAllByCampaignId(campaignId)
+        segmentIds.forEach { segmentId ->
+            campaignSegmentsRepository.save(CampaignSegments.new(campaignId = campaignId, segmentId = segmentId))
+        }
+
+        campaignCacheManager.evict(campaignId, previousName)
+        campaignCacheManager.save(updatedCampaign)
+
+        return ApiResponseGenerator.success(
+            CampaignDetailDto(
+                id = updatedCampaign.id ?: campaignId,
+                name = updatedCampaign.name,
+                properties = updatedCampaign.properties.value.map {
+                    CampaignPropertyDto(key = it.key, value = it.value)
+                },
+                segmentIds = segmentIds,
+                createdAt = updatedCampaign.createdAt?.format(formatter)
+            ),
+            HttpStatus.OK
+        )
+    }
+
+    @Transactional
+    @DeleteMapping("/{campaignId}")
+    suspend fun deleteCampaign(
+        @PathVariable campaignId: Long
+    ): ApiResponse<ApiResponse.SuccessBody<CampaignDeleteResponseDto>> {
+        val campaign = campaignRepository.findById(campaignId)
+            ?: throw NotFoundByIdException("Campaign", campaignId)
+
+        campaignSegmentsRepository.deleteAllByCampaignId(campaignId)
+        campaignRepository.deleteById(campaignId)
+        campaignCacheManager.evict(campaignId, campaign.name)
+
+        return ApiResponseGenerator.success(CampaignDeleteResponseDto(success = true), HttpStatus.OK)
+    }
+
 
     @Operation(
         summary = "캠페인 대시보드 조회",
@@ -173,3 +329,26 @@ class CampaignDashboardController(
         return ApiResponseGenerator.success(response, HttpStatus.OK)
     }
 }
+
+data class CampaignListItemDto(
+    val id: Long,
+    val name: String,
+    val createdAt: String?
+)
+
+data class CampaignPropertyDto(
+    val key: String,
+    val value: String
+)
+
+data class CampaignDetailDto(
+    val id: Long,
+    val name: String,
+    val properties: List<CampaignPropertyDto>,
+    val segmentIds: List<Long>,
+    val createdAt: String?
+)
+
+data class CampaignDeleteResponseDto(
+    val success: Boolean
+)
