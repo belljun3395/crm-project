@@ -13,6 +13,21 @@ enum class JourneyTriggerType {
     }
 }
 
+enum class JourneySegmentTriggerEventType {
+    ENTER,
+    EXIT,
+    UPDATE,
+    COUNT_REACHED,
+    COUNT_DROPPED;
+
+    companion object {
+        fun from(value: String): JourneySegmentTriggerEventType {
+            return entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+                ?: throw IllegalArgumentException("Unsupported segment trigger event type: $value")
+        }
+    }
+}
+
 enum class JourneyStepType {
     ACTION,
     DELAY,
@@ -59,6 +74,9 @@ data class PostJourneyIn(
     val triggerType: JourneyTriggerType,
     val triggerEventName: String?,
     val triggerSegmentId: Long?,
+    val triggerSegmentEvent: JourneySegmentTriggerEventType?,
+    val triggerSegmentWatchFields: List<String>,
+    val triggerSegmentCountThreshold: Long?,
     val active: Boolean,
     val steps: List<PostJourneyStepIn>
 )
@@ -84,6 +102,9 @@ data class JourneyDto(
     val triggerType: String,
     val triggerEventName: String?,
     val triggerSegmentId: Long?,
+    val triggerSegmentEvent: String?,
+    val triggerSegmentWatchFields: List<String>,
+    val triggerSegmentCountThreshold: Long?,
     val active: Boolean,
     val steps: List<JourneyStepDto>,
     val createdAt: String

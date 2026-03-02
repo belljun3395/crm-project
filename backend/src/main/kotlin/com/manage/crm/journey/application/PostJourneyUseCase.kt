@@ -28,6 +28,9 @@ class PostJourneyUseCase(
                 triggerType = useCaseIn.triggerType.name,
                 triggerEventName = useCaseIn.triggerEventName,
                 triggerSegmentId = useCaseIn.triggerSegmentId,
+                triggerSegmentEvent = useCaseIn.triggerSegmentEvent?.name,
+                triggerSegmentWatchFields = toTriggerSegmentWatchFieldsJson(useCaseIn.triggerSegmentWatchFields),
+                triggerSegmentCountThreshold = useCaseIn.triggerSegmentCountThreshold,
                 active = useCaseIn.active
             )
         )
@@ -59,6 +62,9 @@ class PostJourneyUseCase(
             triggerType = savedJourney.triggerType,
             triggerEventName = savedJourney.triggerEventName,
             triggerSegmentId = savedJourney.triggerSegmentId,
+            triggerSegmentEvent = savedJourney.triggerSegmentEvent,
+            triggerSegmentWatchFields = fromTriggerSegmentWatchFieldsJson(savedJourney.triggerSegmentWatchFields),
+            triggerSegmentCountThreshold = savedJourney.triggerSegmentCountThreshold,
             active = savedJourney.active,
             steps = savedSteps.map { step ->
                 JourneyStepDto(
@@ -99,6 +105,26 @@ class PostJourneyUseCase(
             JourneyTriggerType.SEGMENT -> {
                 if (useCaseIn.triggerSegmentId == null) {
                     throw IllegalArgumentException("triggerSegmentId is required for SEGMENT trigger")
+                }
+                val segmentEvent = useCaseIn.triggerSegmentEvent
+                    ?: throw IllegalArgumentException("triggerSegmentEvent is required for SEGMENT trigger")
+                when (segmentEvent) {
+                    JourneySegmentTriggerEventType.ENTER,
+                    JourneySegmentTriggerEventType.EXIT -> Unit
+
+                    JourneySegmentTriggerEventType.UPDATE -> {
+                        if (useCaseIn.triggerSegmentWatchFields.isEmpty()) {
+                            throw IllegalArgumentException("triggerSegmentWatchFields is required for SEGMENT UPDATE trigger")
+                        }
+                    }
+
+                    JourneySegmentTriggerEventType.COUNT_REACHED,
+                    JourneySegmentTriggerEventType.COUNT_DROPPED -> {
+                        val threshold = useCaseIn.triggerSegmentCountThreshold
+                        if (threshold == null || threshold <= 0L) {
+                            throw IllegalArgumentException("triggerSegmentCountThreshold must be greater than 0 for SEGMENT COUNT trigger")
+                        }
+                    }
                 }
             }
 
@@ -141,6 +167,13 @@ class PostJourneyUseCase(
         return objectMapper.writeValueAsString(variables)
     }
 
+    private fun toTriggerSegmentWatchFieldsJson(fields: List<String>): String? {
+        if (fields.isEmpty()) {
+            return null
+        }
+        return objectMapper.writeValueAsString(fields)
+    }
+
     private fun fromVariablesJson(variablesJson: String?): Map<String, String> {
         if (variablesJson.isNullOrBlank()) {
             return emptyMap()
@@ -149,6 +182,17 @@ class PostJourneyUseCase(
             objectMapper.readValue(variablesJson, object : TypeReference<Map<String, String>>() {})
         }.getOrElse {
             emptyMap()
+        }
+    }
+
+    private fun fromTriggerSegmentWatchFieldsJson(json: String?): List<String> {
+        if (json.isNullOrBlank()) {
+            return emptyList()
+        }
+        return runCatching {
+            objectMapper.readValue(json, object : TypeReference<List<String>>() {})
+        }.getOrElse {
+            emptyList()
         }
     }
 }

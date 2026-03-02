@@ -1,5 +1,6 @@
 package com.manage.crm.infrastructure.kafka
 
+import com.manage.crm.journey.queue.JourneyTriggerQueueMessage
 import com.manage.crm.infrastructure.scheduler.event.ScheduledTaskEvent
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
@@ -32,6 +33,9 @@ class KafkaConfig {
 
     @Value("\${spring.kafka.consumer.group-id:crm-scheduled-tasks-consumer}")
     private lateinit var groupId: String
+
+    @Value("\${spring.kafka.consumer.journey-group-id:crm-journey-trigger-consumer}")
+    private lateinit var journeyTriggerGroupId: String
 
     /**
      * Producer configuration for ScheduledTaskEvent
@@ -84,6 +88,54 @@ class KafkaConfig {
         factory.consumerFactory = scheduledTaskConsumerFactory()
         factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL // Manual acknowledgment
         factory.setConcurrency(3) // 3 concurrent consumers (matches 3 partitions)
+        return factory
+    }
+
+    @Bean
+    fun journeyTriggerProducerFactory(): ProducerFactory<String, JourneyTriggerQueueMessage> {
+        val configProps = mapOf(
+            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java,
+            ProducerConfig.ACKS_CONFIG to "all",
+            ProducerConfig.RETRIES_CONFIG to 3,
+            ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION to 1,
+            ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true
+        )
+        return DefaultKafkaProducerFactory(configProps)
+    }
+
+    @Bean
+    fun journeyTriggerKafkaTemplate(): KafkaTemplate<String, JourneyTriggerQueueMessage> {
+        return KafkaTemplate(journeyTriggerProducerFactory())
+    }
+
+    @Bean
+    fun journeyTriggerConsumerFactory(): ConsumerFactory<String, JourneyTriggerQueueMessage> {
+        val props = mapOf(
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+            ConsumerConfig.GROUP_ID_CONFIG to journeyTriggerGroupId,
+            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to JsonDeserializer::class.java,
+            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
+            ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
+            ConsumerConfig.MAX_POLL_RECORDS_CONFIG to 20,
+            JsonDeserializer.TRUSTED_PACKAGES to "*",
+            JsonDeserializer.VALUE_DEFAULT_TYPE to JourneyTriggerQueueMessage::class.java.name
+        )
+        return DefaultKafkaConsumerFactory(
+            props,
+            StringDeserializer(),
+            JsonDeserializer(JourneyTriggerQueueMessage::class.java)
+        )
+    }
+
+    @Bean
+    fun journeyTriggerKafkaListenerContainerFactory(): ConcurrentKafkaListenerContainerFactory<String, JourneyTriggerQueueMessage> {
+        val factory = ConcurrentKafkaListenerContainerFactory<String, JourneyTriggerQueueMessage>()
+        factory.consumerFactory = journeyTriggerConsumerFactory()
+        factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
+        factory.setConcurrency(3)
         return factory
     }
 }

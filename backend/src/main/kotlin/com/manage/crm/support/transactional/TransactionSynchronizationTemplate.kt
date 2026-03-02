@@ -27,7 +27,11 @@ class TransactionSynchronizationTemplate {
                 override fun afterCompletion(status: Int): Mono<Void> {
                     return mono(context) {
                         log.debug { "do after completion: $blockDescription" }
-                        block()
+                        runCatching {
+                            block()
+                        }.onFailure { error ->
+                            log.error(error) { "afterCompletion block failed: $blockDescription" }
+                        }
                         return@mono null
                     }
                 }
@@ -48,7 +52,11 @@ class TransactionSynchronizationTemplate {
                 override fun afterCommit(): Mono<Void> {
                     return mono(context) {
                         log.debug { "do after commit: $blockDescription" }
-                        block()
+                        runCatching {
+                            block()
+                        }.onFailure { error ->
+                            log.error(error) { "afterCommit block failed: $blockDescription" }
+                        }
                         return@mono null
                     }
                 }

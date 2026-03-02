@@ -18,6 +18,9 @@ import com.manage.crm.journey.domain.repository.JourneyExecutionRepository
 import com.manage.crm.journey.domain.repository.JourneyRepository
 import com.manage.crm.journey.domain.repository.JourneyStepDeduplicationRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
+import com.manage.crm.user.domain.User
+import com.manage.crm.user.domain.repository.UserRepository
+import com.manage.crm.user.domain.vo.UserAttributes
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
@@ -36,6 +39,7 @@ class JourneyAutomationServiceTest : BehaviorSpec({
     lateinit var journeyExecutionHistoryRepository: JourneyExecutionHistoryRepository
     lateinit var journeyStepDeduplicationRepository: JourneyStepDeduplicationRepository
     lateinit var actionDispatchService: ActionDispatchService
+    lateinit var userRepository: UserRepository
     lateinit var service: JourneyAutomationService
 
     beforeTest {
@@ -45,6 +49,7 @@ class JourneyAutomationServiceTest : BehaviorSpec({
         journeyExecutionHistoryRepository = mockk()
         journeyStepDeduplicationRepository = mockk()
         actionDispatchService = mockk()
+        userRepository = mockk()
 
         service = JourneyAutomationService(
             journeyRepository = journeyRepository,
@@ -53,7 +58,16 @@ class JourneyAutomationServiceTest : BehaviorSpec({
             journeyExecutionHistoryRepository = journeyExecutionHistoryRepository,
             journeyStepDeduplicationRepository = journeyStepDeduplicationRepository,
             actionDispatchService = actionDispatchService,
+            userRepository = userRepository,
             objectMapper = ObjectMapper()
+        )
+
+        coEvery { userRepository.findById(1L) } returns User.new(
+            id = 1L,
+            externalId = "user-1",
+            userAttributes = UserAttributes("""{"email":"user1@example.com","name":"tester"}"""),
+            createdAt = LocalDateTime.of(2026, 2, 25, 9, 0, 0),
+            updatedAt = LocalDateTime.of(2026, 2, 25, 9, 0, 0)
         )
     }
 
@@ -64,7 +78,8 @@ class JourneyAutomationServiceTest : BehaviorSpec({
             journeyExecutionRepository,
             journeyExecutionHistoryRepository,
             journeyStepDeduplicationRepository,
-            actionDispatchService
+            actionDispatchService,
+            userRepository
         )
     }
 

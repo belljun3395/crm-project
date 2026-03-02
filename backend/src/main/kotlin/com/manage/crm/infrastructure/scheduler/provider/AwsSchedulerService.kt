@@ -5,6 +5,7 @@ import com.manage.crm.infrastructure.scheduler.ScheduleInfo
 import com.manage.crm.infrastructure.scheduler.ScheduleName
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.info.BuildProperties
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.scheduler.SchedulerClient
@@ -30,6 +31,7 @@ fun LocalDateTime.toScheduleExpression(): String =
     )
 
 @Service
+@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws", matchIfMissing = true)
 class AwsSchedulerService(
     private val awsSchedulerClient: SchedulerClient,
     private val buildProperties: BuildProperties,

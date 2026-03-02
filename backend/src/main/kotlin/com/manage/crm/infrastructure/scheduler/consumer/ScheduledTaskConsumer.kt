@@ -60,6 +60,7 @@ class ScheduledTaskConsumer(
         applicationEventPublisher.publishEvent(
             NotificationEmailSendTimeOutInvokeEvent(
                 timeOutEventId = input.eventId,
+                campaignId = input.campaignId,
                 templateId = input.templateId,
                 templateVersion = input.templateVersion,
                 userIds = input.userIds,

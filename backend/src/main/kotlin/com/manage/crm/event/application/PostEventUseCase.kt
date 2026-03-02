@@ -14,7 +14,7 @@ import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.event.service.CampaignDashboardEvent
 import com.manage.crm.event.service.CampaignDashboardService
-import com.manage.crm.journey.application.JourneyAutomationService
+import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.repository.UserRepository
@@ -47,7 +47,7 @@ class PostEventUseCase(
     private val userRepository: UserRepository,
     private val segmentTargetingService: SegmentTargetingService,
     private val campaignDashboardService: CampaignDashboardService,
-    private val journeyAutomationService: JourneyAutomationService? = null
+    private val journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher
 ) {
     val log = KotlinLogging.logger {}
 
@@ -113,16 +113,21 @@ class PostEventUseCase(
     private suspend fun triggerJourneyAutomation(savedEvents: List<Event>) {
         savedEvents.forEach { savedEvent ->
             runCatching {
-                journeyAutomationService?.onEvent(savedEvent)
+                journeyTriggerQueuePublisher.publishEventTrigger(savedEvent)
             }.onFailure {
-                log.error(it) { "Failed to execute journey automation for eventId=${savedEvent.id}" }
+                log.error(it) { "Failed to enqueue journey EVENT trigger for eventId=${savedEvent.id}" }
             }
+        }
+        runCatching {
+            journeyTriggerQueuePublisher.publishSegmentContextTrigger(savedEvents.map { it.userId }.distinct())
+        }.onFailure {
+            log.error(it) { "Failed to enqueue journey SEGMENT_CONTEXT trigger after event save" }
         }
     }
 
     private suspend fun resolveTargetUserIds(externalId: String, segmentId: Long?): List<Long> {
         if (segmentId != null) {
-            return segmentTargetingService.resolveUserIds(segmentId)
+            return segmentTargetingService.resolveUserIds(segmentId, null)
         }
 
         val userId = userRepository.findByExternalId(externalId)?.id

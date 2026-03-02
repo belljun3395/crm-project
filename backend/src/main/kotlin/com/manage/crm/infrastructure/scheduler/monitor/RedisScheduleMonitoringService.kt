@@ -2,7 +2,7 @@ package com.manage.crm.infrastructure.scheduler.monitor
 
 import com.manage.crm.infrastructure.scheduler.ScheduleName
 import com.manage.crm.infrastructure.scheduler.executor.KafkaScheduledTaskExecutor
-import com.manage.crm.infrastructure.scheduler.provider.RedisSchedulerProvider
+import com.manage.crm.infrastructure.scheduler.provider.SchedulerProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +27,7 @@ import kotlin.time.Duration.Companion.seconds
 @Service
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class RedisScheduleMonitoringService(
-    private val redisSchedulerProvider: RedisSchedulerProvider,
+    private val redisSchedulerProvider: SchedulerProvider,
     private val kafkaExecutor: KafkaScheduledTaskExecutor
 ) {
     private val log = KotlinLogging.logger {}

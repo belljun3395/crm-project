@@ -18,6 +18,12 @@ class Journey(
     var triggerEventName: String? = null,
     @Column("trigger_segment_id")
     var triggerSegmentId: Long? = null,
+    @Column("trigger_segment_event")
+    var triggerSegmentEvent: String? = null,
+    @Column("trigger_segment_watch_fields")
+    var triggerSegmentWatchFields: String? = null,
+    @Column("trigger_segment_count_threshold")
+    var triggerSegmentCountThreshold: Long? = null,
     @Column("active")
     var active: Boolean = true,
     @CreatedDate
@@ -30,6 +36,9 @@ class Journey(
             triggerType: String,
             triggerEventName: String?,
             triggerSegmentId: Long?,
+            triggerSegmentEvent: String?,
+            triggerSegmentWatchFields: String?,
+            triggerSegmentCountThreshold: Long?,
             active: Boolean
         ): Journey {
             return Journey(
@@ -37,6 +46,9 @@ class Journey(
                 triggerType = triggerType,
                 triggerEventName = triggerEventName,
                 triggerSegmentId = triggerSegmentId,
+                triggerSegmentEvent = triggerSegmentEvent,
+                triggerSegmentWatchFields = triggerSegmentWatchFields,
+                triggerSegmentCountThreshold = triggerSegmentCountThreshold,
                 active = active
             )
         }

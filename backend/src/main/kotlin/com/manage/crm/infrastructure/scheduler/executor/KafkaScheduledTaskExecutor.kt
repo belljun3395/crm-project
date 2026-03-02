@@ -1,7 +1,7 @@
 package com.manage.crm.infrastructure.scheduler.executor
 
 import com.manage.crm.infrastructure.scheduler.event.ScheduledTaskEvent
-import com.manage.crm.infrastructure.scheduler.provider.RedisSchedulerProvider
+import com.manage.crm.infrastructure.scheduler.provider.DueSchedule
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.core.KafkaTemplate
@@ -28,7 +28,7 @@ class KafkaScheduledTaskExecutor(
      * @param scheduleData Schedule data from Redis
      * @return true if successfully published, false otherwise
      */
-    suspend fun execute(scheduleData: RedisSchedulerProvider.ScheduleData): Boolean {
+    suspend fun execute(scheduleData: DueSchedule): Boolean {
         return try {
             val event = ScheduledTaskEvent(
                 scheduleName = scheduleData.name,
@@ -60,7 +60,7 @@ class KafkaScheduledTaskExecutor(
     /**
      * Publishes multiple scheduled tasks in batch
      */
-    suspend fun executeBatch(schedules: List<RedisSchedulerProvider.ScheduleData>): Int {
+    suspend fun executeBatch(schedules: List<DueSchedule>): Int {
         var successCount = 0
         schedules.forEach { schedule ->
             if (execute(schedule)) {
