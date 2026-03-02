@@ -1,8 +1,10 @@
 package com.manage.crm.user.application
 
 import com.manage.crm.infrastructure.cache.provider.CacheInvalidationPublisher
+import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
+import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
 import com.manage.crm.user.application.dto.EnrollUserUseCaseIn
 import com.manage.crm.user.application.dto.EnrollUserUseCaseOut
 import com.manage.crm.user.application.service.JsonService
@@ -29,7 +31,9 @@ class EnrollUserUseCase(
     private val userRepository: UserRepository,
     private val userRepositoryEventProcessor: UserRepositoryEventProcessor,
     private val jsonService: JsonService,
-    private val cacheInvalidationPublisher: CacheInvalidationPublisher
+    private val cacheInvalidationPublisher: CacheInvalidationPublisher,
+    private val journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher,
+    private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -61,6 +65,15 @@ class EnrollUserUseCase(
         // Publish cache invalidation message
         val userId = updateOrSaveUser.id!!
         cacheInvalidationPublisher.publishCacheInvalidation(listOf("user:$userId"))
+        runCatching {
+            transactionSynchronizationTemplate.afterCommit(
+                blockDescription = "enqueue journey segment trigger after user commit"
+            ) {
+                journeyTriggerQueuePublisher.publishSegmentContextTrigger(listOf(userId))
+            }
+        }.onFailure { error ->
+            log.error("Failed to enqueue segment-triggered journey automation for userId=$userId", error)
+        }
 
         return out {
             EnrollUserUseCaseOut(

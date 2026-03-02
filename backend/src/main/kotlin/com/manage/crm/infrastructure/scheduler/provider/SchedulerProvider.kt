@@ -4,6 +4,12 @@ import com.manage.crm.infrastructure.scheduler.ScheduleInfo
 import com.manage.crm.infrastructure.scheduler.ScheduleName
 import java.time.LocalDateTime
 
+data class DueSchedule(
+    val name: String,
+    val scheduleTime: LocalDateTime,
+    val payload: ScheduleInfo
+)
+
 /**
  * Vendor-independent scheduler abstraction interface.
  * Provides basic operations for schedule management across different providers (AWS, Redis+Kafka, etc.)
@@ -29,6 +35,12 @@ interface SchedulerProvider {
      * @param scheduleName Schedule identifier to delete
      */
     suspend fun deleteSchedule(scheduleName: ScheduleName)
+
+    /**
+     * Fetches due schedules that should be executed immediately.
+     * Redis+Kafka provider overrides this; others can return empty.
+     */
+    suspend fun fetchDueSchedules(): List<DueSchedule> = emptyList()
 }
 
 /**

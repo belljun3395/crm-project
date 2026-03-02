@@ -7,4 +7,5 @@ import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 interface JourneyRepository : CoroutineCrudRepository<Journey, Long> {
     fun findAllByOrderByCreatedAtDesc(): Flow<Journey>
     fun findAllByTriggerTypeAndTriggerEventNameAndActiveTrue(triggerType: String, triggerEventName: String): Flow<Journey>
+    fun findAllByTriggerTypeAndActiveTrue(triggerType: String): Flow<Journey>
 }

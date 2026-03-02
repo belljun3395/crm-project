@@ -42,7 +42,7 @@ class RedisSchedulerProvider(
     ): ScheduleCreationResult {
         return try {
             val score = scheduleTime.atZone(ZoneId.of(ASIA_SEOUL_ZONE)).toEpochSecond().toDouble()
-            val scheduleData = ScheduleData(
+            val scheduleData = DueSchedule(
                 name = name,
                 scheduleTime = scheduleTime,
                 payload = input
@@ -81,7 +81,7 @@ class RedisSchedulerProvider(
 
             schedules.mapNotNull { json ->
                 try {
-                    val scheduleData = objectMapper.readValue(json, ScheduleData::class.java)
+                    val scheduleData = objectMapper.readValue(json, DueSchedule::class.java)
                     ScheduleName(scheduleData.name)
                 } catch (ex: Exception) {
                     log.error(ex) { "Failed to parse schedule data: $json" }
@@ -126,7 +126,7 @@ class RedisSchedulerProvider(
      * Fetches schedules that should be executed (score <= current timestamp)
      * This is called by the monitoring service
      */
-    suspend fun fetchDueSchedules(): List<ScheduleData> {
+    override suspend fun fetchDueSchedules(): List<DueSchedule> {
         return try {
             val now = LocalDateTime.now(ZoneId.of(ASIA_SEOUL_ZONE))
                 .toEpochSecond(ZoneOffset.of("+09:00"))
@@ -139,7 +139,7 @@ class RedisSchedulerProvider(
 
             dueSchedules.mapNotNull { json ->
                 try {
-                    objectMapper.readValue(json, ScheduleData::class.java)
+                    objectMapper.readValue(json, DueSchedule::class.java)
                 } catch (ex: Exception) {
                     log.error(ex) { "Failed to parse due schedule: $json" }
                     null
@@ -150,13 +150,4 @@ class RedisSchedulerProvider(
             emptyList()
         }
     }
-
-    /**
-     * Internal data structure for Redis storage
-     */
-    data class ScheduleData(
-        val name: String,
-        val scheduleTime: LocalDateTime,
-        val payload: ScheduleInfo
-    )
 }

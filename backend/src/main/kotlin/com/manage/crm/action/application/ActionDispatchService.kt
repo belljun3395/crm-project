@@ -22,6 +22,7 @@ class ActionDispatchService(
     }
 
     suspend fun dispatch(input: ActionDispatchIn): ActionDispatchOut {
+        val renderedDestination = VariableTemplateRenderer.render(input.destination, input.variables)
         val renderedSubject = input.subject?.let { VariableTemplateRenderer.render(it, input.variables) }
         val renderedBody = VariableTemplateRenderer.render(input.body, input.variables)
 
@@ -29,7 +30,7 @@ class ActionDispatchService(
             val provider = actionProviderRegistry.get(input.channel)
             provider.dispatch(
                 ActionProviderRequest(
-                    destination = input.destination,
+                    destination = renderedDestination,
                     subject = renderedSubject,
                     body = renderedBody,
                     variables = input.variables
@@ -39,7 +40,7 @@ class ActionDispatchService(
             ActionDispatchOut(
                 status = ActionDispatchStatus.FAILED,
                 channel = input.channel,
-                destination = input.destination,
+                destination = renderedDestination,
                 errorCode = "PROVIDER_DISPATCH_ERROR",
                 errorMessage = error.message
             )

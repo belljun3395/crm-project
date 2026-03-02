@@ -1,5 +1,6 @@
 package com.manage.crm.segment.application
 
+import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
 import com.manage.crm.segment.application.dto.PostSegmentConditionIn
 import com.manage.crm.segment.application.dto.PostSegmentUseCaseIn
 import com.manage.crm.segment.application.dto.PostSegmentUseCaseOut
@@ -13,6 +14,7 @@ import com.manage.crm.segment.exception.InvalidSegmentConditionException
 import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
+import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -24,7 +26,9 @@ import java.time.format.DateTimeFormatter
 @Service
 class PostSegmentUseCase(
     private val segmentRepository: SegmentRepository,
-    private val segmentConditionRepository: SegmentConditionRepository
+    private val segmentConditionRepository: SegmentConditionRepository,
+    private val journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher,
+    private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate
 ) {
     companion object {
         private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -64,6 +68,13 @@ class PostSegmentUseCase(
 
         val segmentId = saved.id ?: throw IllegalStateException("Saved segment id is null")
         replaceConditions(segmentId, useCaseIn.conditions)
+        runCatching {
+            transactionSynchronizationTemplate.afterCommit(
+                blockDescription = "enqueue journey segment trigger after segment commit"
+            ) {
+                journeyTriggerQueuePublisher.publishSegmentContextTrigger()
+            }
+        }
 
         val conditionDtos = useCaseIn.conditions.mapIndexed { index, condition ->
             SegmentConditionDto(

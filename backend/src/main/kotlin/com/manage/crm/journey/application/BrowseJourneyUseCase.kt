@@ -31,6 +31,9 @@ class BrowseJourneyUseCase(
                 triggerType = journey.triggerType,
                 triggerEventName = journey.triggerEventName,
                 triggerSegmentId = journey.triggerSegmentId,
+                triggerSegmentEvent = journey.triggerSegmentEvent,
+                triggerSegmentWatchFields = fromTriggerSegmentWatchFieldsJson(journey.triggerSegmentWatchFields),
+                triggerSegmentCountThreshold = journey.triggerSegmentCountThreshold,
                 active = journey.active,
                 steps = steps.map { step ->
                     JourneyStepDto(
@@ -61,6 +64,17 @@ class BrowseJourneyUseCase(
             objectMapper.readValue(variablesJson, object : TypeReference<Map<String, String>>() {})
         }.getOrElse {
             emptyMap()
+        }
+    }
+
+    private fun fromTriggerSegmentWatchFieldsJson(json: String?): List<String> {
+        if (json.isNullOrBlank()) {
+            return emptyList()
+        }
+        return runCatching {
+            objectMapper.readValue(json, object : TypeReference<List<String>>() {})
+        }.getOrElse {
+            emptyList()
         }
     }
 }

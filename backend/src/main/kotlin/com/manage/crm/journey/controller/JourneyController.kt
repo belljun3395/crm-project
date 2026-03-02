@@ -8,6 +8,7 @@ import com.manage.crm.journey.application.BrowseJourneyUseCase
 import com.manage.crm.journey.application.JourneyDto
 import com.manage.crm.journey.application.JourneyExecutionDto
 import com.manage.crm.journey.application.JourneyExecutionHistoryDto
+import com.manage.crm.journey.application.JourneySegmentTriggerEventType
 import com.manage.crm.journey.application.JourneyStepType
 import com.manage.crm.journey.application.JourneyTriggerType
 import com.manage.crm.journey.application.PostJourneyIn
@@ -53,6 +54,9 @@ class JourneyController(
                     triggerType = JourneyTriggerType.from(request.triggerType),
                     triggerEventName = request.triggerEventName,
                     triggerSegmentId = request.triggerSegmentId,
+                    triggerSegmentEvent = request.triggerSegmentEvent?.let { JourneySegmentTriggerEventType.from(it) },
+                    triggerSegmentWatchFields = request.triggerSegmentWatchFields ?: emptyList(),
+                    triggerSegmentCountThreshold = request.triggerSegmentCountThreshold,
                     active = request.active ?: true,
                     steps = request.steps.map { step ->
                         PostJourneyStepIn(
