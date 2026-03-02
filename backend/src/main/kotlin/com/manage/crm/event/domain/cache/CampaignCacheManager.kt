@@ -103,4 +103,9 @@ class CampaignCacheManager(
                 ?.also { save(it) }
         }
     }
+
+    suspend fun evict(campaignId: Long, campaignName: String) {
+        redisTemplate.delete("${CAMPAIGN_CACHE_KEY_PREFIX}$campaignId").awaitSingleOrNull()
+        redisTemplate.delete("${CAMPAIGN_CACHE_KEY_PREFIX}${Campaign.UNIQUE_FIELDS.NAME}${SPLIT}$campaignName").awaitSingleOrNull()
+    }
 }

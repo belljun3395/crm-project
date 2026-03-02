@@ -3,6 +3,7 @@ package com.manage.crm.event.application
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.event.domain.Event
+import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.segment.application.SegmentOperator
 import com.manage.crm.segment.application.SegmentValueType
@@ -24,11 +25,12 @@ class SegmentTargetingServiceImpl(
     private val segmentRepository: SegmentRepository,
     private val segmentConditionRepository: SegmentConditionRepository,
     private val userRepository: UserRepository,
+    private val campaignEventsRepository: CampaignEventsRepository,
     private val eventRepository: EventRepository,
     private val objectMapper: ObjectMapper
 ) : SegmentTargetingService {
 
-    override suspend fun resolveUserIds(segmentId: Long): List<Long> {
+    override suspend fun resolveUserIds(segmentId: Long, campaignId: Long?): List<Long> {
         val segment = segmentRepository.findById(segmentId) ?: throw NotFoundByIdException("Segment", segmentId)
         if (!segment.active) {
             return emptyList()
@@ -39,17 +41,40 @@ class SegmentTargetingServiceImpl(
             return emptyList()
         }
 
-        val users = userRepository.findAll().toList()
-        if (users.isEmpty()) {
-            return emptyList()
+        val requiresEventCondition = conditions.any { it.fieldName.startsWith("event.") }
+
+        val (users, eventsByUserId) = if (campaignId != null) {
+            val campaignEventIds = campaignEventsRepository.findAllByCampaignId(campaignId)
+                .map { it.eventId }
+                .distinct()
+            if (campaignEventIds.isEmpty()) {
+                return emptyList()
+            }
+            val campaignEvents = eventRepository.findAllByIdIn(campaignEventIds)
+            val campaignUserIds = campaignEvents.map { it.userId }.distinct()
+            if (campaignUserIds.isEmpty()) {
+                return emptyList()
+            }
+            val scopedUsers = userRepository.findAllByIdIn(campaignUserIds)
+            val scopedEventsByUserId = if (requiresEventCondition) {
+                campaignEvents.groupBy { it.userId }
+            } else {
+                emptyMap()
+            }
+            scopedUsers to scopedEventsByUserId
+        } else {
+            val allUsers = userRepository.findAll().toList()
+            val userIds = allUsers.mapNotNull { it.id }
+            val allEventsByUserId = if (requiresEventCondition && userIds.isNotEmpty()) {
+                eventRepository.findAllByUserIdIn(userIds).groupBy { it.userId }
+            } else {
+                emptyMap()
+            }
+            allUsers to allEventsByUserId
         }
 
-        val userIds = users.mapNotNull { it.id }
-        val requiresEventCondition = conditions.any { it.fieldName.startsWith("event.") }
-        val eventsByUserId = if (requiresEventCondition && userIds.isNotEmpty()) {
-            eventRepository.findAllByUserIdIn(userIds).groupBy { it.userId }
-        } else {
-            emptyMap()
+        if (users.isEmpty()) {
+            return emptyList()
         }
 
         return users

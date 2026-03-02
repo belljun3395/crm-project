@@ -4,6 +4,7 @@ import com.manage.crm.config.SwaggerTag
 import com.manage.crm.email.application.BrowseEmailNotificationSchedulesUseCase
 import com.manage.crm.email.application.BrowseEmailSendHistoriesUseCase
 import com.manage.crm.email.application.BrowseTemplateUseCase
+import com.manage.crm.email.application.BrowseTemplateVariableCatalogUseCase
 import com.manage.crm.email.application.CancelNotificationEmailUseCase
 import com.manage.crm.email.application.DeleteTemplateUseCase
 import com.manage.crm.email.application.PostEmailNotificationSchedulesUseCase
@@ -14,6 +15,8 @@ import com.manage.crm.email.application.dto.BrowseEmailSendHistoriesUseCaseIn
 import com.manage.crm.email.application.dto.BrowseEmailSendHistoriesUseCaseOut
 import com.manage.crm.email.application.dto.BrowseTemplateUseCaseIn
 import com.manage.crm.email.application.dto.BrowseTemplateUseCaseOut
+import com.manage.crm.email.application.dto.BrowseTemplateVariableCatalogUseCaseIn
+import com.manage.crm.email.application.dto.BrowseTemplateVariableCatalogUseCaseOut
 import com.manage.crm.email.application.dto.CancelNotificationEmailUseCaseIn
 import com.manage.crm.email.application.dto.CancelNotificationEmailUseCaseOut
 import com.manage.crm.email.application.dto.DeleteTemplateUseCaseIn
@@ -48,6 +51,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping(value = ["/api/v1/emails"])
 class EmailController(
     private val browseTemplateUseCase: BrowseTemplateUseCase,
+    private val browseTemplateVariableCatalogUseCase: BrowseTemplateVariableCatalogUseCase,
     private val postTemplateUseCase: PostTemplateUseCase,
     private val deleteTemplateUseCase: DeleteTemplateUseCase,
     private val sendNotificationEmailUseCase: SendNotificationEmailUseCase,
@@ -80,6 +84,15 @@ class EmailController(
                     variables = request.variables ?: emptyList()
                 )
             )
+            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+    }
+
+    @GetMapping(value = ["/templates/variable-catalog"])
+    suspend fun browseTemplateVariableCatalog(
+        @RequestParam(required = false) campaignId: Long?
+    ): ApiResponse<ApiResponse.SuccessBody<BrowseTemplateVariableCatalogUseCaseOut>> {
+        return browseTemplateVariableCatalogUseCase
+            .execute(BrowseTemplateVariableCatalogUseCaseIn(campaignId = campaignId))
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
     }
 
@@ -129,6 +142,7 @@ class EmailController(
         return postEmailNotificationSchedulesUseCase
             .execute(
                 PostEmailNotificationSchedulesUseCaseIn(
+                    campaignId = request.campaignId,
                     templateId = request.templateId,
                     templateVersion = request.templateVersion,
                     userIds = request.userIds ?: emptyList(),

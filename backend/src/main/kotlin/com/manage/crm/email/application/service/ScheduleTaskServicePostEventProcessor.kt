@@ -53,9 +53,11 @@ class ScheduleTaskServicePostEventProcessor(
         emailEventPublisher.publishEvent(
             NotificationEmailSendTimeOutEvent(
                 eventId = input.eventId,
+                campaignId = input.campaignId,
                 templateId = input.templateId,
                 templateVersion = input.templateVersion,
                 userIds = input.userIds,
+                segmentId = input.segmentId,
                 expiredTime = input.expiredTime
             )
         )

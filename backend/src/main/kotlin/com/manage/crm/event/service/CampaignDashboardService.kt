@@ -267,9 +267,9 @@ class CampaignDashboardService(
 
         return CampaignDashboardSummary(
             campaignId = campaignId,
-            totalEvents = summaryMetrics.totalEvents,
-            eventsLast24Hours = summaryMetrics.eventsLast24Hours,
-            eventsLast7Days = summaryMetrics.eventsLast7Days,
+            totalEvents = summaryMetrics.totalEvents ?: 0L,
+            eventsLast24Hours = summaryMetrics.eventsLast24Hours ?: 0L,
+            eventsLast7Days = summaryMetrics.eventsLast7Days ?: 0L,
             lastUpdated = now
         )
     }
