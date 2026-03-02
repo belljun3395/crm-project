@@ -4,17 +4,9 @@ import { useToggle } from 'common/hook';
 import { useEvents } from 'shared/hook';
 import type { EventFormData } from 'shared/type';
 
-interface CampaignFormState {
-  name: string;
-  segmentIds: string;
-  propertyKey: string;
-  propertyValue: string;
-}
-
 export const EventPage: React.FC = () => {
-  const { events, loading, error, createEvent, createCampaign, searchEvents } = useEvents();
+  const { events, loading, error, createEvent, browseAllEvents, searchEvents } = useEvents();
   const { value: isModalOpen, setTrue: openModal, setFalse: closeModal } = useToggle();
-  const { value: isCampaignModalOpen, setTrue: openCampaignModal, setFalse: closeCampaignModal } = useToggle();
   const [eventNameQuery, setEventNameQuery] = useState('');
   const [whereQuery, setWhereQuery] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,12 +17,7 @@ export const EventPage: React.FC = () => {
     externalId: '',
     properties: [{ key: '', value: '' }]
   });
-  const [campaignForm, setCampaignForm] = useState<CampaignFormState>({
-    name: '',
-    segmentIds: '',
-    propertyKey: '',
-    propertyValue: ''
-  });
+  const [selectedEvent, setSelectedEvent] = useState<(typeof events)[number] | null>(null);
 
   // 검색 필터링
   const filteredEvents = events.filter(event =>
@@ -41,6 +28,11 @@ export const EventPage: React.FC = () => {
   const handleSearch = async () => {
     setHasSearched(true);
     await searchEvents(eventNameQuery, whereQuery);
+  };
+
+  const handleLoadAll = async () => {
+    setHasSearched(true);
+    await browseAllEvents();
   };
 
   // 폼 제출
@@ -64,54 +56,14 @@ export const EventPage: React.FC = () => {
     }
   };
 
-  const handleCampaignSubmit = async () => {
-    if (!campaignForm.name.trim()) return;
-
-    const segmentIds = campaignForm.segmentIds
-      .split(',')
-      .map((id) => Number(id.trim()))
-      .filter((id) => Number.isInteger(id) && id > 0);
-
-    const properties =
-      campaignForm.propertyKey.trim() && campaignForm.propertyValue.trim()
-        ? [
-            {
-              key: campaignForm.propertyKey.trim(),
-              value: campaignForm.propertyValue.trim()
-            }
-          ]
-        : [];
-
-    const success = await createCampaign({
-      name: campaignForm.name.trim(),
-      segmentIds,
-      properties
-    });
-
-    if (success) {
-      setCampaignForm({
-        name: '',
-        segmentIds: '',
-        propertyKey: '',
-        propertyValue: ''
-      });
-      closeCampaignModal();
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Events</h1>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={openCampaignModal}>
-            New Campaign
-          </Button>
-          <Button onClick={openModal}>
-            <span className="text-lg mr-2">+</span>
-            New Event
-          </Button>
-        </div>
+        <Button onClick={openModal}>
+          <span className="text-lg mr-2">+</span>
+          New Event
+        </Button>
       </div>
 
       {/* Error Message */}
@@ -130,18 +82,20 @@ export const EventPage: React.FC = () => {
 
       <GuidePanel
         title="이벤트 검색 가이드"
-        description="이벤트 조회는 Event Name과 Where를 함께 입력해야 합니다."
+        description="조건 검색 또는 전체 조회로 이벤트를 불러올 수 있습니다."
         items={[
           '단일 조건: category&electronics&=&end',
           '다중 조건: category&electronics&=&and,brand&samsung&=&end',
-          '범위 조건: amount&100&amount&200&between&end'
+          '범위 조건: amount&100&amount&200&between&end',
+          'Load All로 전체 이벤트를 조건 없이 조회할 수 있습니다.',
+          'Campaign 생성/관리는 Campaigns 화면에서 진행합니다.'
         ]}
         note="연산자: =, !=, >, >=, <, <=, like, between / 연결: and, or, end"
       />
 
       {/* 서버 검색 */}
       <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
-        <div className="grid gap-3 md:grid-cols-[1fr,2fr,auto]">
+        <div className="grid gap-3 md:grid-cols-[1fr,2fr,auto,auto]">
           <Input
             label="Event Name"
             value={eventNameQuery}
@@ -158,6 +112,9 @@ export const EventPage: React.FC = () => {
           />
           <Button onClick={handleSearch} loading={loading} className="md:self-end">
             Search
+          </Button>
+          <Button variant="secondary" onClick={handleLoadAll} loading={loading} className="md:self-end">
+            Load All
           </Button>
         </div>
         <p className="mt-2 text-xs text-slate-400">
@@ -199,7 +156,11 @@ export const EventPage: React.FC = () => {
               </tr>
             ) : filteredEvents.length > 0 ? (
               filteredEvents.map((event) => (
-                <tr key={event.id} className="hover:bg-gray-800/50">
+                <tr
+                  key={event.id}
+                  className="cursor-pointer hover:bg-gray-800/50"
+                  onClick={() => setSelectedEvent(event)}
+                >
                   <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-white">
                     {event.name}
                   </td>
@@ -230,6 +191,50 @@ export const EventPage: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      <Modal
+        isOpen={Boolean(selectedEvent)}
+        onClose={() => setSelectedEvent(null)}
+        title={selectedEvent ? `Event #${selectedEvent.id}` : 'Event Detail'}
+        size="lg"
+      >
+        {selectedEvent && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 text-sm text-slate-200 md:grid-cols-2">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Name</p>
+                <p>{selectedEvent.name}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">External ID</p>
+                <p>{selectedEvent.externalId || '-'}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Campaign</p>
+                <p>{selectedEvent.campaignName || '-'}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Created</p>
+                <p>{new Date(selectedEvent.createdAt).toLocaleString()}</p>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Properties</p>
+              <pre className="mt-2 max-h-[260px] overflow-auto rounded-lg border border-slate-700 bg-slate-950/80 p-3 text-xs text-slate-200">
+                {JSON.stringify(selectedEvent.properties, null, 2)}
+              </pre>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Raw JSON</p>
+              <pre className="mt-2 max-h-[240px] overflow-auto rounded-lg border border-slate-700 bg-slate-950/80 p-3 text-xs text-slate-200">
+                {JSON.stringify(selectedEvent, null, 2)}
+              </pre>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* 이벤트 생성 모달 */}
       <Modal isOpen={isModalOpen} onClose={closeModal} title="Create Event">
@@ -279,47 +284,6 @@ export const EventPage: React.FC = () => {
               Create
             </Button>
             <Button onClick={closeModal} variant="secondary" className="flex-1">
-              Cancel
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal isOpen={isCampaignModalOpen} onClose={closeCampaignModal} title="Create Campaign">
-        <div className="space-y-4">
-          <Input
-            label="Campaign Name"
-            value={campaignForm.name}
-            onChange={(e) => setCampaignForm({ ...campaignForm, name: e.target.value })}
-            placeholder="campaign_black_friday"
-            required
-          />
-          <Input
-            label="Segment IDs"
-            value={campaignForm.segmentIds}
-            onChange={(e) => setCampaignForm({ ...campaignForm, segmentIds: e.target.value })}
-            placeholder="1,2"
-          />
-          <div className="grid grid-cols-2 gap-2">
-            <Input
-              label="Property Key"
-              value={campaignForm.propertyKey}
-              onChange={(e) => setCampaignForm({ ...campaignForm, propertyKey: e.target.value })}
-              placeholder="channel"
-            />
-            <Input
-              label="Property Value"
-              value={campaignForm.propertyValue}
-              onChange={(e) => setCampaignForm({ ...campaignForm, propertyValue: e.target.value })}
-              placeholder="email"
-            />
-          </div>
-          <p className="text-xs text-slate-400">Property는 선택값입니다.</p>
-          <div className="flex gap-3 pt-4">
-            <Button onClick={handleCampaignSubmit} loading={loading} className="flex-1">
-              Create Campaign
-            </Button>
-            <Button onClick={closeCampaignModal} variant="secondary" className="flex-1">
               Cancel
             </Button>
           </div>

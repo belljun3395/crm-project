@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, GuidePanel, Input } from 'common/component';
+import { Button, GuidePanel, Input, Modal } from 'common/component';
 import { useAuditLogs } from 'shared/hook';
 
 const formatDateTime = (value?: string): string => {
@@ -18,6 +18,7 @@ export const AuditLogPage: React.FC = () => {
   const [action, setAction] = useState('');
   const [resourceType, setResourceType] = useState('');
   const [actorId, setActorId] = useState('');
+  const [selectedLog, setSelectedLog] = useState<(typeof logs)[number] | null>(null);
 
   const handleSearch = async () => {
     const parsedLimit = Number(limit);
@@ -118,7 +119,11 @@ export const AuditLogPage: React.FC = () => {
                 </tr>
               ) : (
                 logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-800/30">
+                  <tr
+                    key={log.id}
+                    className="cursor-pointer hover:bg-slate-800/30"
+                    onClick={() => setSelectedLog(log)}
+                  >
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">{log.id}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-white">{log.action}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{log.resourceType}</td>
@@ -134,6 +139,47 @@ export const AuditLogPage: React.FC = () => {
           </table>
         </div>
       </section>
+
+      <Modal
+        isOpen={Boolean(selectedLog)}
+        onClose={() => setSelectedLog(null)}
+        title={selectedLog ? `Audit Log #${selectedLog.id}` : 'Audit Log'}
+        size="lg"
+      >
+        {selectedLog && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 text-sm text-slate-200 md:grid-cols-2">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Action</p>
+                <p>{selectedLog.action}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Resource</p>
+                <p>{selectedLog.resourceType}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Actor</p>
+                <p>{selectedLog.actorId ?? '-'}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Status</p>
+                <p>{selectedLog.statusCode ?? '-'}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Created</p>
+                <p>{formatDateTime(selectedLog.createdAt)}</p>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Raw JSON</p>
+              <pre className="mt-2 max-h-[360px] overflow-auto rounded-lg border border-slate-700 bg-slate-950/80 p-3 text-xs text-slate-200">
+                {JSON.stringify(selectedLog, null, 2)}
+              </pre>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

@@ -1,1 +1,1 @@
-export { JourneyManagementPage } from './JourneyManagementPage';
+export { default as JourneyManagementPage } from './JourneyManagementPage';

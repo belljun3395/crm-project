@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Button, GuidePanel, Input } from 'common/component';
-import { useCampaignDashboard } from 'shared/hook';
+import { useCampaignDashboard, useCampaigns } from 'shared/hook';
 import type { TimeWindowUnit } from 'shared/type';
 
 const toLocalDateTime = (value: string): string | undefined => {
@@ -37,8 +37,9 @@ export const CampaignDashboardPage: React.FC = () => {
     disconnectStream,
     clearLiveEvents
   } = useCampaignDashboard();
+  const { campaigns } = useCampaigns();
 
-  const [campaignIdInput, setCampaignIdInput] = useState('1');
+  const [campaignIdInput, setCampaignIdInput] = useState('');
   const [timeWindowUnit, setTimeWindowUnit] = useState<TimeWindowUnit>('HOUR');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
@@ -46,6 +47,12 @@ export const CampaignDashboardPage: React.FC = () => {
 
   const campaignId = Number(campaignIdInput);
   const isCampaignIdValid = Number.isInteger(campaignId) && campaignId > 0;
+
+  useEffect(() => {
+    if (!campaignIdInput && campaigns.length > 0) {
+      setCampaignIdInput(String(campaigns[0].id));
+    }
+  }, [campaignIdInput, campaigns]);
 
   const sortedMetrics = useMemo(() => {
     if (!dashboard?.metrics) {
@@ -112,7 +119,7 @@ export const CampaignDashboardPage: React.FC = () => {
       <GuidePanel
         description="특정 캠페인의 성과를 기간별로 보고, 실시간 이벤트 흐름까지 확인하는 화면입니다."
         items={[
-          '먼저 Campaign ID를 입력한 뒤 Refresh를 눌러 최신 집계를 조회합니다.',
+          'Campaign 목록에서 대상을 선택한 뒤 Refresh를 눌러 최신 집계를 조회합니다.',
           'Connect를 누르면 실시간 이벤트가 Live Stream에 쌓입니다.',
           'Start/End Time을 채우면 원하는 기간만 좁혀서 볼 수 있습니다.'
         ]}
@@ -121,13 +128,24 @@ export const CampaignDashboardPage: React.FC = () => {
 
       <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
-          <Input
-            label="Campaign ID"
-            type="number"
-            value={campaignIdInput}
-            onChange={(e) => setCampaignIdInput(e.target.value)}
-            placeholder="Campaign ID"
-          />
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-300">Campaign</label>
+            <select
+              value={campaignIdInput}
+              onChange={(e) => setCampaignIdInput(e.target.value)}
+              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-[#22c55e] focus:outline-none focus:ring-2 focus:ring-[#22c55e]"
+            >
+              {campaigns.length === 0 ? (
+                <option value="">No campaigns</option>
+              ) : (
+                campaigns.map((campaign) => (
+                  <option key={campaign.id} value={campaign.id}>
+                    #{campaign.id} - {campaign.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-300">Time Window</label>
             <select

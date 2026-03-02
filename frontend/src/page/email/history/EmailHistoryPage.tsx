@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Button, GuidePanel, Input } from 'common/component';
-import { useEmailHistories } from 'shared/hook';
+import React, { useMemo, useState } from 'react';
+import { Button, GuidePanel, Input, Modal } from 'common/component';
+import { useEmailHistories, useUsers } from 'shared/hook';
 
 const formatDateTime = (value?: string): string => {
   if (!value) {
@@ -11,13 +11,45 @@ const formatDateTime = (value?: string): string => {
   return Number.isNaN(parsed.getTime()) ? '-' : parsed.toLocaleString();
 };
 
+const extractUserEmail = (raw?: string): string => {
+  if (!raw) {
+    return '';
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const email = parsed.email;
+    return typeof email === 'string' ? email : '';
+  } catch {
+    return '';
+  }
+};
+
 export const EmailHistoryPage: React.FC = () => {
   const { histories, totalCount, page, size, loading, error, fetchHistories } = useEmailHistories();
+  const { users } = useUsers();
 
   const [userId, setUserId] = useState('');
+  const [userQuery, setUserQuery] = useState('');
   const [sendStatus, setSendStatus] = useState('');
   const [pageInput, setPageInput] = useState('0');
   const [sizeInput, setSizeInput] = useState('20');
+  const [selectedHistory, setSelectedHistory] = useState<(typeof histories)[number] | null>(null);
+
+  const filteredUsers = useMemo(() => {
+    const query = userQuery.trim().toLowerCase();
+    if (!query) {
+      return users.slice(0, 200);
+    }
+
+    return users
+      .filter((user) => {
+        const externalId = user.externalId?.toLowerCase() ?? '';
+        const email = extractUserEmail(user.userAttributes).toLowerCase();
+        return externalId.includes(query) || email.includes(query);
+      })
+      .slice(0, 200);
+  }, [users, userQuery]);
 
   const handleSearch = async () => {
     const parsedUserId = Number(userId);
@@ -51,14 +83,34 @@ export const EmailHistoryPage: React.FC = () => {
 
       <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur">
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-300">Filter</h3>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
           <Input
-            label="User ID"
-            type="number"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            placeholder="1001"
+            label="User Search"
+            value={userQuery}
+            onChange={(e) => setUserQuery(e.target.value)}
+            placeholder="externalId 또는 email 검색"
           />
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-200">User (optional)</label>
+            <select
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-white focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            >
+              <option value="">전체 사용자</option>
+              {filteredUsers.map((user) => {
+                const email = extractUserEmail(user.userAttributes);
+                return (
+                  <option key={user.id} value={user.id}>
+                    #{user.id} - {user.externalId}{email ? ` (${email})` : ''}
+                  </option>
+                );
+              })}
+            </select>
+            <p className="mt-1 text-xs text-slate-500">검색 결과 상위 200명만 표시됩니다.</p>
+          </div>
+
           <Input
             label="Send Status"
             value={sendStatus}
@@ -117,7 +169,11 @@ export const EmailHistoryPage: React.FC = () => {
               </tr>
             ) : (
               histories.map((history) => (
-                <tr key={history.id} className="hover:bg-slate-800/30">
+                <tr
+                  key={history.id}
+                  className="cursor-pointer hover:bg-slate-800/30"
+                  onClick={() => setSelectedHistory(history)}
+                >
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">{history.id}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-white">{history.userEmail}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{history.sendStatus}</td>
@@ -131,6 +187,43 @@ export const EmailHistoryPage: React.FC = () => {
           </tbody>
         </table>
       </section>
+
+      <Modal
+        isOpen={Boolean(selectedHistory)}
+        onClose={() => setSelectedHistory(null)}
+        title={selectedHistory ? `Email History #${selectedHistory.id}` : 'Email History'}
+        size="lg"
+      >
+        {selectedHistory && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 text-sm text-slate-200 md:grid-cols-2">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">User Email</p>
+                <p>{selectedHistory.userEmail}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Status</p>
+                <p>{selectedHistory.sendStatus}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Message ID</p>
+                <p>{selectedHistory.emailMessageId}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400">Created</p>
+                <p>{formatDateTime(selectedHistory.createdAt)}</p>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Raw JSON</p>
+              <pre className="mt-2 max-h-[360px] overflow-auto rounded-lg border border-slate-700 bg-slate-950/80 p-3 text-xs text-slate-200">
+                {JSON.stringify(selectedHistory, null, 2)}
+              </pre>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

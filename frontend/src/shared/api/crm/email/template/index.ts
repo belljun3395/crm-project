@@ -1,6 +1,7 @@
 import { crmApi } from '../../instance';
 import type { 
   Template,
+  TemplateVariableCatalog,
   CreateTemplateRequest,
   ApiResponse 
 } from 'shared/type';
@@ -27,6 +28,21 @@ export const templateAPI = {
     } catch (error) {
       console.error('Error posting template:', error);
       return null;
+    }
+  },
+
+  async getVariableCatalog(campaignId?: number): Promise<TemplateVariableCatalog> {
+    try {
+      const response = await crmApi.get<ApiResponse<TemplateVariableCatalog>>('/emails/templates/variable-catalog', {
+        params: campaignId ? { campaignId } : undefined
+      });
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching template variable catalog:', error);
+      return {
+        userVariables: [],
+        campaignVariables: []
+      };
     }
   },
 

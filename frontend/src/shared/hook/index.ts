@@ -4,6 +4,7 @@ export { useTemplates } from './useTemplates';
 export { useEmailSchedules } from './useEmailSchedules';
 export { useEmailHistories } from './useEmailHistories';
 export { useCampaignDashboard } from './useCampaignDashboard';
+export { useCampaigns } from './useCampaigns';
 export { useWebhooks } from './useWebhooks';
 export { useSegments } from './useSegments';
 export { useJourneys } from './useJourneys';

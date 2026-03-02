@@ -282,7 +282,8 @@ export const WebhookManagementPage: React.FC = () => {
               sortedWebhooks.map((webhook) => (
                 <tr
                   key={webhook.id}
-                  className={`hover:bg-slate-800/40 ${selectedWebhookId === webhook.id ? 'bg-slate-800/30' : ''}`}
+                  className={`cursor-pointer hover:bg-slate-800/40 ${selectedWebhookId === webhook.id ? 'bg-slate-800/30' : ''}`}
+                  onClick={() => setSelectedWebhookId(webhook.id)}
                 >
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">{webhook.id}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-white">{webhook.name}</td>
@@ -299,16 +300,33 @@ export const WebhookManagementPage: React.FC = () => {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
                     <div className="flex gap-2">
-                      <Button size="sm" variant="secondary" onClick={() => setSelectedWebhookId(webhook.id)}>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedWebhookId(webhook.id);
+                        }}
+                      >
                         Logs
                       </Button>
-                      <Button size="sm" variant="secondary" onClick={() => handleEdit(webhook)}>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(webhook);
+                        }}
+                      >
                         Edit
                       </Button>
                       <Button
                         size="sm"
                         variant="danger"
-                        onClick={() => handleDelete(webhook.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(webhook.id);
+                        }}
                         loading={deletingId === webhook.id}
                       >
                         Delete
