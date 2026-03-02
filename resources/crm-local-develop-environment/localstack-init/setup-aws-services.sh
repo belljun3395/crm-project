@@ -2,11 +2,14 @@
 
 # LocalStack AWS Services Setup Script for Local Development
 
+LOCALSTACK_HOST="${LOCALSTACK_HOST:-localhost}"
+export AWS_ENDPOINT_URL="${AWS_ENDPOINT_URL:-http://${LOCALSTACK_HOST}:4566}"
+
 echo "🚀 Setting up AWS services for local development environment..."
 
 # Wait for LocalStack to be ready
 echo "⏳ Waiting for LocalStack to be ready..."
-while ! curl -s http://localhost:4566/health > /dev/null; do
+while ! curl -s "http://${LOCALSTACK_HOST}:4566/_localstack/health" > /dev/null; do
   echo "   Still waiting for LocalStack..."
   sleep 3
 done
@@ -24,16 +27,16 @@ for EMAIL in ${VERIFIED_EMAILS//,/ }; do
   if [ -z "$EMAIL" ]; then
     continue
   fi
-  if ! awslocal ses list-verified-email-addresses --query "VerifiedEmailAddresses[]" --output text 2>/dev/null | grep -Fxq "$EMAIL"; then
-    awslocal ses verify-email-identity --email-address "$EMAIL" && echo "   ✓ Verified: $EMAIL" || echo "   ⚠ Failed to verify: $EMAIL"
+  if ! aws ses list-verified-email-addresses --query "VerifiedEmailAddresses[]" --output text 2>/dev/null | grep -Fxq "$EMAIL"; then
+    aws ses verify-email-identity --email-address "$EMAIL" && echo "   ✓ Verified: $EMAIL" || echo "   ⚠ Failed to verify: $EMAIL"
   else
     echo "   ✓ Already verified: $EMAIL"
   fi
 done
 
 # Create SES configuration set (idempotent - check if exists first)
-if ! awslocal ses list-configuration-sets --query "ConfigurationSets[?Name=='local-configuration-set']" --output text 2>/dev/null | grep -Fxq "local-configuration-set"; then
-  awslocal ses create-configuration-set --configuration-set Name=local-configuration-set && echo "   ✓ Configuration set created: local-configuration-set" || echo "   ⚠ Failed to create configuration set"
+if ! aws ses list-configuration-sets --query "ConfigurationSets[?Name=='local-configuration-set']" --output text 2>/dev/null | grep -Fxq "local-configuration-set"; then
+  aws ses create-configuration-set --configuration-set Name=local-configuration-set && echo "   ✓ Configuration set created: local-configuration-set" || echo "   ⚠ Failed to create configuration set"
 else
   echo "   ✓ Configuration set already exists: local-configuration-set"
 fi
@@ -42,26 +45,26 @@ echo "✅ SES setup completed"
 
 # Create SQS queue for SES events and general messaging
 echo "📨 Setting up SQS (Simple Queue Service)..."
-awslocal sqs create-queue --queue-name ses_sqs
-awslocal sqs create-queue --queue-name notification_queue
-awslocal sqs create-queue --queue-name event_processing_queue
+aws sqs create-queue --queue-name ses_sqs
+aws sqs create-queue --queue-name notification_queue
+aws sqs create-queue --queue-name event_processing_queue
 
 # Create SQS queue for cache invalidation (AWS DR strategy)
 # Note: GCP environments use GCP Pub/Sub instead - see pubsub-init/setup-gcp-services.sh
-awslocal sqs create-queue --queue-name crm-dr-cache-invalidation-queue-aws
+aws sqs create-queue --queue-name crm-dr-cache-invalidation-queue-aws
 
 # Get SQS queue URLs and ARNs
-SES_SQS_URL=$(awslocal sqs get-queue-url --queue-name ses_sqs --query 'QueueUrl' --output text)
-SES_SQS_ARN=$(awslocal sqs get-queue-attributes --queue-url $SES_SQS_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
+SES_SQS_URL=$(aws sqs get-queue-url --queue-name ses_sqs --query 'QueueUrl' --output text)
+SES_SQS_ARN=$(aws sqs get-queue-attributes --queue-url $SES_SQS_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
 
-NOTIFICATION_SQS_URL=$(awslocal sqs get-queue-url --queue-name notification_queue --query 'QueueUrl' --output text)
-NOTIFICATION_SQS_ARN=$(awslocal sqs get-queue-attributes --queue-url $NOTIFICATION_SQS_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
+NOTIFICATION_SQS_URL=$(aws sqs get-queue-url --queue-name notification_queue --query 'QueueUrl' --output text)
+NOTIFICATION_SQS_ARN=$(aws sqs get-queue-attributes --queue-url $NOTIFICATION_SQS_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
 
-EVENT_SQS_URL=$(awslocal sqs get-queue-url --queue-name event_processing_queue --query 'QueueUrl' --output text)
-EVENT_SQS_ARN=$(awslocal sqs get-queue-attributes --queue-url $EVENT_SQS_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
+EVENT_SQS_URL=$(aws sqs get-queue-url --queue-name event_processing_queue --query 'QueueUrl' --output text)
+EVENT_SQS_ARN=$(aws sqs get-queue-attributes --queue-url $EVENT_SQS_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
 
-CACHE_AWS_SQS_URL=$(awslocal sqs get-queue-url --queue-name crm-dr-cache-invalidation-queue-aws --query 'QueueUrl' --output text)
-CACHE_AWS_SQS_ARN=$(awslocal sqs get-queue-attributes --queue-url $CACHE_AWS_SQS_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
+CACHE_AWS_SQS_URL=$(aws sqs get-queue-url --queue-name crm-dr-cache-invalidation-queue-aws --query 'QueueUrl' --output text)
+CACHE_AWS_SQS_ARN=$(aws sqs get-queue-attributes --queue-url $CACHE_AWS_SQS_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
 
 echo "✅ SQS queues created"
 echo "   📋 SES SQS ARN: $SES_SQS_ARN"
@@ -71,16 +74,16 @@ echo "   📋 Cache Invalidation AWS SQS ARN: $CACHE_AWS_SQS_ARN"
 
 # Create SNS topics for different types of notifications
 echo "📢 Setting up SNS (Simple Notification Service)..."
-awslocal sns create-topic --name ses-events-topic
-awslocal sns create-topic --name user-events-topic
-awslocal sns create-topic --name campaign-events-topic
-awslocal sns create-topic --name cache-invalidation-topic
+aws sns create-topic --name ses-events-topic
+aws sns create-topic --name user-events-topic
+aws sns create-topic --name campaign-events-topic
+aws sns create-topic --name cache-invalidation-topic
 
 # Get SNS topic ARNs
-SES_SNS_ARN=$(awslocal sns list-topics --query 'Topics[?contains(TopicArn,`ses-events-topic`)].TopicArn' --output text)
-USER_SNS_ARN=$(awslocal sns list-topics --query 'Topics[?contains(TopicArn,`user-events-topic`)].TopicArn' --output text)
-CAMPAIGN_SNS_ARN=$(awslocal sns list-topics --query 'Topics[?contains(TopicArn,`campaign-events-topic`)].TopicArn' --output text)
-CACHE_SNS_ARN=$(awslocal sns list-topics --query 'Topics[?contains(TopicArn,`cache-invalidation-topic`)].TopicArn' --output text)
+SES_SNS_ARN=$(aws sns list-topics --query 'Topics[?contains(TopicArn,`ses-events-topic`)].TopicArn' --output text)
+USER_SNS_ARN=$(aws sns list-topics --query 'Topics[?contains(TopicArn,`user-events-topic`)].TopicArn' --output text)
+CAMPAIGN_SNS_ARN=$(aws sns list-topics --query 'Topics[?contains(TopicArn,`campaign-events-topic`)].TopicArn' --output text)
+CACHE_SNS_ARN=$(aws sns list-topics --query 'Topics[?contains(TopicArn,`cache-invalidation-topic`)].TopicArn' --output text)
 
 echo "✅ SNS topics created"
 echo "   📋 SES SNS ARN: $SES_SNS_ARN"
@@ -90,10 +93,10 @@ echo "   📋 Cache Invalidation SNS ARN: $CACHE_SNS_ARN"
 
 # Subscribe SQS queues to SNS topics
 echo "🔗 Connecting SNS topics to SQS queues..."
-awslocal sns subscribe --topic-arn $SES_SNS_ARN --protocol sqs --notification-endpoint $SES_SQS_ARN
-awslocal sns subscribe --topic-arn $USER_SNS_ARN --protocol sqs --notification-endpoint $NOTIFICATION_SQS_ARN
-awslocal sns subscribe --topic-arn $CAMPAIGN_SNS_ARN --protocol sqs --notification-endpoint $EVENT_SQS_ARN
-awslocal sns subscribe --topic-arn $CACHE_SNS_ARN --protocol sqs --notification-endpoint $CACHE_AWS_SQS_ARN
+aws sns subscribe --topic-arn $SES_SNS_ARN --protocol sqs --notification-endpoint $SES_SQS_ARN
+aws sns subscribe --topic-arn $USER_SNS_ARN --protocol sqs --notification-endpoint $NOTIFICATION_SQS_ARN
+aws sns subscribe --topic-arn $CAMPAIGN_SNS_ARN --protocol sqs --notification-endpoint $EVENT_SQS_ARN
+aws sns subscribe --topic-arn $CACHE_SNS_ARN --protocol sqs --notification-endpoint $CACHE_AWS_SQS_ARN
 
 # Set SQS policies to allow SNS to send messages
 echo "🔐 Setting up SQS policies..."
@@ -177,24 +180,24 @@ CACHE_AWS_SQS_POLICY=$(cat <<EOF
 EOF
 )
 
-awslocal sqs set-queue-attributes --queue-url $SES_SQS_URL --attributes Policy="$SES_SQS_POLICY"
-awslocal sqs set-queue-attributes --queue-url $NOTIFICATION_SQS_URL --attributes Policy="$NOTIFICATION_SQS_POLICY"
-awslocal sqs set-queue-attributes --queue-url $EVENT_SQS_URL --attributes Policy="$EVENT_SQS_POLICY"
-awslocal sqs set-queue-attributes --queue-url $CACHE_AWS_SQS_URL --attributes Policy="$CACHE_AWS_SQS_POLICY"
+aws sqs set-queue-attributes --queue-url $SES_SQS_URL --attributes Policy="$SES_SQS_POLICY"
+aws sqs set-queue-attributes --queue-url $NOTIFICATION_SQS_URL --attributes Policy="$NOTIFICATION_SQS_POLICY"
+aws sqs set-queue-attributes --queue-url $EVENT_SQS_URL --attributes Policy="$EVENT_SQS_POLICY"
+aws sqs set-queue-attributes --queue-url $CACHE_AWS_SQS_URL --attributes Policy="$CACHE_AWS_SQS_POLICY"
 
 echo "✅ SQS policies configured"
 
 # Create EventBridge custom bus for events
 echo "🎯 Setting up EventBridge..."
-awslocal events create-event-bus --name local-event-bus
-awslocal events create-event-bus --name user-event-bus
-awslocal events create-event-bus --name campaign-event-bus
+aws events create-event-bus --name local-event-bus
+aws events create-event-bus --name user-event-bus
+aws events create-event-bus --name campaign-event-bus
 
 echo "✅ EventBridge buses created"
 
 # Create IAM role for EventBridge Scheduler
 echo "🔑 Setting up IAM roles..."
-awslocal iam create-role --role-name LocalEventBridgeSchedulerRole --assume-role-policy-document '{
+aws iam create-role --role-name LocalEventBridgeSchedulerRole --assume-role-policy-document '{
   "Version": "2012-10-17",
   "Statement": [
     {
@@ -208,7 +211,7 @@ awslocal iam create-role --role-name LocalEventBridgeSchedulerRole --assume-role
 }'
 
 # Create IAM role for SES
-awslocal iam create-role --role-name LocalSESRole --assume-role-policy-document '{
+aws iam create-role --role-name LocalSESRole --assume-role-policy-document '{
   "Version": "2012-10-17",
   "Statement": [
     {
@@ -222,22 +225,22 @@ awslocal iam create-role --role-name LocalSESRole --assume-role-policy-document 
 }'
 
 # Get role ARNs
-SCHEDULER_ROLE_ARN=$(awslocal iam get-role --role-name LocalEventBridgeSchedulerRole --query 'Role.Arn' --output text)
-SES_ROLE_ARN=$(awslocal iam get-role --role-name LocalSESRole --query 'Role.Arn' --output text)
+SCHEDULER_ROLE_ARN=$(aws iam get-role --role-name LocalEventBridgeSchedulerRole --query 'Role.Arn' --output text)
+SES_ROLE_ARN=$(aws iam get-role --role-name LocalSESRole --query 'Role.Arn' --output text)
 
 echo "✅ IAM roles created"
 echo "   📋 Scheduler Role ARN: $SCHEDULER_ROLE_ARN"
 echo "   📋 SES Role ARN: $SES_ROLE_ARN"
 
 # Attach policies to roles
-awslocal iam attach-role-policy --role-name LocalEventBridgeSchedulerRole --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEventBridgeSchedulerFullAccess
-awslocal iam attach-role-policy --role-name LocalSESRole --policy-arn arn:aws:iam::aws:policy/service-role/AmazonSESFullAccess
+aws iam attach-role-policy --role-name LocalEventBridgeSchedulerRole --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEventBridgeSchedulerFullAccess
+aws iam attach-role-policy --role-name LocalSESRole --policy-arn arn:aws:iam::aws:policy/service-role/AmazonSESFullAccess
 
 # Create EventBridge Scheduler schedule groups
 echo "📅 Setting up EventBridge Scheduler..."
-awslocal scheduler create-schedule-group --name local-schedule-group
-awslocal scheduler create-schedule-group --name notification-schedule-group
-awslocal scheduler create-schedule-group --name campaign-schedule-group
+aws scheduler create-schedule-group --name local-schedule-group
+aws scheduler create-schedule-group --name notification-schedule-group
+aws scheduler create-schedule-group --name campaign-schedule-group
 
 echo "✅ EventBridge Scheduler groups created"
 
@@ -245,19 +248,19 @@ echo "✅ EventBridge Scheduler groups created"
 echo "📋 Setting up EventBridge rules..."
 
 # Rule for user events
-awslocal events put-rule \
+aws events put-rule \
     --event-bus-name user-event-bus \
     --name user-activity-rule \
     --event-pattern '{"source":["local.user"],"detail-type":["User Activity","User Registration","User Update"]}'
 
 # Rule for campaign events
-awslocal events put-rule \
+aws events put-rule \
     --event-bus-name campaign-event-bus \
     --name campaign-activity-rule \
     --event-pattern '{"source":["local.campaign"],"detail-type":["Campaign Created","Campaign Updated","Event Created"]}'
 
 # Rule for email events
-awslocal events put-rule \
+aws events put-rule \
     --event-bus-name local-event-bus \
     --name email-activity-rule \
     --event-pattern '{"source":["local.email"],"detail-type":["Email Sent","Email Delivered","Email Bounced"]}'
@@ -268,19 +271,19 @@ echo "✅ EventBridge rules created"
 echo "🎯 Setting up EventBridge targets..."
 
 # User events -> Notification queue
-awslocal events put-targets \
+aws events put-targets \
     --event-bus-name user-event-bus \
     --rule user-activity-rule \
     --targets "Id"="1","Arn"="$NOTIFICATION_SQS_ARN"
 
 # Campaign events -> Event processing queue
-awslocal events put-targets \
+aws events put-targets \
     --event-bus-name campaign-event-bus \
     --rule campaign-activity-rule \
     --targets "Id"="1","Arn"="$EVENT_SQS_ARN"
 
 # Email events -> SES queue
-awslocal events put-targets \
+aws events put-targets \
     --event-bus-name local-event-bus \
     --rule email-activity-rule \
     --targets "Id"="1","Arn"="$SES_SQS_ARN"
@@ -289,7 +292,7 @@ echo "✅ EventBridge targets configured"
 
 # Test EventBridge by sending a sample event
 echo "🧪 Testing EventBridge with sample events..."
-awslocal events put-events \
+aws events put-events \
     --entries '[
         {
             "Source": "local.user",
@@ -299,7 +302,7 @@ awslocal events put-events \
     ]' \
     --event-bus-name user-event-bus
 
-awslocal events put-events \
+aws events put-events \
     --entries '[
         {
             "Source": "local.email",
