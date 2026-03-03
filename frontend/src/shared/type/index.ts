@@ -405,6 +405,33 @@ export interface CampaignDetail {
   createdAt?: string;
 }
 
+export interface CampaignFunnelStepMetric {
+  step: string;
+  eventCount: number;
+  qualifiedUserCount: number;
+  conversionFromPrevious: number;
+}
+
+export interface CampaignFunnelAnalyticsResponse {
+  campaignId: number;
+  stepMetrics: CampaignFunnelStepMetric[];
+}
+
+export interface CampaignSegmentComparisonMetric {
+  segmentId: number;
+  segmentName?: string;
+  targetUserCount: number;
+  eventUserCount: number;
+  eventCount: number;
+  conversionRate: number;
+}
+
+export interface CampaignSegmentComparisonResponse {
+  campaignId: number;
+  eventName?: string;
+  segmentMetrics: CampaignSegmentComparisonMetric[];
+}
+
 // Email History Types
 export interface EmailSendHistoryDto {
   id: number;
