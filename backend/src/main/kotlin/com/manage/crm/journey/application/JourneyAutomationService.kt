@@ -87,8 +87,12 @@ class JourneyAutomationService(
         conditionJourneys.forEach { journey ->
             runCatching {
                 val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }
-                val steps = journeyStepRepository.findAllByJourneyIdOrderByStepOrderAsc(journeyId).toList()
-                val conditionExpression = resolveConditionExpression(journey, steps)
+                val conditionExpression = if (!journey.triggerEventName.isNullOrBlank()) {
+                    journey.triggerEventName
+                } else {
+                    val steps = journeyStepRepository.findAllByJourneyIdOrderByStepOrderAsc(journeyId).toList()
+                    resolveConditionExpression(journey, steps)
+                }
 
                 if (conditionExpression.isNullOrBlank()) {
                     log.warn { "Skip CONDITION journey without condition expression: journeyId=$journeyId" }
