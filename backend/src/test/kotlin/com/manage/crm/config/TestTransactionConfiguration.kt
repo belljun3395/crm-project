@@ -26,5 +26,4 @@ class TestTransactionConfiguration {
     fun transactionalTemplate(transactionManager: PlatformTransactionManager): TransactionTemplate {
         return TransactionTemplate(transactionManager)
     }
-
 }
