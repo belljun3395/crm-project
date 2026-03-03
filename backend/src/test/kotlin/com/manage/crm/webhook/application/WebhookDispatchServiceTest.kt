@@ -25,6 +25,7 @@ class WebhookDispatchServiceTest : BehaviorSpec({
     lateinit var webhookClient: WebhookClient
     lateinit var webhookDeliveryLogRepository: WebhookDeliveryLogRepository
     lateinit var webhookDeadLetterRepository: WebhookDeadLetterRepository
+    lateinit var webhookFailureAlertService: WebhookFailureAlertService
     lateinit var webhookDispatchService: WebhookDispatchService
 
     beforeTest {
@@ -32,12 +33,14 @@ class WebhookDispatchServiceTest : BehaviorSpec({
         webhookClient = mockk()
         webhookDeliveryLogRepository = mockk(relaxed = true)
         webhookDeadLetterRepository = mockk(relaxed = true)
+        webhookFailureAlertService = mockk(relaxed = true)
         webhookDispatchService = WebhookDispatchService(
             webhookRepository = webhookRepository,
             webhookClient = webhookClient,
             webhookDeliveryLogRepository = webhookDeliveryLogRepository,
             webhookDeadLetterRepository = webhookDeadLetterRepository,
-            objectMapper = jacksonObjectMapper()
+            objectMapper = jacksonObjectMapper(),
+            webhookFailureAlertService = webhookFailureAlertService
         )
     }
 
