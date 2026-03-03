@@ -106,7 +106,15 @@ class PostJourneyUseCase(
                 }
             }
 
-            JourneyTriggerType.CONDITION -> Unit
+            JourneyTriggerType.CONDITION -> {
+                val hasConditionExpression = !useCaseIn.triggerEventName.isNullOrBlank()
+                    || useCaseIn.steps.any { it.stepType == JourneyStepType.BRANCH && !it.conditionExpression.isNullOrBlank() }
+                if (!hasConditionExpression) {
+                    throw IllegalArgumentException(
+                        "CONDITION trigger requires triggerEventName(condition expression) or BRANCH step conditionExpression"
+                    )
+                }
+            }
         }
 
         useCaseIn.steps.forEach { step ->
