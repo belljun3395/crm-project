@@ -16,6 +16,7 @@ import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.vo.CampaignProperties
 import com.manage.crm.event.domain.vo.CampaignProperty
 import com.manage.crm.event.service.CampaignDashboardService
+import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.user.domain.UserFixtures
 import com.manage.crm.user.domain.repository.UserRepository
@@ -36,6 +37,7 @@ class PostEventUseCaseTest : BehaviorSpec({
     lateinit var userRepository: UserRepository
     lateinit var segmentTargetingService: SegmentTargetingService
     lateinit var campaignDashboardService: CampaignDashboardService
+    lateinit var journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher
     lateinit var postEventUseCase: PostEventUseCase
 
     beforeContainer {
@@ -46,6 +48,7 @@ class PostEventUseCaseTest : BehaviorSpec({
         userRepository = mockk()
         segmentTargetingService = mockk()
         campaignDashboardService = mockk(relaxed = true)
+        journeyTriggerQueuePublisher = mockk(relaxed = true)
         postEventUseCase =
             PostEventUseCase(
                 eventRepository,
@@ -54,7 +57,8 @@ class PostEventUseCaseTest : BehaviorSpec({
                 campaignCacheManager,
                 userRepository,
                 segmentTargetingService,
-                campaignDashboardService
+                campaignDashboardService,
+                journeyTriggerQueuePublisher
             )
     }
 
@@ -564,7 +568,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 campaignName = null
             )
 
-            coEvery { segmentTargetingService.resolveUserIds(55L) } returns listOf(1L, 2L)
+            coEvery { segmentTargetingService.resolveUserIds(55L, null) } returns listOf(1L, 2L)
             coEvery { eventRepository.save(any(Event::class)) } answers {
                 firstArg<Event>().apply {
                     id = if (userId == 1L) 101L else 102L
@@ -575,7 +579,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 val result = postEventUseCase.execute(useCaseIn)
                 result.id shouldBe 101L
                 result.message shouldBe "Event saved for segment users (2)"
-                coVerify(exactly = 1) { segmentTargetingService.resolveUserIds(55L) }
+                coVerify(exactly = 1) { segmentTargetingService.resolveUserIds(55L, null) }
                 coVerify(exactly = 0) { userRepository.findByExternalId(any()) }
                 coVerify(exactly = 2) { eventRepository.save(any(Event::class)) }
             }
