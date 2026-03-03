@@ -1,6 +1,5 @@
 package com.manage.crm.journey.queue
 
-import com.manage.crm.event.domain.Event
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.core.KafkaTemplate
@@ -14,22 +13,11 @@ class KafkaJourneyTriggerQueuePublisher(
 ) : JourneyTriggerQueuePublisher {
     private val log = KotlinLogging.logger {}
 
-    override suspend fun publishEventTrigger(event: Event) {
-        val eventId = event.id ?: return
+    override suspend fun publishEventTrigger(event: JourneyEventPayload) {
+        val eventId = event.id
         val message = JourneyTriggerQueueMessage(
             triggerType = JourneyTriggerQueueType.EVENT,
-            event = JourneyEventPayload(
-                id = eventId,
-                name = event.name,
-                userId = event.userId,
-                properties = event.properties.value.map { property ->
-                    JourneyEventPropertyPayload(
-                        key = property.key,
-                        value = property.value
-                    )
-                },
-                createdAt = event.createdAt
-            )
+            event = event
         )
 
         val future = journeyTriggerKafkaTemplate.send(JourneyTriggerQueuePublisher.TOPIC, "event-$eventId", message)

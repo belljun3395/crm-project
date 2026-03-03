@@ -13,13 +13,14 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.mock
-import org.mockito.Mockito.mockingDetails
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.modulith.test.Scenario
 import software.amazon.awssdk.services.scheduler.model.CreateScheduleResponse
 import java.time.LocalDateTime
-import kotlin.test.assertEquals
 
 class NotificationEmailSendTimeOutEventListenerTest(
     @Qualifier("scheduleTaskServicePostEventProcessor")
@@ -35,7 +36,7 @@ class NotificationEmailSendTimeOutEventListenerTest(
         )
 
     @Test
-    fun `schedule task service new schedule method is called`(scenario: Scenario) {
+    fun `schedule task service new schedule method is called`() {
         runTest {
             // given
             val template = EmailTemplateFixtures.giveMeOne().build()
@@ -69,23 +70,20 @@ class NotificationEmailSendTimeOutEventListenerTest(
             // when
             scheduleTaskService.newSchedule(input)
 
-            `when`(notificationEmailSendTimeOutEventHandler.handle(event)).thenReturn(Unit)
-
             // then
-            val expectedInvocationTime = 1
-            scenario.publish(event)
-                .andWaitForStateChange(
-                    { mockingDetails(notificationEmailSendTimeOutEventHandler).invocations.size },
-                    { mockingDetails(notificationEmailSendTimeOutEventHandler).invocations.size == expectedInvocationTime }
-                )
-                .andVerify { invocationTime ->
-                    assertEquals(invocationTime, expectedInvocationTime)
+            verify(emailEventPublisher, times(1)).publishEvent(
+                argThat<NotificationEmailSendTimeOutEvent> {
+                    eventId == event.eventId &&
+                        templateId == event.templateId &&
+                        templateVersion == event.templateVersion &&
+                        userIds == event.userIds
                 }
+            )
         }
     }
 
     @Test
-    fun `scheduled notification email event from aws scheduler`(scenario: Scenario) {
+    fun `scheduled notification email event from aws scheduler`() {
         runTest {
             // given
             val message = """
@@ -113,18 +111,9 @@ class NotificationEmailSendTimeOutEventListenerTest(
             // when
             scheduledEventReverseRelay.onMessage(message, acknowledgement)
 
-            `when`(notificationEmailSendTimeOutInvokeEventHandler.handle(event)).thenReturn(Unit)
-
             // then
-            val expectedInvocationTime = 1
-            scenario.publish(event)
-                .andWaitForStateChange(
-                    { mockingDetails(notificationEmailSendTimeOutInvokeEventHandler).invocations.size },
-                    { mockingDetails(notificationEmailSendTimeOutInvokeEventHandler).invocations.size == expectedInvocationTime }
-                )
-                .andVerify { invocationTime ->
-                    assertEquals(invocationTime, expectedInvocationTime)
-                }
+            verify(scheduledEventReverseRelayEmailEventPublisher, times(1))
+                .publishEvent(any<NotificationEmailSendTimeOutInvokeEvent>())
         }
     }
 }

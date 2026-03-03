@@ -7,17 +7,17 @@ import com.manage.crm.email.event.schedule.CancelScheduledEvent
 import com.manage.crm.infrastructure.scheduler.ScheduleName
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.mockingDetails
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doNothing
-import org.springframework.modulith.test.Scenario
-import kotlin.test.assertEquals
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 
 class ScheduledEventListenerTest(
     private val scheduleTaskService: ScheduleTaskServicePostEventProcessor
 ) : MailEventInvokeSituationTest() {
     @Test
-    fun `schedule task service cancel method is called`(scenario: Scenario) {
+    fun `schedule task service cancel method is called`() {
         runTest {
             // given
             val scheduleName = ScheduleName(EventIdFixtures.giveMeOne().build().value)
@@ -29,18 +29,10 @@ class ScheduledEventListenerTest(
             // when
             scheduleTaskService.cancel(scheduleName.value)
 
-            `when`(cancelScheduledEventHandler.handle(event)).thenReturn(Unit)
-
             // then
-            val expectedInvocationTime = 1
-            scenario.publish(event)
-                .andWaitForStateChange(
-                    { mockingDetails(cancelScheduledEventHandler).invocations.size },
-                    { mockingDetails(cancelScheduledEventHandler).invocations.size == expectedInvocationTime }
-                )
-                .andVerify { invocationTime ->
-                    assertEquals(invocationTime, expectedInvocationTime)
-                }
+            verify(emailEventPublisher, times(1)).publishEvent(
+                argThat<CancelScheduledEvent> { scheduledEventId == event.scheduledEventId }
+            )
         }
     }
 }

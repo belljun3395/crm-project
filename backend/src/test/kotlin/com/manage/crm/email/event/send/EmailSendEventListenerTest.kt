@@ -16,12 +16,12 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.mock
-import org.mockito.Mockito.mockingDetails
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.modulith.test.Scenario
 import java.time.ZonedDateTime
-import kotlin.test.assertEquals
 
 fun getMessage(
     status: SentEmailStatus,
@@ -61,7 +61,7 @@ class EmailSendEventListenerTest(
         )
 
     @Test
-    fun `after mail service is called`(scenario: Scenario) {
+    fun `after mail service is called`() {
         runTest {
             // given
             val sendEmailInDto = SendEmailInDto(
@@ -97,23 +97,13 @@ class EmailSendEventListenerTest(
             // when
             mailService.send(sendEmailInDto)
 
-            `when`(emailSentEventHandler.handle(event)).thenReturn(Unit)
-
             // then
-            val expectedInvocationTime = 1
-            scenario.publish(event)
-                .andWaitForStateChange(
-                    { mockingDetails(emailSentEventHandler).invocations.size },
-                    { mockingDetails(emailSentEventHandler).invocations.size == expectedInvocationTime }
-                )
-                .andVerify { invocationTime ->
-                    assertEquals(invocationTime, expectedInvocationTime)
-                }
+            verify(emailEventPublisher, times(1)).publishEvent(any<EmailSentEvent>())
         }
     }
 
     @Test
-    fun `receive open message from ses`(scenario: Scenario) {
+    fun `receive open message from ses`() {
         runTest {
             // given
             val zoneTime = ZonedDateTime.now()
@@ -135,23 +125,13 @@ class EmailSendEventListenerTest(
             // when
             sesMessageReverseRelay.onMessage(message, acknowledgement)
 
-            `when`(emailOpenEventHandler.handle(event)).thenReturn(Unit)
-
             // then
-            val expectedInvocationTime = 1
-            scenario.publish(event)
-                .andWaitForStateChange(
-                    { mockingDetails(emailOpenEventHandler).invocations.size },
-                    { mockingDetails(emailOpenEventHandler).invocations.size == expectedInvocationTime }
-                )
-                .andVerify { invocationTime ->
-                    assertEquals(invocationTime, expectedInvocationTime)
-                }
+            verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailOpenEvent>())
         }
     }
 
     @Test
-    fun `receive delivery message from ses`(scenario: Scenario) {
+    fun `receive delivery message from ses`() {
         runTest {
             // given
             val zoneTime = ZonedDateTime.now()
@@ -173,23 +153,13 @@ class EmailSendEventListenerTest(
             // when
             sesMessageReverseRelay.onMessage(message, acknowledgement)
 
-            `when`(emailDeliveryEventHandler.handle(event)).thenReturn(Unit)
-
             // then
-            val expectedInvocationTime = 1
-            scenario.publish(event)
-                .andWaitForStateChange(
-                    { mockingDetails(emailDeliveryEventHandler).invocations.size },
-                    { mockingDetails(emailDeliveryEventHandler).invocations.size == expectedInvocationTime }
-                )
-                .andVerify { invocationTime ->
-                    assertEquals(invocationTime, expectedInvocationTime)
-                }
+            verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailDeliveryEvent>())
         }
     }
 
     @Test
-    fun `receive delivery delay message from ses`(scenario: Scenario) {
+    fun `receive delivery delay message from ses`() {
         runTest {
             // given
             val zoneTime = ZonedDateTime.now()
@@ -211,23 +181,13 @@ class EmailSendEventListenerTest(
             // when
             sesMessageReverseRelay.onMessage(message, acknowledgement)
 
-            `when`(emailDeliveryDelayEventHandler.handle(event)).thenReturn(Unit)
-
             // then
-            val expectedInvocationTime = 1
-            scenario.publish(event)
-                .andWaitForStateChange(
-                    { mockingDetails(emailDeliveryDelayEventHandler).invocations.size },
-                    { mockingDetails(emailDeliveryDelayEventHandler).invocations.size == expectedInvocationTime }
-                )
-                .andVerify { invocationTime ->
-                    assertEquals(invocationTime, expectedInvocationTime)
-                }
+            verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailDeliveryDelayEvent>())
         }
     }
 
     @Test
-    fun `receive click message from ses`(scenario: Scenario) {
+    fun `receive click message from ses`() {
         runTest {
             // given
             val zoneTime = ZonedDateTime.now()
@@ -249,18 +209,8 @@ class EmailSendEventListenerTest(
             // when
             sesMessageReverseRelay.onMessage(message, acknowledgement)
 
-            `when`(emailClickEventHandler.handle(event)).thenReturn(Unit)
-
             // then
-            val expectedInvocationTime = 1
-            scenario.publish(event)
-                .andWaitForStateChange(
-                    { mockingDetails(emailClickEventHandler).invocations.size },
-                    { mockingDetails(emailClickEventHandler).invocations.size == expectedInvocationTime }
-                )
-                .andVerify { invocationTime ->
-                    assertEquals(invocationTime, expectedInvocationTime)
-                }
+            verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailClickEvent>())
         }
     }
 }
