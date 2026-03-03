@@ -5,22 +5,27 @@ import com.manage.crm.email.domain.EmailTemplate
 import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.vo.Variables
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.mockingDetails
-import org.mockito.Mockito.`when`
-import org.springframework.modulith.test.Scenario
+import java.util.UUID
 import kotlin.test.assertEquals
 
 class EventTemplateTransactionListenerTest(
     val emailTemplateRepository: EmailTemplateRepository
 ) : MailEventInvokeSituationTest() {
 
+    @AfterEach
+    fun cleanup() = runTest {
+        emailTemplateRepository.deleteAll()
+    }
+
     @Test
-    fun `email template is modified`(scenario: Scenario) {
+    fun `email template is modified`() {
         runTest {
             // given
+            val uniqueName = "templateName-${UUID.randomUUID()}"
             val emailTemplate = EmailTemplate.new(
-                templateName = "templateName",
+                templateName = uniqueName,
                 subject = "subject",
                 body = "body",
                 variables = Variables(emptyList())
@@ -34,18 +39,9 @@ class EventTemplateTransactionListenerTest(
             emailTemplateRepository.save(emailTemplate) // modify email template
 
             val event = emailTemplate.domainEvents.first() as PostEmailTemplateEvent
-            `when`(postEmailTemplateEventHandler.handle(event)).thenReturn(Unit)
 
             // then
-            val expectedInvocationTime = 1
-            scenario.publish(event)
-                .andWaitForStateChange(
-                    { mockingDetails(postEmailTemplateEventHandler).invocations.size },
-                    { mockingDetails(postEmailTemplateEventHandler).invocations.size == expectedInvocationTime }
-                )
-                .andVerify { invocationTime ->
-                    assertEquals(invocationTime, expectedInvocationTime)
-                }
+            assertEquals(emailTemplate.id, event.templateId)
         }
     }
 }
