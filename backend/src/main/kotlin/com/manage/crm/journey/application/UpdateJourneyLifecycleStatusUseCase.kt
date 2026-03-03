@@ -48,11 +48,21 @@ class UpdateJourneyLifecycleStatusUseCase(
             return assembleJourneyDto(journey, steps, objectMapper)
         }
 
-        journey.lifecycleStatus = status.name
-        journey.active = status == JourneyLifecycleStatus.ACTIVE
-        journey.version = journey.version.coerceAtLeast(1) + 1
+        val expectedVersion = journey.version
+        val newVersion = expectedVersion.coerceAtLeast(1) + 1
+        val updatedRows = journeyRepository.updateLifecycleStatusIfVersionMatches(
+            journeyId = journeyId,
+            lifecycleStatus = status.name,
+            active = status == JourneyLifecycleStatus.ACTIVE,
+            expectedVersion = expectedVersion,
+            newVersion = newVersion
+        )
+        if (updatedRows == 0) {
+            throw IllegalStateException("Journey lifecycle update conflict detected. Please retry.")
+        }
 
-        val savedJourney = journeyRepository.save(journey)
+        val savedJourney = journeyRepository.findById(journeyId)
+            ?: throw NotFoundByIdException("Journey", journeyId)
         val steps = journeyStepRepository.findAllByJourneyIdOrderByStepOrderAsc(journeyId).toList()
         return assembleJourneyDto(savedJourney, steps, objectMapper)
     }

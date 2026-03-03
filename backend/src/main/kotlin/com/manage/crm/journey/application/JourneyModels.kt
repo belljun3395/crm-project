@@ -57,6 +57,7 @@ enum class JourneyExecutionHistoryStatus {
 }
 
 enum class JourneyLifecycleStatus {
+    DRAFT,
     ACTIVE,
     PAUSED,
     ARCHIVED;
