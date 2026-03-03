@@ -376,6 +376,12 @@
               "type": "integer",
               "format": "int64"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Idempotency key for write request replay and duplicate prevention",
+            "required": true
           }
         ],
         "requestBody": {
@@ -1208,6 +1214,14 @@
           "Event API"
         ],
         "operationId": "postCampaign_1",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Idempotency key for write request replay and duplicate prevention",
+            "required": true
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
