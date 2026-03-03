@@ -123,7 +123,7 @@ export const webhookAPI = {
       return response.data.data.results;
     } catch (error) {
       console.error('Error retrying webhook dead letters:', error);
-      return [];
+      throw error;
     }
   }
 };

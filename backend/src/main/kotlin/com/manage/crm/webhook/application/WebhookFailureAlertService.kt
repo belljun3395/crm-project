@@ -8,6 +8,8 @@ import com.manage.crm.webhook.WebhookDeliveryResult
 import com.manage.crm.webhook.WebhookDeliveryStatus
 import com.manage.crm.webhook.domain.Webhook
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
@@ -30,6 +32,7 @@ class WebhookFailureAlertService(
     private val log = KotlinLogging.logger {}
     private val failureCountByWebhook = ConcurrentHashMap<Long, AtomicInteger>()
     private val lastAlertAtByWebhook = ConcurrentHashMap<Long, Long>()
+    private val alertMutexByWebhook = ConcurrentHashMap<Long, Mutex>()
 
     suspend fun onDeliveryResult(webhook: Webhook, result: WebhookDeliveryResult) {
         if (!enabled) {
@@ -39,6 +42,7 @@ class WebhookFailureAlertService(
         val webhookId = webhook.id ?: return
         if (result.status == WebhookDeliveryStatus.SUCCESS) {
             failureCountByWebhook.remove(webhookId)
+            lastAlertAtByWebhook.remove(webhookId)
             return
         }
 
@@ -55,52 +59,55 @@ class WebhookFailureAlertService(
             return
         }
 
-        val nowEpochMillis = System.currentTimeMillis()
-        val lastAlertEpochMillis = lastAlertAtByWebhook[webhookId] ?: 0L
-        val cooldownMillis = cooldownSeconds.coerceAtLeast(0L) * 1000L
-        if (nowEpochMillis - lastAlertEpochMillis < cooldownMillis) {
-            return
-        }
-
-        val channel = runCatching { ActionChannel.from(alertChannel) }
-            .getOrElse {
-                log.warn { "Unsupported webhook.alert.channel=$alertChannel. fallback=SLACK" }
-                ActionChannel.SLACK
+        val mutex = alertMutexByWebhook.computeIfAbsent(webhookId) { Mutex() }
+        mutex.withLock {
+            val nowEpochMillis = System.currentTimeMillis()
+            val lastAlertEpochMillis = lastAlertAtByWebhook[webhookId] ?: 0L
+            val cooldownMillis = cooldownSeconds.coerceAtLeast(0L) * 1000L
+            if (nowEpochMillis - lastAlertEpochMillis < cooldownMillis) {
+                return@withLock
             }
-        val message = buildString {
-            append("[Webhook Alert] delivery failures reached threshold")
-            append(" webhookId=").append(webhookId)
-            append(", name=").append(webhook.name)
-            append(", url=").append(webhook.url)
-            append(", failures=").append(currentFailures)
-            append(", latestStatus=").append(result.status.name)
-            result.errorMessage?.let { append(", error=").append(it) }
-        }
 
-        val dispatchResult = runCatching {
-            actionDispatchService.dispatch(
-                ActionDispatchIn(
-                    channel = channel,
-                    destination = alertDestination,
-                    subject = "Webhook delivery alert",
-                    body = message,
-                    variables = emptyMap(),
-                    campaignId = null,
-                    journeyExecutionId = null
+            val channel = runCatching { ActionChannel.from(alertChannel) }
+                .getOrElse {
+                    log.warn { "Unsupported webhook.alert.channel=$alertChannel. fallback=SLACK" }
+                    ActionChannel.SLACK
+                }
+            val message = buildString {
+                append("[Webhook Alert] delivery failures reached threshold")
+                append(" webhookId=").append(webhookId)
+                append(", name=").append(webhook.name)
+                append(", url=").append(webhook.url)
+                append(", failures=").append(currentFailures)
+                append(", latestStatus=").append(result.status.name)
+                result.errorMessage?.let { append(", error=").append(it) }
+            }
+
+            val dispatchResult = runCatching {
+                actionDispatchService.dispatch(
+                    ActionDispatchIn(
+                        channel = channel,
+                        destination = alertDestination,
+                        subject = "Webhook delivery alert",
+                        body = message,
+                        variables = emptyMap(),
+                        campaignId = null,
+                        journeyExecutionId = null
+                    )
                 )
-            )
-        }.onFailure { error ->
-            log.error(error) { "Failed to send webhook alert for webhookId=$webhookId" }
-        }.getOrNull()
+            }.onFailure { error ->
+                log.error(error) { "Failed to send webhook alert for webhookId=$webhookId" }
+            }.getOrNull()
 
-        if (dispatchResult?.status != ActionDispatchStatus.SUCCESS) {
-            if (dispatchResult != null) {
-                log.warn { "Webhook alert dispatch failed for webhookId=$webhookId, status=${dispatchResult.status}" }
+            if (dispatchResult?.status != ActionDispatchStatus.SUCCESS) {
+                if (dispatchResult != null) {
+                    log.warn { "Webhook alert dispatch failed for webhookId=$webhookId, status=${dispatchResult.status}" }
+                }
+                return@withLock
             }
-            return
-        }
 
-        lastAlertAtByWebhook[webhookId] = nowEpochMillis
-        failureCountByWebhook[webhookId]?.set(0)
+            lastAlertAtByWebhook[webhookId] = nowEpochMillis
+            failureCountByWebhook[webhookId]?.set(0)
+        }
     }
 }
