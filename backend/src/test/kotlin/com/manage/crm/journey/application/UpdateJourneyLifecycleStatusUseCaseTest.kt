@@ -30,7 +30,7 @@ class UpdateJourneyLifecycleStatusUseCaseTest : BehaviorSpec({
     given("pause lifecycle") {
         `when`("active journey is paused") {
             then("mark status paused and increment version") {
-                val journey = Journey(
+                val currentJourney = Journey(
                     id = 100L,
                     name = "welcome",
                     triggerType = JourneyTriggerType.EVENT.name,
@@ -42,6 +42,19 @@ class UpdateJourneyLifecycleStatusUseCaseTest : BehaviorSpec({
                     active = true,
                     lifecycleStatus = JourneyLifecycleStatus.ACTIVE.name,
                     version = 1
+                )
+                val pausedJourney = Journey(
+                    id = 100L,
+                    name = "welcome",
+                    triggerType = JourneyTriggerType.EVENT.name,
+                    triggerEventName = "SIGNUP",
+                    triggerSegmentId = null,
+                    triggerSegmentEvent = null,
+                    triggerSegmentWatchFields = null,
+                    triggerSegmentCountThreshold = null,
+                    active = false,
+                    lifecycleStatus = JourneyLifecycleStatus.PAUSED.name,
+                    version = 2
                 )
 
                 val step = JourneyStep.new(
@@ -58,8 +71,16 @@ class UpdateJourneyLifecycleStatusUseCaseTest : BehaviorSpec({
                     retryCount = 0
                 ).apply { id = 1L }
 
-                coEvery { journeyRepository.findById(100L) } returns journey
-                coEvery { journeyRepository.save(any()) } answers { firstArg() }
+                coEvery { journeyRepository.findById(100L) } returnsMany listOf(currentJourney, pausedJourney)
+                coEvery {
+                    journeyRepository.updateLifecycleStatusIfVersionMatches(
+                        journeyId = 100L,
+                        lifecycleStatus = JourneyLifecycleStatus.PAUSED.name,
+                        active = false,
+                        expectedVersion = 1,
+                        newVersion = 2
+                    )
+                } returns 1
                 coEvery { journeyStepRepository.findAllByJourneyIdOrderByStepOrderAsc(100L) } returns flowOf(step)
 
                 val result = useCase.pause(100L)
@@ -67,6 +88,41 @@ class UpdateJourneyLifecycleStatusUseCaseTest : BehaviorSpec({
                 result.lifecycleStatus shouldBe JourneyLifecycleStatus.PAUSED.name
                 result.active shouldBe false
                 result.version shouldBe 2
+            }
+        }
+    }
+
+    given("pause lifecycle") {
+        `when`("concurrent request updates journey first") {
+            then("throw conflict error") {
+                val currentJourney = Journey(
+                    id = 100L,
+                    name = "welcome",
+                    triggerType = JourneyTriggerType.EVENT.name,
+                    triggerEventName = "SIGNUP",
+                    triggerSegmentId = null,
+                    triggerSegmentEvent = null,
+                    triggerSegmentWatchFields = null,
+                    triggerSegmentCountThreshold = null,
+                    active = true,
+                    lifecycleStatus = JourneyLifecycleStatus.ACTIVE.name,
+                    version = 1
+                )
+
+                coEvery { journeyRepository.findById(100L) } returns currentJourney
+                coEvery {
+                    journeyRepository.updateLifecycleStatusIfVersionMatches(
+                        journeyId = 100L,
+                        lifecycleStatus = JourneyLifecycleStatus.PAUSED.name,
+                        active = false,
+                        expectedVersion = 1,
+                        newVersion = 2
+                    )
+                } returns 0
+
+                shouldThrow<IllegalStateException> {
+                    useCase.pause(100L)
+                }
             }
         }
     }

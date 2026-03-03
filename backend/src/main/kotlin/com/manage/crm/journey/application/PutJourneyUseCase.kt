@@ -65,7 +65,11 @@ class PutJourneyUseCase(
         journey.triggerSegmentWatchFields = toTriggerSegmentWatchFieldsJson(useCaseIn.triggerSegmentWatchFields)
         journey.triggerSegmentCountThreshold = useCaseIn.triggerSegmentCountThreshold
         journey.active = useCaseIn.active
-        journey.lifecycleStatus = if (useCaseIn.active) JourneyLifecycleStatus.ACTIVE.name else JourneyLifecycleStatus.PAUSED.name
+        journey.lifecycleStatus = when {
+            useCaseIn.active -> JourneyLifecycleStatus.ACTIVE.name
+            journey.lifecycleStatus == JourneyLifecycleStatus.DRAFT.name -> JourneyLifecycleStatus.DRAFT.name
+            else -> JourneyLifecycleStatus.PAUSED.name
+        }
         journey.version = journey.version.coerceAtLeast(1) + 1
 
         val savedJourney = journeyRepository.save(journey)

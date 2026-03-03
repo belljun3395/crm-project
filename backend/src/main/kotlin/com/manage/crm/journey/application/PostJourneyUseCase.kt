@@ -29,7 +29,7 @@ class PostJourneyUseCase(
                 triggerSegmentWatchFields = toTriggerSegmentWatchFieldsJson(useCaseIn.triggerSegmentWatchFields),
                 triggerSegmentCountThreshold = useCaseIn.triggerSegmentCountThreshold,
                 active = useCaseIn.active,
-                lifecycleStatus = if (useCaseIn.active) JourneyLifecycleStatus.ACTIVE.name else JourneyLifecycleStatus.PAUSED.name,
+                lifecycleStatus = if (useCaseIn.active) JourneyLifecycleStatus.ACTIVE.name else JourneyLifecycleStatus.DRAFT.name,
                 version = 1
             )
         )
