@@ -169,6 +169,16 @@ export interface WebhookDeadLetter {
   createdAt?: string;
 }
 
+export interface WebhookDeadLetterRetryResult {
+  deadLetterId: number;
+  webhookId: number;
+  eventId: string;
+  status: string;
+  attemptCount: number;
+  responseStatus?: number;
+  errorMessage?: string;
+}
+
 // Segment Types
 export interface SegmentCondition {
   field: string;

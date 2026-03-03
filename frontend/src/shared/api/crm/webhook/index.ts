@@ -4,6 +4,7 @@ import type {
   WebhookResponse,
   WebhookDeliveryLog,
   WebhookDeadLetter,
+  WebhookDeadLetterRetryResult,
   CreateWebhookRequest,
   UpdateWebhookRequest,
   ApiResponse
@@ -88,6 +89,41 @@ export const webhookAPI = {
     } catch (error) {
       console.error('Error fetching webhook dead letters:', error);
       throw error;
+    }
+  },
+
+  async retryWebhookDeadLetter(id: number, deadLetterId: number): Promise<WebhookDeadLetterRetryResult | null> {
+    try {
+      const response = await crmApi.post<ApiResponse<WebhookDeadLetterRetryResult>>(
+        `/webhooks/${id}/dead-letters/${deadLetterId}/retry`,
+        {},
+        {
+          headers: createIdempotencyHeaders(`webhook-dead-letter-retry-${id}-${deadLetterId}`)
+        }
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error('Error retrying webhook dead letter:', error);
+      return null;
+    }
+  },
+
+  async retryWebhookDeadLetters(
+    id: number,
+    payload?: { deadLetterIds?: number[]; limit?: number }
+  ): Promise<WebhookDeadLetterRetryResult[]> {
+    try {
+      const response = await crmApi.post<ApiResponse<{ results: WebhookDeadLetterRetryResult[] }>>(
+        `/webhooks/${id}/dead-letters/retry`,
+        payload ?? {},
+        {
+          headers: createIdempotencyHeaders(`webhook-dead-letter-retry-batch-${id}`)
+        }
+      );
+      return response.data.data.results;
+    } catch (error) {
+      console.error('Error retrying webhook dead letters:', error);
+      return [];
     }
   }
 };

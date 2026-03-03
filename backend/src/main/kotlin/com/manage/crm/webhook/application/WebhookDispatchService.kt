@@ -26,7 +26,8 @@ class WebhookDispatchService(
     private val webhookClient: WebhookClient,
     private val webhookDeliveryLogRepository: WebhookDeliveryLogRepository,
     private val webhookDeadLetterRepository: WebhookDeadLetterRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val webhookFailureAlertService: WebhookFailureAlertService
 ) {
     private val log = KotlinLogging.logger {}
 
@@ -57,6 +58,11 @@ class WebhookDispatchService(
 
                     if (deliveryResult.status != WebhookDeliveryStatus.SUCCESS) {
                         saveDeadLetter(webhook, webhookId, eventPayload, deliveryResult)
+                    }
+                    runCatching {
+                        webhookFailureAlertService.onDeliveryResult(webhook, deliveryResult)
+                    }.onFailure { error ->
+                        log.error(error) { "Failed to process webhook failure alert: webhookId=$webhookId" }
                     }
                 }
             }
