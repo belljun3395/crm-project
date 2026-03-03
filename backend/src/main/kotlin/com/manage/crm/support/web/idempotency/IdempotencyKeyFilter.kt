@@ -29,6 +29,28 @@ class IdempotencyKeyFilter(
     private val objectMapper: ObjectMapper,
     private val idempotencyRecordStore: IdempotencyRecordStore
 ) : WebFilter {
+    private data class IdempotencyRoute(
+        val method: HttpMethod,
+        val pathRegex: Regex
+    )
+
+    private val idempotencyRoutes: List<IdempotencyRoute> = listOf(
+        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/users$")),
+        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/events$")),
+        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/events/campaign$")),
+        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/campaigns$")),
+        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/emails/templates$")),
+        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/emails/send/notifications$")),
+        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/emails/schedules/notifications/email$")),
+        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/webhooks$")),
+        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/actions/dispatch$")),
+        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/journeys$")),
+        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/segments$")),
+        IdempotencyRoute(HttpMethod.PUT, Regex("^/api/v1/webhooks/\\d+$")),
+        IdempotencyRoute(HttpMethod.PUT, Regex("^/api/v1/campaigns/\\d+$")),
+        IdempotencyRoute(HttpMethod.PUT, Regex("^/api/v1/segments/\\d+$"))
+    )
+
     override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
         val request = exchange.request
         if (!requiresIdempotencyKey(request.method, request.path.value())) {
@@ -171,16 +193,11 @@ class IdempotencyKeyFilter(
     }
 
     private fun requiresIdempotencyKey(method: HttpMethod?, path: String): Boolean {
-        return when {
-            method == HttpMethod.POST && path == "/api/v1/users" -> true
-            method == HttpMethod.POST && (path == "/api/v1/events" || path == "/api/v1/events/campaign") -> true
-            method == HttpMethod.POST &&
-                (path == "/api/v1/emails/send/notifications" || path == "/api/v1/emails/schedules/notifications/email") -> true
-            method == HttpMethod.POST && path == "/api/v1/webhooks" -> true
-            method == HttpMethod.POST && path == "/api/v1/actions/dispatch" -> true
-            method == HttpMethod.POST && path == "/api/v1/journeys" -> true
-            method == HttpMethod.PUT && path.startsWith("/api/v1/webhooks/") -> true
-            else -> false
+        if (method == null) {
+            return false
+        }
+        return idempotencyRoutes.any { route ->
+            route.method == method && route.pathRegex.matches(path)
         }
     }
 
