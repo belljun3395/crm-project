@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import kotlin.math.roundToInt
 
+/**
+ * Provides campaign analytics projections for funnel progression and segment comparison.
+ */
 @Service
 class GetCampaignAnalyticsUseCase(
     private val campaignRepository: CampaignRepository,
@@ -31,29 +34,31 @@ class GetCampaignAnalyticsUseCase(
         }
 
         val events = findCampaignEvents(useCaseIn.campaignId, useCaseIn.startTime, useCaseIn.endTime)
-        var previousQualifiedUsers: Set<Long>? = null
+        val highestReachedStepByUserId = events
+            .groupBy { it.userId }
+            .mapValues { (_, userEvents) ->
+                calculateHighestReachedStepIndex(userEvents, steps)
+            }
+        var previousQualifiedUserCount = 0
 
         val metrics = steps.mapIndexed { index, step ->
             val stepEvents = events.filter { it.name == step }
-            val stepUsers = stepEvents.map { it.userId }.toSet()
-            val qualifiedUsers = if (previousQualifiedUsers == null) {
-                stepUsers
-            } else {
-                previousQualifiedUsers!!.intersect(stepUsers)
-            }
+            val qualifiedUserCount = highestReachedStepByUserId
+                .values
+                .count { reachedIndex -> reachedIndex >= index }
 
             val conversionFromPrevious = if (index == 0) {
-                100.0
+                if (qualifiedUserCount > 0) 100.0 else 0.0
             } else {
-                percent(qualifiedUsers.size, previousQualifiedUsers?.size ?: 0)
+                percent(qualifiedUserCount, previousQualifiedUserCount)
             }
 
-            previousQualifiedUsers = qualifiedUsers
+            previousQualifiedUserCount = qualifiedUserCount
 
             FunnelStepMetricDto(
                 step = step,
                 eventCount = stepEvents.size,
-                qualifiedUserCount = qualifiedUsers.size,
+                qualifiedUserCount = qualifiedUserCount,
                 conversionFromPrevious = conversionFromPrevious
             )
         }
@@ -139,5 +144,26 @@ class GetCampaignAnalyticsUseCase(
             return 0.0
         }
         return ((numerator.toDouble() / denominator.toDouble()) * 10000.0).roundToInt() / 100.0
+    }
+
+    private fun calculateHighestReachedStepIndex(events: List<Event>, steps: List<String>): Int {
+        if (events.isEmpty()) {
+            return -1
+        }
+
+        val orderedEvents = events.sortedWith(
+            compareBy<Event> { it.createdAt ?: LocalDateTime.MIN }
+                .thenBy { it.id ?: Long.MIN_VALUE }
+        )
+        var reachedStepIndex = -1
+
+        orderedEvents.forEach { event ->
+            val nextStepIndex = reachedStepIndex + 1
+            if (nextStepIndex < steps.size && event.name == steps[nextStepIndex]) {
+                reachedStepIndex = nextStepIndex
+            }
+        }
+
+        return reachedStepIndex
     }
 }

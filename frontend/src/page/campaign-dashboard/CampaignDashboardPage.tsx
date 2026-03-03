@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, GuidePanel, Input } from 'common/component';
 import { useCampaignDashboard, useCampaigns } from 'shared/hook';
 import type { TimeWindowUnit } from 'shared/type';
@@ -60,6 +60,7 @@ export const CampaignDashboardPage: React.FC = () => {
   const [funnelStepsInput, setFunnelStepsInput] = useState('signup,open,click');
   const [segmentIdsInput, setSegmentIdsInput] = useState('');
   const [comparisonEventName, setComparisonEventName] = useState('');
+  const campaignDetailRequestSeqRef = useRef(0);
 
   const campaignId = Number(campaignIdInput);
   const isCampaignIdValid = Number.isInteger(campaignId) && campaignId > 0;
@@ -72,10 +73,20 @@ export const CampaignDashboardPage: React.FC = () => {
 
   useEffect(() => {
     if (!isCampaignIdValid) {
+      campaignDetailRequestSeqRef.current += 1;
       return;
     }
+    const requestSeq = campaignDetailRequestSeqRef.current + 1;
+    campaignDetailRequestSeqRef.current = requestSeq;
+
     void fetchCampaignDetail(campaignId).then((detail) => {
+      if (campaignDetailRequestSeqRef.current !== requestSeq) {
+        return;
+      }
       if (!detail) {
+        return;
+      }
+      if (detail.id !== campaignId) {
         return;
       }
       setSegmentIdsInput(detail.segmentIds.join(','));
