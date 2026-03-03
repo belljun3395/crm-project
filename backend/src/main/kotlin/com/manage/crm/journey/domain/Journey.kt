@@ -6,6 +6,9 @@ import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
 import java.time.LocalDateTime
 
+/**
+ * Journey aggregate root that stores trigger metadata and lifecycle state.
+ */
 @Table("journeys")
 class Journey(
     @Id

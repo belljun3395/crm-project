@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
+/**
+ * Handles lifecycle transitions for journeys and increments the version on change.
+ */
 @Service
 class UpdateJourneyLifecycleStatusUseCase(
     private val journeyRepository: JourneyRepository,

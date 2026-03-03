@@ -6,6 +6,9 @@ import com.manage.crm.journey.domain.repository.JourneyStepRepository
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
 
+/**
+ * Returns journeys with expanded step payloads ordered by creation time.
+ */
 @Service
 class BrowseJourneyUseCase(
     private val journeyRepository: JourneyRepository,

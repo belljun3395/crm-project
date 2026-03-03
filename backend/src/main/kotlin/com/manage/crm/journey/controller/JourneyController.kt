@@ -103,7 +103,7 @@ class JourneyController(
                     triggerSegmentEvent = request.triggerSegmentEvent?.let { JourneySegmentTriggerEventType.from(it) },
                     triggerSegmentWatchFields = request.triggerSegmentWatchFields ?: emptyList(),
                     triggerSegmentCountThreshold = request.triggerSegmentCountThreshold,
-                    active = request.active ?: true,
+                    active = request.active ?: throw IllegalArgumentException("active is required for updateJourney"),
                     steps = request.steps.map { step ->
                         PutJourneyStepIn(
                             stepOrder = step.stepOrder,
@@ -136,6 +136,14 @@ class JourneyController(
         @PathVariable journeyId: Long
     ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> {
         return updateJourneyLifecycleStatusUseCase.resume(journeyId)
+            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+    }
+
+    @PostMapping("/{journeyId}/archive")
+    suspend fun archiveJourney(
+        @PathVariable journeyId: Long
+    ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> {
+        return updateJourneyLifecycleStatusUseCase.archive(journeyId)
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
     }
 

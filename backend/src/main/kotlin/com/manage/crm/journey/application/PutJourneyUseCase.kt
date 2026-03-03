@@ -2,6 +2,7 @@ package com.manage.crm.journey.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.journey.domain.JourneyStep
+import com.manage.crm.journey.domain.repository.JourneyExecutionHistoryRepository
 import com.manage.crm.journey.domain.repository.JourneyRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
 import com.manage.crm.support.exception.NotFoundByIdException
@@ -35,10 +36,14 @@ data class PutJourneyIn(
     val steps: List<PutJourneyStepIn>
 )
 
+/**
+ * Updates a journey and reconciles its step definitions without breaking execution history FK links.
+ */
 @Service
 class PutJourneyUseCase(
     private val journeyRepository: JourneyRepository,
     private val journeyStepRepository: JourneyStepRepository,
+    private val journeyExecutionHistoryRepository: JourneyExecutionHistoryRepository,
     private val objectMapper: ObjectMapper
 ) {
     @Transactional
@@ -67,11 +72,28 @@ class PutJourneyUseCase(
         val journeyId = requireNotNull(savedJourney.id) { "Journey id cannot be null" }
 
         val existingSteps = journeyStepRepository.findAllByJourneyIdOrderByStepOrderAsc(journeyId).toList()
-        existingSteps.forEach { journeyStepRepository.delete(it) }
+        val existingStepByOrder = existingSteps.associateBy { it.stepOrder }.toMutableMap()
+        val incomingStepOrders = mutableSetOf<Int>()
 
         val savedSteps = useCaseIn.steps
             .sortedBy { it.stepOrder }
             .map { step ->
+                incomingStepOrders += step.stepOrder
+                val existingStep = existingStepByOrder.remove(step.stepOrder)
+
+                if (existingStep != null) {
+                    existingStep.stepType = step.stepType.name
+                    existingStep.channel = step.channel
+                    existingStep.destination = step.destination
+                    existingStep.subject = step.subject
+                    existingStep.body = step.body
+                    existingStep.variablesJson = toVariablesJson(step.variables)
+                    existingStep.delayMillis = step.delayMillis
+                    existingStep.conditionExpression = step.conditionExpression
+                    existingStep.retryCount = step.retryCount.coerceAtLeast(0)
+                    return@map journeyStepRepository.save(existingStep)
+                }
+
                 journeyStepRepository.save(
                     JourneyStep.new(
                         journeyId = journeyId,
@@ -89,6 +111,18 @@ class PutJourneyUseCase(
                 )
             }
 
+        val removableSteps = existingStepByOrder.values
+            .filter { !incomingStepOrders.contains(it.stepOrder) }
+        removableSteps.forEach { step ->
+            val stepId = step.id
+            if (stepId != null && journeyExecutionHistoryRepository.existsByJourneyStepId(stepId)) {
+                throw IllegalArgumentException(
+                    "Cannot remove stepOrder=${step.stepOrder} because execution history already exists"
+                )
+            }
+            journeyStepRepository.delete(step)
+        }
+
         return assembleJourneyDto(savedJourney, savedSteps, objectMapper)
     }
 
@@ -99,6 +133,12 @@ class PutJourneyUseCase(
 
         if (useCaseIn.steps.isEmpty()) {
             throw IllegalArgumentException("Journey steps are required")
+        }
+        if (useCaseIn.steps.any { it.stepOrder <= 0 }) {
+            throw IllegalArgumentException("stepOrder must be greater than 0")
+        }
+        if (useCaseIn.steps.groupingBy { it.stepOrder }.eachCount().any { it.value > 1 }) {
+            throw IllegalArgumentException("stepOrder must be unique")
         }
 
         when (useCaseIn.triggerType) {

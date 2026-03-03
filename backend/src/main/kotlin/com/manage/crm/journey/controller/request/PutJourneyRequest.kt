@@ -1,5 +1,6 @@
 package com.manage.crm.journey.controller.request
 
+import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
@@ -14,10 +15,11 @@ data class PutJourneyRequest(
     val triggerEventName: String? = null,
     val triggerSegmentId: Long? = null,
     val triggerSegmentEvent: String? = null,
-    val triggerSegmentWatchFields: List<String>? = emptyList(),
+    val triggerSegmentWatchFields: List<String>? = null,
     val triggerSegmentCountThreshold: Long? = null,
-    val active: Boolean? = true,
+    val active: Boolean? = null,
 
+    @field:Valid
     @field:NotEmpty(message = "At least one step is required")
     val steps: List<PutJourneyStepRequest>
 )
