@@ -6,6 +6,9 @@ import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 
+/**
+ * Repository for journey definitions and lifecycle transition updates.
+ */
 interface JourneyRepository : CoroutineCrudRepository<Journey, Long> {
     fun findAllByOrderByCreatedAtDesc(): Flow<Journey>
     fun findAllByTriggerTypeAndTriggerEventNameAndActiveTrue(triggerType: String, triggerEventName: String): Flow<Journey>

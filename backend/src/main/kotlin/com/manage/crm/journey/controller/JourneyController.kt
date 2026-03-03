@@ -5,9 +5,6 @@ import com.manage.crm.journey.application.BrowseJourneyExecutionHistoryUseCase
 import com.manage.crm.journey.application.BrowseJourneyExecutionIn
 import com.manage.crm.journey.application.BrowseJourneyExecutionUseCase
 import com.manage.crm.journey.application.BrowseJourneyUseCase
-import com.manage.crm.journey.application.PutJourneyIn
-import com.manage.crm.journey.application.PutJourneyStepIn
-import com.manage.crm.journey.application.PutJourneyUseCase
 import com.manage.crm.journey.application.JourneyDto
 import com.manage.crm.journey.application.JourneyExecutionDto
 import com.manage.crm.journey.application.JourneyExecutionHistoryDto
@@ -17,6 +14,9 @@ import com.manage.crm.journey.application.JourneyTriggerType
 import com.manage.crm.journey.application.PostJourneyIn
 import com.manage.crm.journey.application.PostJourneyStepIn
 import com.manage.crm.journey.application.PostJourneyUseCase
+import com.manage.crm.journey.application.PutJourneyIn
+import com.manage.crm.journey.application.PutJourneyStepIn
+import com.manage.crm.journey.application.PutJourneyUseCase
 import com.manage.crm.journey.application.UpdateJourneyLifecycleStatusUseCase
 import com.manage.crm.journey.controller.request.PostJourneyRequest
 import com.manage.crm.journey.controller.request.PutJourneyRequest
