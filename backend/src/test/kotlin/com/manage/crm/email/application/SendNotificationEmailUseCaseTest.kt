@@ -20,6 +20,7 @@ import com.manage.crm.event.application.SegmentTargetingService
 import com.manage.crm.event.domain.Campaign
 import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.repository.CampaignRepository
+import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
 import com.manage.crm.event.domain.vo.CampaignProperties
 import com.manage.crm.event.domain.vo.CampaignProperty
 import com.manage.crm.event.domain.vo.EventProperties
@@ -45,6 +46,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
     lateinit var emailContentService: EmailContentService
     lateinit var campaignEventsService: CampaignEventsService
     lateinit var campaignRepository: CampaignRepository
+    lateinit var campaignSegmentsRepository: CampaignSegmentsRepository
     lateinit var userRepository: UserRepository
     lateinit var segmentTargetingService: SegmentTargetingService
     lateinit var useCase: SendNotificationEmailUseCase
@@ -56,6 +58,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
         emailContentService = mockk()
         campaignEventsService = mockk()
         campaignRepository = mockk()
+        campaignSegmentsRepository = mockk()
         userRepository = mockk()
         segmentTargetingService = mockk()
         useCase = SendNotificationEmailUseCase(
@@ -65,6 +68,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             emailContentService,
             campaignEventsService,
             campaignRepository,
+            campaignSegmentsRepository,
             userRepository,
             segmentTargetingService,
             ObjectMapper()
@@ -645,7 +649,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                 segmentId = 123L
             )
 
-            coEvery { segmentTargetingService.resolveUserIds(123L) } returns listOf(1L, 2L)
+            coEvery { segmentTargetingService.resolveUserIds(123L, null) } returns listOf(1L, 2L)
             coEvery { emailTemplateRepository.findById(useCaseIn.templateId) } answers {
                 EmailTemplate.new(
                     id = 1,
@@ -671,7 +675,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             then("resolve target users from segment and ignore direct userIds") {
                 val result = useCase.execute(useCaseIn)
                 result.isSuccess shouldBe true
-                coVerify(exactly = 1) { segmentTargetingService.resolveUserIds(123L) }
+                coVerify(exactly = 1) { segmentTargetingService.resolveUserIds(123L, null) }
                 coVerify(exactly = 1) { userRepository.findAllByIdIn(listOf(1L, 2L)) }
                 coVerify(exactly = 0) { userRepository.findAllByIdIn(listOf(999L)) }
             }

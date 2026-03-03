@@ -3,6 +3,7 @@ package com.manage.crm.infrastructure.scheduler.monitor
 import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
 import com.manage.crm.email.domain.vo.EventId
 import com.manage.crm.infrastructure.scheduler.executor.KafkaScheduledTaskExecutor
+import com.manage.crm.infrastructure.scheduler.provider.DueSchedule
 import com.manage.crm.infrastructure.scheduler.provider.RedisSchedulerProvider
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -18,8 +19,8 @@ class RedisScheduleMonitoringServiceTest {
 
     private val monitoringService = RedisScheduleMonitoringService(redisSchedulerProvider, kafkaExecutor)
 
-    private fun sampleSchedule(name: String = "schedule-1"): RedisSchedulerProvider.ScheduleData {
-        return RedisSchedulerProvider.ScheduleData(
+    private fun sampleSchedule(name: String = "schedule-1"): DueSchedule {
+        return DueSchedule(
             name = name,
             scheduleTime = LocalDateTime.now(),
             payload = NotificationEmailSendTimeOutEventInput(

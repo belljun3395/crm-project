@@ -96,7 +96,7 @@ class RedisSchedulerProviderTest {
     @Test
     fun `browseSchedules should return list of schedule names`() = runTest {
         // given
-        val scheduleData1 = RedisSchedulerProvider.ScheduleData(
+        val scheduleData1 = DueSchedule(
             name = "schedule-1",
             scheduleTime = LocalDateTime.now(),
             payload = NotificationEmailSendTimeOutEventInput(
@@ -107,7 +107,7 @@ class RedisSchedulerProviderTest {
                 expiredTime = LocalDateTime.now()
             )
         )
-        val scheduleData2 = RedisSchedulerProvider.ScheduleData(
+        val scheduleData2 = DueSchedule(
             name = "schedule-2",
             scheduleTime = LocalDateTime.now(),
             payload = NotificationEmailSendTimeOutEventInput(
@@ -153,7 +153,7 @@ class RedisSchedulerProviderTest {
     fun `fetchDueSchedules should return schedules with score less than current time`() = runTest {
         // given
         val pastTime = LocalDateTime.now().minusMinutes(5)
-        val scheduleData = RedisSchedulerProvider.ScheduleData(
+        val scheduleData = DueSchedule(
             name = "due-schedule",
             scheduleTime = pastTime,
             payload = NotificationEmailSendTimeOutEventInput(

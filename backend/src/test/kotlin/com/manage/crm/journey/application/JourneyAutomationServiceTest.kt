@@ -5,6 +5,7 @@ import com.manage.crm.action.application.ActionChannel
 import com.manage.crm.action.application.ActionDispatchOut
 import com.manage.crm.action.application.ActionDispatchService
 import com.manage.crm.action.application.ActionDispatchStatus
+import com.manage.crm.event.application.SegmentTargetingService
 import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
@@ -16,6 +17,8 @@ import com.manage.crm.journey.domain.JourneyStepDeduplication
 import com.manage.crm.journey.domain.repository.JourneyExecutionHistoryRepository
 import com.manage.crm.journey.domain.repository.JourneyExecutionRepository
 import com.manage.crm.journey.domain.repository.JourneyRepository
+import com.manage.crm.journey.domain.repository.JourneySegmentCountStateRepository
+import com.manage.crm.journey.domain.repository.JourneySegmentUserStateRepository
 import com.manage.crm.journey.domain.repository.JourneyStepDeduplicationRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
 import com.manage.crm.user.domain.User
@@ -38,6 +41,9 @@ class JourneyAutomationServiceTest : BehaviorSpec({
     lateinit var journeyExecutionRepository: JourneyExecutionRepository
     lateinit var journeyExecutionHistoryRepository: JourneyExecutionHistoryRepository
     lateinit var journeyStepDeduplicationRepository: JourneyStepDeduplicationRepository
+    lateinit var journeySegmentUserStateRepository: JourneySegmentUserStateRepository
+    lateinit var journeySegmentCountStateRepository: JourneySegmentCountStateRepository
+    lateinit var segmentTargetingService: SegmentTargetingService
     lateinit var actionDispatchService: ActionDispatchService
     lateinit var userRepository: UserRepository
     lateinit var service: JourneyAutomationService
@@ -48,6 +54,9 @@ class JourneyAutomationServiceTest : BehaviorSpec({
         journeyExecutionRepository = mockk()
         journeyExecutionHistoryRepository = mockk()
         journeyStepDeduplicationRepository = mockk()
+        journeySegmentUserStateRepository = mockk()
+        journeySegmentCountStateRepository = mockk()
+        segmentTargetingService = mockk()
         actionDispatchService = mockk()
         userRepository = mockk()
 
@@ -57,6 +66,9 @@ class JourneyAutomationServiceTest : BehaviorSpec({
             journeyExecutionRepository = journeyExecutionRepository,
             journeyExecutionHistoryRepository = journeyExecutionHistoryRepository,
             journeyStepDeduplicationRepository = journeyStepDeduplicationRepository,
+            journeySegmentUserStateRepository = journeySegmentUserStateRepository,
+            journeySegmentCountStateRepository = journeySegmentCountStateRepository,
+            segmentTargetingService = segmentTargetingService,
             actionDispatchService = actionDispatchService,
             userRepository = userRepository,
             objectMapper = ObjectMapper()
@@ -78,6 +90,9 @@ class JourneyAutomationServiceTest : BehaviorSpec({
             journeyExecutionRepository,
             journeyExecutionHistoryRepository,
             journeyStepDeduplicationRepository,
+            journeySegmentUserStateRepository,
+            journeySegmentCountStateRepository,
+            segmentTargetingService,
             actionDispatchService,
             userRepository
         )
@@ -92,6 +107,9 @@ class JourneyAutomationServiceTest : BehaviorSpec({
                     triggerType = JourneyTriggerType.EVENT.name,
                     triggerEventName = "purchase",
                     triggerSegmentId = null,
+                    triggerSegmentEvent = null,
+                    triggerSegmentWatchFields = null,
+                    triggerSegmentCountThreshold = null,
                     active = true
                 ).apply { id = 1L }
 
@@ -166,6 +184,9 @@ class JourneyAutomationServiceTest : BehaviorSpec({
                     triggerType = JourneyTriggerType.EVENT.name,
                     triggerEventName = "purchase",
                     triggerSegmentId = null,
+                    triggerSegmentEvent = null,
+                    triggerSegmentWatchFields = null,
+                    triggerSegmentCountThreshold = null,
                     active = true
                 ).apply { id = 1L }
 

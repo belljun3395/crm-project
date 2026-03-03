@@ -1,6 +1,8 @@
 package com.manage.crm.user.application
 
 import com.manage.crm.infrastructure.cache.provider.CacheInvalidationPublisher
+import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
+import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
 import com.manage.crm.user.application.dto.EnrollUserUseCaseIn
 import com.manage.crm.user.application.dto.EnrollUserUseCaseOut
 import com.manage.crm.user.application.service.JsonService
@@ -22,6 +24,8 @@ class EnrollUserUseCaseTest : BehaviorSpec({
     lateinit var userRepositoryEventProcessor: UserRepositoryEventProcessor
     lateinit var jsonService: JsonService
     lateinit var cacheInvalidationPublisher: CacheInvalidationPublisher
+    lateinit var journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher
+    lateinit var transactionSynchronizationTemplate: TransactionSynchronizationTemplate
     lateinit var useCase: EnrollUserUseCase
 
     beforeContainer {
@@ -29,12 +33,16 @@ class EnrollUserUseCaseTest : BehaviorSpec({
         userRepositoryEventProcessor = mockk()
         jsonService = mockk()
         cacheInvalidationPublisher = mockk()
+        journeyTriggerQueuePublisher = mockk(relaxed = true)
+        transactionSynchronizationTemplate = mockk(relaxed = true)
         justRun { cacheInvalidationPublisher.publishCacheInvalidation(any()) }
         useCase = EnrollUserUseCase(
             userRepository,
             userRepositoryEventProcessor,
             jsonService,
-            cacheInvalidationPublisher
+            cacheInvalidationPublisher,
+            journeyTriggerQueuePublisher,
+            transactionSynchronizationTemplate
         )
     }
 
