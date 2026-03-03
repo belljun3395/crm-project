@@ -7,6 +7,9 @@ import com.manage.crm.journey.domain.repository.JourneyRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
 import org.springframework.stereotype.Service
 
+/**
+ * Creates a journey and its ordered step definitions.
+ */
 @Service
 class PostJourneyUseCase(
     private val journeyRepository: JourneyRepository,
@@ -62,6 +65,12 @@ class PostJourneyUseCase(
 
         if (useCaseIn.steps.isEmpty()) {
             throw IllegalArgumentException("Journey steps are required")
+        }
+        if (useCaseIn.steps.any { it.stepOrder <= 0 }) {
+            throw IllegalArgumentException("stepOrder must be greater than 0")
+        }
+        if (useCaseIn.steps.groupingBy { it.stepOrder }.eachCount().any { it.value > 1 }) {
+            throw IllegalArgumentException("stepOrder must be unique")
         }
 
         when (useCaseIn.triggerType) {
