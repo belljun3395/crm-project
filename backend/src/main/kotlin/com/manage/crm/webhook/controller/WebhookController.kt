@@ -206,7 +206,9 @@ class WebhookController(
     @PostMapping("/{id}/dead-letters/retry")
     suspend fun retryDeadLetters(
         @PathVariable id: Long,
-        @RequestBody(required = false) request: PostWebhookDeadLetterRetryRequest?,
+        @Valid
+        @RequestBody(required = false)
+        request: PostWebhookDeadLetterRetryRequest?,
         httpRequest: ServerHttpRequest
     ): ApiResponse<ApiResponse.SuccessBody<RetryWebhookDeadLettersUseCaseOut>> {
         val result = retryWebhookDeadLettersUseCase.retryBatch(

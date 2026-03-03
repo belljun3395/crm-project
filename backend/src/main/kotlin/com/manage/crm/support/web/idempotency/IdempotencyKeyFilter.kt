@@ -43,6 +43,8 @@ class IdempotencyKeyFilter(
         IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/emails/send/notifications$")),
         IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/emails/schedules/notifications/email$")),
         IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/webhooks$")),
+        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/webhooks/\\d+/dead-letters/\\d+/retry$")),
+        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/webhooks/\\d+/dead-letters/retry$")),
         IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/actions/dispatch$")),
         IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/journeys$")),
         IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/segments$")),

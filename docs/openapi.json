@@ -2796,6 +2796,109 @@
           }
         }
       },
+      "SuccessBodyWebhookDeadLetterRetryResultDto": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/WebhookDeadLetterRetryResultDto"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "WebhookDeadLetterRetryResultDto": {
+        "required": [
+          "attemptCount",
+          "deadLetterId",
+          "eventId",
+          "status",
+          "webhookId"
+        ],
+        "type": "object",
+        "properties": {
+          "deadLetterId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "webhookId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "attemptCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "responseStatus": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "PostWebhookDeadLetterRetryRequest": {
+        "required": [
+          "deadLetterIds",
+          "limit"
+        ],
+        "type": "object",
+        "properties": {
+          "deadLetterIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "limit": {
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "RetryWebhookDeadLettersUseCaseOut": {
+        "required": [
+          "results"
+        ],
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookDeadLetterRetryResultDto"
+            }
+          }
+        }
+      },
+      "SuccessBodyRetryWebhookDeadLettersUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RetryWebhookDeadLettersUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
       "EnrollUserRequest": {
         "required": [
           "externalId",
