@@ -164,6 +164,8 @@ export const JourneyManagementPage: React.FC = () => {
     saving,
     error,
     createJourney,
+    pauseJourney,
+    resumeJourney,
     fetchExecutionHistories
   } = useJourneys();
   const { segments } = useSegments();
@@ -324,19 +326,22 @@ export const JourneyManagementPage: React.FC = () => {
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">ID</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Name</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Trigger</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Version</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Steps</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-300">
+                    <td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-300">
                       Loading journeys...
                     </td>
                   </tr>
                 ) : journeys.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-300">
+                    <td colSpan={7} className="px-4 py-8 text-center text-sm text-slate-300">
                       No journeys
                     </td>
                   </tr>
@@ -354,7 +359,37 @@ export const JourneyManagementPage: React.FC = () => {
                           ? `${journey.triggerType}:${journey.triggerSegmentEvent ?? '-'}`
                           : journey.triggerType}
                       </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{journey.lifecycleStatus}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{journey.version}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{journey.steps.length}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm">
+                        {journey.lifecycleStatus === 'ACTIVE' ? (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            loading={saving}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void pauseJourney(journey.id);
+                            }}
+                          >
+                            Pause
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            loading={saving}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void resumeJourney(journey.id);
+                            }}
+                            disabled={journey.lifecycleStatus === 'ARCHIVED'}
+                          >
+                            Resume
+                          </Button>
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -684,6 +719,14 @@ export const JourneyManagementPage: React.FC = () => {
               <div className="rounded-lg border border-slate-700/80 bg-slate-900/60 p-3">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Active</p>
                 <p className="mt-1 text-sm text-white">{selectedJourney.active ? 'true' : 'false'}</p>
+              </div>
+              <div className="rounded-lg border border-slate-700/80 bg-slate-900/60 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Lifecycle Status</p>
+                <p className="mt-1 text-sm text-white">{selectedJourney.lifecycleStatus}</p>
+              </div>
+              <div className="rounded-lg border border-slate-700/80 bg-slate-900/60 p-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Version</p>
+                <p className="mt-1 text-sm text-white">{selectedJourney.version}</p>
               </div>
               <div className="rounded-lg border border-slate-700/80 bg-slate-900/60 p-3">
                 <p className="text-xs uppercase tracking-wide text-slate-400">Created At</p>

@@ -56,6 +56,19 @@ enum class JourneyExecutionHistoryStatus {
     SKIPPED_DUPLICATE
 }
 
+enum class JourneyLifecycleStatus {
+    ACTIVE,
+    PAUSED,
+    ARCHIVED;
+
+    companion object {
+        fun from(value: String): JourneyLifecycleStatus {
+            return entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+                ?: throw IllegalArgumentException("Unsupported lifecycle status: $value")
+        }
+    }
+}
+
 data class PostJourneyStepIn(
     val stepOrder: Int,
     val stepType: JourneyStepType,
@@ -106,6 +119,8 @@ data class JourneyDto(
     val triggerSegmentWatchFields: List<String>,
     val triggerSegmentCountThreshold: Long?,
     val active: Boolean,
+    val lifecycleStatus: String,
+    val version: Int,
     val steps: List<JourneyStepDto>,
     val createdAt: String
 )

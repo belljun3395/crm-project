@@ -81,6 +81,46 @@ export const useJourneys = () => {
     }
   }, [fetchJourneys]);
 
+  const pauseJourney = useCallback(async (journeyId: number): Promise<boolean> => {
+    setSaving(true);
+    setError(null);
+    try {
+      const updated = await journeyAPI.pauseJourney(journeyId);
+      if (!updated) {
+        setError('Failed to pause journey');
+        return false;
+      }
+      await fetchJourneys();
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to pause journey';
+      setError(message);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [fetchJourneys]);
+
+  const resumeJourney = useCallback(async (journeyId: number): Promise<boolean> => {
+    setSaving(true);
+    setError(null);
+    try {
+      const updated = await journeyAPI.resumeJourney(journeyId);
+      if (!updated) {
+        setError('Failed to resume journey');
+        return false;
+      }
+      await fetchJourneys();
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to resume journey';
+      setError(message);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [fetchJourneys]);
+
   const sortedJourneys = useMemo(() => {
     return [...journeys].sort((a, b) => b.id - a.id);
   }, [journeys]);
@@ -104,6 +144,8 @@ export const useJourneys = () => {
     fetchJourneys,
     fetchExecutions,
     fetchExecutionHistories,
-    createJourney
+    createJourney,
+    pauseJourney,
+    resumeJourney
   };
 };
