@@ -1,17 +1,17 @@
 package com.manage.crm.event.controller
 
 import com.manage.crm.config.SwaggerTag
-import com.manage.crm.event.application.GetCampaignDashboardUseCase
 import com.manage.crm.event.application.GetCampaignAnalyticsUseCase
+import com.manage.crm.event.application.GetCampaignDashboardUseCase
 import com.manage.crm.event.application.GetCampaignSummaryUseCase
 import com.manage.crm.event.application.GetStreamStatusUseCase
 import com.manage.crm.event.application.PostCampaignUseCase
+import com.manage.crm.event.application.dto.GetCampaignDashboardUseCaseIn
+import com.manage.crm.event.application.dto.GetCampaignDashboardUseCaseOut
 import com.manage.crm.event.application.dto.GetCampaignFunnelAnalyticsUseCaseIn
 import com.manage.crm.event.application.dto.GetCampaignFunnelAnalyticsUseCaseOut
 import com.manage.crm.event.application.dto.GetCampaignSegmentComparisonUseCaseIn
 import com.manage.crm.event.application.dto.GetCampaignSegmentComparisonUseCaseOut
-import com.manage.crm.event.application.dto.GetCampaignDashboardUseCaseIn
-import com.manage.crm.event.application.dto.GetCampaignDashboardUseCaseOut
 import com.manage.crm.event.application.dto.GetCampaignSummaryUseCaseIn
 import com.manage.crm.event.application.dto.GetStreamStatusUseCaseIn
 import com.manage.crm.event.application.dto.PostCampaignPropertyDto
@@ -342,7 +342,8 @@ class CampaignDashboardController(
     suspend fun getCampaignFunnelAnalytics(
         @PathVariable campaignId: Long,
         @Parameter(description = "퍼널 단계 이벤트 이름(쉼표 구분)")
-        @RequestParam steps: String,
+        @RequestParam
+        steps: String,
         @Parameter(description = "조회 시작 시간 (ISO 8601 형식)")
         @RequestParam(required = false)
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
@@ -372,9 +373,11 @@ class CampaignDashboardController(
     suspend fun getCampaignSegmentComparison(
         @PathVariable campaignId: Long,
         @Parameter(description = "비교할 세그먼트 ID 목록(쉼표 구분)")
-        @RequestParam segmentIds: String,
+        @RequestParam
+        segmentIds: String,
         @Parameter(description = "필터링할 이벤트 이름 (미입력 시 캠페인 전체 이벤트 대상)")
-        @RequestParam(required = false) eventName: String?,
+        @RequestParam(required = false)
+        eventName: String?,
         @Parameter(description = "조회 시작 시간 (ISO 8601 형식)")
         @RequestParam(required = false)
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
