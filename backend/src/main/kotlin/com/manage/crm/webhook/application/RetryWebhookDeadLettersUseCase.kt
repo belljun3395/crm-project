@@ -14,6 +14,7 @@ import com.manage.crm.webhook.domain.WebhookEventPayload
 import com.manage.crm.webhook.domain.repository.WebhookDeadLetterRepository
 import com.manage.crm.webhook.domain.repository.WebhookDeliveryLogRepository
 import com.manage.crm.webhook.domain.repository.WebhookRepository
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -22,6 +23,9 @@ import org.springframework.transaction.annotation.Transactional
 
 @Service
 @ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
+/**
+ * Re-drives webhook dead-letter events either in batch or per item.
+ */
 class RetryWebhookDeadLettersUseCase(
     private val webhookRepository: WebhookRepository,
     private val webhookDeadLetterRepository: WebhookDeadLetterRepository,
@@ -57,6 +61,7 @@ class RetryWebhookDeadLettersUseCase(
             }
         } else {
             webhookDeadLetterRepository.findByWebhookIdOrderByCreatedAtDesc(useCaseIn.webhookId)
+                .filter { it.deliveryStatus != "REDRIVEN_SUCCESS" }
                 .take(normalizedLimit)
                 .toList()
         }

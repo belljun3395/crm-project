@@ -3,6 +3,7 @@ package com.manage.crm.webhook.application
 import com.manage.crm.action.application.ActionChannel
 import com.manage.crm.action.application.ActionDispatchIn
 import com.manage.crm.action.application.ActionDispatchService
+import com.manage.crm.action.application.ActionDispatchStatus
 import com.manage.crm.webhook.WebhookDeliveryResult
 import com.manage.crm.webhook.WebhookDeliveryStatus
 import com.manage.crm.webhook.domain.Webhook
@@ -76,7 +77,7 @@ class WebhookFailureAlertService(
             result.errorMessage?.let { append(", error=").append(it) }
         }
 
-        runCatching {
+        val dispatchResult = runCatching {
             actionDispatchService.dispatch(
                 ActionDispatchIn(
                     channel = channel,
@@ -90,6 +91,13 @@ class WebhookFailureAlertService(
             )
         }.onFailure { error ->
             log.error(error) { "Failed to send webhook alert for webhookId=$webhookId" }
+        }.getOrNull()
+
+        if (dispatchResult?.status != ActionDispatchStatus.SUCCESS) {
+            if (dispatchResult != null) {
+                log.warn { "Webhook alert dispatch failed for webhookId=$webhookId, status=${dispatchResult.status}" }
+            }
+            return
         }
 
         lastAlertAtByWebhook[webhookId] = nowEpochMillis
