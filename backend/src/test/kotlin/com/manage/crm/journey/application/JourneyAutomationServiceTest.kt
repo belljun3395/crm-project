@@ -32,6 +32,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.emptyFlow
 import org.springframework.dao.DataIntegrityViolationException
 import java.time.LocalDateTime
 
@@ -73,6 +74,8 @@ class JourneyAutomationServiceTest : BehaviorSpec({
             userRepository = userRepository,
             objectMapper = ObjectMapper()
         )
+
+        coEvery { journeyRepository.findAllByTriggerTypeAndActiveTrue(JourneyTriggerType.CONDITION.name) } returns emptyFlow()
 
         coEvery { userRepository.findById(1L) } returns User.new(
             id = 1L,
