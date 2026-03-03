@@ -258,6 +258,8 @@ export interface Journey {
   triggerSegmentWatchFields?: string[];
   triggerSegmentCountThreshold?: number;
   active: boolean;
+  lifecycleStatus: string;
+  version: number;
   steps: JourneyStep[];
   createdAt: string;
 }
