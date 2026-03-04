@@ -17,6 +17,8 @@ export const useWebhooks = () => {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deliveryLoadingId, setDeliveryLoadingId] = useState<number | null>(null);
   const [deadLetterLoadingId, setDeadLetterLoadingId] = useState<number | null>(null);
+  const [retryingDeadLetterId, setRetryingDeadLetterId] = useState<number | null>(null);
+  const [batchRetryingWebhookId, setBatchRetryingWebhookId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchWebhooks = useCallback(async (): Promise<void> => {
@@ -125,6 +127,45 @@ export const useWebhooks = () => {
     }
   }, []);
 
+  const retryDeadLetter = useCallback(async (webhookId: number, deadLetterId: number): Promise<boolean> => {
+    setRetryingDeadLetterId(deadLetterId);
+    setError(null);
+    try {
+      const result = await webhookAPI.retryWebhookDeadLetter(webhookId, deadLetterId);
+      if (!result) {
+        setError('Failed to retry dead letter');
+        return false;
+      }
+      await Promise.all([fetchDeadLetters(webhookId), fetchDeliveries(webhookId)]);
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to retry dead letter';
+      setError(message);
+      return false;
+    } finally {
+      setRetryingDeadLetterId(null);
+    }
+  }, [fetchDeadLetters, fetchDeliveries]);
+
+  const retryDeadLetters = useCallback(async (webhookId: number, deadLetterIds?: number[]): Promise<number> => {
+    setBatchRetryingWebhookId(webhookId);
+    setError(null);
+    try {
+      const results = await webhookAPI.retryWebhookDeadLetters(webhookId, {
+        deadLetterIds: deadLetterIds && deadLetterIds.length > 0 ? deadLetterIds : undefined,
+        limit: 50
+      });
+      await Promise.all([fetchDeadLetters(webhookId), fetchDeliveries(webhookId)]);
+      return results.length;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to retry dead letters';
+      setError(message);
+      return 0;
+    } finally {
+      setBatchRetryingWebhookId(null);
+    }
+  }, [fetchDeadLetters, fetchDeliveries]);
+
   useEffect(() => {
     fetchWebhooks();
   }, [fetchWebhooks]);
@@ -138,12 +179,16 @@ export const useWebhooks = () => {
     deletingId,
     deliveryLoadingId,
     deadLetterLoadingId,
+    retryingDeadLetterId,
+    batchRetryingWebhookId,
     error,
     fetchWebhooks,
     createWebhook,
     updateWebhook,
     deleteWebhook,
     fetchDeliveries,
-    fetchDeadLetters
+    fetchDeadLetters,
+    retryDeadLetter,
+    retryDeadLetters
   };
 };

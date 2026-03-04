@@ -11,6 +11,7 @@ import com.manage.crm.webhook.application.BrowseWebhookUseCase
 import com.manage.crm.webhook.application.DeleteWebhookUseCase
 import com.manage.crm.webhook.application.GetWebhookUseCase
 import com.manage.crm.webhook.application.PostWebhookUseCase
+import com.manage.crm.webhook.application.RetryWebhookDeadLettersUseCase
 import com.manage.crm.webhook.application.dto.BrowseWebhookDeadLettersUseCaseIn
 import com.manage.crm.webhook.application.dto.BrowseWebhookDeliveryLogsUseCaseIn
 import com.manage.crm.webhook.application.dto.BrowseWebhookUseCaseIn
@@ -18,9 +19,13 @@ import com.manage.crm.webhook.application.dto.DeleteWebhookUseCaseIn
 import com.manage.crm.webhook.application.dto.GetWebhookUseCaseIn
 import com.manage.crm.webhook.application.dto.PostWebhookUseCaseIn
 import com.manage.crm.webhook.application.dto.PostWebhookUseCaseOut
+import com.manage.crm.webhook.application.dto.RetryWebhookDeadLettersUseCaseIn
+import com.manage.crm.webhook.application.dto.RetryWebhookDeadLettersUseCaseOut
 import com.manage.crm.webhook.application.dto.WebhookDeadLetterDto
+import com.manage.crm.webhook.application.dto.WebhookDeadLetterRetryResultDto
 import com.manage.crm.webhook.application.dto.WebhookDeliveryLogDto
 import com.manage.crm.webhook.application.dto.WebhookDto
+import com.manage.crm.webhook.controller.request.PostWebhookDeadLetterRetryRequest
 import com.manage.crm.webhook.controller.request.PostWebhookRequest
 import com.manage.crm.webhook.controller.request.PutWebhookRequest
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -51,6 +56,7 @@ class WebhookController(
     private val getWebhookUseCase: GetWebhookUseCase,
     private val browseWebhookDeliveryLogsUseCase: BrowseWebhookDeliveryLogsUseCase,
     private val browseWebhookDeadLettersUseCase: BrowseWebhookDeadLettersUseCase,
+    private val retryWebhookDeadLettersUseCase: RetryWebhookDeadLettersUseCase,
     private val auditLogService: AuditLogService
 ) {
     @PostMapping
@@ -173,6 +179,58 @@ class WebhookController(
                 limit = limit
             )
         ).let { ApiResponseGenerator.success(it.deadLetters, HttpStatus.OK) }
+    }
+
+    @PostMapping("/{id}/dead-letters/{deadLetterId}/retry")
+    suspend fun retryDeadLetter(
+        @PathVariable id: Long,
+        @PathVariable deadLetterId: Long,
+        httpRequest: ServerHttpRequest
+    ): ApiResponse<ApiResponse.SuccessBody<WebhookDeadLetterRetryResultDto>> {
+        val result = retryWebhookDeadLettersUseCase.retrySingle(id, deadLetterId)
+        auditLogService.record(
+            RecordAuditLogCommand(
+                actorId = extractActorId(httpRequest),
+                action = "WEBHOOK_DEAD_LETTER_RETRY",
+                resourceType = "WEBHOOK",
+                resourceId = id.toString(),
+                requestMethod = httpRequest.method.name(),
+                requestPath = httpRequest.path.value(),
+                statusCode = HttpStatus.OK.value(),
+                detail = "retried deadLetterId=$deadLetterId status=${result.status}"
+            )
+        )
+        return ApiResponseGenerator.success(result, HttpStatus.OK)
+    }
+
+    @PostMapping("/{id}/dead-letters/retry")
+    suspend fun retryDeadLetters(
+        @PathVariable id: Long,
+        @Valid
+        @RequestBody(required = false)
+        request: PostWebhookDeadLetterRetryRequest?,
+        httpRequest: ServerHttpRequest
+    ): ApiResponse<ApiResponse.SuccessBody<RetryWebhookDeadLettersUseCaseOut>> {
+        val result = retryWebhookDeadLettersUseCase.retryBatch(
+            RetryWebhookDeadLettersUseCaseIn(
+                webhookId = id,
+                deadLetterIds = request?.deadLetterIds ?: emptyList(),
+                limit = request?.limit ?: 50
+            )
+        )
+        auditLogService.record(
+            RecordAuditLogCommand(
+                actorId = extractActorId(httpRequest),
+                action = "WEBHOOK_DEAD_LETTER_RETRY_BATCH",
+                resourceType = "WEBHOOK",
+                resourceId = id.toString(),
+                requestMethod = httpRequest.method.name(),
+                requestPath = httpRequest.path.value(),
+                statusCode = HttpStatus.OK.value(),
+                detail = "retried deadLetters count=${result.results.size}"
+            )
+        )
+        return ApiResponseGenerator.success(result, HttpStatus.OK)
     }
 
     private fun extractActorId(httpRequest: ServerHttpRequest): String? {
