@@ -1910,6 +1910,139 @@
         }
       }
     },
+    "/api/v1/campaigns/{campaignId}/analytics/segment-comparison": {
+      "get": {
+        "tags": [
+          "Event API"
+        ],
+        "summary": "캠페인 세그먼트 비교 분석 조회",
+        "description": "세그먼트별 타겟 유저 대비 이벤트 전환율을 비교 조회합니다.",
+        "operationId": "getCampaignSegmentComparison",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "segmentIds",
+            "in": "query",
+            "description": "비교할 세그먼트 ID 목록(쉼표 구분)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventName",
+            "in": "query",
+            "description": "필터링할 이벤트 이름 (미입력 시 캠페인 전체 이벤트 대상)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startTime",
+            "in": "query",
+            "description": "조회 시작 시간 (ISO 8601 형식)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endTime",
+            "in": "query",
+            "description": "조회 종료 시간 (ISO 8601 형식)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyGetCampaignSegmentComparisonUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/campaigns/{campaignId}/analytics/funnel": {
+      "get": {
+        "tags": [
+          "Event API"
+        ],
+        "summary": "캠페인 퍼널 분석 조회",
+        "description": "이벤트 단계(step)를 기준으로 캠페인 퍼널 지표(이벤트 수, 유효 유저 수, 이전 단계 대비 전환율)를 조회합니다.",
+        "operationId": "getCampaignFunnelAnalytics",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "steps",
+            "in": "query",
+            "description": "퍼널 단계 이벤트 이름(쉼표 구분)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startTime",
+            "in": "query",
+            "description": "조회 시작 시간 (ISO 8601 형식)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "endTime",
+            "in": "query",
+            "description": "조회 종료 시간 (ISO 8601 형식)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyGetCampaignFunnelAnalyticsUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/audit-logs": {
       "get": {
         "tags": [
@@ -4481,6 +4614,138 @@
       },
       "ServerSentEventCampaignEventData": {
         "type": "object"
+      },
+      "GetCampaignSegmentComparisonUseCaseOut": {
+        "required": [
+          "campaignId",
+          "segmentMetrics"
+        ],
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "eventName": {
+            "type": "string"
+          },
+          "segmentMetrics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SegmentComparisonMetricDto"
+            }
+          }
+        }
+      },
+      "SegmentComparisonMetricDto": {
+        "required": [
+          "conversionRate",
+          "eventCount",
+          "eventUserCount",
+          "segmentId",
+          "targetUserCount"
+        ],
+        "type": "object",
+        "properties": {
+          "segmentId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "segmentName": {
+            "type": "string"
+          },
+          "targetUserCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "eventUserCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "eventCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "conversionRate": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "SuccessBodyGetCampaignSegmentComparisonUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/GetCampaignSegmentComparisonUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "FunnelStepMetricDto": {
+        "required": [
+          "conversionFromPrevious",
+          "eventCount",
+          "qualifiedUserCount",
+          "step"
+        ],
+        "type": "object",
+        "properties": {
+          "step": {
+            "type": "string"
+          },
+          "eventCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "qualifiedUserCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "conversionFromPrevious": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "GetCampaignFunnelAnalyticsUseCaseOut": {
+        "required": [
+          "campaignId",
+          "stepMetrics"
+        ],
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "stepMetrics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FunnelStepMetricDto"
+            }
+          }
+        }
+      },
+      "SuccessBodyGetCampaignFunnelAnalyticsUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/GetCampaignFunnelAnalyticsUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
       },
       "AuditLogDto": {
         "required": [

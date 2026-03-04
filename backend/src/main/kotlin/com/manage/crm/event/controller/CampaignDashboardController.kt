@@ -1,12 +1,17 @@
 package com.manage.crm.event.controller
 
 import com.manage.crm.config.SwaggerTag
+import com.manage.crm.event.application.GetCampaignAnalyticsUseCase
 import com.manage.crm.event.application.GetCampaignDashboardUseCase
 import com.manage.crm.event.application.GetCampaignSummaryUseCase
 import com.manage.crm.event.application.GetStreamStatusUseCase
 import com.manage.crm.event.application.PostCampaignUseCase
 import com.manage.crm.event.application.dto.GetCampaignDashboardUseCaseIn
 import com.manage.crm.event.application.dto.GetCampaignDashboardUseCaseOut
+import com.manage.crm.event.application.dto.GetCampaignFunnelAnalyticsUseCaseIn
+import com.manage.crm.event.application.dto.GetCampaignFunnelAnalyticsUseCaseOut
+import com.manage.crm.event.application.dto.GetCampaignSegmentComparisonUseCaseIn
+import com.manage.crm.event.application.dto.GetCampaignSegmentComparisonUseCaseOut
 import com.manage.crm.event.application.dto.GetCampaignSummaryUseCaseIn
 import com.manage.crm.event.application.dto.GetStreamStatusUseCaseIn
 import com.manage.crm.event.application.dto.PostCampaignPropertyDto
@@ -61,6 +66,7 @@ import java.time.format.DateTimeFormatter
 @RequestMapping(value = ["/api/v1/campaigns"])
 class CampaignDashboardController(
     private val getCampaignDashboardUseCase: GetCampaignDashboardUseCase,
+    private val getCampaignAnalyticsUseCase: GetCampaignAnalyticsUseCase,
     private val getCampaignSummaryUseCase: GetCampaignSummaryUseCase,
     private val getStreamStatusUseCase: GetStreamStatusUseCase,
     private val postCampaignUseCase: PostCampaignUseCase,
@@ -326,6 +332,76 @@ class CampaignDashboardController(
             checkedAt = result.checkedAt
         )
         return ApiResponseGenerator.success(response, HttpStatus.OK)
+    }
+
+    @Operation(
+        summary = "캠페인 퍼널 분석 조회",
+        description = "이벤트 단계(step)를 기준으로 캠페인 퍼널 지표(이벤트 수, 유효 유저 수, 이전 단계 대비 전환율)를 조회합니다."
+    )
+    @GetMapping("/{campaignId}/analytics/funnel")
+    suspend fun getCampaignFunnelAnalytics(
+        @PathVariable campaignId: Long,
+        @Parameter(description = "퍼널 단계 이벤트 이름(쉼표 구분)")
+        @RequestParam
+        steps: String,
+        @Parameter(description = "조회 시작 시간 (ISO 8601 형식)")
+        @RequestParam(required = false)
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+        startTime: LocalDateTime? = null,
+        @Parameter(description = "조회 종료 시간 (ISO 8601 형식)")
+        @RequestParam(required = false)
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+        endTime: LocalDateTime? = null
+    ): ApiResponse<ApiResponse.SuccessBody<GetCampaignFunnelAnalyticsUseCaseOut>> {
+        val parsedSteps = steps.split(",").map { it.trim() }.filter { it.isNotBlank() }
+        val result = getCampaignAnalyticsUseCase.getFunnel(
+            GetCampaignFunnelAnalyticsUseCaseIn(
+                campaignId = campaignId,
+                steps = parsedSteps,
+                startTime = startTime,
+                endTime = endTime
+            )
+        )
+        return ApiResponseGenerator.success(result, HttpStatus.OK)
+    }
+
+    @Operation(
+        summary = "캠페인 세그먼트 비교 분석 조회",
+        description = "세그먼트별 타겟 유저 대비 이벤트 전환율을 비교 조회합니다."
+    )
+    @GetMapping("/{campaignId}/analytics/segment-comparison")
+    suspend fun getCampaignSegmentComparison(
+        @PathVariable campaignId: Long,
+        @Parameter(description = "비교할 세그먼트 ID 목록(쉼표 구분)")
+        @RequestParam
+        segmentIds: String,
+        @Parameter(description = "필터링할 이벤트 이름 (미입력 시 캠페인 전체 이벤트 대상)")
+        @RequestParam(required = false)
+        eventName: String?,
+        @Parameter(description = "조회 시작 시간 (ISO 8601 형식)")
+        @RequestParam(required = false)
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+        startTime: LocalDateTime? = null,
+        @Parameter(description = "조회 종료 시간 (ISO 8601 형식)")
+        @RequestParam(required = false)
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+        endTime: LocalDateTime? = null
+    ): ApiResponse<ApiResponse.SuccessBody<GetCampaignSegmentComparisonUseCaseOut>> {
+        val parsedSegmentIds = segmentIds
+            .split(",")
+            .mapNotNull { it.trim().toLongOrNull() }
+            .distinct()
+
+        val result = getCampaignAnalyticsUseCase.compareSegments(
+            GetCampaignSegmentComparisonUseCaseIn(
+                campaignId = campaignId,
+                segmentIds = parsedSegmentIds,
+                eventName = eventName,
+                startTime = startTime,
+                endTime = endTime
+            )
+        )
+        return ApiResponseGenerator.success(result, HttpStatus.OK)
     }
 }
 
