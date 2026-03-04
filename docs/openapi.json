@@ -213,6 +213,12 @@
               "type": "integer",
               "format": "int64"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Idempotency key for write request replay and duplicate prevention",
+            "required": true
           }
         ],
         "requestBody": {
@@ -650,6 +656,14 @@
           "Segments API"
         ],
         "operationId": "create_1",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Idempotency key for write request replay and duplicate prevention",
+            "required": true
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -1060,6 +1074,14 @@
           "Emails API"
         ],
         "operationId": "postEmailTemplate",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Idempotency key for write request replay and duplicate prevention",
+            "required": true
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
