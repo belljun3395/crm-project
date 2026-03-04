@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { campaignAPI } from 'shared/api';
 import type {
+  CampaignFunnelAnalyticsResponse,
+  CampaignSegmentComparisonResponse,
   CampaignSummaryResponse,
   CampaignEventData,
   GetCampaignDashboardUseCaseOut,
@@ -21,10 +23,14 @@ export const useCampaignDashboard = () => {
   const [dashboard, setDashboard] = useState<GetCampaignDashboardUseCaseOut | null>(null);
   const [summary, setSummary] = useState<CampaignSummaryResponse | null>(null);
   const [streamStatus, setStreamStatus] = useState<StreamStatusResponse | null>(null);
+  const [funnelAnalytics, setFunnelAnalytics] = useState<CampaignFunnelAnalyticsResponse | null>(null);
+  const [segmentComparison, setSegmentComparison] = useState<CampaignSegmentComparisonResponse | null>(null);
   const [liveEvents, setLiveEvents] = useState<CampaignEventData[]>([]);
 
   const [loadingDashboard, setLoadingDashboard] = useState(false);
   const [loadingStreamStatus, setLoadingStreamStatus] = useState(false);
+  const [loadingFunnelAnalytics, setLoadingFunnelAnalytics] = useState(false);
+  const [loadingSegmentComparison, setLoadingSegmentComparison] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [connectionStatus, setConnectionStatus] = useState<StreamConnectionStatus>('idle');
@@ -93,6 +99,67 @@ export const useCampaignDashboard = () => {
       setLoadingStreamStatus(false);
     }
   }, []);
+
+  const fetchFunnelAnalytics = useCallback(
+    async (
+      campaignId: number,
+      params: {
+        steps: string[];
+        startTime?: string;
+        endTime?: string;
+      }
+    ): Promise<boolean> => {
+      setLoadingFunnelAnalytics(true);
+      setError(null);
+      try {
+        const data = await campaignAPI.getFunnelAnalytics(campaignId, params);
+        if (!data) {
+          setError('Failed to load funnel analytics');
+          return false;
+        }
+        setFunnelAnalytics(data);
+        return true;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load funnel analytics';
+        setError(message);
+        return false;
+      } finally {
+        setLoadingFunnelAnalytics(false);
+      }
+    },
+    []
+  );
+
+  const fetchSegmentComparison = useCallback(
+    async (
+      campaignId: number,
+      params: {
+        segmentIds: number[];
+        eventName?: string;
+        startTime?: string;
+        endTime?: string;
+      }
+    ): Promise<boolean> => {
+      setLoadingSegmentComparison(true);
+      setError(null);
+      try {
+        const data = await campaignAPI.getSegmentComparison(campaignId, params);
+        if (!data) {
+          setError('Failed to load segment comparison');
+          return false;
+        }
+        setSegmentComparison(data);
+        return true;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load segment comparison';
+        setError(message);
+        return false;
+      } finally {
+        setLoadingSegmentComparison(false);
+      }
+    },
+    []
+  );
 
   const disconnectStream = useCallback(() => {
     if (eventSourceRef.current) {
@@ -190,15 +257,21 @@ export const useCampaignDashboard = () => {
     dashboard,
     summary,
     streamStatus,
+    funnelAnalytics,
+    segmentComparison,
     liveEvents,
     loadingDashboard,
     loadingStreamStatus,
+    loadingFunnelAnalytics,
+    loadingSegmentComparison,
     error,
     connectionStatus,
     streamMessage,
     fetchDashboard,
     fetchSummary,
     fetchStreamStatus,
+    fetchFunnelAnalytics,
+    fetchSegmentComparison,
     connectStream,
     disconnectStream,
     clearLiveEvents

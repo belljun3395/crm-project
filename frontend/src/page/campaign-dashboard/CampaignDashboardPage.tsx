@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, GuidePanel, Input } from 'common/component';
 import { useCampaignDashboard, useCampaigns } from 'shared/hook';
 import type { TimeWindowUnit } from 'shared/type';
@@ -8,6 +8,13 @@ const toLocalDateTime = (value: string): string | undefined => {
     return undefined;
   }
   return value.length === 16 ? `${value}:00` : value;
+};
+
+const parseCsvValues = (value: string): string[] => {
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
 };
 
 const statusBadgeClass: Record<string, string> = {
@@ -24,26 +31,36 @@ export const CampaignDashboardPage: React.FC = () => {
     dashboard,
     summary,
     streamStatus,
+    funnelAnalytics,
+    segmentComparison,
     liveEvents,
     loadingDashboard,
     loadingStreamStatus,
+    loadingFunnelAnalytics,
+    loadingSegmentComparison,
     error,
     connectionStatus,
     streamMessage,
     fetchDashboard,
     fetchSummary,
     fetchStreamStatus,
+    fetchFunnelAnalytics,
+    fetchSegmentComparison,
     connectStream,
     disconnectStream,
     clearLiveEvents
   } = useCampaignDashboard();
-  const { campaigns } = useCampaigns();
+  const { campaigns, fetchCampaignDetail, detailLoadingId } = useCampaigns();
 
   const [campaignIdInput, setCampaignIdInput] = useState('');
   const [timeWindowUnit, setTimeWindowUnit] = useState<TimeWindowUnit>('HOUR');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [durationSeconds, setDurationSeconds] = useState('3600');
+  const [funnelStepsInput, setFunnelStepsInput] = useState('signup,open,click');
+  const [segmentIdsInput, setSegmentIdsInput] = useState('');
+  const [comparisonEventName, setComparisonEventName] = useState('');
+  const campaignDetailRequestSeqRef = useRef(0);
 
   const campaignId = Number(campaignIdInput);
   const isCampaignIdValid = Number.isInteger(campaignId) && campaignId > 0;
@@ -54,6 +71,37 @@ export const CampaignDashboardPage: React.FC = () => {
     }
   }, [campaignIdInput, campaigns]);
 
+  useEffect(() => {
+    if (!isCampaignIdValid) {
+      campaignDetailRequestSeqRef.current += 1;
+      return;
+    }
+    const requestSeq = campaignDetailRequestSeqRef.current + 1;
+    campaignDetailRequestSeqRef.current = requestSeq;
+
+    void fetchCampaignDetail(campaignId).then((detail) => {
+      if (campaignDetailRequestSeqRef.current !== requestSeq) {
+        return;
+      }
+      if (!detail) {
+        return;
+      }
+      if (detail.id !== campaignId) {
+        return;
+      }
+      setSegmentIdsInput(detail.segmentIds.join(','));
+    });
+  }, [campaignId, isCampaignIdValid, fetchCampaignDetail]);
+
+  const parsedFunnelSteps = useMemo(() => parseCsvValues(funnelStepsInput), [funnelStepsInput]);
+  const parsedSegmentIds = useMemo(
+    () =>
+      parseCsvValues(segmentIdsInput)
+        .map((value) => Number(value))
+        .filter((id): id is number => Number.isInteger(id) && id > 0),
+    [segmentIdsInput]
+  );
+
   const sortedMetrics = useMemo(() => {
     if (!dashboard?.metrics) {
       return [];
@@ -62,33 +110,72 @@ export const CampaignDashboardPage: React.FC = () => {
   }, [dashboard]);
   const summaryData = summary ?? dashboard?.summary;
 
+  const getRangeParams = () => {
+    const normalizedStartTime = toLocalDateTime(startTime);
+    const normalizedEndTime = toLocalDateTime(endTime);
+    return {
+      startTime: normalizedStartTime,
+      endTime: normalizedEndTime
+    };
+  };
+
   const handleRefresh = async () => {
     if (!isCampaignIdValid) {
       return;
     }
 
-    const params: {
-      startTime?: string;
-      endTime?: string;
-      timeWindowUnit?: TimeWindowUnit;
-    } = {
-      timeWindowUnit
-    };
+    const rangeParams = getRangeParams();
 
-    const normalizedStartTime = toLocalDateTime(startTime);
-    const normalizedEndTime = toLocalDateTime(endTime);
-    if (normalizedStartTime) {
-      params.startTime = normalizedStartTime;
-    }
-    if (normalizedEndTime) {
-      params.endTime = normalizedEndTime;
-    }
-
-    await Promise.all([
-      fetchDashboard(campaignId, params),
+    const jobs: Array<Promise<boolean>> = [
+      fetchDashboard(campaignId, {
+        ...rangeParams,
+        timeWindowUnit
+      }),
       fetchSummary(campaignId),
       fetchStreamStatus(campaignId)
-    ]);
+    ];
+
+    if (parsedFunnelSteps.length >= 2) {
+      jobs.push(
+        fetchFunnelAnalytics(campaignId, {
+          steps: parsedFunnelSteps,
+          ...rangeParams
+        })
+      );
+    }
+
+    if (parsedSegmentIds.length > 0) {
+      jobs.push(
+        fetchSegmentComparison(campaignId, {
+          segmentIds: parsedSegmentIds,
+          eventName: comparisonEventName.trim() || undefined,
+          ...rangeParams
+        })
+      );
+    }
+
+    await Promise.all(jobs);
+  };
+
+  const handleFetchFunnelAnalytics = async () => {
+    if (!isCampaignIdValid || parsedFunnelSteps.length < 2) {
+      return;
+    }
+    await fetchFunnelAnalytics(campaignId, {
+      steps: parsedFunnelSteps,
+      ...getRangeParams()
+    });
+  };
+
+  const handleFetchSegmentComparison = async () => {
+    if (!isCampaignIdValid || parsedSegmentIds.length === 0) {
+      return;
+    }
+    await fetchSegmentComparison(campaignId, {
+      segmentIds: parsedSegmentIds,
+      eventName: comparisonEventName.trim() || undefined,
+      ...getRangeParams()
+    });
   };
 
   const handleConnectStream = () => {
@@ -117,11 +204,11 @@ export const CampaignDashboardPage: React.FC = () => {
       )}
 
       <GuidePanel
-        description="특정 캠페인의 성과를 기간별로 보고, 실시간 이벤트 흐름까지 확인하는 화면입니다."
+        description="특정 캠페인의 성과를 기간별로 보고, 실시간 이벤트 흐름과 퍼널/세그먼트 전환율까지 함께 분석하는 화면입니다."
         items={[
           'Campaign 목록에서 대상을 선택한 뒤 Refresh를 눌러 최신 집계를 조회합니다.',
-          'Connect를 누르면 실시간 이벤트가 Live Stream에 쌓입니다.',
-          'Start/End Time을 채우면 원하는 기간만 좁혀서 볼 수 있습니다.'
+          'Funnel Steps에 이벤트 이름을 순서대로 입력하고 Load Funnel을 누르면 단계별 전환율이 계산됩니다.',
+          'Segment IDs와 Event Name을 지정하면 세그먼트별 전환율을 비교할 수 있습니다.'
         ]}
         note="실시간 연결이 길어지면 Disconnect로 종료하고 다시 연결할 수 있습니다."
       />
@@ -199,6 +286,144 @@ export const CampaignDashboardPage: React.FC = () => {
           <p className="text-sm text-gray-400">Stream Length</p>
           <p className="mt-2 text-2xl font-bold text-white">{streamStatus?.streamLength ?? '-'}</p>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <section className="rounded-xl border border-gray-800 bg-gray-900 p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-white">Funnel Conversion</h2>
+            <Button
+              onClick={handleFetchFunnelAnalytics}
+              loading={loadingFunnelAnalytics}
+              disabled={!isCampaignIdValid || parsedFunnelSteps.length < 2}
+            >
+              Load Funnel
+            </Button>
+          </div>
+
+          <Input
+            label="Funnel Steps (comma separated)"
+            value={funnelStepsInput}
+            onChange={(e) => setFunnelStepsInput(e.target.value)}
+            placeholder="signup,open,click"
+          />
+
+          <p className="mt-2 text-xs text-gray-400">
+            Step은 2개 이상 필요합니다. 현재 {parsedFunnelSteps.length}개 입력됨
+          </p>
+
+          <div className="mt-4 max-h-[320px] overflow-auto rounded-lg border border-gray-800">
+            <table className="min-w-full divide-y divide-gray-800">
+              <thead className="bg-gray-800/60">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-300">Step</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-300">Events</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-300">Qualified Users</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-300">Conversion (%)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800">
+                {loadingFunnelAnalytics ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-400">Loading funnel analytics...</td>
+                  </tr>
+                ) : !funnelAnalytics || funnelAnalytics.stepMetrics.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-400">No funnel data</td>
+                  </tr>
+                ) : (
+                  funnelAnalytics.stepMetrics.map((stepMetric) => (
+                    <tr key={stepMetric.step} className="hover:bg-gray-800/40">
+                      <td className="px-4 py-3 text-sm text-white">{stepMetric.step}</td>
+                      <td className="px-4 py-3 text-sm text-gray-300">{stepMetric.eventCount}</td>
+                      <td className="px-4 py-3 text-sm text-gray-300">{stepMetric.qualifiedUserCount}</td>
+                      <td className="px-4 py-3 text-sm text-gray-300">{stepMetric.conversionFromPrevious.toFixed(2)}%</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-gray-800 bg-gray-900 p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-white">Segment Comparison</h2>
+            <Button
+              onClick={handleFetchSegmentComparison}
+              loading={loadingSegmentComparison}
+              disabled={!isCampaignIdValid || parsedSegmentIds.length === 0}
+            >
+              Compare
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <Input
+              label="Segment IDs (comma separated)"
+              value={segmentIdsInput}
+              onChange={(e) => setSegmentIdsInput(e.target.value)}
+              placeholder="1,2,3"
+            />
+            <Input
+              label="Event Name (optional)"
+              value={comparisonEventName}
+              onChange={(e) => setComparisonEventName(e.target.value)}
+              placeholder="purchase"
+            />
+          </div>
+
+          {detailLoadingId === campaignId && (
+            <p className="mt-2 text-xs text-gray-400">Loading default segment IDs from campaign...</p>
+          )}
+
+          <p className="mt-2 text-xs text-gray-400">
+            현재 {parsedSegmentIds.length}개 세그먼트 선택됨
+          </p>
+
+          {segmentComparison?.eventName && (
+            <p className="mt-2 text-xs text-gray-400">
+              Filter Event: <span className="text-gray-200">{segmentComparison.eventName}</span>
+            </p>
+          )}
+
+          <div className="mt-4 max-h-[320px] overflow-auto rounded-lg border border-gray-800">
+            <table className="min-w-full divide-y divide-gray-800">
+              <thead className="bg-gray-800/60">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-300">Segment</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-300">Target Users</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-300">Event Users</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-300">Event Count</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-300">Conversion (%)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800">
+                {loadingSegmentComparison ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-400">Loading segment comparison...</td>
+                  </tr>
+                ) : !segmentComparison || segmentComparison.segmentMetrics.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-400">No segment comparison data</td>
+                  </tr>
+                ) : (
+                  segmentComparison.segmentMetrics.map((metric) => (
+                    <tr key={metric.segmentId} className="hover:bg-gray-800/40">
+                      <td className="px-4 py-3 text-sm text-white">
+                        {metric.segmentName ? `${metric.segmentName} (#${metric.segmentId})` : `#${metric.segmentId}`}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-300">{metric.targetUserCount}</td>
+                      <td className="px-4 py-3 text-sm text-gray-300">{metric.eventUserCount}</td>
+                      <td className="px-4 py-3 text-sm text-gray-300">{metric.eventCount}</td>
+                      <td className="px-4 py-3 text-sm text-gray-300">{metric.conversionRate.toFixed(2)}%</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">

@@ -3,6 +3,8 @@ import { createIdempotencyHeaders } from '../idempotency';
 import type {
   CreateCampaignRequest,
   GetCampaignDashboardUseCaseOut,
+  CampaignFunnelAnalyticsResponse,
+  CampaignSegmentComparisonResponse,
   CampaignSummaryResponse,
   CampaignDetail,
   CampaignOption,
@@ -111,6 +113,57 @@ export const campaignAPI = {
       return response.data.data;
     } catch (error) {
       console.error('Error fetching stream status:', error);
+      return null;
+    }
+  },
+
+  async getFunnelAnalytics(
+    campaignId: number,
+    params: {
+      steps: string[];
+      startTime?: string;
+      endTime?: string;
+    }
+  ): Promise<CampaignFunnelAnalyticsResponse | null> {
+    try {
+      const response = await crmApi.get<ApiResponse<CampaignFunnelAnalyticsResponse>>(
+        `/campaigns/${campaignId}/analytics/funnel`,
+        {
+          params: {
+            ...params,
+            steps: params.steps.join(',')
+          }
+        }
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching funnel analytics:', error);
+      return null;
+    }
+  },
+
+  async getSegmentComparison(
+    campaignId: number,
+    params: {
+      segmentIds: number[];
+      eventName?: string;
+      startTime?: string;
+      endTime?: string;
+    }
+  ): Promise<CampaignSegmentComparisonResponse | null> {
+    try {
+      const response = await crmApi.get<ApiResponse<CampaignSegmentComparisonResponse>>(
+        `/campaigns/${campaignId}/analytics/segment-comparison`,
+        {
+          params: {
+            ...params,
+            segmentIds: params.segmentIds.join(',')
+          }
+        }
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching segment comparison:', error);
       return null;
     }
   },
