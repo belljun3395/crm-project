@@ -49,12 +49,16 @@ export const WebhookManagementPage: React.FC = () => {
     deletingId,
     deliveryLoadingId,
     deadLetterLoadingId,
+    retryingDeadLetterId,
+    batchRetryingWebhookId,
     error,
     createWebhook,
     updateWebhook,
     deleteWebhook,
     fetchDeliveries,
-    fetchDeadLetters
+    fetchDeadLetters,
+    retryDeadLetter,
+    retryDeadLetters
   } = useWebhooks();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -402,16 +406,29 @@ export const WebhookManagementPage: React.FC = () => {
         <div className="overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur">
           <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Dead Letters</h3>
-            {selectedWebhookId && (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => fetchDeadLetters(selectedWebhookId)}
-                loading={deadLetterLoadingId === selectedWebhookId}
-              >
-                Refresh
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {selectedWebhookId && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => void retryDeadLetters(selectedWebhookId)}
+                  loading={batchRetryingWebhookId === selectedWebhookId}
+                  disabled={deadLetters.length === 0}
+                >
+                  Retry All
+                </Button>
+              )}
+              {selectedWebhookId && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => fetchDeadLetters(selectedWebhookId)}
+                  loading={deadLetterLoadingId === selectedWebhookId}
+                >
+                  Refresh
+                </Button>
+              )}
+            </div>
           </div>
           <div className="max-h-[320px] overflow-auto">
             <table className="min-w-full divide-y divide-slate-800">
@@ -421,24 +438,25 @@ export const WebhookManagementPage: React.FC = () => {
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Event</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Error</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
                 {!selectedWebhookId ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-300">
+                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-300">
                       Select webhook
                     </td>
                   </tr>
                 ) : deadLetterLoadingId === selectedWebhookId ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-300">
+                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-300">
                       Loading dead letters...
                     </td>
                   </tr>
                 ) : deadLetters.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-300">
+                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-300">
                       No dead letters
                     </td>
                   </tr>
@@ -449,6 +467,21 @@ export const WebhookManagementPage: React.FC = () => {
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">{log.eventType}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-white">{log.deliveryStatus}</td>
                       <td className="px-4 py-3 text-sm text-slate-300">{log.errorMessage || '-'}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          loading={retryingDeadLetterId === log.id}
+                          onClick={() => {
+                            if (!selectedWebhookId) {
+                              return;
+                            }
+                            void retryDeadLetter(selectedWebhookId, log.id);
+                          }}
+                        >
+                          Retry
+                        </Button>
+                      </td>
                     </tr>
                   ))
                 )}
