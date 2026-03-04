@@ -1,7 +1,7 @@
 package com.manage.crm.infrastructure.kafka
 
-import com.manage.crm.journey.queue.JourneyTriggerQueueMessage
 import com.manage.crm.infrastructure.scheduler.event.ScheduledTaskEvent
+import com.manage.crm.journey.queue.JourneyTriggerQueueMessage
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringDeserializer

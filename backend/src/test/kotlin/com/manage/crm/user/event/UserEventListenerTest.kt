@@ -5,15 +5,15 @@ import com.manage.crm.user.application.service.UserService
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
-import org.mockito.kotlin.doNothing
-import org.mockito.kotlin.mockingDetails
-import org.springframework.modulith.test.Scenario
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 
 class UserEventListenerTest(
     private val userService: UserService
 ) : UserEventInvokeSituationTest() {
     @Test
-    fun `user service is called and need to refresh user total count cause count is too old`(scenario: Scenario) {
+    fun `user service is called and need to refresh user total count cause count is too old`() {
         runTest {
             // given
             val oldCount = 10L
@@ -24,21 +24,14 @@ class UserEventListenerTest(
                 .thenReturn(System.currentTimeMillis() - fourHours)
 
             val command = RefreshTotalUsersCommand(oldCount)
-            doNothing().`when`(userEventPublisher).publishEvent(command)
 
             // when
             userService.getTotalUserCount()
-            Mockito.`when`(refreshTotalUsersCommandHandler.handle(command)).thenReturn(Unit)
 
             // then
-            val expectedInvocationTime = 1
-            scenario.publish(command)
-                .andWaitForStateChange(
-                    { mockingDetails(refreshTotalUsersCommandHandler).invocations.size }
-                )
-                .andVerify { invocationTime ->
-                    assert(invocationTime == expectedInvocationTime)
-                }
+            verify(userEventPublisher, times(1)).publishEvent(
+                argThat<RefreshTotalUsersCommand> { oldTotalUsers == command.oldTotalUsers }
+            )
         }
     }
 }

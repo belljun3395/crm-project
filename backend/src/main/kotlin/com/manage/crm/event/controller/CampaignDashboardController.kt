@@ -5,23 +5,23 @@ import com.manage.crm.event.application.GetCampaignDashboardUseCase
 import com.manage.crm.event.application.GetCampaignSummaryUseCase
 import com.manage.crm.event.application.GetStreamStatusUseCase
 import com.manage.crm.event.application.PostCampaignUseCase
-import com.manage.crm.event.application.dto.PostCampaignPropertyDto
-import com.manage.crm.event.application.dto.PostCampaignUseCaseIn
-import com.manage.crm.event.application.dto.PostCampaignUseCaseOut
 import com.manage.crm.event.application.dto.GetCampaignDashboardUseCaseIn
 import com.manage.crm.event.application.dto.GetCampaignDashboardUseCaseOut
 import com.manage.crm.event.application.dto.GetCampaignSummaryUseCaseIn
 import com.manage.crm.event.application.dto.GetStreamStatusUseCaseIn
-import com.manage.crm.event.controller.request.PostCampaignRequest
-import com.manage.crm.event.controller.request.PutCampaignRequest
+import com.manage.crm.event.application.dto.PostCampaignPropertyDto
+import com.manage.crm.event.application.dto.PostCampaignUseCaseIn
+import com.manage.crm.event.application.dto.PostCampaignUseCaseOut
 import com.manage.crm.event.controller.dto.CampaignEventData
 import com.manage.crm.event.controller.dto.CampaignSummaryResponse
 import com.manage.crm.event.controller.dto.StreamStatusResponse
-import com.manage.crm.event.domain.TimeWindowUnit
+import com.manage.crm.event.controller.request.PostCampaignRequest
+import com.manage.crm.event.controller.request.PutCampaignRequest
 import com.manage.crm.event.domain.CampaignSegments
+import com.manage.crm.event.domain.TimeWindowUnit
 import com.manage.crm.event.domain.cache.CampaignCacheManager
-import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
 import com.manage.crm.event.domain.repository.CampaignRepository
+import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
 import com.manage.crm.event.domain.vo.CampaignProperties
 import com.manage.crm.event.domain.vo.CampaignProperty
 import com.manage.crm.event.service.CampaignDashboardService
@@ -33,23 +33,23 @@ import com.manage.crm.support.web.ApiResponseGenerator
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
+import kotlinx.coroutines.flow.toList
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.transaction.annotation.Transactional
-import kotlinx.coroutines.flow.toList
 import reactor.core.publisher.Flux
 import java.time.Duration
 import java.time.LocalDateTime
@@ -198,7 +198,6 @@ class CampaignDashboardController(
 
         return ApiResponseGenerator.success(CampaignDeleteResponseDto(success = true), HttpStatus.OK)
     }
-
 
     @Operation(
         summary = "캠페인 대시보드 조회",

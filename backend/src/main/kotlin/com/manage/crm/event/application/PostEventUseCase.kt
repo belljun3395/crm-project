@@ -14,6 +14,8 @@ import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.event.service.CampaignDashboardEvent
 import com.manage.crm.event.service.CampaignDashboardService
+import com.manage.crm.journey.queue.JourneyEventPayload
+import com.manage.crm.journey.queue.JourneyEventPropertyPayload
 import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.out
@@ -113,7 +115,21 @@ class PostEventUseCase(
     private suspend fun triggerJourneyAutomation(savedEvents: List<Event>) {
         savedEvents.forEach { savedEvent ->
             runCatching {
-                journeyTriggerQueuePublisher.publishEventTrigger(savedEvent)
+                val savedEventId = savedEvent.id ?: return@runCatching
+                journeyTriggerQueuePublisher.publishEventTrigger(
+                    JourneyEventPayload(
+                        id = savedEventId,
+                        name = savedEvent.name,
+                        userId = savedEvent.userId,
+                        properties = savedEvent.properties.value.map { property ->
+                            JourneyEventPropertyPayload(
+                                key = property.key,
+                                value = property.value
+                            )
+                        },
+                        createdAt = savedEvent.createdAt
+                    )
+                )
             }.onFailure {
                 log.error(it) { "Failed to enqueue journey EVENT trigger for eventId=${savedEvent.id}" }
             }

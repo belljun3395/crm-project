@@ -2,6 +2,7 @@ package com.manage.crm.event.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.event.domain.Event
+import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.segment.domain.Segment
@@ -23,6 +24,7 @@ class SegmentTargetingServiceImplTest : BehaviorSpec({
     lateinit var segmentRepository: SegmentRepository
     lateinit var segmentConditionRepository: SegmentConditionRepository
     lateinit var userRepository: UserRepository
+    lateinit var campaignEventsRepository: CampaignEventsRepository
     lateinit var eventRepository: EventRepository
     lateinit var service: SegmentTargetingServiceImpl
 
@@ -30,11 +32,13 @@ class SegmentTargetingServiceImplTest : BehaviorSpec({
         segmentRepository = mockk()
         segmentConditionRepository = mockk()
         userRepository = mockk()
+        campaignEventsRepository = mockk()
         eventRepository = mockk()
         service = SegmentTargetingServiceImpl(
             segmentRepository = segmentRepository,
             segmentConditionRepository = segmentConditionRepository,
             userRepository = userRepository,
+            campaignEventsRepository = campaignEventsRepository,
             eventRepository = eventRepository,
             objectMapper = ObjectMapper()
         )
@@ -97,7 +101,7 @@ class SegmentTargetingServiceImplTest : BehaviorSpec({
             )
 
             then("returns only users matching all conditions") {
-                service.resolveUserIds(segmentId) shouldBe listOf(1L)
+                service.resolveUserIds(segmentId, null) shouldBe listOf(1L)
             }
         }
 
@@ -108,7 +112,7 @@ class SegmentTargetingServiceImplTest : BehaviorSpec({
             } returns Segment.new(id = segmentId, name = "inactive", description = null, active = false)
 
             then("returns empty list") {
-                service.resolveUserIds(segmentId) shouldBe emptyList()
+                service.resolveUserIds(segmentId, null) shouldBe emptyList()
             }
         }
     }
