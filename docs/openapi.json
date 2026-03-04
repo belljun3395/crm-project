@@ -281,6 +281,156 @@
         }
       }
     },
+    "/api/v1/journeys/{journeyId}": {
+      "put": {
+        "tags": [
+          "Journeys API"
+        ],
+        "operationId": "updateJourney",
+        "parameters": [
+          {
+            "name": "journeyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutJourneyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyJourneyDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/campaigns/{campaignId}": {
+      "get": {
+        "tags": [
+          "Event API"
+        ],
+        "operationId": "getCampaign",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyCampaignDetailDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Event API"
+        ],
+        "operationId": "updateCampaign",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutCampaignRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyCampaignDetailDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Event API"
+        ],
+        "operationId": "deleteCampaign",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyCampaignDeleteResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/webhooks": {
       "get": {
         "tags": [
@@ -604,6 +754,129 @@
         }
       }
     },
+    "/api/v1/journeys/{journeyId}/resume": {
+      "post": {
+        "tags": [
+          "Journeys API"
+        ],
+        "operationId": "resumeJourney",
+        "parameters": [
+          {
+            "name": "journeyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyJourneyDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/journeys/{journeyId}/pause": {
+      "post": {
+        "tags": [
+          "Journeys API"
+        ],
+        "operationId": "pauseJourney",
+        "parameters": [
+          {
+            "name": "journeyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyJourneyDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/journeys/{journeyId}/archive": {
+      "post": {
+        "tags": [
+          "Journeys API"
+        ],
+        "operationId": "archiveJourney",
+        "parameters": [
+          {
+            "name": "journeyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyJourneyDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/events": {
       "get": {
         "tags": [
@@ -899,6 +1172,66 @@
         }
       }
     },
+    "/api/v1/campaigns": {
+      "get": {
+        "tags": [
+          "Event API"
+        ],
+        "operationId": "listCampaigns",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyListCampaignListItemDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Event API"
+        ],
+        "operationId": "postCampaign_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostCampaignRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyPostCampaignUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/actions/dispatch": {
       "post": {
         "tags": [
@@ -1059,6 +1392,56 @@
         }
       }
     },
+    "/api/v1/segments/{id}/users": {
+      "get": {
+        "tags": [
+          "Segments API"
+        ],
+        "operationId": "getMatchedUsers",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "campaignId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyListSegmentMatchedUserDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/journeys/executions": {
       "get": {
         "tags": [
@@ -1152,6 +1535,79 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessBodyListJourneyExecutionHistoryDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/all": {
+      "get": {
+        "tags": [
+          "Event API"
+        ],
+        "operationId": "browseEvents",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 200
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyBrowseEventsUseCaseOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/emails/templates/variable-catalog": {
+      "get": {
+        "tags": [
+          "Emails API"
+        ],
+        "operationId": "browseTemplateVariableCatalog",
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBodyBrowseTemplateVariableCatalogUseCaseOut"
                 }
               }
             }
@@ -1812,6 +2268,338 @@
           }
         }
       },
+      "PutJourneyRequest": {
+        "required": [
+          "name",
+          "steps",
+          "triggerType"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "triggerType": {
+            "type": "string"
+          },
+          "triggerEventName": {
+            "type": "string"
+          },
+          "triggerSegmentId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "triggerSegmentEvent": {
+            "type": "string"
+          },
+          "triggerSegmentWatchFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "triggerSegmentCountThreshold": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PutJourneyStepRequest"
+            }
+          }
+        }
+      },
+      "PutJourneyStepRequest": {
+        "required": [
+          "stepOrder",
+          "stepType"
+        ],
+        "type": "object",
+        "properties": {
+          "stepOrder": {
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "stepType": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "variables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "delayMillis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "conditionExpression": {
+            "type": "string"
+          },
+          "retryCount": {
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "JourneyDto": {
+        "required": [
+          "active",
+          "createdAt",
+          "id",
+          "lifecycleStatus",
+          "name",
+          "steps",
+          "triggerSegmentWatchFields",
+          "triggerType",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "triggerType": {
+            "type": "string"
+          },
+          "triggerEventName": {
+            "type": "string"
+          },
+          "triggerSegmentId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "triggerSegmentEvent": {
+            "type": "string"
+          },
+          "triggerSegmentWatchFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "triggerSegmentCountThreshold": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "lifecycleStatus": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JourneyStepDto"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      },
+      "JourneyStepDto": {
+        "required": [
+          "createdAt",
+          "id",
+          "retryCount",
+          "stepOrder",
+          "stepType",
+          "variables"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "stepOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stepType": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "string"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "variables": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "delayMillis": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "conditionExpression": {
+            "type": "string"
+          },
+          "retryCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyJourneyDto": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/JourneyDto"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "PostCampaignPropertyDto": {
+        "required": [
+          "key",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "PutCampaignRequest": {
+        "required": [
+          "name",
+          "properties"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "properties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostCampaignPropertyDto"
+            }
+          },
+          "segmentIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        }
+      },
+      "CampaignDetailDto": {
+        "required": [
+          "id",
+          "name",
+          "properties",
+          "segmentIds"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "properties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CampaignPropertyDto"
+            }
+          },
+          "segmentIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      },
+      "CampaignPropertyDto": {
+        "required": [
+          "key",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyCampaignDetailDto": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CampaignDetailDto"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
       "PostWebhookRequest": {
         "required": [
           "events",
@@ -1941,6 +2729,19 @@
             "type": "integer",
             "format": "int64"
           },
+          "triggerSegmentEvent": {
+            "type": "string"
+          },
+          "triggerSegmentWatchFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "triggerSegmentCountThreshold": {
+            "type": "integer",
+            "format": "int64"
+          },
           "active": {
             "type": "boolean"
           },
@@ -1996,119 +2797,6 @@
             "minimum": 0,
             "type": "integer",
             "format": "int32"
-          }
-        }
-      },
-      "JourneyDto": {
-        "required": [
-          "active",
-          "createdAt",
-          "id",
-          "name",
-          "steps",
-          "triggerType"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "name": {
-            "type": "string"
-          },
-          "triggerType": {
-            "type": "string"
-          },
-          "triggerEventName": {
-            "type": "string"
-          },
-          "triggerSegmentId": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "active": {
-            "type": "boolean"
-          },
-          "steps": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/JourneyStepDto"
-            }
-          },
-          "createdAt": {
-            "type": "string"
-          }
-        }
-      },
-      "JourneyStepDto": {
-        "required": [
-          "createdAt",
-          "id",
-          "retryCount",
-          "stepOrder",
-          "stepType",
-          "variables"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "stepOrder": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "stepType": {
-            "type": "string"
-          },
-          "channel": {
-            "type": "string"
-          },
-          "destination": {
-            "type": "string"
-          },
-          "subject": {
-            "type": "string"
-          },
-          "body": {
-            "type": "string"
-          },
-          "variables": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            }
-          },
-          "delayMillis": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "conditionExpression": {
-            "type": "string"
-          },
-          "retryCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "createdAt": {
-            "type": "string"
-          }
-        }
-      },
-      "SuccessBodyJourneyDto": {
-        "required": [
-          "data",
-          "message"
-        ],
-        "type": "object",
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/JourneyDto"
-          },
-          "message": {
-            "type": "string"
           }
         }
       },
@@ -2183,21 +2871,6 @@
             "$ref": "#/components/schemas/PostEventUseCaseOut"
           },
           "message": {
-            "type": "string"
-          }
-        }
-      },
-      "PostCampaignPropertyDto": {
-        "required": [
-          "key",
-          "value"
-        ],
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string"
-          },
-          "value": {
             "type": "string"
           }
         }
@@ -2411,6 +3084,10 @@
         ],
         "type": "object",
         "properties": {
+          "campaignId": {
+            "type": "integer",
+            "format": "int64"
+          },
           "templateId": {
             "type": "integer",
             "format": "int64"
@@ -2899,6 +3576,49 @@
           }
         }
       },
+      "SegmentMatchedUserDto": {
+        "required": [
+          "externalId",
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyListSegmentMatchedUserDto": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SegmentMatchedUserDto"
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
       "SuccessBodyListJourneyDto": {
         "required": [
           "data",
@@ -3126,6 +3846,35 @@
           }
         }
       },
+      "BrowseEventsUseCaseOut": {
+        "required": [
+          "events"
+        ],
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventDto"
+            }
+          }
+        }
+      },
+      "SuccessBodyBrowseEventsUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/BrowseEventsUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
       "BrowseTemplateUseCaseOut": {
         "required": [
           "templates"
@@ -3251,6 +4000,65 @@
             "items": {
               "$ref": "#/components/schemas/TemplateHistoryDto"
             }
+          }
+        }
+      },
+      "BrowseTemplateVariableCatalogUseCaseOut": {
+        "required": [
+          "campaignVariables",
+          "userVariables"
+        ],
+        "type": "object",
+        "properties": {
+          "userVariables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateVariableCatalogItemDto"
+            }
+          },
+          "campaignVariables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateVariableCatalogItemDto"
+            }
+          }
+        }
+      },
+      "SuccessBodyBrowseTemplateVariableCatalogUseCaseOut": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/BrowseTemplateVariableCatalogUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "TemplateVariableCatalogItemDto": {
+        "required": [
+          "description",
+          "key",
+          "required",
+          "source"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
           }
         }
       },
@@ -3391,6 +4199,43 @@
         "properties": {
           "data": {
             "$ref": "#/components/schemas/BrowseEmailSendHistoriesUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "CampaignListItemDto": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        }
+      },
+      "SuccessBodyListCampaignListItemDto": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CampaignListItemDto"
+            }
           },
           "message": {
             "type": "string"
@@ -3795,6 +4640,32 @@
         "properties": {
           "data": {
             "$ref": "#/components/schemas/CancelNotificationEmailUseCaseOut"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "CampaignDeleteResponseDto": {
+        "required": [
+          "success"
+        ],
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SuccessBodyCampaignDeleteResponseDto": {
+        "required": [
+          "data",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CampaignDeleteResponseDto"
           },
           "message": {
             "type": "string"

@@ -4,6 +4,7 @@ import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInp
 import com.manage.crm.email.application.dto.PostEmailNotificationSchedulesUseCaseIn
 import com.manage.crm.email.application.service.ScheduleTaskAllService
 import com.manage.crm.email.domain.vo.EventId
+import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -13,10 +14,12 @@ import java.time.LocalDateTime
 
 class PostEmailNotificationSchedulesUseCaseTest : BehaviorSpec({
     lateinit var scheduleTaskService: ScheduleTaskAllService
+    lateinit var campaignSegmentsRepository: CampaignSegmentsRepository
     lateinit var useCase: PostEmailNotificationSchedulesUseCase
     beforeContainer {
         scheduleTaskService = mockk()
-        useCase = PostEmailNotificationSchedulesUseCase(scheduleTaskService)
+        campaignSegmentsRepository = mockk()
+        useCase = PostEmailNotificationSchedulesUseCase(scheduleTaskService, campaignSegmentsRepository)
     }
 
     given("PostEmailNotificationSchedulesUseCase") {

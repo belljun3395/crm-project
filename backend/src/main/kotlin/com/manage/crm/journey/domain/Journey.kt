@@ -6,6 +6,9 @@ import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
 import java.time.LocalDateTime
 
+/**
+ * Journey aggregate root that stores trigger metadata and lifecycle state.
+ */
 @Table("journeys")
 class Journey(
     @Id
@@ -26,6 +29,10 @@ class Journey(
     var triggerSegmentCountThreshold: Long? = null,
     @Column("active")
     var active: Boolean = true,
+    @Column("lifecycle_status")
+    var lifecycleStatus: String = "ACTIVE",
+    @Column("version")
+    var version: Int = 1,
     @CreatedDate
     @Column("created_at")
     var createdAt: LocalDateTime? = null
@@ -39,7 +46,9 @@ class Journey(
             triggerSegmentEvent: String?,
             triggerSegmentWatchFields: String?,
             triggerSegmentCountThreshold: Long?,
-            active: Boolean
+            active: Boolean,
+            lifecycleStatus: String = "ACTIVE",
+            version: Int = 1
         ): Journey {
             return Journey(
                 name = name,
@@ -49,7 +58,9 @@ class Journey(
                 triggerSegmentEvent = triggerSegmentEvent,
                 triggerSegmentWatchFields = triggerSegmentWatchFields,
                 triggerSegmentCountThreshold = triggerSegmentCountThreshold,
-                active = active
+                active = active,
+                lifecycleStatus = lifecycleStatus,
+                version = version
             )
         }
     }

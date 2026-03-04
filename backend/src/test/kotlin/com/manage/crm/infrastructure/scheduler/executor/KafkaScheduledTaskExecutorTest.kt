@@ -3,7 +3,7 @@ package com.manage.crm.infrastructure.scheduler.executor
 import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInput
 import com.manage.crm.email.domain.vo.EventId
 import com.manage.crm.infrastructure.scheduler.event.ScheduledTaskEvent
-import com.manage.crm.infrastructure.scheduler.provider.RedisSchedulerProvider
+import com.manage.crm.infrastructure.scheduler.provider.DueSchedule
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import kotlinx.coroutines.test.runTest
@@ -26,13 +26,13 @@ class KafkaScheduledTaskExecutorTest {
     private lateinit var kafkaTemplate: KafkaTemplate<String, ScheduledTaskEvent>
     private lateinit var executor: KafkaScheduledTaskExecutor
 
-    private lateinit var scheduleData: RedisSchedulerProvider.ScheduleData
+    private lateinit var scheduleData: DueSchedule
 
     @BeforeEach
     fun setup() {
         kafkaTemplate = mock()
         executor = KafkaScheduledTaskExecutor(kafkaTemplate)
-        scheduleData = RedisSchedulerProvider.ScheduleData(
+        scheduleData = DueSchedule(
             name = "schedule-1",
             scheduleTime = LocalDateTime.now(),
             payload = NotificationEmailSendTimeOutEventInput(

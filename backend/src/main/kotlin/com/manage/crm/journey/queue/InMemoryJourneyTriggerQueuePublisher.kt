@@ -1,6 +1,5 @@
 package com.manage.crm.journey.queue
 
-import com.manage.crm.event.domain.Event
 import com.manage.crm.support.coroutine.eventListenerCoroutineScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.PostConstruct
@@ -9,11 +8,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
 @Component
-@ConditionalOnMissingBean(JourneyTriggerQueuePublisher::class)
+@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws", matchIfMissing = true)
 class InMemoryJourneyTriggerQueuePublisher(
     private val processor: JourneyTriggerQueueProcessor
 ) : JourneyTriggerQueuePublisher {
@@ -43,27 +42,15 @@ class InMemoryJourneyTriggerQueuePublisher(
         consumerJobs.forEach { it.cancel() }
     }
 
-    override suspend fun publishEventTrigger(event: Event) {
-        val eventId = event.id ?: return
+    override suspend fun publishEventTrigger(event: JourneyEventPayload) {
         val result = queue.trySend(
             JourneyTriggerQueueMessage(
                 triggerType = JourneyTriggerQueueType.EVENT,
-                event = JourneyEventPayload(
-                    id = eventId,
-                    name = event.name,
-                    userId = event.userId,
-                    properties = event.properties.value.map { property ->
-                        JourneyEventPropertyPayload(
-                            key = property.key,
-                            value = property.value
-                        )
-                    },
-                    createdAt = event.createdAt
-                )
+                event = event
             )
         )
         if (result.isFailure) {
-            log.error { "Failed to enqueue in-memory EVENT journey trigger for eventId=$eventId" }
+            log.error { "Failed to enqueue in-memory EVENT journey trigger for eventId=${event.id}" }
         }
     }
 
