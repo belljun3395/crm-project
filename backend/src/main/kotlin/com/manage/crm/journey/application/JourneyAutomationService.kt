@@ -58,20 +58,69 @@ class JourneyAutomationService(
     private val log = KotlinLogging.logger {}
 
     suspend fun onEvent(event: Event) {
-        val eventId = requireNotNull(event.id) { "Event id cannot be null" }
-
-        val journeys = journeyRepository
+        val eventJourneys = journeyRepository
             .findAllByTriggerTypeAndTriggerEventNameAndActiveTrue(
                 triggerType = JourneyTriggerType.EVENT.name,
                 triggerEventName = event.name
             )
             .toList()
 
-        journeys.forEach { journey ->
+        val eventId = requireNotNull(event.id) { "Event id cannot be null" }
+        eventJourneys.forEach { journey ->
             val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }
             val triggerKey = "$journeyId:$eventId:${event.userId}"
             executeJourney(journey, event, triggerKey)
         }
+
+        processConditionTriggeredJourneys(event)
+    }
+
+    private suspend fun processConditionTriggeredJourneys(event: Event) {
+        val conditionJourneys = journeyRepository
+            .findAllByTriggerTypeAndActiveTrue(JourneyTriggerType.CONDITION.name)
+            .toList()
+        if (conditionJourneys.isEmpty()) {
+            return
+        }
+
+        val eventId = requireNotNull(event.id) { "Event id cannot be null" }
+        conditionJourneys.forEach { journey ->
+            runCatching {
+                val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }
+                val conditionExpression = if (!journey.triggerEventName.isNullOrBlank()) {
+                    journey.triggerEventName
+                } else {
+                    val steps = journeyStepRepository.findAllByJourneyIdOrderByStepOrderAsc(journeyId).toList()
+                    resolveConditionExpression(journey, steps)
+                }
+
+                if (conditionExpression.isNullOrBlank()) {
+                    log.warn { "Skip CONDITION journey without condition expression: journeyId=$journeyId" }
+                    return@runCatching
+                }
+
+                if (!evaluateCondition(conditionExpression, event)) {
+                    return@runCatching
+                }
+
+                val triggerKey = "$journeyId:CONDITION:$eventId:${event.userId}"
+                executeJourney(journey, event, triggerKey)
+            }.onFailure { error ->
+                val journeyId = journey.id
+                log.error(error) { "Failed to process CONDITION journey: journeyId=$journeyId" }
+            }
+        }
+    }
+
+    private fun resolveConditionExpression(journey: Journey, steps: List<JourneyStep>): String? {
+        if (!journey.triggerEventName.isNullOrBlank()) {
+            return journey.triggerEventName
+        }
+
+        return steps.firstOrNull { step ->
+            runCatching { JourneyStepType.from(step.stepType) }.getOrNull() == JourneyStepType.BRANCH &&
+                !step.conditionExpression.isNullOrBlank()
+        }?.conditionExpression
     }
 
     suspend fun onSegmentContextChanged(changedUserIds: List<Long>? = null) {

@@ -8,7 +8,7 @@ import com.manage.crm.journey.domain.repository.JourneyStepRepository
 import org.springframework.stereotype.Service
 
 /**
- * Creates a journey and its ordered step definitions.
+ * Creates a journey with trigger metadata and ordered execution steps.
  */
 @Service
 class PostJourneyUseCase(
@@ -106,7 +106,21 @@ class PostJourneyUseCase(
                 }
             }
 
-            JourneyTriggerType.CONDITION -> Unit
+            JourneyTriggerType.CONDITION -> {
+                val triggerExpression = useCaseIn.triggerEventName?.takeIf { it.isNotBlank() }
+                val branchExpressions = useCaseIn.steps
+                    .filter { it.stepType == JourneyStepType.BRANCH && !it.conditionExpression.isNullOrBlank() }
+                    .map { requireNotNull(it.conditionExpression).trim() }
+
+                if (triggerExpression.isNullOrBlank() && branchExpressions.isEmpty()) {
+                    throw IllegalArgumentException(
+                        "CONDITION trigger requires triggerEventName(condition expression) or BRANCH step conditionExpression"
+                    )
+                }
+
+                triggerExpression?.let { validateConditionExpression(it) }
+                branchExpressions.forEach { validateConditionExpression(it) }
+            }
         }
 
         useCaseIn.steps.forEach { step ->
@@ -150,5 +164,24 @@ class PostJourneyUseCase(
             return null
         }
         return objectMapper.writeValueAsString(fields)
+    }
+    private fun validateConditionExpression(expression: String) {
+        val raw = expression.trim()
+        val operator = when {
+            raw.contains("==") -> "=="
+            raw.contains("!=") -> "!="
+            else -> throw IllegalArgumentException("Unsupported condition expression: $expression")
+        }
+
+        val parts = raw.split(operator, limit = 2)
+        if (parts.size != 2) {
+            throw IllegalArgumentException("Invalid condition expression: $expression")
+        }
+
+        val left = parts[0].trim()
+        val right = parts[1].trim().trim('"').trim('\'')
+        if (!left.startsWith("event.") || left.removePrefix("event.").isBlank() || right.isBlank()) {
+            throw IllegalArgumentException("Invalid condition expression: $expression")
+        }
     }
 }

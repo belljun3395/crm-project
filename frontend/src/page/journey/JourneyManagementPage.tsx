@@ -90,9 +90,10 @@ const triggerGuides: Record<
   },
   CONDITION: {
     description:
-      '조건 기반 트리거 입력입니다. 생성은 가능하며 자동 실행은 별도 조건 엔진 연계가 필요합니다.',
+      '조건 기반 트리거 입력입니다. 조건식이 만족되면 이벤트 유입 시 여정이 자동 실행됩니다.',
     triggerExample: `{
-  "triggerType": "CONDITION"
+  "triggerType": "CONDITION",
+  "triggerEventName": "event.plan==\\"PRO\\""
 }`,
     stepsExample: `[
   {
@@ -213,8 +214,8 @@ export const JourneyManagementPage: React.FC = () => {
         ? Number(form.triggerSegmentCountThreshold.trim())
         : undefined;
 
-    if (form.triggerType === 'EVENT' && !triggerEventName) {
-      setFormError('EVENT 트리거는 Trigger Event Name이 필수입니다.');
+    if ((form.triggerType === 'EVENT' || form.triggerType === 'CONDITION') && !triggerEventName) {
+      setFormError(`${form.triggerType} 트리거는 Trigger Condition/Event Expression이 필수입니다.`);
       return;
     }
 
@@ -256,7 +257,9 @@ export const JourneyManagementPage: React.FC = () => {
     const payload: CreateJourneyRequest = {
       name: form.name.trim(),
       triggerType: form.triggerType,
-      triggerEventName: form.triggerType === 'EVENT' ? triggerEventName : undefined,
+      triggerEventName: (form.triggerType === 'EVENT' || form.triggerType === 'CONDITION')
+        ? triggerEventName
+        : undefined,
       triggerSegmentId: form.triggerType === 'SEGMENT' ? parsedTriggerSegmentId : undefined,
       triggerSegmentEvent: form.triggerType === 'SEGMENT' ? triggerSegmentEvent : undefined,
       triggerSegmentWatchFields:
@@ -518,7 +521,7 @@ export const JourneyManagementPage: React.FC = () => {
                 setForm((prev) => ({
                   ...prev,
                   triggerType: nextType,
-                  triggerEventName: nextType === 'EVENT' ? prev.triggerEventName : '',
+                  triggerEventName: (nextType === 'EVENT' || nextType === 'CONDITION') ? prev.triggerEventName : '',
                   triggerSegmentId: nextType === 'SEGMENT' ? prev.triggerSegmentId : '',
                   triggerSegmentEvent: nextType === 'SEGMENT' ? prev.triggerSegmentEvent : 'ENTER',
                   triggerSegmentWatchFields: nextType === 'SEGMENT' ? prev.triggerSegmentWatchFields : '',
@@ -533,12 +536,12 @@ export const JourneyManagementPage: React.FC = () => {
             </select>
           </div>
 
-          {form.triggerType === 'EVENT' && (
+          {(form.triggerType === 'EVENT' || form.triggerType === 'CONDITION') && (
             <Input
-              label="Trigger Event Name"
+              label={form.triggerType === 'EVENT' ? 'Trigger Event Name' : 'Trigger Condition Expression'}
               value={form.triggerEventName}
               onChange={(e) => setForm((prev) => ({ ...prev, triggerEventName: e.target.value }))}
-              placeholder="USER_SIGNUP"
+              placeholder={form.triggerType === 'EVENT' ? 'USER_SIGNUP' : 'event.plan=="PRO"'}
               required
             />
           )}
@@ -599,7 +602,7 @@ export const JourneyManagementPage: React.FC = () => {
 
           {form.triggerType === 'CONDITION' && (
             <div className="rounded-xl border border-amber-700/50 bg-amber-900/20 p-3 text-sm text-amber-100">
-              CONDITION 트리거는 생성 가능하며, 자동 실행은 별도 조건 엔진 연계가 필요합니다.
+              CONDITION 트리거는 Trigger Condition Expression을 기준으로 이벤트 유입 시 자동 실행됩니다.
             </div>
           )}
 
