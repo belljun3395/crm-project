@@ -71,18 +71,26 @@ class SpringDocConfig(
                 "/api/v1/users",
                 "/api/v1/events",
                 "/api/v1/events/campaign",
+                "/api/v1/campaigns",
+                "/api/v1/emails/templates",
                 "/api/v1/emails/send/notifications",
                 "/api/v1/emails/schedules/notifications/email",
                 "/api/v1/webhooks",
                 "/api/v1/actions/dispatch",
-                "/api/v1/journeys"
+                "/api/v1/journeys",
+                "/api/v1/segments"
+            )
+            val putPaths = setOf(
+                "/api/v1/webhooks/{id}",
+                "/api/v1/campaigns/{campaignId}",
+                "/api/v1/segments/{id}"
             )
 
             openApi.paths?.forEach { (path, pathItem) ->
                 if (path in postPaths) {
                     addIdempotencyKeyParameter(pathItem.post)
                 }
-                if (path == "/api/v1/webhooks/{id}") {
+                if (path in putPaths) {
                     addIdempotencyKeyParameter(pathItem.put)
                 }
             }

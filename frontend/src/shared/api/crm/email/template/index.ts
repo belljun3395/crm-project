@@ -1,4 +1,5 @@
 import { crmApi } from '../../instance';
+import { createIdempotencyHeaders } from '../../idempotency';
 import type { 
   Template,
   TemplateVariableCatalog,
@@ -23,7 +24,9 @@ export const templateAPI = {
   // 템플릿 생성
   async postTemplate(template: CreateTemplateRequest): Promise<any> {
     try {
-      const response = await crmApi.post<ApiResponse<any>>('/emails/templates', template);
+      const response = await crmApi.post<ApiResponse<any>>('/emails/templates', template, {
+        headers: createIdempotencyHeaders('template-create')
+      });
       return response.data.data;
     } catch (error) {
       console.error('Error posting template:', error);

@@ -74,8 +74,9 @@ class EmailControllerIdempotencyIntegrationTest : AbstractIntegrationTest() {
     }
 
     private fun createTemplate(): Long {
+        val timestamp = System.currentTimeMillis()
         val templateRequest = PostTemplateRequest(
-            templateName = "idem-template-${System.currentTimeMillis()}",
+            templateName = "idem-template-$timestamp",
             subject = "Idempotency Test",
             body = "<h1>Hello ${'$'}{user_name}</h1>",
             variables = listOf("user_name")
@@ -83,6 +84,7 @@ class EmailControllerIdempotencyIntegrationTest : AbstractIntegrationTest() {
 
         val responseBody = webTestClient.post()
             .uri("/api/v1/emails/templates")
+            .header("Idempotency-Key", "idem-template-$timestamp")
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(templateRequest)
             .exchange()

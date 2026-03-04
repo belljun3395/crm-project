@@ -1,4 +1,5 @@
 import { crmApi } from '../instance';
+import { createIdempotencyHeaders } from '../idempotency';
 import type {
   CreateCampaignRequest,
   GetCampaignDashboardUseCaseOut,
@@ -35,7 +36,9 @@ export const campaignAPI = {
 
   async postCampaign(payload: CreateCampaignRequest): Promise<CampaignDetail | null> {
     try {
-      const response = await crmApi.post<ApiResponse<CampaignDetail>>('/campaigns', payload);
+      const response = await crmApi.post<ApiResponse<CampaignDetail>>('/campaigns', payload, {
+        headers: createIdempotencyHeaders('campaign-create')
+      });
       return response.data.data;
     } catch (error) {
       console.error('Error creating campaign:', error);
@@ -45,7 +48,9 @@ export const campaignAPI = {
 
   async putCampaign(campaignId: number, payload: CreateCampaignRequest): Promise<CampaignDetail | null> {
     try {
-      const response = await crmApi.put<ApiResponse<CampaignDetail>>(`/campaigns/${campaignId}`, payload);
+      const response = await crmApi.put<ApiResponse<CampaignDetail>>(`/campaigns/${campaignId}`, payload, {
+        headers: createIdempotencyHeaders(`campaign-update-${campaignId}`)
+      });
       return response.data.data;
     } catch (error) {
       console.error('Error updating campaign:', error);
