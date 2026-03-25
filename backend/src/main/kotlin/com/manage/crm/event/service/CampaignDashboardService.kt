@@ -21,7 +21,8 @@ import java.time.temporal.ChronoUnit
 class CampaignDashboardService(
     private val campaignDashboardMetricsRepository: CampaignDashboardMetricsRepository,
     private val campaignEventsRepository: CampaignEventsRepository,
-    private val streamService: CampaignDashboardStreamService
+    private val streamService: CampaignDashboardStreamService,
+    private val campaignStreamRegistry: CampaignStreamRegistry
 ) {
     val log = KotlinLogging.logger { }
     private val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -32,7 +33,7 @@ class CampaignDashboardService(
     @Transactional
     suspend fun publishCampaignEvent(event: CampaignDashboardEvent) {
         streamService.publishEvent(event)
-        updateMetricsForEvent(event)
+        campaignStreamRegistry.registerCampaign(event.campaignId)
 
         backgroundScope.launch {
             try {
@@ -208,6 +209,36 @@ class CampaignDashboardService(
         return campaignDashboardMetricsRepository
             .findAllByCampaignIdOrderByTimeWindowStartDesc(campaignId)
             .toList()
+    }
+
+    /**
+     * Updates dashboard metrics for a batch of events from the stream consumer.
+     * Groups events by campaignId and time window, then batch-upserts to MySQL.
+     */
+    suspend fun updateMetricsForEvents(events: List<CampaignDashboardEvent>) {
+        val timeWindowUnits = listOf(
+            TimeWindowUnit.MINUTE,
+            TimeWindowUnit.HOUR,
+            TimeWindowUnit.DAY,
+            TimeWindowUnit.WEEK,
+            TimeWindowUnit.MONTH
+        )
+
+        events.groupBy { it.campaignId }.forEach { (campaignId, campaignEvents) ->
+            timeWindowUnits.forEach { unit ->
+                campaignEvents.groupBy { event -> calculateTimeWindow(event.timestamp, unit) }
+                    .forEach { (window, windowEvents) ->
+                        val (start, end) = window
+                        updateOrCreateMetric(campaignId, MetricType.EVENT_COUNT, unit, start, end, windowEvents.size.toLong())
+
+                        val totalUserCount = campaignEventsRepository.countAllByCampaignIdAndTimeRange(campaignId, start, end)
+                        val uniqueUserCount = campaignEventsRepository.countDistinctUsersByCampaignIdAndTimeRange(campaignId, start, end)
+
+                        upsertAbsoluteMetric(campaignId, MetricType.TOTAL_USER_COUNT, unit, start, end, totalUserCount)
+                        upsertAbsoluteMetric(campaignId, MetricType.UNIQUE_USER_COUNT, unit, start, end, uniqueUserCount)
+                    }
+            }
+        }
     }
 
     /**

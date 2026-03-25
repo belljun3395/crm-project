@@ -6,6 +6,7 @@ import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.data.redis.connection.stream.MapRecord
 import org.springframework.data.redis.connection.stream.ReadOffset
 import org.springframework.data.redis.connection.stream.StreamOffset
+import org.springframework.data.redis.connection.stream.StreamReadOptions
 import org.springframework.data.redis.connection.stream.StreamRecords
 import org.springframework.data.redis.connection.stream.StringRecord
 import org.springframework.data.redis.core.ReactiveRedisTemplate
@@ -115,6 +116,37 @@ class CampaignDashboardStreamService(
             log.info { "Trimmed stream for campaign: $campaignId to max length: $maxLength" }
         } catch (e: Exception) {
             log.error(e) { "Failed to trim stream for campaign: $campaignId" }
+        }
+    }
+
+    /**
+     * Reads a batch of events from the stream since the given lastId.
+     * Used by the scheduled consumer for windowed aggregation.
+     */
+    suspend fun readEventsBatch(
+        campaignId: Long,
+        lastId: String?,
+        count: Long = 100
+    ): List<CampaignDashboardEvent> {
+        val streamKey = getStreamKey(campaignId)
+        val readOffset = if (lastId.isNullOrBlank()) {
+            ReadOffset.from("0-0")
+        } else {
+            ReadOffset.from(lastId)
+        }
+
+        return try {
+            reactiveRedisTemplate.opsForStream<String, Any>()
+                .read(
+                    StreamReadOptions.empty().count(count),
+                    StreamOffset.create(streamKey, readOffset)
+                )
+                .map { record -> mapRecordToEvent(record) }
+                .collectList()
+                .awaitSingle()
+        } catch (e: Exception) {
+            log.error(e) { "Failed to read events batch for campaign: $campaignId" }
+            emptyList()
         }
     }
 
