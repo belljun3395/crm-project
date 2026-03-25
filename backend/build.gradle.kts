@@ -1,24 +1,32 @@
+import org.gradle.api.artifacts.MinimalExternalModuleDependency
+import org.gradle.api.provider.Provider
+
 plugins {
-    kotlin("jvm") version DependencyVersion.KOTLIN
-    kotlin("plugin.spring") version DependencyVersion.KOTLIN
-    kotlin("plugin.allopen") version DependencyVersion.KOTLIN
-    kotlin("kapt") version DependencyVersion.KOTLIN
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.spring)
+    alias(libs.plugins.kotlin.allopen)
+    alias(libs.plugins.kotlin.kapt)
 
     /** test */
     id("java-test-fixtures")
 
     /** spring */
-    id("org.springframework.boot") version DependencyVersion.SPRING_BOOT
-    id("io.spring.dependency-management") version DependencyVersion.SPRING_DEPENDENCY_MANAGEMENT
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
 
     /** docs */
-    id("org.springdoc.openapi-gradle-plugin") version DependencyVersion.SPRING_OPENAPI
+    alias(libs.plugins.springdoc.openapi)
 
     /** lint */
-    id("org.jlleitschuh.gradle.ktlint") version DependencyVersion.KTLINT
+    alias(libs.plugins.ktlint)
 
     /** coverage */
     id("jacoco")
+}
+
+fun bomCoordinate(dependency: Provider<MinimalExternalModuleDependency>): String {
+    val module = dependency.get()
+    return "${module.module.group}:${module.module.name}:${module.versionConstraint.requiredVersion}"
 }
 
 group = "com.manage"
@@ -26,12 +34,16 @@ version = "0.0.1-SNAPSHOT"
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(libs.versions.java.get().toInt())
     }
 }
 
 repositories {
     mavenCentral()
+}
+
+dependencyLocking {
+    lockAllConfigurations()
 }
 
 /**
@@ -50,107 +62,105 @@ allOpen {
 
 dependencyManagement {
     imports {
-        mavenBom("org.springframework.modulith:spring-modulith-bom:${DependencyVersion.SPRING_MODULITH}")
-        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${DependencyVersion.SPRING_CLOUD}")
-        mavenBom("software.amazon.awssdk:bom:${DependencyVersion.AWS_SDK}")
-        mavenBom("com.google.cloud:spring-cloud-gcp-dependencies:${DependencyVersion.SPRING_CLOUD_GCP}")
+        mavenBom(bomCoordinate(libs.spring.modulith.bom))
+        mavenBom(bomCoordinate(libs.spring.cloud.dependencies.bom))
+        mavenBom(bomCoordinate(libs.aws.sdk.bom))
+        mavenBom(bomCoordinate(libs.spring.cloud.gcp.dependencies.bom))
     }
 }
 
 dependencies {
     /** kotlin */
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
-    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation(libs.kotlin.reflect)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.slf4j)
+    implementation(libs.kotlinx.coroutines.reactor)
+    implementation(libs.reactor.kotlin.extensions)
+    implementation(libs.jackson.module.kotlin)
 
     /** spring */
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
-    implementation("io.r2dbc:r2dbc-pool")
-    implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
-    implementation("org.springframework.kafka:spring-kafka")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j")
-    implementation("org.springframework.modulith:spring-modulith-starter-core")
-    runtimeOnly("org.springframework.modulith:spring-modulith-actuator")
-    runtimeOnly("org.springframework.modulith:spring-modulith-observability")
-    implementation("org.springframework.boot:spring-boot-starter-mail")
-    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
-    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:${DependencyVersion.SPRINGDOC}")
+    implementation(libs.spring.boot.starter.validation)
+    implementation(libs.spring.boot.starter.webflux)
+    implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.spring.boot.starter.data.r2dbc)
+    implementation(libs.r2dbc.pool)
+    implementation(libs.spring.boot.starter.data.redis.reactive)
+    implementation(libs.spring.kafka)
+    implementation(libs.spring.cloud.starter.circuitbreaker.reactor.resilience4j)
+    implementation(libs.spring.modulith.starter.core)
+    runtimeOnly(libs.spring.modulith.actuator)
+    runtimeOnly(libs.spring.modulith.observability)
+    implementation(libs.spring.boot.starter.mail)
+    implementation(libs.spring.boot.starter.thymeleaf)
+    implementation(libs.springdoc.openapi.starter.webflux.ui)
 
     /** data */
-    runtimeOnly("com.mysql:mysql-connector-j")
-    runtimeOnly("io.asyncer:r2dbc-mysql")
-    testRuntimeOnly("com.mysql:mysql-connector-j")
-    testImplementation("com.zaxxer:HikariCP:${DependencyVersion.HIKARI_CP}")
+    runtimeOnly(libs.mysql.connector.j)
+    runtimeOnly(libs.r2dbc.mysql)
+    testRuntimeOnly(libs.mysql.connector.j)
+    testImplementation(libs.hikari.cp)
 
     /** commons-io */
-    implementation("commons-io:commons-io:${DependencyVersion.COMMONS_IO}")
+    implementation(libs.commons.io)
 
     /** flyway */
-    implementation("org.flywaydb:flyway-core:${DependencyVersion.FLYWAY}")
-    implementation("org.flywaydb:flyway-mysql")
+    implementation(libs.flyway.core)
+    implementation(libs.flyway.mysql)
 
     /** domain */
-    implementation("org.jmolecules.integrations:jmolecules-starter-ddd:${DependencyVersion.JMOLECULES}")
+    implementation(libs.jmolecules.starter.ddd)
 
     /** arrow */
-    implementation("io.arrow-kt:arrow-core:${DependencyVersion.ARROW}")
-    implementation("io.arrow-kt:arrow-fx-coroutines:${DependencyVersion.ARROW}")
+    implementation(libs.arrow.core)
+    implementation(libs.arrow.fx.coroutines)
 
     /** aspectj */
-    implementation("org.aspectj:aspectjweaver:${DependencyVersion.ASPECTJ}")
+    implementation(libs.aspectjweaver)
 
     /** aws */
-    implementation("io.awspring.cloud:spring-cloud-aws-starter-sqs:${DependencyVersion.AWS_SQS}")
-    implementation("software.amazon.awssdk:sqs")
-    implementation("software.amazon.awssdk:sns")
-    implementation("software.amazon.awssdk:scheduler")
-    implementation("com.amazonaws:aws-java-sdk-ses:${DependencyVersion.AWS_SES}")
-    implementation("software.amazon.awssdk:aws-query-protocol")
+    implementation(libs.spring.cloud.aws.starter.sqs)
+    implementation(libs.aws.sdk.sqs)
+    implementation(libs.aws.sdk.sns)
+    implementation(libs.aws.sdk.scheduler)
+    implementation(libs.aws.java.sdk.ses)
+    implementation(libs.aws.query.protocol)
 
     /** gcp */
-    implementation("com.google.cloud:spring-cloud-gcp-starter-pubsub")
+    implementation(libs.spring.cloud.gcp.starter.pubsub)
 
     /** docs */
-    runtimeOnly("com.github.therapi:therapi-runtime-javadoc-scribe:${DependencyVersion.JAVADOC_SCRIBE}")
-    kapt("com.github.therapi:therapi-runtime-javadoc-scribe:${DependencyVersion.JAVADOC_SCRIBE}")
+    runtimeOnly(libs.therapi.runtime.javadoc.scribe)
+    kapt(libs.therapi.runtime.javadoc.scribe)
 
     /** jsoup */
-    implementation("org.jsoup:jsoup:${DependencyVersion.JSOUP}")
+    implementation(libs.jsoup)
 
     /** monitoring */
-    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
-    implementation("com.github.loki4j:loki-logback-appender:1.4.2")
+    runtimeOnly(libs.micrometer.registry.prometheus)
+    implementation(libs.loki.logback.appender)
 
     /** test */
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("io.projectreactor:reactor-test")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
-    testImplementation("org.springframework.modulith:spring-modulith-starter-test")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("io.mockk:mockk:${DependencyVersion.MOCKK}")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:${DependencyVersion.MOCKITO_KOTLIN}")
-    testImplementation("io.kotest:kotest-runner-junit5:${DependencyVersion.KOTEST}")
-    testImplementation("io.kotest:kotest-assertions-core:${DependencyVersion.KOTEST}")
-    testImplementation("io.kotest:kotest-framework-api:${DependencyVersion.KOTEST}")
-    testImplementation("io.kotest.extensions:kotest-extensions-spring:${DependencyVersion.KOTEST_EXTENSION}")
-    testImplementation("io.kotest.extensions:kotest-extensions-allure:${DependencyVersion.KOTEST_EXTENSION}")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${DependencyVersion.COROUTINE_TEST}")
+    testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.reactor.test)
+    testImplementation(libs.kotlin.test.junit5)
+    testImplementation(libs.spring.modulith.starter.test)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.mockk)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.kotest.framework.api)
+    testImplementation(libs.kotest.extensions.spring)
+    testImplementation(libs.kotest.extensions.allure)
+    testImplementation(libs.kotlinx.coroutines.test)
 
     /** testcontainers */
-    testImplementation("org.testcontainers:junit-jupiter:${DependencyVersion.TESTCONTAINERS}")
-    testImplementation("org.testcontainers:mysql:${DependencyVersion.TESTCONTAINERS}")
-    testImplementation("org.testcontainers:testcontainers:${DependencyVersion.TESTCONTAINERS}")
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.mysql)
+    testImplementation(libs.testcontainers)
 
     /** logger */
-    implementation("io.github.oshai:kotlin-logging-jvm:${DependencyVersion.KOTLIN_LOGGING}")
+    implementation(libs.kotlin.logging.jvm)
 }
 
 kotlin {
@@ -170,10 +180,6 @@ tasks.jacocoTestReport {
         xml.required.set(true)
         html.required.set(true)
     }
-}
-
-ktlint {
-    disabledRules.set(setOf("filename"))
 }
 
 openApi {
