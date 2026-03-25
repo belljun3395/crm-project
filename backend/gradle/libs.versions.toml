@@ -1,0 +1,111 @@
+[versions]
+java = "17"
+kotlin = "1.9.25"
+ktlint = "11.6.1"
+spring-boot = "3.4.2"
+spring-dependency-management = "1.1.7"
+spring-modulith = "1.3.1"
+spring-cloud = "2024.0.0"
+springdoc = "2.3.0"
+springdoc-openapi-plugin = "1.9.0"
+javadoc-scribe = "0.15.0"
+hikari-cp = "6.2.1"
+aws-sqs = "3.0.1"
+aws-ses = "1.12.765"
+aws-sdk = "2.29.45"
+jmolecules = "0.24.1"
+arrow = "1.2.1"
+aspectj = "1.9.5"
+jsoup = "1.15.3"
+flyway = "10.12.0"
+mockito-kotlin = "5.4.0"
+mockk = "1.13.9"
+kotest = "5.8.0"
+kotest-extension = "1.3.0"
+coroutine-test = "1.8.0"
+testcontainers = "1.19.8"
+kotlin-logging = "7.0.0"
+commons-io = "2.19.0"
+spring-cloud-gcp = "5.6.0"
+loki4j = "1.4.2"
+
+[libraries]
+spring-modulith-bom = { module = "org.springframework.modulith:spring-modulith-bom", version.ref = "spring-modulith" }
+spring-cloud-dependencies-bom = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "spring-cloud" }
+aws-sdk-bom = { module = "software.amazon.awssdk:bom", version.ref = "aws-sdk" }
+spring-cloud-gcp-dependencies-bom = { module = "com.google.cloud:spring-cloud-gcp-dependencies", version.ref = "spring-cloud-gcp" }
+
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
+kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core" }
+kotlinx-coroutines-slf4j = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j" }
+kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutine-test" }
+reactor-kotlin-extensions = { module = "io.projectreactor.kotlin:reactor-kotlin-extensions" }
+jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
+
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-data-r2dbc = { module = "org.springframework.boot:spring-boot-starter-data-r2dbc" }
+spring-boot-starter-data-redis-reactive = { module = "org.springframework.boot:spring-boot-starter-data-redis-reactive" }
+spring-boot-starter-mail = { module = "org.springframework.boot:spring-boot-starter-mail" }
+spring-boot-starter-thymeleaf = { module = "org.springframework.boot:spring-boot-starter-thymeleaf" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-kafka = { module = "org.springframework.kafka:spring-kafka" }
+spring-cloud-starter-circuitbreaker-reactor-resilience4j = { module = "org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j" }
+spring-modulith-starter-core = { module = "org.springframework.modulith:spring-modulith-starter-core" }
+spring-modulith-actuator = { module = "org.springframework.modulith:spring-modulith-actuator" }
+spring-modulith-observability = { module = "org.springframework.modulith:spring-modulith-observability" }
+spring-modulith-starter-test = { module = "org.springframework.modulith:spring-modulith-starter-test" }
+springdoc-openapi-starter-webflux-ui = { module = "org.springdoc:springdoc-openapi-starter-webflux-ui", version.ref = "springdoc" }
+
+r2dbc-pool = { module = "io.r2dbc:r2dbc-pool" }
+r2dbc-mysql = { module = "io.asyncer:r2dbc-mysql" }
+mysql-connector-j = { module = "com.mysql:mysql-connector-j" }
+hikari-cp = { module = "com.zaxxer:HikariCP", version.ref = "hikari-cp" }
+
+commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-mysql = { module = "org.flywaydb:flyway-mysql", version.ref = "flyway" }
+jmolecules-starter-ddd = { module = "org.jmolecules.integrations:jmolecules-starter-ddd", version.ref = "jmolecules" }
+arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
+aspectjweaver = { module = "org.aspectj:aspectjweaver", version.ref = "aspectj" }
+
+spring-cloud-aws-starter-sqs = { module = "io.awspring.cloud:spring-cloud-aws-starter-sqs", version.ref = "aws-sqs" }
+aws-sdk-sqs = { module = "software.amazon.awssdk:sqs" }
+aws-sdk-sns = { module = "software.amazon.awssdk:sns" }
+aws-sdk-scheduler = { module = "software.amazon.awssdk:scheduler" }
+aws-query-protocol = { module = "software.amazon.awssdk:aws-query-protocol" }
+aws-java-sdk-ses = { module = "com.amazonaws:aws-java-sdk-ses", version.ref = "aws-ses" }
+
+spring-cloud-gcp-starter-pubsub = { module = "com.google.cloud:spring-cloud-gcp-starter-pubsub" }
+therapi-runtime-javadoc-scribe = { module = "com.github.therapi:therapi-runtime-javadoc-scribe", version.ref = "javadoc-scribe" }
+jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
+loki-logback-appender = { module = "com.github.loki4j:loki-logback-appender", version.ref = "loki4j" }
+kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlin-logging" }
+
+reactor-test = { module = "io.projectreactor:reactor-test" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-framework-api = { module = "io.kotest:kotest-framework-api", version.ref = "kotest" }
+kotest-extensions-spring = { module = "io.kotest.extensions:kotest-extensions-spring", version.ref = "kotest-extension" }
+kotest-extensions-allure = { module = "io.kotest.extensions:kotest-extensions-allure", version.ref = "kotest-extension" }
+testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainers-mysql = { module = "org.testcontainers:mysql", version.ref = "testcontainers" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+kotlin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+springdoc-openapi = { id = "org.springdoc.openapi-gradle-plugin", version.ref = "springdoc-openapi-plugin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
