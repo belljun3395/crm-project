@@ -1,8 +1,9 @@
 package com.manage.crm.event.controller
 
 import com.manage.crm.config.SwaggerTag
-import com.manage.crm.event.application.GetCampaignAnalyticsUseCase
 import com.manage.crm.event.application.GetCampaignDashboardUseCase
+import com.manage.crm.event.application.GetCampaignFunnelAnalyticsUseCase
+import com.manage.crm.event.application.GetCampaignSegmentComparisonUseCase
 import com.manage.crm.event.application.GetCampaignSummaryUseCase
 import com.manage.crm.event.application.GetStreamStatusUseCase
 import com.manage.crm.event.application.PostCampaignUseCase
@@ -66,7 +67,8 @@ import java.time.format.DateTimeFormatter
 @RequestMapping(value = ["/api/v1/campaigns"])
 class CampaignDashboardController(
     private val getCampaignDashboardUseCase: GetCampaignDashboardUseCase,
-    private val getCampaignAnalyticsUseCase: GetCampaignAnalyticsUseCase,
+    private val getCampaignFunnelAnalyticsUseCase: GetCampaignFunnelAnalyticsUseCase,
+    private val getCampaignSegmentComparisonUseCase: GetCampaignSegmentComparisonUseCase,
     private val getCampaignSummaryUseCase: GetCampaignSummaryUseCase,
     private val getStreamStatusUseCase: GetStreamStatusUseCase,
     private val postCampaignUseCase: PostCampaignUseCase,
@@ -354,7 +356,7 @@ class CampaignDashboardController(
         endTime: LocalDateTime? = null
     ): ApiResponse<ApiResponse.SuccessBody<GetCampaignFunnelAnalyticsUseCaseOut>> {
         val parsedSteps = steps.split(",").map { it.trim() }.filter { it.isNotBlank() }
-        val result = getCampaignAnalyticsUseCase.getFunnel(
+        val result = getCampaignFunnelAnalyticsUseCase.execute(
             GetCampaignFunnelAnalyticsUseCaseIn(
                 campaignId = campaignId,
                 steps = parsedSteps,
@@ -392,7 +394,7 @@ class CampaignDashboardController(
             .mapNotNull { it.trim().toLongOrNull() }
             .distinct()
 
-        val result = getCampaignAnalyticsUseCase.compareSegments(
+        val result = getCampaignSegmentComparisonUseCase.execute(
             GetCampaignSegmentComparisonUseCaseIn(
                 campaignId = campaignId,
                 segmentIds = parsedSegmentIds,

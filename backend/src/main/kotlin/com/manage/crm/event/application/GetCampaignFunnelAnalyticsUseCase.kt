@@ -3,37 +3,28 @@ package com.manage.crm.event.application
 import com.manage.crm.event.application.dto.FunnelStepMetricDto
 import com.manage.crm.event.application.dto.GetCampaignFunnelAnalyticsUseCaseIn
 import com.manage.crm.event.application.dto.GetCampaignFunnelAnalyticsUseCaseOut
-import com.manage.crm.event.application.dto.GetCampaignSegmentComparisonUseCaseIn
-import com.manage.crm.event.application.dto.GetCampaignSegmentComparisonUseCaseOut
-import com.manage.crm.event.application.dto.SegmentComparisonMetricDto
 import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
-import com.manage.crm.segment.domain.repository.SegmentRepository
 import com.manage.crm.support.exception.NotFoundByIdException
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 import kotlin.math.roundToInt
 
-/**
- * Provides campaign analytics projections for funnel progression and segment comparison.
- */
-@Service
-class GetCampaignAnalyticsUseCase(
+@Component
+class GetCampaignFunnelAnalyticsUseCase(
     private val campaignRepository: CampaignRepository,
     private val campaignEventsRepository: CampaignEventsRepository,
-    private val eventRepository: EventRepository,
-    private val segmentRepository: SegmentRepository,
-    private val segmentTargetingService: SegmentTargetingService
+    private val eventRepository: EventRepository
 ) {
-    suspend fun getFunnel(useCaseIn: GetCampaignFunnelAnalyticsUseCaseIn): GetCampaignFunnelAnalyticsUseCaseOut {
-        val steps = useCaseIn.steps.map { it.trim() }.filter { it.isNotBlank() }
+    suspend fun execute(input: GetCampaignFunnelAnalyticsUseCaseIn): GetCampaignFunnelAnalyticsUseCaseOut {
+        val steps = input.steps.map { it.trim() }.filter { it.isNotBlank() }
         if (steps.size < 2) {
             throw IllegalArgumentException("At least two funnel steps are required")
         }
 
-        val events = findCampaignEvents(useCaseIn.campaignId, useCaseIn.startTime, useCaseIn.endTime)
+        val events = findCampaignEvents(input.campaignId, input.startTime, input.endTime)
         val highestReachedStepByUserId = events
             .groupBy { it.userId }
             .mapValues { (_, userEvents) ->
@@ -64,50 +55,8 @@ class GetCampaignAnalyticsUseCase(
         }
 
         return GetCampaignFunnelAnalyticsUseCaseOut(
-            campaignId = useCaseIn.campaignId,
+            campaignId = input.campaignId,
             stepMetrics = metrics
-        )
-    }
-
-    suspend fun compareSegments(useCaseIn: GetCampaignSegmentComparisonUseCaseIn): GetCampaignSegmentComparisonUseCaseOut {
-        val segmentIds = useCaseIn.segmentIds
-            .mapNotNull { id -> id.takeIf { it > 0 } }
-            .distinct()
-        if (segmentIds.isEmpty()) {
-            throw IllegalArgumentException("segmentIds is required")
-        }
-
-        val events = findCampaignEvents(useCaseIn.campaignId, useCaseIn.startTime, useCaseIn.endTime)
-            .let { baseEvents ->
-                val eventName = useCaseIn.eventName?.trim()?.takeIf { it.isNotBlank() }
-                if (eventName == null) {
-                    baseEvents
-                } else {
-                    baseEvents.filter { it.name == eventName }
-                }
-            }
-
-        val metrics = segmentIds.map { segmentId ->
-            val segmentName = segmentRepository.findById(segmentId)?.name
-            val targetUserIds = segmentTargetingService.resolveUserIds(segmentId, useCaseIn.campaignId).toSet()
-            val segmentEvents = events.filter { event -> targetUserIds.contains(event.userId) }
-            val eventUserCount = segmentEvents.map { it.userId }.toSet().size
-            val targetUserCount = targetUserIds.size
-
-            SegmentComparisonMetricDto(
-                segmentId = segmentId,
-                segmentName = segmentName,
-                targetUserCount = targetUserCount,
-                eventUserCount = eventUserCount,
-                eventCount = segmentEvents.size,
-                conversionRate = percent(eventUserCount, targetUserCount)
-            )
-        }.sortedByDescending { it.conversionRate }
-
-        return GetCampaignSegmentComparisonUseCaseOut(
-            campaignId = useCaseIn.campaignId,
-            eventName = useCaseIn.eventName?.trim()?.takeIf { it.isNotBlank() },
-            segmentMetrics = metrics
         )
     }
 
