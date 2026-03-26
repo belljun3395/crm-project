@@ -40,7 +40,7 @@ data class SendEmailInDto(
 }
 
 data class SendEmailOutDto(
-    val userId: Long,
+    val userId: Long?,
     val emailBody: String,
     val messageId: String,
     val destination: String,

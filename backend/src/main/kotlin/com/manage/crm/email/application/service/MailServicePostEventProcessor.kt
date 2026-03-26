@@ -24,15 +24,17 @@ class MailServicePostEventProcessor(
      * `EmailSentEvent`를 발행합니다.
      */
     fun sendPostEventProcess(outDto: SendEmailOutDto): SendEmailOutDto {
-        emailEventPublisher.publishEvent(
-            EmailSentEvent(
-                userId = outDto.userId,
-                emailBody = outDto.emailBody,
-                messageId = outDto.messageId,
-                destination = outDto.destination,
-                provider = outDto.provider
+        outDto.userId?.let { userId ->
+            emailEventPublisher.publishEvent(
+                EmailSentEvent(
+                    userId = userId,
+                    emailBody = outDto.emailBody,
+                    messageId = outDto.messageId,
+                    destination = outDto.destination,
+                    provider = outDto.provider
+                )
             )
-        )
+        }
         return outDto
     }
 }
