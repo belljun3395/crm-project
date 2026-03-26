@@ -7,7 +7,7 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate
 import org.springframework.stereotype.Service
 
 @Service
-class CampaignStreamRegistry(
+class CampaignStreamRegistryService(
     private val reactiveStringRedisTemplate: ReactiveRedisTemplate<String, String>
 ) {
     val log = KotlinLogging.logger { }

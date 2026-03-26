@@ -5,7 +5,6 @@ import com.manage.crm.event.domain.MetricType
 import com.manage.crm.event.domain.TimeWindowUnit
 import com.manage.crm.event.domain.repository.CampaignDashboardMetricsRepository
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
-import com.manage.crm.event.service.dto.CampaignDashboardSummary
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,12 +16,20 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
+data class CampaignDashboardSummary(
+    val campaignId: Long,
+    val totalEvents: Long,
+    val eventsLast24Hours: Long,
+    val eventsLast7Days: Long,
+    val lastUpdated: LocalDateTime
+)
+
 @Service
 class CampaignDashboardService(
     private val campaignDashboardMetricsRepository: CampaignDashboardMetricsRepository,
     private val campaignEventsRepository: CampaignEventsRepository,
     private val streamService: CampaignDashboardStreamService,
-    private val campaignStreamRegistry: CampaignStreamRegistry
+    private val campaignStreamRegistryService: CampaignStreamRegistryService
 ) {
     val log = KotlinLogging.logger { }
     private val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -33,7 +40,7 @@ class CampaignDashboardService(
     @Transactional
     suspend fun publishCampaignEvent(event: CampaignDashboardEvent) {
         streamService.publishEvent(event)
-        campaignStreamRegistry.registerCampaign(event.campaignId)
+        campaignStreamRegistryService.registerCampaign(event.campaignId)
 
         backgroundScope.launch {
             try {
@@ -45,64 +52,6 @@ class CampaignDashboardService(
                 log.error(e) { "Failed to trim stream for campaign: ${event.campaignId}" }
             }
         }
-    }
-
-    /**
-     * Updates dashboard metrics when a new event occurs
-     */
-    private suspend fun updateMetricsForEvent(event: CampaignDashboardEvent) {
-        val timeWindows = listOf(
-            TimeWindowUnit.MINUTE,
-            TimeWindowUnit.HOUR,
-            TimeWindowUnit.DAY,
-            TimeWindowUnit.WEEK,
-            TimeWindowUnit.MONTH
-        ).map { unit ->
-            unit to calculateTimeWindow(event.timestamp, unit)
-        }
-
-        timeWindows.forEach { (unit, window) ->
-            val start = window.first
-            val end = window.second
-            updateOrCreateMetric(
-                campaignId = event.campaignId,
-                metricType = MetricType.EVENT_COUNT,
-                timeWindowUnit = unit,
-                timeWindowStart = start,
-                timeWindowEnd = end,
-                incrementBy = 1
-            )
-
-            val totalUserCount = campaignEventsRepository.countAllByCampaignIdAndTimeRange(
-                campaignId = event.campaignId,
-                startTime = start,
-                endTime = end
-            )
-            val uniqueUserCount = campaignEventsRepository.countDistinctUsersByCampaignIdAndTimeRange(
-                campaignId = event.campaignId,
-                startTime = start,
-                endTime = end
-            )
-
-            upsertAbsoluteMetric(
-                campaignId = event.campaignId,
-                metricType = MetricType.TOTAL_USER_COUNT,
-                timeWindowUnit = unit,
-                timeWindowStart = start,
-                timeWindowEnd = end,
-                metricValue = totalUserCount
-            )
-            upsertAbsoluteMetric(
-                campaignId = event.campaignId,
-                metricType = MetricType.UNIQUE_USER_COUNT,
-                timeWindowUnit = unit,
-                timeWindowStart = start,
-                timeWindowEnd = end,
-                metricValue = uniqueUserCount
-            )
-        }
-
-        log.debug { "Updated metrics for campaign event: campaignId=${event.campaignId}, eventId=${event.eventId}" }
     }
 
     private suspend fun updateOrCreateMetric(
@@ -239,39 +188,6 @@ class CampaignDashboardService(
                     }
             }
         }
-    }
-
-    /**
-     * Aggregates metrics from database for a specific time period
-     * Useful for backfilling or recalculation
-     */
-    @Transactional
-    suspend fun aggregateMetricsForPeriod(
-        campaignId: Long,
-        startTime: LocalDateTime,
-        endTime: LocalDateTime,
-        timeWindowUnit: TimeWindowUnit
-    ): CampaignDashboardMetrics {
-        // Get events for the campaign in the specified time period from campaign_events table
-        val events = campaignEventsRepository.findAllByCampaignIdAndTimeRange(
-            campaignId = campaignId,
-            startTime = startTime,
-            endTime = endTime
-        )
-
-        val window = calculateTimeWindow(startTime, timeWindowUnit)
-        val eventCount = events.size.toLong()
-
-        val metric = CampaignDashboardMetrics.new(
-            campaignId = campaignId,
-            metricType = MetricType.EVENT_COUNT,
-            metricValue = eventCount,
-            timeWindowStart = window.first,
-            timeWindowEnd = window.second,
-            timeWindowUnit = timeWindowUnit
-        )
-
-        return campaignDashboardMetricsRepository.save(metric)
     }
 
     /**

@@ -1,5 +1,8 @@
-package com.manage.crm.event.service
+package com.manage.crm.event.consumer
 
+import com.manage.crm.event.service.CampaignDashboardService
+import com.manage.crm.event.service.CampaignDashboardStreamService
+import com.manage.crm.event.service.CampaignStreamRegistryService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import org.springframework.scheduling.annotation.Scheduled
@@ -7,7 +10,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class CampaignDashboardStreamConsumer(
-    private val campaignStreamRegistry: CampaignStreamRegistry,
+    private val campaignStreamRegistryService: CampaignStreamRegistryService,
     private val streamService: CampaignDashboardStreamService,
     private val campaignDashboardService: CampaignDashboardService
 ) {
@@ -15,7 +18,7 @@ class CampaignDashboardStreamConsumer(
 
     @Scheduled(fixedDelay = 60_000)
     fun processStreamEvents() = runBlocking {
-        val activeCampaigns = campaignStreamRegistry.getActiveCampaigns()
+        val activeCampaigns = campaignStreamRegistryService.getActiveCampaigns()
         if (activeCampaigns.isEmpty()) return@runBlocking
 
         activeCampaigns.forEach { campaignId ->
@@ -28,7 +31,7 @@ class CampaignDashboardStreamConsumer(
     }
 
     private suspend fun processEventsForCampaign(campaignId: Long) {
-        val lastProcessedId = campaignStreamRegistry.getLastProcessedId(campaignId)
+        val lastProcessedId = campaignStreamRegistryService.getLastProcessedId(campaignId)
         val events = streamService.readEventsBatch(campaignId, lastProcessedId)
 
         if (events.isEmpty()) return
@@ -36,7 +39,7 @@ class CampaignDashboardStreamConsumer(
         campaignDashboardService.updateMetricsForEvents(events)
 
         events.lastOrNull()?.streamId?.let { lastId ->
-            campaignStreamRegistry.updateLastProcessedId(campaignId, lastId)
+            campaignStreamRegistryService.updateLastProcessedId(campaignId, lastId)
         }
 
         log.info { "Processed ${events.size} events for campaign: $campaignId" }

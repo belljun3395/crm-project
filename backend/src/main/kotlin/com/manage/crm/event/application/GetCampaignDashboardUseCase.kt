@@ -5,7 +5,7 @@ import com.manage.crm.event.application.dto.GetCampaignDashboardUseCaseOut
 import com.manage.crm.event.application.dto.toDto
 import com.manage.crm.event.domain.CampaignDashboardMetrics
 import com.manage.crm.event.service.CampaignDashboardService
-import com.manage.crm.event.service.dto.CampaignDashboardSummary
+import com.manage.crm.event.service.CampaignDashboardSummary
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
