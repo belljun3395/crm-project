@@ -7,7 +7,6 @@ import com.manage.crm.action.application.ActionChannel
 import com.manage.crm.action.application.ActionDispatchIn
 import com.manage.crm.action.application.ActionDispatchService
 import com.manage.crm.action.application.ActionDispatchStatus
-import com.manage.crm.event.application.SegmentTargetingService
 import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
@@ -25,6 +24,7 @@ import com.manage.crm.journey.domain.repository.JourneySegmentCountStateReposito
 import com.manage.crm.journey.domain.repository.JourneySegmentUserStateRepository
 import com.manage.crm.journey.domain.repository.JourneyStepDeduplicationRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
+import com.manage.crm.segment.service.SegmentTargetingService
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey

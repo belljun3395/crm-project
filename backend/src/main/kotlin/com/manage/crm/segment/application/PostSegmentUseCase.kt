@@ -72,7 +72,7 @@ class PostSegmentUseCase(
             transactionSynchronizationTemplate.afterCommit(
                 blockDescription = "enqueue journey segment trigger after segment commit"
             ) {
-                journeyTriggerQueuePublisher.publishSegmentContextTrigger()
+                journeyTriggerQueuePublisher.publishSegmentContextTrigger(null)
             }
         }
 

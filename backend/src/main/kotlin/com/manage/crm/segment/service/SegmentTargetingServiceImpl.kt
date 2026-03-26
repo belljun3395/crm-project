@@ -1,4 +1,4 @@
-package com.manage.crm.event.application
+package com.manage.crm.segment.service
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -140,8 +140,8 @@ class SegmentTargetingServiceImpl(
             return false
         }
 
-        val operator = SegmentOperator.from(condition.operator)
-        val valueType = SegmentValueType.from(condition.valueType)
+        val operator = SegmentOperator.Companion.from(condition.operator)
+        val valueType = SegmentValueType.Companion.from(condition.valueType)
 
         return when (valueType) {
             SegmentValueType.STRING -> matchString(actualValue.toString(), operator, expectedValue)

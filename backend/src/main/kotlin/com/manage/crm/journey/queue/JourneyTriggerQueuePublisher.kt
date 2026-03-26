@@ -7,5 +7,5 @@ interface JourneyTriggerQueuePublisher {
 
     suspend fun publishEventTrigger(event: JourneyEventPayload)
 
-    suspend fun publishSegmentContextTrigger(changedUserIds: List<Long>? = null)
+    suspend fun publishSegmentContextTrigger(changedUserIds: List<Long>?)
 }

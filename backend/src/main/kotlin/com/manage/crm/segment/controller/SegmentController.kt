@@ -2,7 +2,6 @@ package com.manage.crm.segment.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.config.SwaggerTag
-import com.manage.crm.event.application.SegmentTargetingService
 import com.manage.crm.segment.application.BrowseSegmentUseCase
 import com.manage.crm.segment.application.DeleteSegmentUseCase
 import com.manage.crm.segment.application.GetSegmentUseCase
@@ -16,6 +15,7 @@ import com.manage.crm.segment.application.dto.SegmentDto
 import com.manage.crm.segment.controller.request.PostSegmentRequest
 import com.manage.crm.segment.controller.request.PutSegmentRequest
 import com.manage.crm.segment.exception.InvalidSegmentConditionException
+import com.manage.crm.segment.service.SegmentTargetingService
 import com.manage.crm.support.web.ApiResponse
 import com.manage.crm.support.web.ApiResponseGenerator
 import com.manage.crm.user.domain.repository.UserRepository

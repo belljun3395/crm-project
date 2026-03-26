@@ -16,7 +16,6 @@ import com.manage.crm.email.domain.vo.CampaignVariable
 import com.manage.crm.email.domain.vo.EmailProviderType
 import com.manage.crm.email.domain.vo.UserVariable
 import com.manage.crm.email.domain.vo.Variables
-import com.manage.crm.event.application.SegmentTargetingService
 import com.manage.crm.event.domain.Campaign
 import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.repository.CampaignRepository
@@ -25,6 +24,7 @@ import com.manage.crm.event.domain.vo.CampaignProperties
 import com.manage.crm.event.domain.vo.CampaignProperty
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.service.CampaignEventsService
+import com.manage.crm.segment.service.SegmentTargetingService
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.user.domain.User

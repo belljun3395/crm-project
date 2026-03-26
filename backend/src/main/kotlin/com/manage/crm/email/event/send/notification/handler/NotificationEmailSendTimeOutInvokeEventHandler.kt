@@ -12,8 +12,8 @@ import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.repository.ScheduledEventRepository
 import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
-import com.manage.crm.event.application.SegmentTargetingService
 import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
+import com.manage.crm.segment.service.SegmentTargetingService
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
 import org.springframework.beans.factory.annotation.Qualifier

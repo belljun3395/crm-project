@@ -9,6 +9,7 @@ import com.manage.crm.segment.domain.Segment
 import com.manage.crm.segment.domain.SegmentCondition
 import com.manage.crm.segment.domain.repository.SegmentConditionRepository
 import com.manage.crm.segment.domain.repository.SegmentRepository
+import com.manage.crm.segment.service.SegmentTargetingServiceImpl
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.UserAttributes
