@@ -14,6 +14,8 @@ import io.github.resilience4j.ratelimiter.RequestNotPermitted
 import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator
 import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator
 import io.netty.channel.ChannelOption
+import io.netty.handler.ssl.SslContextBuilder
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.beans.factory.annotation.Value
@@ -50,7 +52,9 @@ class WebClientWebhookClient(
     @Value("\${webhook.signing.enabled:false}")
     private val signingEnabled: Boolean,
     @Value("\${webhook.signing.secret:}")
-    private val signingSecret: String
+    private val signingSecret: String,
+    @Value("\${webhook.ssl.verify:true}")
+    private val sslVerify: Boolean
 ) : WebhookClient {
     private val log = KotlinLogging.logger {}
     private val circuitBreaker by lazy {
@@ -66,6 +70,19 @@ class WebClientWebhookClient(
                 HttpClient.create()
                     .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
                     .responseTimeout(Duration.ofSeconds(10))
+                    .let { client ->
+                        if (!sslVerify) {
+                            client.secure { spec ->
+                                spec.sslContext(
+                                    SslContextBuilder.forClient()
+                                        .trustManager(InsecureTrustManagerFactory.INSTANCE)
+                                        .build()
+                                )
+                            }
+                        } else {
+                            client
+                        }
+                    }
             )
         )
         .build()

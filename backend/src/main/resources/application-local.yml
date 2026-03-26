@@ -105,3 +105,14 @@ scheduler:
 
 mail:
     provider: mock
+
+webhook:
+    ssl:
+        verify: false
+
+resilience4j:
+    circuitbreaker:
+        instances:
+            webhookDelivery:
+                failure-rate-threshold: 100
+                wait-duration-in-open-state: 5s
