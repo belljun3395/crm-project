@@ -17,16 +17,19 @@ class CampaignDashboardServiceTest : BehaviorSpec({
     lateinit var campaignDashboardMetricsRepository: CampaignDashboardMetricsRepository
     lateinit var campaignEventsRepository: CampaignEventsRepository
     lateinit var streamService: CampaignDashboardStreamService
+    lateinit var campaignStreamRegistryService: CampaignStreamRegistryService
     lateinit var service: CampaignDashboardService
 
     beforeContainer {
         campaignDashboardMetricsRepository = mockk()
         campaignEventsRepository = mockk()
         streamService = mockk()
+        campaignStreamRegistryService = mockk<CampaignStreamRegistryService>()
         service = CampaignDashboardService(
             campaignDashboardMetricsRepository,
             campaignEventsRepository,
-            streamService
+            streamService,
+            campaignStreamRegistryService
         )
     }
 
