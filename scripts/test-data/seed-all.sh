@@ -14,6 +14,7 @@ scripts=(
   seed-users.sh
   seed-segments.sh
   seed-events.sh
+  seed-campaign-management.sh
   seed-emails.sh
   seed-webhooks.sh
   seed-actions.sh

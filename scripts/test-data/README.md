@@ -23,6 +23,8 @@
   - 문자열/이벤트/IN 조건 세그먼트 생성 + campaign scope 미리보기 케이스 포함
 - `seed-events.sh`: `/events`, `/events/campaign`, `/events` 검색, `/events/all`
   - 단건 이벤트, 캠페인 이벤트, 세그먼트 벌크 이벤트, 커스텀 property 이벤트 케이스 포함
+- `seed-campaign-management.sh`: `/campaigns` 목록/상세/생성/수정/삭제
+  - 캠페인 CRUD 전체 플로우(생성→목록/상세 확인→수정→삭제) 검증
 - `seed-emails.sh`: `/emails/templates`, `/emails/send/notifications`, `/emails/schedules/notifications/email`, `/emails/histories`
   - userIds 발송, campaign+segment 발송, 링크 불일치 검증 실패(예상 실패) 케이스 포함
 - `seed-webhooks.sh`: `/webhooks`, `/webhooks/{id}`, `/webhooks/{id}/deliveries`, `/webhooks/{id}/dead-letters`
@@ -37,6 +39,8 @@
   - 퍼널/세그먼트 API 조회 결과를 함께 출력해 시드 직후 데이터 유입 여부를 즉시 확인 가능
 - `pump-campaign-live-stream.sh`: `/events` (지정 캠페인으로 실시간 이벤트 지속 발생)
   - 대시보드 SSE 연결 상태에서 라이브 이벤트 패널을 채우기 위한 스트림 펌프 스크립트
+- `check-campaign-dashboard-stream.sh`: `/campaigns/{campaignId}/dashboard/stream` (SSE 연결 검증)
+  - SSE `connected`/`campaign-event` 수신 여부를 자동 점검하고 실패 시 출력 덤프 제공
 - `seed-audit-logs.sh`: `/audit-logs` (웹훅 생성/수정/삭제를 통해 감사 로그 생성)
   - actor 2명 기준으로 감사 로그 필터링 검증 가능 데이터 생성
 
@@ -54,10 +58,13 @@
 ```bash
 bash scripts/test-data/seed-users.sh
 bash scripts/test-data/seed-events.sh
+bash scripts/test-data/seed-campaign-management.sh
 bash scripts/test-data/seed-emails.sh
 bash scripts/test-data/seed-campaign-dashboard.sh
 # live stream demo (campaignId는 seed-campaign-dashboard 출력값 사용)
 bash scripts/test-data/pump-campaign-live-stream.sh <campaignId> 30 1
+# sse endpoint 검증
+bash scripts/test-data/check-campaign-dashboard-stream.sh <campaignId> 8 3 1
 ```
 
 ### 전체 일괄 실행
