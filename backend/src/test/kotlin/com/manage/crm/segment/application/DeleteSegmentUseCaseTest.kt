@@ -1,5 +1,6 @@
 package com.manage.crm.segment.application
 
+import com.manage.crm.segment.application.dto.DeleteSegmentUseCaseIn
 import com.manage.crm.segment.domain.Segment
 import com.manage.crm.segment.domain.repository.SegmentRepository
 import com.manage.crm.support.exception.NotFoundByIdException
@@ -33,7 +34,7 @@ class DeleteSegmentUseCaseTest : BehaviorSpec({
 
                 coEvery { segmentRepository.findById(segmentId) } returns segment
 
-                useCase.execute(segmentId)
+                useCase.execute(DeleteSegmentUseCaseIn(id = segmentId))
 
                 coVerify(exactly = 1) { segmentRepository.delete(segment) }
             }
@@ -45,7 +46,7 @@ class DeleteSegmentUseCaseTest : BehaviorSpec({
                 coEvery { segmentRepository.findById(segmentId) } returns null
 
                 shouldThrow<NotFoundByIdException> {
-                    useCase.execute(segmentId)
+                    useCase.execute(DeleteSegmentUseCaseIn(id = segmentId))
                 }
             }
         }

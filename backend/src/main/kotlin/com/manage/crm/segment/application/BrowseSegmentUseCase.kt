@@ -1,30 +1,31 @@
 package com.manage.crm.segment.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.NullNode
 import com.manage.crm.segment.application.dto.BrowseSegmentUseCaseIn
 import com.manage.crm.segment.application.dto.BrowseSegmentUseCaseOut
-import com.manage.crm.segment.application.dto.SegmentConditionDto
-import com.manage.crm.segment.application.dto.SegmentDto
+import com.manage.crm.segment.application.dto.toSegmentConditionDto
+import com.manage.crm.segment.application.dto.toSegmentDto
 import com.manage.crm.segment.domain.repository.SegmentConditionRepository
 import com.manage.crm.segment.domain.repository.SegmentRepository
 import com.manage.crm.support.out
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
-import org.springframework.stereotype.Service
-import java.time.format.DateTimeFormatter
+import org.springframework.stereotype.Component
 
 /**
- * Lists segments with their ordered condition set.
+ * UC-SEGMENT-002
+ * Lists segments with ordered conditions.
+ *
+ * Input: list limit.
+ * Success: returns segments sorted by createdAt desc with per-segment ordered conditions.
  */
-@Service
+@Component
 class BrowseSegmentUseCase(
     private val segmentRepository: SegmentRepository,
     private val segmentConditionRepository: SegmentConditionRepository,
     private val objectMapper: ObjectMapper
 ) {
     companion object {
-        private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
         private const val MIN_LIMIT = 1
         private const val MAX_LIMIT = 200
     }
@@ -44,26 +45,11 @@ class BrowseSegmentUseCase(
         }
 
         val segmentDtos = segments
-            .mapNotNull { segment ->
-                val segmentId = segment.id ?: return@mapNotNull null
+            .map { segment ->
+                val segmentId = segment.id ?: throw IllegalStateException("Segment id is null")
                 val conditions = conditionsBySegmentId[segmentId].orEmpty()
-                    .map { condition ->
-                        SegmentConditionDto(
-                            field = condition.fieldName,
-                            operator = condition.operator,
-                            valueType = condition.valueType,
-                            value = runCatching { objectMapper.readTree(condition.conditionValue) }.getOrElse { NullNode.instance },
-                            position = condition.position
-                        )
-                    }
-                SegmentDto(
-                    id = segmentId,
-                    name = segment.name,
-                    description = segment.description,
-                    active = segment.active,
-                    conditions = conditions,
-                    createdAt = segment.createdAt?.format(formatter)
-                )
+                    .map { condition -> condition.toSegmentConditionDto(objectMapper) }
+                segment.toSegmentDto(conditions)
             }
 
         return out {
