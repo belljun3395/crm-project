@@ -29,6 +29,14 @@ import kotlinx.coroutines.Dispatchers
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 
+/**
+ * UC-EMAIL-004
+ * Sends notification emails using template variables and optional campaign/segment targeting.
+ *
+ * Input: template id/version and optional campaign id, segment id, user ids.
+ * Success: sends emails to resolved recipients and returns success flag.
+ * Failure: throws when template/campaign constraints are invalid.
+ */
 @Service
 class SendNotificationEmailUseCase(
     private val emailTemplateRepository: EmailTemplateRepository,
