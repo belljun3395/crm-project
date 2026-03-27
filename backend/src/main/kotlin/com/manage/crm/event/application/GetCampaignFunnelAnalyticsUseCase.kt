@@ -3,9 +3,9 @@ package com.manage.crm.event.application
 import com.manage.crm.event.application.dto.FunnelStepMetricDto
 import com.manage.crm.event.application.dto.GetCampaignFunnelAnalyticsUseCaseIn
 import com.manage.crm.event.application.dto.GetCampaignFunnelAnalyticsUseCaseOut
-import com.manage.crm.event.util.toPercentage
 import com.manage.crm.event.domain.Event
 import com.manage.crm.event.service.CampaignEventsService
+import com.manage.crm.event.util.toPercentage
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 

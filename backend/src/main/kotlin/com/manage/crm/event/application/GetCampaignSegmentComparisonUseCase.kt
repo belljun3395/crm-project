@@ -3,8 +3,8 @@ package com.manage.crm.event.application
 import com.manage.crm.event.application.dto.GetCampaignSegmentComparisonUseCaseIn
 import com.manage.crm.event.application.dto.GetCampaignSegmentComparisonUseCaseOut
 import com.manage.crm.event.application.dto.SegmentComparisonMetricDto
-import com.manage.crm.event.util.toPercentage
 import com.manage.crm.event.service.CampaignEventsService
+import com.manage.crm.event.util.toPercentage
 import com.manage.crm.segment.domain.repository.SegmentRepository
 import com.manage.crm.segment.service.SegmentTargetingService
 import org.springframework.stereotype.Component
