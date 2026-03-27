@@ -111,7 +111,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
             coEvery { userRepository.findAllByIdIn(useCaseIn.userIds) } answers { userSubs(useCaseIn.userIds.size) }
 
-            coEvery { campaignEventsService.findAllEventsByCampaignIdAndUserId(any()) } returns emptyList()
+            coEvery { campaignEventsService.findAllEventsByCampaignId(any()) } returns emptyList()
 
             coEvery { campaignRepository.findById(any()) } returns null
 
@@ -187,7 +187,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
             coEvery { userRepository.findAllByIdIn(useCaseIn.userIds) } answers { userSubs(useCaseIn.userIds.size) }
 
-            coEvery { campaignEventsService.findAllEventsByCampaignIdAndUserId(any()) } returns emptyList()
+            coEvery { campaignEventsService.findAllEventsByCampaignId(any()) } returns emptyList()
 
             coEvery { campaignRepository.findById(any()) } returns null
 
@@ -261,7 +261,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                 emptyList()
             }
 
-            coEvery { campaignEventsService.findAllEventsByCampaignIdAndUserId(any()) } returns emptyList()
+            coEvery { campaignEventsService.findAllEventsByCampaignId(any()) } returns emptyList()
 
             coEvery { campaignRepository.findById(any()) } returns null
 
@@ -337,7 +337,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
 
             coEvery { userRepository.findAllByIdIn(useCaseIn.userIds) } answers { userSubs(useCaseIn.userIds.size) }
 
-            coEvery { campaignEventsService.findAllEventsByCampaignIdAndUserId(any()) } returns emptyList()
+            coEvery { campaignEventsService.findAllEventsByCampaignId(any()) } returns emptyList()
 
             coEvery { campaignRepository.findById(any()) } returns null
 
@@ -532,7 +532,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                     createdAt = LocalDateTime.now()
                 )
             )
-            coEvery { campaignEventsService.findAllEventsByCampaignIdAndUserId(useCaseIn.campaignId!!) } returns mockCampaignEvents
+            coEvery { campaignEventsService.findAllEventsByCampaignId(useCaseIn.campaignId!!) } returns mockCampaignEvents
 
             coEvery { emailContentService.genUserEmailContent(any(), any(), any()) } answers {
                 VariablesContent(

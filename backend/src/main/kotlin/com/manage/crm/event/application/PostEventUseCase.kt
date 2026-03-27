@@ -12,8 +12,8 @@ import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
-import com.manage.crm.event.service.CampaignDashboardEvent
-import com.manage.crm.event.service.CampaignDashboardService
+import com.manage.crm.event.stream.CampaignDashboardEvent
+import com.manage.crm.event.stream.CampaignEventPublisher
 import com.manage.crm.journey.queue.JourneyEventPayload
 import com.manage.crm.journey.queue.JourneyEventPropertyPayload
 import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
@@ -22,7 +22,7 @@ import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.repository.UserRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
 enum class SaveEventMessage(val message: String) {
@@ -41,7 +41,7 @@ enum class SaveEventMessage(val message: String) {
  * Failure: throws when user is not found by externalId.
  * Side effects: may create campaign-event relation and publish dashboard stream event.
  */
-@Service
+@Component
 class PostEventUseCase(
     private val eventRepository: EventRepository,
     private val campaignRepository: CampaignRepository,
@@ -49,8 +49,8 @@ class PostEventUseCase(
     private val campaignCacheManager: CampaignCacheManager,
     private val userRepository: UserRepository,
     private val segmentTargetingService: SegmentTargetingService,
-    private val campaignDashboardService: CampaignDashboardService,
-    private val journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher
+    private val journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher,
+    private val campaignEventPublisher: CampaignEventPublisher
 ) {
     val log = KotlinLogging.logger {}
 
@@ -69,6 +69,8 @@ class PostEventUseCase(
             ?: throw NotFoundByException("User", "segmentId", segmentId ?: -1L)
         val firstSavedEventId = requireNotNull(firstSavedEvent.id)
 
+        // TODO(transaction-consistency): event persistence and journey trigger publication are
+        // not atomically coordinated. Consider outbox-based delivery for rollback-safe behavior.
         triggerJourneyAutomation(savedEvents)
 
         val campaign = try {
@@ -197,7 +199,9 @@ class PostEventUseCase(
                 eventName = savedEvent.name,
                 timestamp = savedEvent.createdAt ?: LocalDateTime.now()
             )
-            campaignDashboardService.publishCampaignEvent(dashboardEvent)
+            // TODO(transaction-consistency): relation save and stream publication are not atomic.
+            // Consider afterCommit publication or outbox relay.
+            campaignEventPublisher.publishCampaignEvent(dashboardEvent)
             log.debug { "Published campaign event to dashboard stream: campaignId=${campaign.id}, eventId=${savedEvent.id}" }
         } catch (e: Exception) {
             log.error(e) { "Failed to publish event to dashboard stream: campaignId=${campaign.id}, eventId=${savedEvent.id}" }

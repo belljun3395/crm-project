@@ -4,19 +4,21 @@ import com.manage.crm.event.application.dto.FunnelStepMetricDto
 import com.manage.crm.event.application.dto.GetCampaignFunnelAnalyticsUseCaseIn
 import com.manage.crm.event.application.dto.GetCampaignFunnelAnalyticsUseCaseOut
 import com.manage.crm.event.domain.Event
-import com.manage.crm.event.domain.repository.CampaignEventsRepository
-import com.manage.crm.event.domain.repository.CampaignRepository
-import com.manage.crm.event.domain.repository.EventRepository
-import com.manage.crm.support.exception.NotFoundByIdException
+import com.manage.crm.event.service.CampaignEventsService
+import com.manage.crm.event.util.toPercentage
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
-import kotlin.math.roundToInt
 
+/**
+ * UC-CAMPAIGN-009
+ * Calculates campaign funnel analytics for ordered event steps.
+ *
+ * Input: campaign id, funnel steps, optional time range.
+ * Success: returns per-step event counts and conversion.
+ */
 @Component
 class GetCampaignFunnelAnalyticsUseCase(
-    private val campaignRepository: CampaignRepository,
-    private val campaignEventsRepository: CampaignEventsRepository,
-    private val eventRepository: EventRepository
+    private val campaignEventsService: CampaignEventsService
 ) {
     suspend fun execute(input: GetCampaignFunnelAnalyticsUseCaseIn): GetCampaignFunnelAnalyticsUseCaseOut {
         val steps = input.steps.map { it.trim() }.filter { it.isNotBlank() }
@@ -24,7 +26,7 @@ class GetCampaignFunnelAnalyticsUseCase(
             throw IllegalArgumentException("At least two funnel steps are required")
         }
 
-        val events = findCampaignEvents(input.campaignId, input.startTime, input.endTime)
+        val events = campaignEventsService.findCampaignEvents(input.campaignId, input.startTime, input.endTime)
         val highestReachedStepByUserId = events
             .groupBy { it.userId }
             .mapValues { (_, userEvents) ->
@@ -41,7 +43,7 @@ class GetCampaignFunnelAnalyticsUseCase(
             val conversionFromPrevious = if (index == 0) {
                 if (qualifiedUserCount > 0) 100.0 else 0.0
             } else {
-                percent(qualifiedUserCount, previousQualifiedUserCount)
+                toPercentage(qualifiedUserCount, previousQualifiedUserCount)
             }
 
             previousQualifiedUserCount = qualifiedUserCount
@@ -58,41 +60,6 @@ class GetCampaignFunnelAnalyticsUseCase(
             campaignId = input.campaignId,
             stepMetrics = metrics
         )
-    }
-
-    private suspend fun findCampaignEvents(
-        campaignId: Long,
-        startTime: LocalDateTime?,
-        endTime: LocalDateTime?
-    ): List<Event> {
-        campaignRepository.findById(campaignId) ?: throw NotFoundByIdException("Campaign", campaignId)
-
-        val campaignEventRows = when {
-            startTime != null && endTime != null -> campaignEventsRepository.findAllByCampaignIdAndTimeRange(campaignId, startTime, endTime)
-            else -> campaignEventsRepository.findAllByCampaignId(campaignId)
-        }
-        if (campaignEventRows.isEmpty()) {
-            return emptyList()
-        }
-
-        val eventIds = campaignEventRows.map { it.eventId }.distinct()
-        val events = eventRepository.findAllByIdIn(eventIds)
-        return events.filter { event ->
-            val createdAt = event.createdAt
-            if ((startTime != null || endTime != null) && createdAt == null) {
-                return@filter false
-            }
-            val startInclusive = startTime?.let { createdAt == null || createdAt >= it } ?: true
-            val endExclusive = endTime?.let { createdAt == null || createdAt < it } ?: true
-            startInclusive && endExclusive
-        }
-    }
-
-    private fun percent(numerator: Int, denominator: Int): Double {
-        if (denominator <= 0) {
-            return 0.0
-        }
-        return ((numerator.toDouble() / denominator.toDouble()) * 10000.0).roundToInt() / 100.0
     }
 
     private fun calculateHighestReachedStepIndex(events: List<Event>, steps: List<String>): Int {

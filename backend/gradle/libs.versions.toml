@@ -22,6 +22,7 @@ mockito-kotlin = "5.4.0"
 mockk = "1.13.9"
 kotest = "5.8.0"
 kotest-extension = "1.3.0"
+konsist = "0.17.3"
 coroutine-test = "1.8.0"
 testcontainers = "1.19.8"
 kotlin-logging = "7.0.0"
@@ -96,6 +97,7 @@ kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.
 kotest-framework-api = { module = "io.kotest:kotest-framework-api", version.ref = "kotest" }
 kotest-extensions-spring = { module = "io.kotest.extensions:kotest-extensions-spring", version.ref = "kotest-extension" }
 kotest-extensions-allure = { module = "io.kotest.extensions:kotest-extensions-allure", version.ref = "kotest-extension" }
+konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
 testcontainers-mysql = { module = "org.testcontainers:mysql", version.ref = "testcontainers" }

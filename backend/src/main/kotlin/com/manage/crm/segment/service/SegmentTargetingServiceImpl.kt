@@ -44,8 +44,7 @@ class SegmentTargetingServiceImpl(
         val requiresEventCondition = conditions.any { it.fieldName.startsWith("event.") }
 
         val (users, eventsByUserId) = if (campaignId != null) {
-            val campaignEventIds = campaignEventsRepository.findAllByCampaignId(campaignId)
-                .map { it.eventId }
+            val campaignEventIds = campaignEventsRepository.findEventIdsByCampaignId(campaignId)
                 .distinct()
             if (campaignEventIds.isEmpty()) {
                 return emptyList()

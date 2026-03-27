@@ -29,6 +29,14 @@ import kotlinx.coroutines.Dispatchers
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 
+/**
+ * UC-EMAIL-004
+ * Sends notification emails using template variables and optional campaign/segment targeting.
+ *
+ * Input: template id/version and optional campaign id, segment id, user ids.
+ * Success: sends emails to resolved recipients and returns success flag.
+ * Failure: throws when template/campaign constraints are invalid.
+ */
 @Service
 class SendNotificationEmailUseCase(
     private val emailTemplateRepository: EmailTemplateRepository,
@@ -143,7 +151,7 @@ class SendNotificationEmailUseCase(
         return when {
             campaignId != null && !userIds.isEmpty() -> {
                 val allUserIdsInCampaign =
-                    campaignEventsService.findAllEventsByCampaignIdAndUserId(campaignId).map { it.userId }.toSet()
+                    campaignEventsService.findAllEventsByCampaignId(campaignId).map { it.userId }.toSet()
                 userIds.filter { allUserIdsInCampaign.contains(it) }
                     .let { filteredUserIds ->
                         userRepository.findAllByIdIn(filteredUserIds)
@@ -158,7 +166,7 @@ class SendNotificationEmailUseCase(
 
             campaignId != null && userIds.isEmpty() -> {
                 val allUserIdsInCampaign =
-                    campaignEventsService.findAllEventsByCampaignIdAndUserId(campaignId).map { it.userId }.toSet()
+                    campaignEventsService.findAllEventsByCampaignId(campaignId).map { it.userId }.toSet()
                 userRepository.findAllByIdIn(allUserIdsInCampaign.toList())
                     .filter {
                         objectMapper.readValue(
