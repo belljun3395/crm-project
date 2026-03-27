@@ -12,7 +12,7 @@ import java.time.Duration
  * Input: campaign id and optional last-event id for resume.
  * Success: returns campaign event stream.
  */
-@Service
+@Component
 class StreamCampaignDashboardUseCase(
     private val campaignDashboardStreamManager: CampaignDashboardStreamManager
 ) {

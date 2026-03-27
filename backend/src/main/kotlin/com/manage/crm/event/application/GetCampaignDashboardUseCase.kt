@@ -10,17 +10,6 @@ import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
-<<<<<<< HEAD
-=======
-data class CampaignDashboardSummary(
-    val campaignId: Long,
-    val totalEvents: Long,
-    val eventsLast24Hours: Long,
-    val eventsLast7Days: Long,
-    val lastUpdated: LocalDateTime
-)
-
->>>>>>> 0f97291 (refactor(event): enforce usecase boundaries and module conventions)
 /**
  * UC-CAMPAIGN-007
  * Reads campaign dashboard metrics and summary.
@@ -61,7 +50,6 @@ class GetCampaignDashboardUseCase(
             campaignDashboardMetricsRepository.findAllByCampaignIdOrderByTimeWindowStartDesc(input.campaignId).toList()
         }
 
-<<<<<<< HEAD
     private suspend fun getSummary(campaignId: Long) =
         LocalDateTime.now().let { now ->
             campaignDashboardMetricsRepository
@@ -72,25 +60,4 @@ class GetCampaignDashboardUseCase(
                 )
                 .toDashboardSummaryDto(campaignId = campaignId, lastUpdated = now)
         }
-=======
-    private suspend fun getSummary(input: GetCampaignDashboardUseCaseIn): CampaignDashboardSummary {
-        val now = LocalDateTime.now()
-        val last24Hours = now.minusHours(24)
-        val last7Days = now.minusDays(7)
-
-        val summaryMetrics = campaignDashboardMetricsRepository.getCampaignSummaryMetrics(
-            campaignId = input.campaignId,
-            last24Hours = last24Hours,
-            last7Days = last7Days
-        )
-
-        return CampaignDashboardSummary(
-            campaignId = input.campaignId,
-            totalEvents = summaryMetrics.totalEvents ?: 0L,
-            eventsLast24Hours = summaryMetrics.eventsLast24Hours ?: 0L,
-            eventsLast7Days = summaryMetrics.eventsLast7Days ?: 0L,
-            lastUpdated = now
-        )
-    }
->>>>>>> 0f97291 (refactor(event): enforce usecase boundaries and module conventions)
 }

@@ -32,7 +32,7 @@ data class UpdateCampaignUseCaseIn(
     val campaignId: Long,
     val name: String,
     val properties: List<CampaignPropertyUseCaseDto>,
-    val segmentIds: List<Long> = emptyList()
+    val segmentIds: List<Long>? = null
 )
 
 data class UpdateCampaignUseCaseOut(

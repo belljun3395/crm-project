@@ -41,7 +41,7 @@ enum class SaveEventMessage(val message: String) {
  * Failure: throws when user is not found by externalId.
  * Side effects: may create campaign-event relation and publish dashboard stream event.
  */
-@Service
+@Component
 class PostEventUseCase(
     private val eventRepository: EventRepository,
     private val campaignRepository: CampaignRepository,

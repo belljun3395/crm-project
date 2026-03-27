@@ -5,7 +5,7 @@ import com.manage.crm.event.application.dto.ListCampaignsUseCaseIn
 import com.manage.crm.event.application.dto.ListCampaignsUseCaseOut
 import com.manage.crm.event.domain.repository.CampaignRepository
 import kotlinx.coroutines.flow.toList
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 
 /**
  * UC-CAMPAIGN-002
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service
  * Input: max item limit.
  * Success: returns campaign ids, names, and created timestamps.
  */
-@Service
+@Component
 class ListCampaignsUseCase(
     private val campaignRepository: CampaignRepository
 ) {

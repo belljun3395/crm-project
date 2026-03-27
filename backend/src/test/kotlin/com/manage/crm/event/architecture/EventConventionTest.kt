@@ -36,8 +36,9 @@ class EventConventionTest : BehaviorSpec({
         }
 
         `when`("checking use case shape") {
-            val useCases = scanAnnotatedClasses("com.manage.crm.event.application", Service::class.java) +
-                scanAnnotatedClasses("com.manage.crm.event.application", Component::class.java)
+            val useCases = scanAnnotatedClasses("com.manage.crm.event.application", Component::class.java)
+            val serviceAnnotatedApplicationBeans =
+                scanAnnotatedClasses("com.manage.crm.event.application", Service::class.java)
 
             then("all use case classes provide execute entrypoint") {
                 useCases
