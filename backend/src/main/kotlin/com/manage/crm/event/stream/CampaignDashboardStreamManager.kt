@@ -79,7 +79,7 @@ class CampaignDashboardStreamManager(
      * Opens a reactive stream reader for campaign events.
      *
      * Responsibility:
-     * 1. Start from latest offset when no cursor is provided.
+     * 1. Start from stream beginning when no cursor is provided.
      * 2. Start from explicit cursor when reconnecting.
      * 3. Keep polling Redis Stream with short blocking reads for live updates.
      * 4. Complete when requested duration expires or client disconnects.
@@ -91,7 +91,7 @@ class CampaignDashboardStreamManager(
     ): Flux<CampaignDashboardEvent> {
         val streamKey = getStreamKey(campaignId)
         val startOffset = if (lastEventId.isNullOrBlank()) {
-            ReadOffset.latest()
+            ReadOffset.from("0-0")
         } else {
             ReadOffset.from(lastEventId)
         }
