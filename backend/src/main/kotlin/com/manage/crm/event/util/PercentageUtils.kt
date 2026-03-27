@@ -1,4 +1,4 @@
-package com.manage.crm.event.application.util
+package com.manage.crm.event.util
 
 import kotlin.math.roundToInt
 
