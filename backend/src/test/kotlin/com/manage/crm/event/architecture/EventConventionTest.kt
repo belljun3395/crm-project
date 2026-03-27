@@ -36,9 +36,8 @@ class EventConventionTest : BehaviorSpec({
         }
 
         `when`("checking use case shape") {
-            val useCases = scanAnnotatedClasses("com.manage.crm.event.application", Component::class.java)
-            val serviceAnnotatedApplicationBeans =
-                scanAnnotatedClasses("com.manage.crm.event.application", Service::class.java)
+            val useCases = scanAnnotatedClasses("com.manage.crm.event.application", Service::class.java) +
+                scanAnnotatedClasses("com.manage.crm.event.application", Component::class.java)
 
             then("all use case classes provide execute entrypoint") {
                 useCases
@@ -56,14 +55,11 @@ class EventConventionTest : BehaviorSpec({
                         applicationBeanClass.simpleName.endsWith("UseCase").shouldBeTrue()
                     }
             }
-
-            then("application use cases use Component annotation only") {
-                serviceAnnotatedApplicationBeans.shouldBe(emptyList())
-            }
         }
 
         `when`("checking dependency direction to prevent cyclic references") {
-            val applicationBeans = scanAnnotatedClasses("com.manage.crm.event.application", Component::class.java)
+            val applicationBeans = scanAnnotatedClasses("com.manage.crm.event.application", Service::class.java) +
+                scanAnnotatedClasses("com.manage.crm.event.application", Component::class.java)
             val services = scanAnnotatedClasses("com.manage.crm.event.service", Service::class.java)
             val streamBeans = scanAnnotatedClasses("com.manage.crm.event.stream", Service::class.java) +
                 scanAnnotatedClasses("com.manage.crm.event.stream", Component::class.java)

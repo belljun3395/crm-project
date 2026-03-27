@@ -144,7 +144,7 @@ class CampaignDashboardController(
                 properties = request.properties.map {
                     CampaignPropertyUseCaseDto(key = it.key, value = it.value)
                 },
-                segmentIds = request.segmentIds
+                segmentIds = request.segmentIds ?: emptyList()
             )
         )
 

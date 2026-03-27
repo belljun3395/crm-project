@@ -8,7 +8,7 @@ import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
 import com.manage.crm.event.stream.CampaignDashboardStreamManager
 import com.manage.crm.event.stream.CampaignStreamRegistryManager
 import com.manage.crm.support.exception.NotFoundByIdException
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional
  * Success: campaign and related mappings are removed.
  * Failure: throws when campaign does not exist.
  */
-@Component
+@Service
 class DeleteCampaignUseCase(
     private val campaignRepository: CampaignRepository,
     private val campaignSegmentsRepository: CampaignSegmentsRepository,

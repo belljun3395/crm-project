@@ -7,9 +7,9 @@ import org.springframework.data.relational.core.mapping.Column
  */
 data class CampaignSummaryMetricsProjection(
     @Column("total_events")
-    val totalEvents: Long,
+    val totalEvents: Long?,
     @Column("events_last_24_hours")
-    val eventsLast24Hours: Long,
+    val eventsLast24Hours: Long?,
     @Column("events_last_7_days")
-    val eventsLast7Days: Long
+    val eventsLast7Days: Long?
 )

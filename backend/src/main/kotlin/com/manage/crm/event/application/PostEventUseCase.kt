@@ -22,7 +22,7 @@ import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.repository.UserRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
 enum class SaveEventMessage(val message: String) {
@@ -41,7 +41,7 @@ enum class SaveEventMessage(val message: String) {
  * Failure: throws when user is not found by externalId.
  * Side effects: may create campaign-event relation and publish dashboard stream event.
  */
-@Component
+@Service
 class PostEventUseCase(
     private val eventRepository: EventRepository,
     private val campaignRepository: CampaignRepository,

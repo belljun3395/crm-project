@@ -15,7 +15,7 @@ import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
 import kotlinx.coroutines.Dispatchers
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional
  * Success: returns updated campaign detail.
  * Failure: throws when campaign/segment is missing or name is duplicated.
  */
-@Component
+@Service
 class UpdateCampaignUseCase(
     private val campaignRepository: CampaignRepository,
     private val campaignSegmentsRepository: CampaignSegmentsRepository,
@@ -42,8 +42,8 @@ class UpdateCampaignUseCase(
         val normalizedName = input.name.trim()
         ensureNameIsUnique(normalizedName, input.campaignId)
 
-        val requestedSegmentIds = input.segmentIds?.distinct()
-        requestedSegmentIds?.let { ensureSegmentsExist(it) }
+        val requestedSegmentIds = input.segmentIds.distinct()
+        ensureSegmentsExist(requestedSegmentIds)
 
         val previousName = campaign.name
         campaign.name = normalizedName
@@ -52,14 +52,13 @@ class UpdateCampaignUseCase(
         )
 
         val updatedCampaign = campaignRepository.save(campaign)
-        requestedSegmentIds?.let { replaceCampaignSegments(input.campaignId, it) }
+        replaceCampaignSegments(input.campaignId, requestedSegmentIds)
 
         transactionSynchronizationTemplate.afterCommit(Dispatchers.IO, "refresh campaign cache after update") {
             refreshCampaignCache(updatedCampaign.id ?: input.campaignId, previousName, updatedCampaign)
         }
 
         val resultSegmentIds = requestedSegmentIds
-            ?: campaignSegmentsRepository.findAllByCampaignId(input.campaignId).map { it.segmentId }
 
         return UpdateCampaignUseCaseOut(
             id = updatedCampaign.id ?: input.campaignId,

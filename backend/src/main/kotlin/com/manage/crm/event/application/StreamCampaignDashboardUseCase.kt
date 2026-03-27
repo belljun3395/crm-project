@@ -2,7 +2,7 @@ package com.manage.crm.event.application
 
 import com.manage.crm.event.application.dto.StreamCampaignDashboardUseCaseIn
 import com.manage.crm.event.stream.CampaignDashboardStreamManager
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import java.time.Duration
 
 /**
@@ -12,7 +12,7 @@ import java.time.Duration
  * Input: campaign id and optional last-event id for resume.
  * Success: returns campaign event stream.
  */
-@Component
+@Service
 class StreamCampaignDashboardUseCase(
     private val campaignDashboardStreamManager: CampaignDashboardStreamManager
 ) {

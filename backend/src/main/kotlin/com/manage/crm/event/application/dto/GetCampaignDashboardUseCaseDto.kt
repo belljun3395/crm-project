@@ -55,8 +55,8 @@ fun CampaignSummaryMetricsProjection.toDashboardSummaryDto(
     lastUpdated: LocalDateTime
 ) = DashboardSummaryDto(
     campaignId = campaignId,
-    totalEvents = this.totalEvents,
-    eventsLast24Hours = this.eventsLast24Hours,
-    eventsLast7Days = this.eventsLast7Days,
+    totalEvents = this.totalEvents ?: 0L,
+    eventsLast24Hours = this.eventsLast24Hours ?: 0L,
+    eventsLast7Days = this.eventsLast7Days ?: 0L,
     lastUpdated = lastUpdated
 )
