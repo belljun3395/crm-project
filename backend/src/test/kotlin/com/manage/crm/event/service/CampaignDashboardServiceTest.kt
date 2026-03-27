@@ -1,7 +1,5 @@
 package com.manage.crm.event.service
 
-import com.manage.crm.event.domain.MetricType
-import com.manage.crm.event.domain.TimeWindowUnit
 import com.manage.crm.event.domain.repository.CampaignDashboardMetricsRepository
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.CampaignSummaryMetricsProjection
@@ -17,14 +15,14 @@ class CampaignDashboardServiceTest : BehaviorSpec({
     lateinit var campaignDashboardMetricsRepository: CampaignDashboardMetricsRepository
     lateinit var campaignEventsRepository: CampaignEventsRepository
     lateinit var streamService: CampaignDashboardStreamService
-    lateinit var campaignStreamRegistryService: CampaignStreamRegistryService
+    lateinit var campaignStreamRegistryService: com.manage.crm.event.service.CampaignStreamRegistryService
     lateinit var service: CampaignDashboardService
 
     beforeContainer {
         campaignDashboardMetricsRepository = mockk()
         campaignEventsRepository = mockk()
         streamService = mockk()
-        campaignStreamRegistryService = mockk<CampaignStreamRegistryService>()
+        campaignStreamRegistryService = mockk<com.manage.crm.event.service.CampaignStreamRegistryService>()
         service = CampaignDashboardService(
             campaignDashboardMetricsRepository,
             campaignEventsRepository,
@@ -44,34 +42,9 @@ class CampaignDashboardServiceTest : BehaviorSpec({
             )
 
             coEvery { streamService.publishEvent(any()) } returns Unit
+            coEvery { campaignStreamRegistryService.registerCampaign(any()) } returns Unit
             coEvery { streamService.getStreamLength(any()) } returns 50L
             coEvery { streamService.trimStream(any(), any()) } returns Unit
-            coEvery {
-                campaignEventsRepository.countAllByCampaignIdAndTimeRange(any(), any(), any())
-            } returns 1L
-            coEvery {
-                campaignEventsRepository.countDistinctUsersByCampaignIdAndTimeRange(any(), any(), any())
-            } returns 1L
-            coEvery {
-                campaignDashboardMetricsRepository.upsertMetric(
-                    any(),
-                    any(),
-                    any(),
-                    any(),
-                    any(),
-                    any()
-                )
-            } returns 1
-            coEvery {
-                campaignDashboardMetricsRepository.upsertMetricAbsolute(
-                    any(),
-                    any(),
-                    any(),
-                    any(),
-                    any(),
-                    any()
-                )
-            } returns 1
 
             service.publishCampaignEvent(event)
 
@@ -79,47 +52,8 @@ class CampaignDashboardServiceTest : BehaviorSpec({
                 coVerify(exactly = 1) { streamService.publishEvent(event) }
             }
 
-            then("should upsert metrics for each time window unit") {
-                val expectedTimeUnits = listOf(
-                    TimeWindowUnit.MINUTE,
-                    TimeWindowUnit.HOUR,
-                    TimeWindowUnit.DAY,
-                    TimeWindowUnit.WEEK,
-                    TimeWindowUnit.MONTH
-                )
-
-                expectedTimeUnits.forEach { unit ->
-                    coVerify(exactly = 1) {
-                        campaignDashboardMetricsRepository.upsertMetric(
-                            campaignId = 1L,
-                            metricType = MetricType.EVENT_COUNT,
-                            metricValue = 1L,
-                            timeWindowStart = any(),
-                            timeWindowEnd = any(),
-                            timeWindowUnit = unit
-                        )
-                    }
-                    coVerify(exactly = 1) {
-                        campaignDashboardMetricsRepository.upsertMetricAbsolute(
-                            campaignId = 1L,
-                            metricType = MetricType.TOTAL_USER_COUNT,
-                            metricValue = 1L,
-                            timeWindowStart = any(),
-                            timeWindowEnd = any(),
-                            timeWindowUnit = unit
-                        )
-                    }
-                    coVerify(exactly = 1) {
-                        campaignDashboardMetricsRepository.upsertMetricAbsolute(
-                            campaignId = 1L,
-                            metricType = MetricType.UNIQUE_USER_COUNT,
-                            metricValue = 1L,
-                            timeWindowStart = any(),
-                            timeWindowEnd = any(),
-                            timeWindowUnit = unit
-                        )
-                    }
-                }
+            then("should register campaign for stream consumption") {
+                coVerify(exactly = 1) { campaignStreamRegistryService.registerCampaign(1L) }
             }
         }
 
