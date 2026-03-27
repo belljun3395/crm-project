@@ -996,9 +996,10 @@
             "name": "where",
             "in": "query",
             "description": "\n검색 조건을 설정합니다.\n형식: key\u0026value(\u0026key\u0026value)\u0026operation\u0026joinOperation,...\n- key(필수): 검색할 이벤트의 속성 키\n- value(필수): 검색할 이벤트의 속성 값\n- operation(필수): \u003d, !\u003d, \u003e, \u003e\u003d, \u003c, \u003c\u003d, like, between\n    - between: 동일한 key로 두 개의 value를 입력\n- joinOperation(필수): and, or, end(마지막)\nex) key1\u0026value1\u0026operation\u0026joinOperation,key2\u0026value2\u0026operation\u0026joinOperation...\n            ",
-            "required": true,
+            "required": false,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "default": ""
             }
           }
         ],
