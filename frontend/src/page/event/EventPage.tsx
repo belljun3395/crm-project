@@ -4,11 +4,51 @@ import { useToggle } from 'common/hook';
 import { useEvents } from 'shared/hook';
 import type { EventFormData } from 'shared/type';
 
+type Operator = '=' | '!=' | '>' | '>=' | '<' | '<=' | 'like' | 'between';
+type JoinOp = 'and' | 'or';
+
+interface WhereCondition {
+  key: string;
+  operator: Operator;
+  value: string;
+  value2: string; // BETWEEN 전용
+  joinOperation: JoinOp; // 마지막 조건 제외한 연결 연산자
+}
+
+const OPERATORS: { label: string; value: Operator }[] = [
+  { label: '=', value: '=' },
+  { label: '≠', value: '!=' },
+  { label: '>', value: '>' },
+  { label: '≥', value: '>=' },
+  { label: '<', value: '<' },
+  { label: '≤', value: '<=' },
+  { label: 'LIKE', value: 'like' },
+  { label: 'BETWEEN', value: 'between' },
+];
+
+function buildWhereString(conditions: WhereCondition[]): string {
+  const filled = conditions.filter(c => c.key.trim() && c.value.trim());
+  if (filled.length === 0) return '';
+  return filled
+    .map((c, i) => {
+      const join = i < filled.length - 1 ? c.joinOperation : 'end';
+      if (c.operator === 'between') {
+        return `${c.key}&${c.value}&${c.key}&${c.value2}&between&${join}`;
+      }
+      return `${c.key}&${c.value}&${c.operator}&${join}`;
+    })
+    .join(',');
+}
+
+function emptyCondition(): WhereCondition {
+  return { key: '', operator: '=', value: '', value2: '', joinOperation: 'and' };
+}
+
 export const EventPage: React.FC = () => {
   const { events, loading, error, createEvent, browseAllEvents, searchEvents } = useEvents();
   const { value: isModalOpen, setTrue: openModal, setFalse: closeModal } = useToggle();
   const [eventNameQuery, setEventNameQuery] = useState('');
-  const [whereQuery, setWhereQuery] = useState('');
+  const [conditions, setConditions] = useState<WhereCondition[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
   const [formData, setFormData] = useState<EventFormData>({
@@ -19,7 +59,8 @@ export const EventPage: React.FC = () => {
   });
   const [selectedEvent, setSelectedEvent] = useState<(typeof events)[number] | null>(null);
 
-  // 검색 필터링
+  const whereString = buildWhereString(conditions);
+
   const filteredEvents = events.filter(event =>
     event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (event.externalId && event.externalId.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -27,7 +68,7 @@ export const EventPage: React.FC = () => {
 
   const handleSearch = async () => {
     setHasSearched(true);
-    await searchEvents(eventNameQuery, whereQuery);
+    await searchEvents(eventNameQuery, whereString);
   };
 
   const handleLoadAll = async () => {
@@ -35,25 +76,31 @@ export const EventPage: React.FC = () => {
     await browseAllEvents();
   };
 
-  // 폼 제출
   const handleSubmit = async () => {
     if (!formData.name || !formData.externalId) return;
-
     const success = await createEvent(formData);
     if (success) {
-      setFormData({
-        name: '',
-        campaignName: '',
-        externalId: '',
-        properties: [{ key: '', value: '' }]
-      });
+      setFormData({ name: '', campaignName: '', externalId: '', properties: [{ key: '', value: '' }] });
       closeModal();
-      // 검색 조건이 유효할 때만 서버 재조회
-      if (eventNameQuery.trim() && whereQuery.trim()) {
+      if (eventNameQuery.trim()) {
         setHasSearched(true);
-        await searchEvents(eventNameQuery, whereQuery);
+        await searchEvents(eventNameQuery, whereString);
       }
     }
+  };
+
+  const addCondition = () => {
+    setConditions(prev => [...prev, emptyCondition()]);
+  };
+
+  const removeCondition = (index: number) => {
+    setConditions(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateCondition = (index: number, patch: Partial<WhereCondition>) => {
+    setConditions(prev =>
+      prev.map((c, i) => (i === index ? { ...c, ...patch } : c))
+    );
   };
 
   return (
@@ -66,7 +113,6 @@ export const EventPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Error Message */}
       {error && (
         <div className="rounded-lg bg-red-900/50 border border-red-700 p-4">
           <div className="flex">
@@ -82,46 +128,127 @@ export const EventPage: React.FC = () => {
 
       <GuidePanel
         title="이벤트 검색 가이드"
-        description="조건 검색 또는 전체 조회로 이벤트를 불러올 수 있습니다."
+        description="Event Name만 입력해도 조회할 수 있습니다. Where 조건은 선택 사항입니다."
         items={[
-          '단일 조건: category&electronics&=&end',
-          '다중 조건: category&electronics&=&and,brand&samsung&=&end',
-          '범위 조건: amount&100&amount&200&between&end',
-          'Load All로 전체 이벤트를 조건 없이 조회할 수 있습니다.',
-          'Campaign 생성/관리는 Campaigns 화면에서 진행합니다.'
+          'Event Name 입력 후 조건 없이 Search → 이름만으로 전체 조회',
+          '+ Add Condition으로 조건 추가, 조건이 여러 개면 AND/OR로 연결',
+          'BETWEEN 선택 시 값 범위 입력 필드(~)가 추가됩니다',
+          'Load All로 이름 무관하게 전체 이벤트 조회',
+          'Campaign 생성/관리는 Campaigns 화면에서 진행합니다.',
         ]}
-        note="연산자: =, !=, >, >=, <, <=, like, between / 연결: and, or, end"
+        note="연산자: =, ≠, >, ≥, <, ≤, LIKE, BETWEEN"
       />
 
       {/* 서버 검색 */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
-        <div className="grid gap-3 md:grid-cols-[1fr,2fr,auto,auto]">
-          <Input
-            label="Event Name"
-            value={eventNameQuery}
-            onChange={(e) => setEventNameQuery(e.target.value)}
-            placeholder="view_product"
-            required
-          />
-          <Input
-            label="Where"
-            value={whereQuery}
-            onChange={(e) => setWhereQuery(e.target.value)}
-            placeholder="category&electronics&=&end"
-            required
-          />
-          <Button onClick={handleSearch} loading={loading} className="md:self-end">
+      <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 space-y-3">
+        {/* Event Name + 액션 버튼 */}
+        <div className="flex gap-3 items-end">
+          <div className="flex-1">
+            <Input
+              label="Event Name"
+              value={eventNameQuery}
+              onChange={(e) => setEventNameQuery(e.target.value)}
+              placeholder="view_product"
+              required
+            />
+          </div>
+          <Button onClick={handleSearch} loading={loading}>
             Search
           </Button>
-          <Button variant="secondary" onClick={handleLoadAll} loading={loading} className="md:self-end">
+          <Button variant="secondary" onClick={handleLoadAll} loading={loading}>
             Load All
           </Button>
         </div>
-        <p className="mt-2 text-xs text-slate-400">
-          where 예시: <code>category&electronics&=&end</code>
-        </p>
-        <p className="mt-1 text-xs text-slate-500">
-          검색 후 아래 결과를 필요하면 로컬 필터로 추가 좁힐 수 있습니다.
+
+        {/* Where 조건 빌더 */}
+        {conditions.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Where 조건</p>
+            {conditions.map((cond, i) => (
+              <div key={i} className="flex items-center gap-2 flex-wrap">
+                {/* AND/OR 연결 (첫 번째 제외) */}
+                {i > 0 && conditions[i - 1] && (
+                  <select
+                    value={conditions[i - 1]!.joinOperation}
+                    onChange={(e) => updateCondition(i - 1, { joinOperation: e.target.value as JoinOp })}
+                    className="rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-indigo-300 font-semibold"
+                  >
+                    <option value="and">AND</option>
+                    <option value="or">OR</option>
+                  </select>
+                )}
+
+                {/* Key */}
+                <input
+                  value={cond.key}
+                  onChange={(e) => updateCondition(i, { key: e.target.value })}
+                  placeholder="key"
+                  className="w-28 rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-sm text-slate-200 placeholder:text-slate-500"
+                />
+
+                {/* Operator */}
+                <select
+                  value={cond.operator}
+                  onChange={(e) => updateCondition(i, { operator: e.target.value as Operator, value2: '' })}
+                  className="rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-sm text-slate-200"
+                >
+                  {OPERATORS.map(op => (
+                    <option key={op.value} value={op.value}>{op.label}</option>
+                  ))}
+                </select>
+
+                {/* Value */}
+                <input
+                  value={cond.value}
+                  onChange={(e) => updateCondition(i, { value: e.target.value })}
+                  placeholder={cond.operator === 'between' ? 'from' : 'value'}
+                  className="w-28 rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-sm text-slate-200 placeholder:text-slate-500"
+                />
+
+                {/* Value2 (BETWEEN 전용) */}
+                {cond.operator === 'between' && (
+                  <>
+                    <span className="text-slate-500 text-sm">~</span>
+                    <input
+                      value={cond.value2}
+                      onChange={(e) => updateCondition(i, { value2: e.target.value })}
+                      placeholder="to"
+                      className="w-28 rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-sm text-slate-200 placeholder:text-slate-500"
+                    />
+                  </>
+                )}
+
+                {/* 삭제 */}
+                <button
+                  onClick={() => removeCondition(i)}
+                  className="text-slate-500 hover:text-red-400 text-sm px-1"
+                  title="조건 삭제"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 조건 추가 버튼 */}
+        <button
+          onClick={addCondition}
+          className="text-xs text-slate-400 hover:text-slate-200 border border-dashed border-slate-600 hover:border-slate-400 rounded px-3 py-1.5 transition-colors"
+        >
+          + Add Condition
+        </button>
+
+        {/* 생성된 DSL 미리보기 */}
+        {whereString && (
+          <p className="text-xs text-slate-500 font-mono break-all">
+            <span className="text-slate-600">where: </span>
+            <span className="text-blue-400">{whereString}</span>
+          </p>
+        )}
+
+        <p className="text-xs text-slate-600">
+          검색 후 아래 결과를 로컬 필터로 추가 좁힐 수 있습니다.
         </p>
       </div>
 
@@ -184,7 +311,7 @@ export const EventPage: React.FC = () => {
             ) : (
               <tr>
                 <td colSpan={4} className="px-6 py-8 text-center text-slate-400">
-                  Event Name과 Where를 입력하고 Search를 눌러주세요.
+                  Event Name을 입력하고 Search를 눌러주세요.
                 </td>
               </tr>
             )}
@@ -264,7 +391,7 @@ export const EventPage: React.FC = () => {
               label="Property Key"
               value={formData.properties[0]?.key || ''}
               onChange={(e) => setFormData({
-                ...formData, 
+                ...formData,
                 properties: [{...(formData.properties[0] || { key: '', value: '' }), key: e.target.value}]
               })}
               placeholder="Property key"
@@ -273,7 +400,7 @@ export const EventPage: React.FC = () => {
               label="Property Value"
               value={formData.properties[0]?.value || ''}
               onChange={(e) => setFormData({
-                ...formData, 
+                ...formData,
                 properties: [{...(formData.properties[0] || { key: '', value: '' }), value: e.target.value}]
               })}
               placeholder="Property value"
