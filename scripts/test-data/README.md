@@ -13,6 +13,8 @@
 - `USER_COUNT` (`seed-users.sh`에서만 사용, default: `5`)
 - `SEED_TIMEOUT_SECONDS` (default: `20`)
 - `JOURNEY_SYNC_WAIT_SECONDS` (`seed-journeys.sh`에서 비동기 실행 대기, default: `1`)
+- `JOURNEY_EXECUTION_WAIT_TIMEOUT_SECONDS` (`seed-journeys.sh` 최종 실행 집계 대기 timeout, default: `45`)
+- `JOURNEY_EXECUTION_WAIT_INTERVAL_SECONDS` (`seed-journeys.sh` 최종 실행 집계 폴링 간격, default: `1`)
 - `CONTINUE_ON_ERROR` (`seed-all.sh`에서만 사용, `1`이면 실패 스크립트가 있어도 계속 진행)
 
 ## API Unit Scripts

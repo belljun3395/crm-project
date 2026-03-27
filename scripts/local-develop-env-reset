@@ -1,6 +1,127 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-cd ../resources/crm-local-develop-environment
-docker-compose down
-docker-compose up -d
-sleep 10
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+COMPOSE_DIR="${SCRIPT_DIR}/../resources/crm-local-develop-environment"
+
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE_CMD=(docker compose)
+else
+  COMPOSE_CMD=(docker-compose)
+fi
+
+compose() {
+  (
+    cd "${COMPOSE_DIR}"
+    "${COMPOSE_CMD[@]}" "$@"
+  )
+}
+
+wait_for_state() {
+  local container_name="$1"
+  local expected_state="$2"
+  local timeout_seconds="${3:-120}"
+
+  local started_at
+  started_at="$(date +%s)"
+
+  while true; do
+    if ! docker inspect "$container_name" >/dev/null 2>&1; then
+      sleep 1
+      continue
+    fi
+
+    local current_state
+    current_state="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container_name" 2>/dev/null || true)"
+    if [[ "$current_state" == "$expected_state" ]]; then
+      echo "✅ ${container_name}: ${current_state}"
+      return 0
+    fi
+
+    local now
+    now="$(date +%s)"
+    if (( now - started_at >= timeout_seconds )); then
+      echo "❌ Timeout waiting for ${container_name} to become '${expected_state}' (current='${current_state}')" >&2
+      return 1
+    fi
+
+    sleep 2
+  done
+}
+
+wait_for_exit_zero() {
+  local container_name="$1"
+  local timeout_seconds="${2:-180}"
+
+  local started_at
+  started_at="$(date +%s)"
+
+  while true; do
+    if ! docker inspect "$container_name" >/dev/null 2>&1; then
+      sleep 1
+      continue
+    fi
+
+    local status
+    local exit_code
+    status="$(docker inspect -f '{{.State.Status}}' "$container_name" 2>/dev/null || true)"
+    exit_code="$(docker inspect -f '{{.State.ExitCode}}' "$container_name" 2>/dev/null || true)"
+
+    if [[ "$status" == "exited" ]]; then
+      if [[ "$exit_code" == "0" ]]; then
+        echo "✅ ${container_name}: exited(0)"
+        return 0
+      fi
+      echo "❌ ${container_name}: exited(${exit_code})" >&2
+      docker logs --tail 200 "$container_name" >&2 || true
+      return 1
+    fi
+
+    local now
+    now="$(date +%s)"
+    if (( now - started_at >= timeout_seconds )); then
+      echo "❌ Timeout waiting for ${container_name} to exit." >&2
+      docker logs --tail 200 "$container_name" >&2 || true
+      return 1
+    fi
+
+    sleep 2
+  done
+}
+
+ensure_kafka_topic() {
+  local topic_name="$1"
+  local partitions="${2:-3}"
+
+  docker exec crm-kafka /opt/kafka/bin/kafka-topics.sh \
+    --bootstrap-server localhost:9092 \
+    --create \
+    --if-not-exists \
+    --topic "$topic_name" \
+    --partitions "$partitions" \
+    --replication-factor 1 >/dev/null
+
+  echo "✅ Kafka topic ensured: ${topic_name}"
+}
+
+echo "🧹 Reset local development environment..."
+compose down --remove-orphans
+compose up -d
+
+echo "⏳ Waiting for core services..."
+wait_for_state "crm-mysql8" "healthy" 180
+wait_for_state "crm-localstack" "healthy" 180
+wait_for_state "crm-pubsub-emulator" "healthy" 180
+wait_for_state "crm-kafka" "healthy" 180
+
+echo "⏳ Waiting for one-time init containers..."
+wait_for_exit_zero "crm-redis-cluster-create" 180
+wait_for_exit_zero "crm-localstack-init" 300
+wait_for_exit_zero "crm-pubsub-init" 180
+
+echo "⏳ Ensuring Kafka topics..."
+ensure_kafka_topic "scheduled-tasks" 3
+ensure_kafka_topic "journey-triggers" 3
+
+echo "🎉 Local development environment is ready."

@@ -1,11 +1,28 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # LocalStack AWS Services Setup Script for Local Development
 
 LOCALSTACK_HOST="${LOCALSTACK_HOST:-localhost}"
 export AWS_ENDPOINT_URL="${AWS_ENDPOINT_URL:-http://${LOCALSTACK_HOST}:4566}"
 
 echo "🚀 Setting up AWS services for local development environment..."
+
+escape_aws_cli_map_value() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+set_queue_policy() {
+  local queue_url="$1"
+  local policy_json="$2"
+  local escaped_policy
+  escaped_policy="$(escape_aws_cli_map_value "$policy_json")"
+
+  aws sqs set-queue-attributes \
+    --queue-url "$queue_url" \
+    --attributes "{\"Policy\":\"${escaped_policy}\"}"
+}
 
 # Wait for LocalStack to be ready
 echo "⏳ Waiting for LocalStack to be ready..."
@@ -119,6 +136,7 @@ SES_SQS_POLICY=$(cat <<EOF
 }
 EOF
 )
+SES_SQS_POLICY="$(echo "$SES_SQS_POLICY" | tr -d '\n' | tr -s ' ')"
 
 NOTIFICATION_SQS_POLICY=$(cat <<EOF
 {
@@ -139,6 +157,7 @@ NOTIFICATION_SQS_POLICY=$(cat <<EOF
 }
 EOF
 )
+NOTIFICATION_SQS_POLICY="$(echo "$NOTIFICATION_SQS_POLICY" | tr -d '\n' | tr -s ' ')"
 
 EVENT_SQS_POLICY=$(cat <<EOF
 {
@@ -159,6 +178,7 @@ EVENT_SQS_POLICY=$(cat <<EOF
 }
 EOF
 )
+EVENT_SQS_POLICY="$(echo "$EVENT_SQS_POLICY" | tr -d '\n' | tr -s ' ')"
 
 CACHE_AWS_SQS_POLICY=$(cat <<EOF
 {
@@ -179,11 +199,12 @@ CACHE_AWS_SQS_POLICY=$(cat <<EOF
 }
 EOF
 )
+CACHE_AWS_SQS_POLICY="$(echo "$CACHE_AWS_SQS_POLICY" | tr -d '\n' | tr -s ' ')"
 
-aws sqs set-queue-attributes --queue-url $SES_SQS_URL --attributes Policy="$SES_SQS_POLICY"
-aws sqs set-queue-attributes --queue-url $NOTIFICATION_SQS_URL --attributes Policy="$NOTIFICATION_SQS_POLICY"
-aws sqs set-queue-attributes --queue-url $EVENT_SQS_URL --attributes Policy="$EVENT_SQS_POLICY"
-aws sqs set-queue-attributes --queue-url $CACHE_AWS_SQS_URL --attributes Policy="$CACHE_AWS_SQS_POLICY"
+set_queue_policy "$SES_SQS_URL" "$SES_SQS_POLICY"
+set_queue_policy "$NOTIFICATION_SQS_URL" "$NOTIFICATION_SQS_POLICY"
+set_queue_policy "$EVENT_SQS_URL" "$EVENT_SQS_POLICY"
+set_queue_policy "$CACHE_AWS_SQS_URL" "$CACHE_AWS_SQS_POLICY"
 
 echo "✅ SQS policies configured"
 
@@ -233,8 +254,12 @@ echo "   📋 Scheduler Role ARN: $SCHEDULER_ROLE_ARN"
 echo "   📋 SES Role ARN: $SES_ROLE_ARN"
 
 # Attach policies to roles
-aws iam attach-role-policy --role-name LocalEventBridgeSchedulerRole --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEventBridgeSchedulerFullAccess
-aws iam attach-role-policy --role-name LocalSESRole --policy-arn arn:aws:iam::aws:policy/service-role/AmazonSESFullAccess
+if ! aws iam attach-role-policy --role-name LocalEventBridgeSchedulerRole --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEventBridgeSchedulerFullAccess >/dev/null 2>&1; then
+  echo "   ⚠ LocalStack does not provide AWS managed policy AmazonEventBridgeSchedulerFullAccess; skipping attach."
+fi
+if ! aws iam attach-role-policy --role-name LocalSESRole --policy-arn arn:aws:iam::aws:policy/service-role/AmazonSESFullAccess >/dev/null 2>&1; then
+  echo "   ⚠ LocalStack does not provide AWS managed policy AmazonSESFullAccess; skipping attach."
+fi
 
 # Create EventBridge Scheduler schedule groups
 echo "📅 Setting up EventBridge Scheduler..."
@@ -297,20 +322,20 @@ aws events put-events \
         {
             "Source": "local.user",
             "DetailType": "User Registration", 
-            "Detail": "{\"userId\":\"test-001\",\"email\":\"test@example.com\",\"timestamp\":\"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'\"}"
+            "Detail": "{\"userId\":\"test-001\",\"email\":\"test@example.com\",\"timestamp\":\"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'\"}",
+            "EventBusName": "user-event-bus"
         }
-    ]' \
-    --event-bus-name user-event-bus
+    ]'
 
 aws events put-events \
     --entries '[
         {
             "Source": "local.email",
             "DetailType": "Email Sent",
-            "Detail": "{\"messageId\":\"test-msg-001\",\"recipient\":\"test@example.com\",\"subject\":\"Test Email\",\"timestamp\":\"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'\"}"
+            "Detail": "{\"messageId\":\"test-msg-001\",\"recipient\":\"test@example.com\",\"subject\":\"Test Email\",\"timestamp\":\"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'\"}",
+            "EventBusName": "local-event-bus"
         }
-    ]' \
-    --event-bus-name local-event-bus
+    ]'
 
 echo "✅ Sample events sent to EventBridge"
 

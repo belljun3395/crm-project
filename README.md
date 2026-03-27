@@ -23,6 +23,8 @@ CRM API 서버(백엔드)와 운영 콘솔(프론트엔드)로 구성된 CRM 프
 cd scripts && bash local-develop-env-reset
 ```
 
+`local-develop-env-reset`는 MySQL/LocalStack/PubSub/Kafka 헬스와 init 컨테이너 완료까지 대기한 뒤 종료됩니다.
+
 ### 2. 백엔드 빌드/실행
 
 ```bash
