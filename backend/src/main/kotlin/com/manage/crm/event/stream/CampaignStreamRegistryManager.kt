@@ -1,4 +1,4 @@
-package com.manage.crm.event.service
+package com.manage.crm.event.stream
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.reactive.awaitFirstOrNull
@@ -7,10 +7,10 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate
 import org.springframework.stereotype.Service
 
 @Service
-class CampaignStreamRegistryService(
+class CampaignStreamRegistryManager(
     private val reactiveStringRedisTemplate: ReactiveRedisTemplate<String, String>
 ) {
-    val log = KotlinLogging.logger { }
+    private val log = KotlinLogging.logger { }
 
     companion object {
         private const val ACTIVE_CAMPAIGNS_KEY = "campaign:dashboard:active"

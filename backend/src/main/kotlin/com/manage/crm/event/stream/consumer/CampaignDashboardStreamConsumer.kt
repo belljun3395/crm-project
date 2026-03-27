@@ -1,8 +1,8 @@
-package com.manage.crm.event.consumer
+package com.manage.crm.event.stream.consumer
 
-import com.manage.crm.event.service.CampaignDashboardService
-import com.manage.crm.event.service.CampaignDashboardStreamService
-import com.manage.crm.event.service.CampaignStreamRegistryService
+import com.manage.crm.event.service.CampaignDashboardMetricsService
+import com.manage.crm.event.stream.CampaignDashboardStreamManager
+import com.manage.crm.event.stream.CampaignStreamRegistryManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import org.springframework.scheduling.annotation.Scheduled
@@ -10,15 +10,15 @@ import org.springframework.stereotype.Component
 
 @Component
 class CampaignDashboardStreamConsumer(
-    private val campaignStreamRegistryService: CampaignStreamRegistryService,
-    private val streamService: CampaignDashboardStreamService,
-    private val campaignDashboardService: CampaignDashboardService
+    private val campaignStreamRegistryManager: CampaignStreamRegistryManager,
+    private val campaignDashboardStreamManager: CampaignDashboardStreamManager,
+    private val campaignDashboardMetricsService: CampaignDashboardMetricsService
 ) {
     val log = KotlinLogging.logger { }
 
     @Scheduled(fixedDelay = 60_000)
     fun processStreamEvents() = runBlocking {
-        val activeCampaigns = campaignStreamRegistryService.getActiveCampaigns()
+        val activeCampaigns = campaignStreamRegistryManager.getActiveCampaigns()
         if (activeCampaigns.isEmpty()) return@runBlocking
 
         activeCampaigns.forEach { campaignId ->
@@ -31,15 +31,15 @@ class CampaignDashboardStreamConsumer(
     }
 
     private suspend fun processEventsForCampaign(campaignId: Long) {
-        val lastProcessedId = campaignStreamRegistryService.getLastProcessedId(campaignId)
-        val events = streamService.readEventsBatch(campaignId, lastProcessedId)
+        val lastProcessedId = campaignStreamRegistryManager.getLastProcessedId(campaignId)
+        val events = campaignDashboardStreamManager.readEventsBatch(campaignId, lastProcessedId)
 
         if (events.isEmpty()) return
 
-        campaignDashboardService.updateMetricsForEvents(events)
+        campaignDashboardMetricsService.updateMetricsForEvents(events)
 
         events.lastOrNull()?.streamId?.let { lastId ->
-            campaignStreamRegistryService.updateLastProcessedId(campaignId, lastId)
+            campaignStreamRegistryManager.updateLastProcessedId(campaignId, lastId)
         }
 
         log.info { "Processed ${events.size} events for campaign: $campaignId" }

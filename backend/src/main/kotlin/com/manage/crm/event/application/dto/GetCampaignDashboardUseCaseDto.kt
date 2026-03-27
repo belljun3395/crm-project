@@ -1,8 +1,8 @@
 package com.manage.crm.event.application.dto
 
+import com.manage.crm.event.application.CampaignDashboardSummary
 import com.manage.crm.event.domain.CampaignDashboardMetrics
 import com.manage.crm.event.domain.TimeWindowUnit
-import com.manage.crm.event.service.CampaignDashboardSummary
 import java.time.LocalDateTime
 
 data class GetCampaignDashboardUseCaseIn(

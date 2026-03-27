@@ -1,4 +1,4 @@
-package com.manage.crm.event.service
+package com.manage.crm.event.stream
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.reactive.awaitFirstOrNull
@@ -15,6 +15,7 @@ import reactor.core.publisher.Flux
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.collections.get
 
 data class CampaignDashboardEvent(
     val campaignId: Long,
@@ -26,10 +27,10 @@ data class CampaignDashboardEvent(
 )
 
 @Service
-class CampaignDashboardStreamService(
+class CampaignDashboardStreamManager(
     private val reactiveRedisTemplate: ReactiveRedisTemplate<String, Any>
 ) {
-    val log = KotlinLogging.logger { }
+    private val log = KotlinLogging.logger { }
 
     companion object {
         private const val STREAM_KEY_PREFIX = "campaign:dashboard:stream"
@@ -38,9 +39,6 @@ class CampaignDashboardStreamService(
         fun getStreamKey(campaignId: Long): String = "$STREAM_KEY_PREFIX:$campaignId"
     }
 
-    /**
-     * Publishes a campaign event to Redis Stream for real-time processing
-     */
     suspend fun publishEvent(event: CampaignDashboardEvent) {
         try {
             val streamKey = getStreamKey(event.campaignId)
@@ -57,8 +55,6 @@ class CampaignDashboardStreamService(
             reactiveRedisTemplate.opsForStream<String, Any>()
                 .add(record)
                 .awaitSingle()
-
-            log.debug { "Published event to stream: campaignId=${event.campaignId}, eventId=${event.eventId}" }
         } catch (e: Exception) {
             log.error(e) { "Failed to publish event to Redis Stream: campaignId=${event.campaignId}" }
             throw e
@@ -87,10 +83,6 @@ class CampaignDashboardStreamService(
             }
     }
 
-    /**
-     * Gets the total count of events in the stream for a campaign
-     * Useful for monitoring and health checks
-     */
     suspend fun getStreamLength(campaignId: Long): Long {
         return try {
             val streamKey = getStreamKey(campaignId)
@@ -103,26 +95,17 @@ class CampaignDashboardStreamService(
         }
     }
 
-    /**
-     * Trims the stream to keep only the most recent events (for memory management)
-     * Should be called periodically to prevent unbounded memory growth
-     */
     suspend fun trimStream(campaignId: Long, maxLength: Long = 10000) {
         try {
             val streamKey = getStreamKey(campaignId)
             reactiveRedisTemplate.opsForStream<String, Any>()
                 .trim(streamKey, maxLength)
                 .awaitFirstOrNull()
-            log.info { "Trimmed stream for campaign: $campaignId to max length: $maxLength" }
         } catch (e: Exception) {
             log.error(e) { "Failed to trim stream for campaign: $campaignId" }
         }
     }
 
-    /**
-     * Reads a batch of events from the stream since the given lastId.
-     * Used by the scheduled consumer for windowed aggregation.
-     */
     suspend fun readEventsBatch(
         campaignId: Long,
         lastId: String?,
@@ -153,10 +136,14 @@ class CampaignDashboardStreamService(
     private fun mapRecordToEvent(record: MapRecord<String, *, *>): CampaignDashboardEvent {
         val values = record.value
         return CampaignDashboardEvent(
-            campaignId = values["campaignId"]?.toString()?.toLong() ?: throw IllegalArgumentException("Missing campaignId"),
-            eventId = values["eventId"]?.toString()?.toLong() ?: throw IllegalArgumentException("Missing eventId"),
-            userId = values["userId"]?.toString()?.toLong() ?: throw IllegalArgumentException("Missing userId"),
-            eventName = values["eventName"]?.toString() ?: throw IllegalArgumentException("Missing eventName"),
+            campaignId = values["campaignId"]?.toString()?.toLong()
+                ?: throw IllegalArgumentException("Missing campaignId"),
+            eventId = values["eventId"]?.toString()?.toLong()
+                ?: throw IllegalArgumentException("Missing eventId"),
+            userId = values["userId"]?.toString()?.toLong()
+                ?: throw IllegalArgumentException("Missing userId"),
+            eventName = values["eventName"]?.toString()
+                ?: throw IllegalArgumentException("Missing eventName"),
             timestamp = parseTimestamp(values["timestamp"]?.toString()) ?: LocalDateTime.now(),
             streamId = record.id.value
         )

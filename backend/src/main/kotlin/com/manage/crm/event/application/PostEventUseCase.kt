@@ -12,8 +12,9 @@ import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
-import com.manage.crm.event.service.CampaignDashboardEvent
-import com.manage.crm.event.service.CampaignDashboardService
+import com.manage.crm.event.stream.CampaignDashboardEvent
+import com.manage.crm.event.stream.CampaignDashboardStreamManager
+import com.manage.crm.event.stream.CampaignStreamRegistryManager
 import com.manage.crm.journey.queue.JourneyEventPayload
 import com.manage.crm.journey.queue.JourneyEventPropertyPayload
 import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
@@ -22,7 +23,12 @@ import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.repository.UserRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 enum class SaveEventMessage(val message: String) {
@@ -49,10 +55,12 @@ class PostEventUseCase(
     private val campaignCacheManager: CampaignCacheManager,
     private val userRepository: UserRepository,
     private val segmentTargetingService: SegmentTargetingService,
-    private val campaignDashboardService: CampaignDashboardService,
-    private val journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher
+    private val journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher,
+    private val campaignDashboardStreamManager: CampaignDashboardStreamManager,
+    private val campaignStreamRegistryManager: CampaignStreamRegistryManager
 ) {
     val log = KotlinLogging.logger {}
+    private val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     suspend fun execute(useCaseIn: PostEventUseCaseIn): PostEventUseCaseOut {
         val eventName = useCaseIn.name
@@ -197,11 +205,31 @@ class PostEventUseCase(
                 eventName = savedEvent.name,
                 timestamp = savedEvent.createdAt ?: LocalDateTime.now()
             )
-            campaignDashboardService.publishCampaignEvent(dashboardEvent)
+            publishCampaignEvent(dashboardEvent)
             log.debug { "Published campaign event to dashboard stream: campaignId=${campaign.id}, eventId=${savedEvent.id}" }
         } catch (e: Exception) {
             log.error(e) { "Failed to publish event to dashboard stream: campaignId=${campaign.id}, eventId=${savedEvent.id}" }
             // Don't fail the entire operation if stream publishing fails
+        }
+    }
+
+    /**
+     * Publishes a campaign event to Redis Stream and updates metrics
+     */
+    @Transactional
+    suspend fun publishCampaignEvent(event: CampaignDashboardEvent) {
+        campaignDashboardStreamManager.publishEvent(event)
+        campaignStreamRegistryManager.registerCampaign(event.campaignId)
+
+        backgroundScope.launch {
+            try {
+                val streamLength = campaignDashboardStreamManager.getStreamLength(event.campaignId)
+                if (streamLength % 100 == 0L && streamLength > 0) {
+                    campaignDashboardStreamManager.trimStream(event.campaignId, maxLength = 10000)
+                }
+            } catch (e: Exception) {
+                log.error(e) { "Failed to trim stream for campaign: ${event.campaignId}" }
+            }
         }
     }
 }

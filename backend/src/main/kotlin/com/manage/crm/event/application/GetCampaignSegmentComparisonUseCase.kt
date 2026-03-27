@@ -3,22 +3,22 @@ package com.manage.crm.event.application
 import com.manage.crm.event.application.dto.GetCampaignSegmentComparisonUseCaseIn
 import com.manage.crm.event.application.dto.GetCampaignSegmentComparisonUseCaseOut
 import com.manage.crm.event.application.dto.SegmentComparisonMetricDto
-import com.manage.crm.event.domain.Event
-import com.manage.crm.event.domain.repository.CampaignEventsRepository
-import com.manage.crm.event.domain.repository.CampaignRepository
-import com.manage.crm.event.domain.repository.EventRepository
+import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.segment.domain.repository.SegmentRepository
 import com.manage.crm.segment.service.SegmentTargetingService
-import com.manage.crm.support.exception.NotFoundByIdException
 import org.springframework.stereotype.Component
-import java.time.LocalDateTime
 import kotlin.math.roundToInt
 
+/**
+ * UC-CAMPAIGN-010
+ * Compares campaign conversion metrics across segments.
+ *
+ * Input: campaign id, segment ids, optional event/time filters.
+ * Success: returns segment-wise target/event/conversion metrics.
+ */
 @Component
 class GetCampaignSegmentComparisonUseCase(
-    private val campaignRepository: CampaignRepository,
-    private val campaignEventsRepository: CampaignEventsRepository,
-    private val eventRepository: EventRepository,
+    private val campaignEventsService: CampaignEventsService,
     private val segmentRepository: SegmentRepository,
     private val segmentTargetingService: SegmentTargetingService
 ) {
@@ -30,7 +30,7 @@ class GetCampaignSegmentComparisonUseCase(
             throw IllegalArgumentException("segmentIds is required")
         }
 
-        val events = findCampaignEvents(input.campaignId, input.startTime, input.endTime)
+        val events = campaignEventsService.findCampaignEvents(input.campaignId, input.startTime, input.endTime)
             .let { baseEvents ->
                 val eventName = input.eventName?.trim()?.takeIf { it.isNotBlank() }
                 if (eventName == null) {
@@ -62,34 +62,6 @@ class GetCampaignSegmentComparisonUseCase(
             eventName = input.eventName?.trim()?.takeIf { it.isNotBlank() },
             segmentMetrics = metrics
         )
-    }
-
-    private suspend fun findCampaignEvents(
-        campaignId: Long,
-        startTime: LocalDateTime?,
-        endTime: LocalDateTime?
-    ): List<Event> {
-        campaignRepository.findById(campaignId) ?: throw NotFoundByIdException("Campaign", campaignId)
-
-        val campaignEventRows = when {
-            startTime != null && endTime != null -> campaignEventsRepository.findAllByCampaignIdAndTimeRange(campaignId, startTime, endTime)
-            else -> campaignEventsRepository.findAllByCampaignId(campaignId)
-        }
-        if (campaignEventRows.isEmpty()) {
-            return emptyList()
-        }
-
-        val eventIds = campaignEventRows.map { it.eventId }.distinct()
-        val events = eventRepository.findAllByIdIn(eventIds)
-        return events.filter { event ->
-            val createdAt = event.createdAt
-            if ((startTime != null || endTime != null) && createdAt == null) {
-                return@filter false
-            }
-            val startInclusive = startTime?.let { createdAt == null || createdAt >= it } ?: true
-            val endExclusive = endTime?.let { createdAt == null || createdAt < it } ?: true
-            startInclusive && endExclusive
-        }
     }
 
     private fun percent(numerator: Int, denominator: Int): Double {
