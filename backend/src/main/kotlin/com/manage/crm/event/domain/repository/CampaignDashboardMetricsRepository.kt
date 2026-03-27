@@ -78,9 +78,9 @@ interface CampaignDashboardMetricsRepository : CoroutineCrudRepository<CampaignD
     @Query(
         """
         SELECT 
-            COALESCE(SUM(metric_value), 0) as totalEvents,
-            COALESCE(SUM(CASE WHEN time_window_start > :last24Hours THEN metric_value ELSE 0 END), 0) as eventsLast24Hours,
-            COALESCE(SUM(CASE WHEN time_window_start > :last7Days THEN metric_value ELSE 0 END), 0) as eventsLast7Days
+            COALESCE(SUM(metric_value), 0) as total_events,
+            COALESCE(SUM(CASE WHEN time_window_start > :last24Hours THEN metric_value ELSE 0 END), 0) as events_last_24_hours,
+            COALESCE(SUM(CASE WHEN time_window_start > :last7Days THEN metric_value ELSE 0 END), 0) as events_last_7_days
         FROM campaign_dashboard_metrics
         WHERE campaign_id = :campaignId
           AND metric_type = 'EVENT_COUNT'

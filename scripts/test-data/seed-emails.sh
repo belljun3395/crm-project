@@ -120,6 +120,9 @@ else
   warn 'Immediate email send(campaign+segment) failed. Remaining scenarios continue.'
 fi
 
+# NOTE:
+# This payload intentionally uses an unlinked segmentId to validate server-side campaign/segment link checks.
+# Failure is expected and should be reported as EXPECTED_FAILURE below.
 invalid_send_payload="$(
   "$JQ_BIN" -cn \
     --argjson campaignId "$campaign_id" \
@@ -176,6 +179,9 @@ schedule_payload_2="$(
 schedule_response_2="$(post_json '/emails/schedules/notifications/email' "$schedule_payload_2" 'emails-schedule-segment-campaign')"
 schedule_id_2="$(json_value "$schedule_response_2" '.data.newSchedule')"
 
+# NOTE:
+# This payload intentionally uses an unlinked segmentId for schedule API validation checks.
+# Failure is expected and should be reported as EXPECTED_FAILURE below.
 invalid_schedule_payload="$(
   "$JQ_BIN" -cn \
     --argjson campaignId "$campaign_id" \
