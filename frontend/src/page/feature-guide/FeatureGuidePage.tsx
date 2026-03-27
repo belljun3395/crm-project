@@ -95,12 +95,12 @@ const featureSections: FeatureSection[] = [
     summary: '고객 등록과 이벤트 적재/검색을 통해 타겟팅 기초 데이터를 관리합니다.',
     features: [
       'Users: externalId + userAttributes 등록/검색',
-      'Events: eventName + where DSL 기반 서버 검색',
+      'Events: eventName + where DSL 기반 서버 검색 (조건 빌더로 DSL 생성)',
       'Event 생성 시 campaignName/externalId/properties 입력 가능'
     ],
     usage: [
       'Users에서 고객을 등록하고 검색으로 데이터 품질을 확인합니다.',
-      'Events에서 where DSL로 검색 결과를 검증한 뒤 이벤트를 적재합니다.'
+      'Events에서 조건 빌더로 where DSL을 구성하고 검색 결과를 검증한 뒤 이벤트를 적재합니다.'
     ],
     apis: [
       'GET /users',
