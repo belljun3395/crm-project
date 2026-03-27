@@ -48,8 +48,8 @@ export const EventPage: React.FC = () => {
         properties: [{ key: '', value: '' }]
       });
       closeModal();
-      // 검색 조건이 유효할 때만 서버 재조회
-      if (eventNameQuery.trim() && whereQuery.trim()) {
+      // 이름만 있어도 재조회 가능
+      if (eventNameQuery.trim()) {
         setHasSearched(true);
         await searchEvents(eventNameQuery, whereQuery);
       }
@@ -82,8 +82,9 @@ export const EventPage: React.FC = () => {
 
       <GuidePanel
         title="이벤트 검색 가이드"
-        description="조건 검색 또는 전체 조회로 이벤트를 불러올 수 있습니다."
+        description="Event Name만 입력해도 조회할 수 있습니다. Where 조건은 선택 사항입니다."
         items={[
+          '이름만 조회: Event Name 입력 후 Where 비워두고 Search',
           '단일 조건: category&electronics&=&end',
           '다중 조건: category&electronics&=&and,brand&samsung&=&end',
           '범위 조건: amount&100&amount&200&between&end',
@@ -104,11 +105,10 @@ export const EventPage: React.FC = () => {
             required
           />
           <Input
-            label="Where"
+            label="Where (선택)"
             value={whereQuery}
             onChange={(e) => setWhereQuery(e.target.value)}
-            placeholder="category&electronics&=&end"
-            required
+            placeholder="category&electronics&=&end (비워두면 이름만 조회)"
           />
           <Button onClick={handleSearch} loading={loading} className="md:self-end">
             Search

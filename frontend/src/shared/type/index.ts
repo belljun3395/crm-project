@@ -44,6 +44,7 @@ export interface Event {
   id: number;
   name: string;
   externalId?: string;
+  campaignName?: string;
   properties: EventProperty[];
   createdAt: string;
 }

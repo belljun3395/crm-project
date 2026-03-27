@@ -19,12 +19,6 @@ export const useEvents = () => {
       return [];
     }
 
-    if (!normalizedWhere) {
-      setError('where는 필수입니다. 예: category&electronics&=&end');
-      setEvents([]);
-      return [];
-    }
-
     // Cancel previous request if still pending
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();

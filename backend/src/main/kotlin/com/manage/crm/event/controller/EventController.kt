@@ -98,13 +98,13 @@ ex) key1&value1&operation&joinOperation,key2&value2&operation&joinOperation...
     @GetMapping
     suspend fun searchEvents(
         @RequestParam eventName: String,
-        @RequestParam where: String
+        @RequestParam(required = false, defaultValue = "") where: String
     ): ApiResponse<ApiResponse.SuccessBody<SearchEventsUseCaseOut>> {
         return searchEventsUseCase
             .execute(
                 SearchEventsUseCaseIn(
                     eventName = eventName,
-                    propertyAndOperations = parseWhereClause(where)
+                    propertyAndOperations = if (where.isBlank()) emptyList() else parseWhereClause(where)
                 )
             )
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
