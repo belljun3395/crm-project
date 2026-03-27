@@ -11,6 +11,8 @@ init_seed_env
 log 'Journeys API seed start'
 
 JOURNEY_SYNC_WAIT_SECONDS="${JOURNEY_SYNC_WAIT_SECONDS:-1}"
+JOURNEY_EXECUTION_WAIT_TIMEOUT_SECONDS="${JOURNEY_EXECUTION_WAIT_TIMEOUT_SECONDS:-45}"
+JOURNEY_EXECUTION_WAIT_INTERVAL_SECONDS="${JOURNEY_EXECUTION_WAIT_INTERVAL_SECONDS:-1}"
 
 sleep_for_engine() {
   sleep "$JOURNEY_SYNC_WAIT_SECONDS"
@@ -73,6 +75,36 @@ collect_execution_and_history_count() {
   fi
 
   printf '%s|%s\n' "$execution_count" "$history_count"
+}
+
+wait_for_min_execution_count() {
+  local journey_id="$1"
+  local min_execution_count="$2"
+  local label="$3"
+
+  local started_at
+  started_at="$(date +%s)"
+
+  while true; do
+    local execution_count='0'
+    local history_count='0'
+    IFS='|' read -r execution_count history_count <<<"$(collect_execution_and_history_count "$journey_id")"
+
+    if (( execution_count >= min_execution_count )); then
+      printf '%s|%s\n' "$execution_count" "$history_count"
+      return
+    fi
+
+    local now
+    now="$(date +%s)"
+    if (( now - started_at >= JOURNEY_EXECUTION_WAIT_TIMEOUT_SECONDS )); then
+      warn "Timed out waiting for ${label} execution count >= ${min_execution_count}. current=${execution_count}"
+      printf '%s|%s\n' "$execution_count" "$history_count"
+      return
+    fi
+
+    sleep "$JOURNEY_EXECUTION_WAIT_INTERVAL_SECONDS"
+  done
 }
 
 journey_suffix="$(seed_suffix)"
@@ -270,12 +302,12 @@ sleep_for_engine
 journey_list_response="$(get_json '/journeys')"
 journey_count="$(json_value "$journey_list_response" '.data | length')"
 
-IFS='|' read -r event_exec_count event_history_count <<<"$(collect_execution_and_history_count "$event_journey_id")"
-IFS='|' read -r enter_exec_count enter_history_count <<<"$(collect_execution_and_history_count "$segment_enter_journey_id")"
-IFS='|' read -r exit_exec_count exit_history_count <<<"$(collect_execution_and_history_count "$segment_exit_journey_id")"
-IFS='|' read -r update_exec_count update_history_count <<<"$(collect_execution_and_history_count "$segment_update_journey_id")"
-IFS='|' read -r count_reached_exec_count count_reached_history_count <<<"$(collect_execution_and_history_count "$segment_count_reached_journey_id")"
-IFS='|' read -r count_dropped_exec_count count_dropped_history_count <<<"$(collect_execution_and_history_count "$segment_count_dropped_journey_id")"
+IFS='|' read -r event_exec_count event_history_count <<<"$(wait_for_min_execution_count "$event_journey_id" 1 "$event_journey_name")"
+IFS='|' read -r enter_exec_count enter_history_count <<<"$(wait_for_min_execution_count "$segment_enter_journey_id" 2 "$segment_enter_journey_name")"
+IFS='|' read -r exit_exec_count exit_history_count <<<"$(wait_for_min_execution_count "$segment_exit_journey_id" 2 "$segment_exit_journey_name")"
+IFS='|' read -r update_exec_count update_history_count <<<"$(wait_for_min_execution_count "$segment_update_journey_id" 1 "$segment_update_journey_name")"
+IFS='|' read -r count_reached_exec_count count_reached_history_count <<<"$(wait_for_min_execution_count "$segment_count_reached_journey_id" 1 "$segment_count_reached_journey_name")"
+IFS='|' read -r count_dropped_exec_count count_dropped_history_count <<<"$(wait_for_min_execution_count "$segment_count_dropped_journey_id" 1 "$segment_count_dropped_journey_name")"
 
 printf 'Event user: id=%s externalId=%s email=%s\n' "$event_user_id" "$event_external_id" "$event_user_email"
 printf 'Segment user A: id=%s externalId=%s initialEmail=%s\n' "$segment_user_a_id" "$segment_user_a_external_id" "$segment_user_a_email"

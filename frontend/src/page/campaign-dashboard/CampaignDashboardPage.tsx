@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, GuidePanel, Input } from 'common/component';
-import { useCampaignDashboard, useCampaigns } from 'shared/hook';
+import { useCampaignDashboard, useCampaigns, useSegments } from 'shared/hook';
 import type { TimeWindowUnit } from 'shared/type';
 
 const toLocalDateTime = (value: string): string | undefined => {
@@ -50,7 +50,8 @@ export const CampaignDashboardPage: React.FC = () => {
     disconnectStream,
     clearLiveEvents
   } = useCampaignDashboard();
-  const { campaigns, fetchCampaignDetail, detailLoadingId } = useCampaigns();
+  const { campaigns, campaignDetailsById, fetchCampaignDetail, detailLoadingId } = useCampaigns();
+  const { segments } = useSegments();
 
   const [campaignIdInput, setCampaignIdInput] = useState('');
   const [timeWindowUnit, setTimeWindowUnit] = useState<TimeWindowUnit>('HOUR');
@@ -58,6 +59,7 @@ export const CampaignDashboardPage: React.FC = () => {
   const [endTime, setEndTime] = useState('');
   const [durationSeconds, setDurationSeconds] = useState('3600');
   const [funnelStepsInput, setFunnelStepsInput] = useState('signup,open,click');
+  const [isFunnelRuleOpen, setIsFunnelRuleOpen] = useState(true);
   const [segmentIdsInput, setSegmentIdsInput] = useState('');
   const [comparisonEventName, setComparisonEventName] = useState('');
   const campaignDetailRequestSeqRef = useRef(0);
@@ -100,6 +102,22 @@ export const CampaignDashboardPage: React.FC = () => {
         .map((value) => Number(value))
         .filter((id): id is number => Number.isInteger(id) && id > 0),
     [segmentIdsInput]
+  );
+  const segmentNameById = useMemo(
+    () => new Map(segments.map((segment) => [segment.id, segment.name])),
+    [segments]
+  );
+  const linkedSegmentIds = useMemo(
+    () => campaignDetailsById[campaignId]?.segmentIds ?? [],
+    [campaignDetailsById, campaignId]
+  );
+  const linkedSegments = useMemo(
+    () =>
+      linkedSegmentIds.map((id) => ({
+        id,
+        name: segmentNameById.get(id) ?? `#${id}`
+      })),
+    [linkedSegmentIds, segmentNameById]
   );
 
   const sortedMetrics = useMemo(() => {
@@ -184,6 +202,18 @@ export const CampaignDashboardPage: React.FC = () => {
     }
     const parsedDuration = Number(durationSeconds);
     connectStream(campaignId, Number.isFinite(parsedDuration) && parsedDuration > 0 ? parsedDuration : 3600);
+  };
+
+  const handleUseLinkedSegments = () => {
+    setSegmentIdsInput(linkedSegmentIds.join(','));
+  };
+
+  const handleToggleSegmentId = (segmentId: number) => {
+    const nextIds = parsedSegmentIds.includes(segmentId)
+      ? parsedSegmentIds.filter((id) => id !== segmentId)
+      : [...parsedSegmentIds, segmentId];
+
+    setSegmentIdsInput([...new Set(nextIds)].sort((a, b) => a - b).join(','));
   };
 
   return (
@@ -312,6 +342,35 @@ export const CampaignDashboardPage: React.FC = () => {
             Step은 2개 이상 필요합니다. 현재 {parsedFunnelSteps.length}개 입력됨
           </p>
 
+          <div className="mt-3 rounded-lg border border-gray-800 bg-gray-950/60 p-3 text-xs text-gray-300">
+            <button
+              type="button"
+              onClick={() => setIsFunnelRuleOpen((prev) => !prev)}
+              className="flex w-full items-center justify-between text-left text-xs font-semibold text-gray-200"
+              aria-expanded={isFunnelRuleOpen}
+              aria-controls="funnel-rule-box"
+            >
+              <span>퍼널 계산 규칙</span>
+              <span>{isFunnelRuleOpen ? 'Hide' : 'Show'}</span>
+            </button>
+
+            {isFunnelRuleOpen && (
+              <div id="funnel-rule-box" className="mt-2">
+                <p>
+                  Step 정의: 입력한 이벤트 이름의 순서입니다. 예) <code className="text-gray-100">signup,open,click</code>
+                </p>
+                <p className="mt-1">
+                  Qualified Users: 해당 step까지 순서를 만족한 사용자 수입니다. 이벤트 건수와 다를 수 있습니다.
+                </p>
+                <p className="mt-1">
+                  예시: <code className="text-gray-100">A,B,C</code> 퍼널에서 사용자 이벤트가 <code className="text-gray-100">A,C</code>면
+                  <code className="text-gray-100"> B</code>를 거치지 않아
+                  <code className="text-gray-100"> C</code> 단계 도달로 집계되지 않습니다.
+                </p>
+              </div>
+            )}
+          </div>
+
           <div className="mt-4 max-h-[320px] overflow-auto rounded-lg border border-gray-800">
             <table className="min-w-full divide-y divide-gray-800">
               <thead className="bg-gray-800/60">
@@ -371,6 +430,44 @@ export const CampaignDashboardPage: React.FC = () => {
               onChange={(e) => setComparisonEventName(e.target.value)}
               placeholder="purchase"
             />
+          </div>
+
+          <div className="mt-3 rounded-lg border border-gray-800 bg-gray-950/60 p-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-gray-200">Linked Segments (Selected Campaign)</p>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleUseLinkedSegments}
+                disabled={!isCampaignIdValid || linkedSegmentIds.length === 0}
+              >
+                Use Linked Segments
+              </Button>
+            </div>
+
+            {linkedSegments.length === 0 ? (
+              <p className="mt-2 text-xs text-gray-400">현재 캠페인에 연결된 세그먼트가 없습니다.</p>
+            ) : (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {linkedSegments.map((segment) => {
+                  const selected = parsedSegmentIds.includes(segment.id);
+                  return (
+                    <button
+                      key={segment.id}
+                      type="button"
+                      onClick={() => handleToggleSegmentId(segment.id)}
+                      className={`rounded-full border px-3 py-1 text-xs transition ${
+                        selected
+                          ? 'border-emerald-500 bg-emerald-900/40 text-emerald-200'
+                          : 'border-gray-700 bg-gray-900/70 text-gray-300 hover:border-gray-500'
+                      }`}
+                    >
+                      {segment.name} (#{segment.id})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {detailLoadingId === campaignId && (

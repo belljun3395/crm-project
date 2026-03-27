@@ -43,7 +43,8 @@ class UserRepositoryCustomImpl(
                     createdAt = it["created_at"] as LocalDateTime,
                     updatedAt = it["updated_at"] as LocalDateTime
                 )
-            }.awaitFirst()
+            }
+            .awaitFirstOrNull()
     }
 
     override suspend fun findAllWithPagination(page: Int, size: Int): List<User> {

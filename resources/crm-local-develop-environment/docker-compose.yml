@@ -78,6 +78,7 @@ services:
         command: [ "sh","-c","chmod +x /tmp/redis.sh && /tmp/redis.sh password 7006" ]
 
     crm-redis-cluster-create:
+        container_name: crm-redis-cluster-create
         image: redis:7.2-alpine
         network_mode: "service:crm-redis-cluster"
         depends_on:
@@ -185,6 +186,13 @@ services:
             - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
             - KAFKA_LOG_DIRS=/tmp/kraft-combined-logs
             - CLUSTER_ID=HYL2Y2eXBWf3X-MUk4zjSA
+        healthcheck:
+            test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+            start_period: 20s
+
     crm-kafka-ui:
         container_name: crm-kafka-ui
         image: provectuslabs/kafka-ui:latest
@@ -194,4 +202,5 @@ services:
             - KAFKA_CLUSTERS_0_NAME=crm-kafka
             - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=crm-kafka:9092
         depends_on:
-            - crm-kafka
+            crm-kafka:
+                condition: service_healthy

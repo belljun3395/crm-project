@@ -194,6 +194,8 @@ export const useCampaignDashboard = () => {
       };
       if (lastEventIdRef.current) {
         streamParams.lastEventId = lastEventIdRef.current;
+      } else {
+        streamParams.lastEventId = '0-0';
       }
 
       const streamUrl = campaignAPI.getStreamUrl(campaignId, {

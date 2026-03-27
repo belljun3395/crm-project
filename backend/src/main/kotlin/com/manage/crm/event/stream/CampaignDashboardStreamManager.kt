@@ -1,6 +1,11 @@
 package com.manage.crm.event.stream
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.data.redis.connection.stream.MapRecord
@@ -74,9 +79,10 @@ class CampaignDashboardStreamManager(
      * Opens a reactive stream reader for campaign events.
      *
      * Responsibility:
-     * 1. Start from latest offset when no cursor is provided.
+     * 1. Start from stream beginning when no cursor is provided.
      * 2. Start from explicit cursor when reconnecting.
-     * 3. Close stream by timeout and fail-safe to empty stream on read errors.
+     * 3. Keep polling Redis Stream with short blocking reads for live updates.
+     * 4. Complete when requested duration expires or client disconnects.
      */
     fun streamEvents(
         campaignId: Long,
@@ -84,16 +90,47 @@ class CampaignDashboardStreamManager(
         lastEventId: String? = null
     ): Flux<CampaignDashboardEvent> {
         val streamKey = getStreamKey(campaignId)
-        val streamOffset = if (lastEventId.isNullOrBlank()) {
-            StreamOffset.latest(streamKey)
+        val startOffset = if (lastEventId.isNullOrBlank()) {
+            ReadOffset.from("0-0")
         } else {
-            StreamOffset.create(streamKey, ReadOffset.from(lastEventId))
+            ReadOffset.from(lastEventId)
         }
 
-        return reactiveRedisTemplate.opsForStream<String, Any>()
-            .read(streamOffset)
-            .map { record -> mapRecordToEvent(record) }
-            .timeout(duration)
+        return Flux.create<CampaignDashboardEvent> { sink ->
+            val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+            val job = scope.launch {
+                var currentOffset = startOffset
+                val deadline = System.currentTimeMillis() + duration.toMillis()
+                while (isActive && !sink.isCancelled && System.currentTimeMillis() < deadline) {
+                    val records = reactiveRedisTemplate.opsForStream<String, Any>()
+                        .read(
+                            StreamReadOptions.empty()
+                                .count(100)
+                                .block(Duration.ofSeconds(1)),
+                            StreamOffset.create(streamKey, currentOffset)
+                        )
+                        .collectList()
+                        .awaitSingle()
+
+                    if (records.isEmpty()) {
+                        continue
+                    }
+
+                    records.forEach { record ->
+                        sink.next(mapRecordToEvent(record))
+                        currentOffset = ReadOffset.from(record.id.value)
+                    }
+                }
+
+                if (!sink.isCancelled) {
+                    sink.complete()
+                }
+            }
+
+            sink.onDispose {
+                job.cancel()
+            }
+        }
             .onErrorResume { error ->
                 log.error(error) { "Error streaming events for campaign: $campaignId" }
                 Flux.empty()

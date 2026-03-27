@@ -222,6 +222,10 @@ class CampaignDashboardController(
     ): Flux<ServerSentEvent<CampaignEventData>> {
         val duration = Duration.ofSeconds(durationSeconds)
         val resolvedLastEventId = lastEventId ?: lastEventIdHeader
+        val connectedEvent = ServerSentEvent.builder<CampaignEventData>()
+            .event("connected")
+            .comment("Stream connected")
+            .build()
 
         return streamCampaignDashboardUseCase.execute(
             StreamCampaignDashboardUseCaseIn(
@@ -246,6 +250,7 @@ class CampaignDashboardController(
                     )
                     .build()
             }
+            .startWith(connectedEvent)
             .timeout(duration)
             .onErrorResume { error ->
                 Flux.just(

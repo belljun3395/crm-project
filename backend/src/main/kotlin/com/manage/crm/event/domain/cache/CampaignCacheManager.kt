@@ -71,8 +71,11 @@ class CampaignCacheManager(
 
     /**
      * Persists full campaign hash under `campaign::<id>`.
+     * Existing hash fields are deleted first to avoid stale field retention
+     * when campaign ids are reused after local DB reset.
      */
     private suspend fun saveWithId(campaign: Campaign) {
+        redisTemplate.delete("${CAMPAIGN_CACHE_KEY_PREFIX}${campaign.id}").awaitSingleOrNull()
         redisTemplate.opsForHash<String, Any>()
             .putAll("${CAMPAIGN_CACHE_KEY_PREFIX}${campaign.id}", toHash(campaign))
             .awaitSingle()
