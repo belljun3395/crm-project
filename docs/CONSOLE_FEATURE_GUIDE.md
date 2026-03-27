@@ -324,14 +324,14 @@ GET /api/v1/users/count
 ## 6.5 Events
 
 ### 목적
-이벤트를 적재하고 where DSL로 이벤트를 조회합니다.
+이벤트를 적재하고, 이름 또는 속성 조건으로 이벤트를 조회합니다.
 
 ### 입력 스펙
 #### 검색
-| 필드 | 필수 | 규칙 | 예시 |
-| --- | --- | --- | --- |
-| Event Name | Y | 공백 불가 | `view_product` |
-| Where | Y | DSL 문자열 | `category&electronics&=&end` |
+| 필드 | 필수 | 규칙 |
+| --- | --- | --- |
+| Event Name | Y | 공백 불가 |
+| Where 조건 | N | Row 빌더로 추가 (없으면 이름만으로 전체 조회) |
 
 #### 생성
 | 필드 | 필수 | 규칙 |
@@ -342,19 +342,27 @@ GET /api/v1/users/count
 | properties | N | key/value 배열 |
 | segmentId | N | 양수 정수 |
 
-### where DSL 운영 가이드
-- 토큰 형식: `field&value&operator&join`
-- join: `and`, `or`, `end`
-- 연산자: `=`, `!=`, `>`, `>=`, `<`, `<=`, `like`, `between`
+### Where 조건 빌더 사용법
+UI에서 `+ Add Condition` 버튼으로 조건 행을 추가합니다.
 
-예시
+| 입력 | 설명 |
+| --- | --- |
+| key | 검색할 속성 키 (`category`, `amount` 등) |
+| operator | `=` `≠` `>` `≥` `<` `≤` `LIKE` `BETWEEN` |
+| value | 비교 값 |
+| AND/OR | 다음 조건과의 연결 (마지막 조건 제외) |
+
+BETWEEN 선택 시 `from ~ to` 두 개의 값 입력 필드가 나타납니다.
+
+조건 빌더가 내부적으로 생성하는 DSL 형식 (참고용):
 - 단일: `category&electronics&=&end`
 - 다중 AND: `category&electronics&=&and,brand&samsung&=&end`
 - 범위: `amount&100&amount&200&between&end`
 
 ### API 계약
-#### 검색
+#### 검색 (where 선택)
 ```http
+GET /api/v1/events?eventName=view_product
 GET /api/v1/events?eventName=view_product&where=category%26electronics%26%3D%26end
 ```
 
@@ -377,9 +385,8 @@ Content-Type: application/json
 ```
 
 ### 실패 시 점검
-- `eventName은 필수입니다.`: 공백 입력 확인
-- `where는 필수입니다.`: DSL 누락 확인
-- 결과 0건: DSL 연산자/조인 토큰 오타 확인
+- `eventName은 필수입니다.`: Event Name 공백 확인
+- 결과 0건: 조건의 key/value 값 또는 연산자 확인
 
 근거: Issue `#194`, `#191`, PR `#218`
 
