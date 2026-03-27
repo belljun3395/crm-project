@@ -17,7 +17,7 @@ import com.manage.crm.support.out
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
 import kotlinx.coroutines.Dispatchers
 import org.springframework.dao.DataIntegrityViolationException
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
 /**
@@ -29,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional
  * Failure: throws AlreadyExistsException when campaign name already exists.
  * Side effects: writes campaign cache after transaction commit.
  */
-@Service
+@Component
 class PostCampaignUseCase(
     private val campaignRepository: CampaignRepository,
     private val campaignSegmentsRepository: CampaignSegmentsRepository,

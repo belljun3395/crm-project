@@ -6,7 +6,7 @@ import com.manage.crm.event.application.dto.GetCampaignUseCaseOut
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
 import com.manage.crm.support.exception.NotFoundByIdException
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 
 /**
  * UC-CAMPAIGN-003
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service
  * Success: returns campaign detail.
  * Failure: throws when campaign does not exist.
  */
-@Service
+@Component
 class GetCampaignUseCase(
     private val campaignRepository: CampaignRepository,
     private val campaignSegmentsRepository: CampaignSegmentsRepository

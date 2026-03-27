@@ -1,8 +1,8 @@
 package com.manage.crm.event.application.dto
 
-import com.manage.crm.event.application.CampaignDashboardSummary
 import com.manage.crm.event.domain.CampaignDashboardMetrics
 import com.manage.crm.event.domain.TimeWindowUnit
+import com.manage.crm.event.domain.repository.projection.CampaignSummaryMetricsProjection
 import java.time.LocalDateTime
 
 data class GetCampaignDashboardUseCaseIn(
@@ -50,10 +50,13 @@ fun CampaignDashboardMetrics.toDto() = MetricDto(
     updatedAt = this.updatedAt
 )
 
-fun CampaignDashboardSummary.toDto() = DashboardSummaryDto(
-    campaignId = this.campaignId,
+fun CampaignSummaryMetricsProjection.toDashboardSummaryDto(
+    campaignId: Long,
+    lastUpdated: LocalDateTime
+) = DashboardSummaryDto(
+    campaignId = campaignId,
     totalEvents = this.totalEvents,
     eventsLast24Hours = this.eventsLast24Hours,
     eventsLast7Days = this.eventsLast7Days,
-    lastUpdated = this.lastUpdated
+    lastUpdated = lastUpdated
 )

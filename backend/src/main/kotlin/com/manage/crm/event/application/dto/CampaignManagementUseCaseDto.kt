@@ -32,7 +32,7 @@ data class UpdateCampaignUseCaseIn(
     val campaignId: Long,
     val name: String,
     val properties: List<CampaignPropertyUseCaseDto>,
-    val segmentIds: List<Long> = emptyList()
+    val segmentIds: List<Long>? = null
 )
 
 data class UpdateCampaignUseCaseOut(
@@ -58,5 +58,6 @@ data class CampaignPropertyUseCaseDto(
 
 data class StreamCampaignDashboardUseCaseIn(
     val campaignId: Long,
+    val durationSeconds: Long = 3600,
     val lastEventId: String? = null
 )

@@ -13,7 +13,9 @@ import com.manage.crm.event.domain.vo.CampaignProperty
 import com.manage.crm.segment.domain.repository.SegmentRepository
 import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.exception.NotFoundByIdException
-import org.springframework.stereotype.Service
+import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
+import kotlinx.coroutines.Dispatchers
+import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
 /**
@@ -24,11 +26,12 @@ import org.springframework.transaction.annotation.Transactional
  * Success: returns updated campaign detail.
  * Failure: throws when campaign/segment is missing or name is duplicated.
  */
-@Service
+@Component
 class UpdateCampaignUseCase(
     private val campaignRepository: CampaignRepository,
     private val campaignSegmentsRepository: CampaignSegmentsRepository,
     private val segmentRepository: SegmentRepository,
+    private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate,
     private val campaignCacheManager: CampaignCacheManager
 ) {
     @Transactional
@@ -39,8 +42,8 @@ class UpdateCampaignUseCase(
         val normalizedName = input.name.trim()
         ensureNameIsUnique(normalizedName, input.campaignId)
 
-        val segmentIds = input.segmentIds.distinct()
-        ensureSegmentsExist(segmentIds)
+        val requestedSegmentIds = input.segmentIds?.distinct()
+        requestedSegmentIds?.let { ensureSegmentsExist(it) }
 
         val previousName = campaign.name
         campaign.name = normalizedName
@@ -49,8 +52,14 @@ class UpdateCampaignUseCase(
         )
 
         val updatedCampaign = campaignRepository.save(campaign)
-        replaceCampaignSegments(input.campaignId, segmentIds)
-        refreshCampaignCache(updatedCampaign.id ?: input.campaignId, previousName, updatedCampaign)
+        requestedSegmentIds?.let { replaceCampaignSegments(input.campaignId, it) }
+
+        transactionSynchronizationTemplate.afterCommit(Dispatchers.IO, "refresh campaign cache after update") {
+            refreshCampaignCache(updatedCampaign.id ?: input.campaignId, previousName, updatedCampaign)
+        }
+
+        val resultSegmentIds = requestedSegmentIds
+            ?: campaignSegmentsRepository.findAllByCampaignId(input.campaignId).map { it.segmentId }
 
         return UpdateCampaignUseCaseOut(
             id = updatedCampaign.id ?: input.campaignId,
@@ -58,7 +67,7 @@ class UpdateCampaignUseCase(
             properties = updatedCampaign.properties.value.map {
                 CampaignPropertyUseCaseDto(key = it.key, value = it.value)
             },
-            segmentIds = segmentIds,
+            segmentIds = resultSegmentIds,
             createdAt = updatedCampaign.createdAt
         )
     }

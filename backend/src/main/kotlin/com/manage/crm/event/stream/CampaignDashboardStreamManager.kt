@@ -26,6 +26,9 @@ data class CampaignDashboardEvent(
     val streamId: String? = null
 )
 
+/**
+ * Encapsulates Redis Stream IO for campaign dashboard events.
+ */
 @Service
 class CampaignDashboardStreamManager(
     private val reactiveRedisTemplate: ReactiveRedisTemplate<String, Any>
@@ -36,9 +39,15 @@ class CampaignDashboardStreamManager(
         private const val STREAM_KEY_PREFIX = "campaign:dashboard:stream"
         private val DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
+        /**
+         * Builds stream key for a campaign-specific dashboard event stream.
+         */
         fun getStreamKey(campaignId: Long): String = "$STREAM_KEY_PREFIX:$campaignId"
     }
 
+    /**
+     * Publishes a single dashboard event record to Redis Stream.
+     */
     suspend fun publishEvent(event: CampaignDashboardEvent) {
         try {
             val streamKey = getStreamKey(event.campaignId)
@@ -61,6 +70,14 @@ class CampaignDashboardStreamManager(
         }
     }
 
+    /**
+     * Opens a reactive stream reader for campaign events.
+     *
+     * Responsibility:
+     * 1. Start from latest offset when no cursor is provided.
+     * 2. Start from explicit cursor when reconnecting.
+     * 3. Close stream by timeout and fail-safe to empty stream on read errors.
+     */
     fun streamEvents(
         campaignId: Long,
         duration: Duration = Duration.ofHours(1),
@@ -83,6 +100,9 @@ class CampaignDashboardStreamManager(
             }
     }
 
+    /**
+     * Returns current stream length. Returns `0` on read failure.
+     */
     suspend fun getStreamLength(campaignId: Long): Long {
         return try {
             val streamKey = getStreamKey(campaignId)
@@ -95,6 +115,9 @@ class CampaignDashboardStreamManager(
         }
     }
 
+    /**
+     * Trims the stream to bounded length to prevent unbounded growth.
+     */
     suspend fun trimStream(campaignId: Long, maxLength: Long = 10000) {
         try {
             val streamKey = getStreamKey(campaignId)
@@ -106,6 +129,23 @@ class CampaignDashboardStreamManager(
         }
     }
 
+    /**
+     * Deletes an entire campaign stream key.
+     */
+    suspend fun deleteStream(campaignId: Long) {
+        try {
+            val streamKey = getStreamKey(campaignId)
+            reactiveRedisTemplate.delete(streamKey).awaitFirstOrNull()
+        } catch (e: Exception) {
+            log.error(e) { "Failed to delete stream for campaign: $campaignId" }
+        }
+    }
+
+    /**
+     * Reads a bounded batch of events from a cursor.
+     *
+     * Starts from `0-0` when no cursor is provided.
+     */
     suspend fun readEventsBatch(
         campaignId: Long,
         lastId: String?,
@@ -133,6 +173,9 @@ class CampaignDashboardStreamManager(
         }
     }
 
+    /**
+     * Maps a Redis stream record to strongly typed dashboard event payload.
+     */
     private fun mapRecordToEvent(record: MapRecord<String, *, *>): CampaignDashboardEvent {
         val values = record.value
         return CampaignDashboardEvent(
@@ -149,6 +192,9 @@ class CampaignDashboardStreamManager(
         )
     }
 
+    /**
+     * Parses ISO timestamp value written to stream record.
+     */
     private fun parseTimestamp(timestampStr: String?): LocalDateTime? {
         return try {
             timestampStr?.let { LocalDateTime.parse(it, DATE_TIME_FORMATTER) }

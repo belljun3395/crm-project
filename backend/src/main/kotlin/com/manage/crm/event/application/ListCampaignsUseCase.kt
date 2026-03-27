@@ -5,7 +5,7 @@ import com.manage.crm.event.application.dto.ListCampaignsUseCaseIn
 import com.manage.crm.event.application.dto.ListCampaignsUseCaseOut
 import com.manage.crm.event.domain.repository.CampaignRepository
 import kotlinx.coroutines.flow.toList
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 
 /**
  * UC-CAMPAIGN-002
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service
  * Input: max item limit.
  * Success: returns campaign ids, names, and created timestamps.
  */
-@Service
+@Component
 class ListCampaignsUseCase(
     private val campaignRepository: CampaignRepository
 ) {
@@ -25,10 +25,8 @@ class ListCampaignsUseCase(
 
     private suspend fun loadRecentCampaigns(limit: Int): List<CampaignListItemUseCaseDto> {
         val normalizedLimit = limit.coerceIn(1, 1000)
-        return campaignRepository.findAll()
+        return campaignRepository.findRecentCampaigns(normalizedLimit)
             .toList()
-            .sortedByDescending { it.createdAt }
-            .take(normalizedLimit)
             .mapNotNull { campaign ->
                 val campaignId = campaign.id ?: return@mapNotNull null
                 CampaignListItemUseCaseDto(

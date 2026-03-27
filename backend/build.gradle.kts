@@ -152,6 +152,7 @@ dependencies {
     testImplementation(libs.kotest.framework.api)
     testImplementation(libs.kotest.extensions.spring)
     testImplementation(libs.kotest.extensions.allure)
+    testImplementation(libs.konsist)
     testImplementation(libs.kotlinx.coroutines.test)
 
     /** testcontainers */

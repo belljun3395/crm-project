@@ -8,10 +8,17 @@ import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.repository.UserRepository
 import kotlinx.coroutines.flow.toList
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
-@Service
+/**
+ * UC-EVENT-002
+ * Reads recent events for operations monitoring.
+ *
+ * Input: optional limit.
+ * Success: returns recent events ordered by creation time with external user ids.
+ */
+@Component
 class BrowseEventsUseCase(
     private val eventRepository: EventRepository,
     private val userRepository: UserRepository

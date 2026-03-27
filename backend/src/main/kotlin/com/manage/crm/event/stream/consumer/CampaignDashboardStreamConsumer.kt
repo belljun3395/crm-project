@@ -14,6 +14,10 @@ class CampaignDashboardStreamConsumer(
     private val campaignDashboardStreamManager: CampaignDashboardStreamManager,
     private val campaignDashboardMetricsService: CampaignDashboardMetricsService
 ) {
+    companion object {
+        private const val MAX_STREAM_LENGTH = 10_000L
+    }
+
     val log = KotlinLogging.logger { }
 
     @Scheduled(fixedDelay = 60_000)
@@ -42,6 +46,18 @@ class CampaignDashboardStreamConsumer(
             campaignStreamRegistryManager.updateLastProcessedId(campaignId, lastId)
         }
 
+        trimStreamIfNeeded(campaignId)
+
         log.info { "Processed ${events.size} events for campaign: $campaignId" }
+    }
+
+    private suspend fun trimStreamIfNeeded(campaignId: Long) {
+        val streamLength = campaignDashboardStreamManager.getStreamLength(campaignId)
+        if (streamLength <= MAX_STREAM_LENGTH) {
+            return
+        }
+
+        campaignDashboardStreamManager.trimStream(campaignId, maxLength = MAX_STREAM_LENGTH)
+        log.debug { "Trimmed campaign stream to max length: campaignId=$campaignId, beforeLength=$streamLength" }
     }
 }

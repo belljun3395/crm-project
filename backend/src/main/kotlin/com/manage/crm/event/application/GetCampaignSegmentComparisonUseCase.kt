@@ -3,11 +3,11 @@ package com.manage.crm.event.application
 import com.manage.crm.event.application.dto.GetCampaignSegmentComparisonUseCaseIn
 import com.manage.crm.event.application.dto.GetCampaignSegmentComparisonUseCaseOut
 import com.manage.crm.event.application.dto.SegmentComparisonMetricDto
+import com.manage.crm.event.application.util.toPercentage
 import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.segment.domain.repository.SegmentRepository
 import com.manage.crm.segment.service.SegmentTargetingService
 import org.springframework.stereotype.Component
-import kotlin.math.roundToInt
 
 /**
  * UC-CAMPAIGN-010
@@ -53,7 +53,7 @@ class GetCampaignSegmentComparisonUseCase(
                 targetUserCount = targetUserCount,
                 eventUserCount = eventUserCount,
                 eventCount = segmentEvents.size,
-                conversionRate = percent(eventUserCount, targetUserCount)
+                conversionRate = toPercentage(eventUserCount, targetUserCount)
             )
         }.sortedByDescending { it.conversionRate }
 
@@ -62,12 +62,5 @@ class GetCampaignSegmentComparisonUseCase(
             eventName = input.eventName?.trim()?.takeIf { it.isNotBlank() },
             segmentMetrics = metrics
         )
-    }
-
-    private fun percent(numerator: Int, denominator: Int): Double {
-        if (denominator <= 0) {
-            return 0.0
-        }
-        return ((numerator.toDouble() / denominator.toDouble()) * 10000.0).roundToInt() / 100.0
     }
 }

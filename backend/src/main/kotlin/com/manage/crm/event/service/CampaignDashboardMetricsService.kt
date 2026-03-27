@@ -17,6 +17,14 @@ class CampaignDashboardMetricsService(
     private val campaignEventsRepository: CampaignEventsRepository,
     private val campaignDashboardMetricsRepository: CampaignDashboardMetricsRepository
 ) {
+    /**
+     * Aggregates streamed events into fixed time windows and persists metrics.
+     *
+     * Responsibility:
+     * 1. Group incoming events by campaign and window unit.
+     * 2. Upsert EVENT_COUNT incrementally per window.
+     * 3. Recompute absolute counters (total interactions / unique users) for each window.
+     */
     suspend fun updateMetricsForEvents(events: List<CampaignDashboardEvent>) {
         val timeWindowUnits = listOf(
             TimeWindowUnit.MINUTE,
@@ -33,7 +41,7 @@ class CampaignDashboardMetricsService(
                         val (start, end) = window
                         upsertEventCountMetric(campaignId, unit, start, end, windowEvents.size.toLong())
 
-                        val totalUserCount =
+                        val totalEventCount =
                             campaignEventsRepository.countEventsByCampaignIdAndCreatedAtRange(campaignId, start, end)
                         val uniqueUserCount =
                             campaignEventsRepository.countDistinctUsersByCampaignIdAndCreatedAtRange(
@@ -42,7 +50,8 @@ class CampaignDashboardMetricsService(
                                 end
                             )
 
-                        upsertAbsoluteMetric(campaignId, MetricType.TOTAL_USER_COUNT, unit, start, end, totalUserCount)
+                        // TOTAL_USER_COUNT is currently used as a legacy key for total interaction volume.
+                        upsertAbsoluteMetric(campaignId, MetricType.TOTAL_USER_COUNT, unit, start, end, totalEventCount)
                         upsertAbsoluteMetric(
                             campaignId,
                             MetricType.UNIQUE_USER_COUNT,
@@ -56,6 +65,9 @@ class CampaignDashboardMetricsService(
         }
     }
 
+    /**
+     * Upserts EVENT_COUNT by accumulating the number of events in the selected window.
+     */
     private suspend fun upsertEventCountMetric(
         campaignId: Long,
         timeWindowUnit: TimeWindowUnit,
@@ -73,6 +85,9 @@ class CampaignDashboardMetricsService(
         )
     }
 
+    /**
+     * Upserts absolute metrics using max semantics to keep monotonic values per window.
+     */
     private suspend fun upsertAbsoluteMetric(
         campaignId: Long,
         metricType: MetricType,
@@ -91,6 +106,9 @@ class CampaignDashboardMetricsService(
         )
     }
 
+    /**
+     * Normalizes a timestamp to the start/end boundary of the requested window unit.
+     */
     private fun calculateTimeWindow(
         timestamp: LocalDateTime,
         unit: TimeWindowUnit

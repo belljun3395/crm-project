@@ -15,8 +15,7 @@ import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.vo.CampaignProperties
 import com.manage.crm.event.domain.vo.CampaignProperty
-import com.manage.crm.event.stream.CampaignDashboardStreamManager
-import com.manage.crm.event.stream.CampaignStreamRegistryManager
+import com.manage.crm.event.stream.CampaignEventPublisher
 import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
 import com.manage.crm.segment.service.SegmentTargetingService
 import com.manage.crm.support.exception.NotFoundByException
@@ -39,8 +38,7 @@ class PostEventUseCaseTest : BehaviorSpec({
     lateinit var userRepository: UserRepository
     lateinit var segmentTargetingService: SegmentTargetingService
     lateinit var journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher
-    lateinit var campaignDashboardStreamManager: CampaignDashboardStreamManager
-    lateinit var campaignStreamRegistryManager: CampaignStreamRegistryManager
+    lateinit var campaignEventPublisher: CampaignEventPublisher
     lateinit var postEventUseCase: PostEventUseCase
 
     beforeContainer {
@@ -51,8 +49,7 @@ class PostEventUseCaseTest : BehaviorSpec({
         userRepository = mockk()
         segmentTargetingService = mockk()
         journeyTriggerQueuePublisher = mockk(relaxed = true)
-        campaignDashboardStreamManager = mockk(relaxed = true)
-        campaignStreamRegistryManager = mockk(relaxed = true)
+        campaignEventPublisher = mockk(relaxed = true)
         postEventUseCase =
             PostEventUseCase(
                 eventRepository,
@@ -62,8 +59,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 userRepository,
                 segmentTargetingService,
                 journeyTriggerQueuePublisher,
-                campaignDashboardStreamManager,
-                campaignStreamRegistryManager
+                campaignEventPublisher
             )
     }
 
@@ -124,8 +120,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             }
 
             then("should not publish to dashboard stream when no campaign") {
-                coVerify(exactly = 0) { campaignDashboardStreamManager.publishEvent(any()) }
-                coVerify(exactly = 0) { campaignStreamRegistryManager.registerCampaign(any()) }
+                coVerify(exactly = 0) { campaignEventPublisher.publishCampaignEvent(any()) }
             }
         }
 
@@ -229,7 +224,7 @@ class PostEventUseCaseTest : BehaviorSpec({
 
             then("publish campaign event to dashboard stream") {
                 coVerify(exactly = 1) {
-                    campaignDashboardStreamManager.publishEvent(
+                    campaignEventPublisher.publishCampaignEvent(
                         match {
                             it.campaignId == campaign.id &&
                                 it.eventId == event.id &&
@@ -238,7 +233,6 @@ class PostEventUseCaseTest : BehaviorSpec({
                         }
                     )
                 }
-                coVerify(exactly = 1) { campaignStreamRegistryManager.registerCampaign(campaign.id!!) }
             }
 
             `when`("post event with campaign. when campaign is not cached") {
@@ -341,9 +335,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             coEvery { campaignEventsRepository.save(any(CampaignEvents::class)) } answers { campaignEvents }
 
             // Dashboard service throws exception
-            coEvery {
-                campaignDashboardStreamManager.publishEvent(any())
-            } throws RuntimeException("Redis connection failed")
+            coEvery { campaignEventPublisher.publishCampaignEvent(any()) } throws RuntimeException("Redis connection failed")
 
             val result = postEventUseCase.execute(useCaseIn)
 
@@ -357,7 +349,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             }
 
             then("should attempt to publish to dashboard stream") {
-                coVerify(exactly = 1) { campaignDashboardStreamManager.publishEvent(any()) }
+                coVerify(exactly = 1) { campaignEventPublisher.publishCampaignEvent(any()) }
             }
         }
 
@@ -448,7 +440,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             }
 
             then("should not publish to dashboard stream when campaign not found") {
-                coVerify(exactly = 0) { campaignDashboardStreamManager.publishEvent(any()) }
+                coVerify(exactly = 0) { campaignEventPublisher.publishCampaignEvent(any()) }
             }
         }
 
@@ -557,7 +549,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             }
 
             then("should not publish to dashboard stream when property keys mismatch") {
-                coVerify(exactly = 0) { campaignDashboardStreamManager.publishEvent(any()) }
+                coVerify(exactly = 0) { campaignEventPublisher.publishCampaignEvent(any()) }
             }
         }
 

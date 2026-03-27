@@ -36,8 +36,9 @@ class EventConventionTest : BehaviorSpec({
         }
 
         `when`("checking use case shape") {
-            val useCases = scanAnnotatedClasses("com.manage.crm.event.application", Service::class.java) +
-                scanAnnotatedClasses("com.manage.crm.event.application", Component::class.java)
+            val useCases = scanAnnotatedClasses("com.manage.crm.event.application", Component::class.java)
+            val serviceAnnotatedApplicationBeans =
+                scanAnnotatedClasses("com.manage.crm.event.application", Service::class.java)
 
             then("all use case classes provide execute entrypoint") {
                 useCases
@@ -46,6 +47,51 @@ class EventConventionTest : BehaviorSpec({
                     .forEach { useCaseClass ->
                         useCaseClass.methods.any { it.name == "execute" }.shouldBe(true)
                     }
+            }
+
+            then("application beans are declared as UseCase") {
+                useCases
+                    .distinctBy { it.name }
+                    .forEach { applicationBeanClass ->
+                        applicationBeanClass.simpleName.endsWith("UseCase").shouldBeTrue()
+                    }
+            }
+
+            then("application use cases use Component annotation only") {
+                serviceAnnotatedApplicationBeans.shouldBe(emptyList())
+            }
+        }
+
+        `when`("checking dependency direction to prevent cyclic references") {
+            val applicationBeans = scanAnnotatedClasses("com.manage.crm.event.application", Component::class.java)
+            val services = scanAnnotatedClasses("com.manage.crm.event.service", Service::class.java)
+            val streamBeans = scanAnnotatedClasses("com.manage.crm.event.stream", Service::class.java) +
+                scanAnnotatedClasses("com.manage.crm.event.stream", Component::class.java)
+
+            then("application layer does not depend on controller layer") {
+                applicationBeans.forEach { applicationClass ->
+                    constructorDependencies(applicationClass).forEach { dependencyType ->
+                        dependencyType.packageName.startsWith("com.manage.crm.event.controller").shouldBe(false)
+                    }
+                }
+            }
+
+            then("service layer does not depend on application/controller layer") {
+                services.forEach { serviceClass ->
+                    constructorDependencies(serviceClass).forEach { dependencyType ->
+                        dependencyType.packageName.startsWith("com.manage.crm.event.application").shouldBe(false)
+                        dependencyType.packageName.startsWith("com.manage.crm.event.controller").shouldBe(false)
+                    }
+                }
+            }
+
+            then("stream layer does not depend on application/controller layer") {
+                streamBeans.forEach { streamClass ->
+                    constructorDependencies(streamClass).forEach { dependencyType ->
+                        dependencyType.packageName.startsWith("com.manage.crm.event.application").shouldBe(false)
+                        dependencyType.packageName.startsWith("com.manage.crm.event.controller").shouldBe(false)
+                    }
+                }
             }
         }
     }
@@ -60,6 +106,11 @@ private fun scanAnnotatedClasses(basePackage: String, annotationClass: Class<out
 }
 
 private fun constructorDependencies(clazz: Class<*>): List<Class<*>> {
-    val primaryConstructor = clazz.declaredConstructors.maxByOrNull { it.parameterCount }
+    val primaryConstructor = clazz.declaredConstructors
+        .filterNot { constructor ->
+            constructor.isSynthetic ||
+                constructor.parameterTypes.any { it.name == "kotlin.jvm.internal.DefaultConstructorMarker" }
+        }
+        .maxByOrNull { it.parameterCount }
     return primaryConstructor?.parameterTypes?.toList().orEmpty()
 }

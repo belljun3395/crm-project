@@ -143,7 +143,7 @@ class SendNotificationEmailUseCase(
         return when {
             campaignId != null && !userIds.isEmpty() -> {
                 val allUserIdsInCampaign =
-                    campaignEventsService.findAllEventsByCampaignIdAndUserId(campaignId).map { it.userId }.toSet()
+                    campaignEventsService.findAllEventsByCampaignId(campaignId).map { it.userId }.toSet()
                 userIds.filter { allUserIdsInCampaign.contains(it) }
                     .let { filteredUserIds ->
                         userRepository.findAllByIdIn(filteredUserIds)
@@ -158,7 +158,7 @@ class SendNotificationEmailUseCase(
 
             campaignId != null && userIds.isEmpty() -> {
                 val allUserIdsInCampaign =
-                    campaignEventsService.findAllEventsByCampaignIdAndUserId(campaignId).map { it.userId }.toSet()
+                    campaignEventsService.findAllEventsByCampaignId(campaignId).map { it.userId }.toSet()
                 userRepository.findAllByIdIn(allUserIdsInCampaign.toList())
                     .filter {
                         objectMapper.readValue(

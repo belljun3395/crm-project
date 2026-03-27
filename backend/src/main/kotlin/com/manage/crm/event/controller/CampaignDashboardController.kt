@@ -144,7 +144,7 @@ class CampaignDashboardController(
                 properties = request.properties.map {
                     CampaignPropertyUseCaseDto(key = it.key, value = it.value)
                 },
-                segmentIds = request.segmentIds ?: emptyList()
+                segmentIds = request.segmentIds
             )
         )
 
@@ -226,6 +226,7 @@ class CampaignDashboardController(
         return streamCampaignDashboardUseCase.execute(
             StreamCampaignDashboardUseCaseIn(
                 campaignId = campaignId,
+                durationSeconds = durationSeconds,
                 lastEventId = resolvedLastEventId
             )
         )

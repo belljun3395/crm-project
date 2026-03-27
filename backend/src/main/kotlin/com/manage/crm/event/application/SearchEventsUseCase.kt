@@ -13,9 +13,16 @@ import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.support.out
 import com.manage.crm.user.domain.repository.UserRepository
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 
-@Service
+/**
+ * UC-EVENT-003
+ * Searches events by name and property conditions.
+ *
+ * Input: event name with one or more property operation groups.
+ * Success: returns matched events with external user ids.
+ */
+@Component
 class SearchEventsUseCase(
     private val eventRepository: EventRepository,
     private val userRepository: UserRepository
