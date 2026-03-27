@@ -41,6 +41,15 @@ data class DeleteSegmentUseCaseIn(
     val id: Long
 )
 
+data class GetSegmentMatchedUsersUseCaseIn(
+    val segmentId: Long,
+    val campaignId: Long? = null
+)
+
+data class GetSegmentMatchedUsersUseCaseOut(
+    val users: List<SegmentMatchedUserDto>
+)
+
 data class SegmentDto(
     val id: Long,
     val name: String,
@@ -56,4 +65,12 @@ data class SegmentConditionDto(
     val valueType: String,
     val value: JsonNode,
     val position: Int
+)
+
+data class SegmentMatchedUserDto(
+    val id: Long,
+    val externalId: String,
+    val email: String?,
+    val name: String?,
+    val createdAt: String?
 )
