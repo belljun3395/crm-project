@@ -1,41 +1,56 @@
 package com.manage.crm.segment.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.NullNode
 import com.manage.crm.segment.application.dto.GetSegmentUseCaseIn
 import com.manage.crm.segment.application.dto.GetSegmentUseCaseOut
-import com.manage.crm.segment.application.dto.toSegmentConditionDto
-import com.manage.crm.segment.application.dto.toSegmentDto
+import com.manage.crm.segment.application.dto.SegmentConditionDto
+import com.manage.crm.segment.application.dto.SegmentDto
 import com.manage.crm.segment.domain.repository.SegmentConditionRepository
 import com.manage.crm.segment.domain.repository.SegmentRepository
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
 import kotlinx.coroutines.flow.toList
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
+import java.time.format.DateTimeFormatter
 
 /**
- * UC-SEGMENT-003
- * Retrieves a segment detail with ordered conditions.
- *
- * Input: segment id.
- * Success: returns the segment with condition list sorted by position asc.
- * Failure: throws NotFoundByIdException when segment does not exist.
+ * Retrieves a single segment with its ordered conditions.
  */
-@Component
+@Service
 class GetSegmentUseCase(
     private val segmentRepository: SegmentRepository,
     private val segmentConditionRepository: SegmentConditionRepository,
     private val objectMapper: ObjectMapper
 ) {
+    companion object {
+        private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    }
+
     suspend fun execute(useCaseIn: GetSegmentUseCaseIn): GetSegmentUseCaseOut {
         val segment = segmentRepository.findById(useCaseIn.id) ?: throw NotFoundByIdException("Segment", useCaseIn.id)
-        val segmentId = segment.id ?: throw IllegalStateException("Segment id is null")
-        val conditions = segmentConditionRepository.findBySegmentIdOrderByPositionAsc(segmentId)
+        val conditions = segmentConditionRepository.findBySegmentIdOrderByPositionAsc(segment.id!!)
             .toList()
-            .map { condition -> condition.toSegmentConditionDto(objectMapper) }
+            .map { condition ->
+                SegmentConditionDto(
+                    field = condition.fieldName,
+                    operator = condition.operator,
+                    valueType = condition.valueType,
+                    value = runCatching { objectMapper.readTree(condition.conditionValue) }.getOrElse { NullNode.instance },
+                    position = condition.position
+                )
+            }
 
         return out {
             GetSegmentUseCaseOut(
-                segment = segment.toSegmentDto(conditions)
+                segment = SegmentDto(
+                    id = segment.id!!,
+                    name = segment.name,
+                    description = segment.description,
+                    active = segment.active,
+                    conditions = conditions,
+                    createdAt = segment.createdAt?.format(formatter)
+                )
             )
         }
     }

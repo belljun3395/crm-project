@@ -1,11 +1,42 @@
 package com.manage.crm.segment.application
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.manage.crm.segment.domain.SegmentOperator
-import com.manage.crm.segment.domain.SegmentValueType
 import com.manage.crm.segment.exception.InvalidSegmentConditionException
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+
+enum class SegmentValueType {
+    STRING,
+    NUMBER,
+    DATETIME,
+    BOOLEAN;
+
+    companion object {
+        fun from(value: String): SegmentValueType {
+            return entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+                ?: throw InvalidSegmentConditionException("Unsupported valueType: $value")
+        }
+    }
+}
+
+enum class SegmentOperator {
+    EQ,
+    NEQ,
+    GT,
+    GTE,
+    LT,
+    LTE,
+    IN,
+    CONTAINS,
+    BETWEEN;
+
+    companion object {
+        fun from(value: String): SegmentOperator {
+            return entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+                ?: throw InvalidSegmentConditionException("Unsupported operator: $value")
+        }
+    }
+}
 
 object SegmentConditionValidator {
     private val fieldValueTypeMap = mapOf(

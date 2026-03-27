@@ -1,27 +1,24 @@
 package com.manage.crm.segment.controller
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.config.SwaggerTag
 import com.manage.crm.segment.application.BrowseSegmentUseCase
 import com.manage.crm.segment.application.DeleteSegmentUseCase
-import com.manage.crm.segment.application.GetSegmentMatchedUsersUseCase
 import com.manage.crm.segment.application.GetSegmentUseCase
 import com.manage.crm.segment.application.PostSegmentUseCase
 import com.manage.crm.segment.application.dto.BrowseSegmentUseCaseIn
-import com.manage.crm.segment.application.dto.DeleteSegmentUseCaseIn
-import com.manage.crm.segment.application.dto.GetSegmentMatchedUsersUseCaseIn
 import com.manage.crm.segment.application.dto.GetSegmentUseCaseIn
 import com.manage.crm.segment.application.dto.PostSegmentConditionIn
 import com.manage.crm.segment.application.dto.PostSegmentUseCaseIn
 import com.manage.crm.segment.application.dto.PostSegmentUseCaseOut
 import com.manage.crm.segment.application.dto.SegmentDto
-import com.manage.crm.segment.application.dto.SegmentMatchedUserDto
-import com.manage.crm.segment.application.dto.toPostSegmentConditionIn
 import com.manage.crm.segment.controller.request.PostSegmentRequest
 import com.manage.crm.segment.controller.request.PutSegmentRequest
-import com.manage.crm.segment.controller.request.SegmentConditionRequest
 import com.manage.crm.segment.exception.InvalidSegmentConditionException
+import com.manage.crm.segment.service.SegmentTargetingService
 import com.manage.crm.support.web.ApiResponse
 import com.manage.crm.support.web.ApiResponseGenerator
+import com.manage.crm.user.domain.repository.UserRepository
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -37,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import java.time.format.DateTimeFormatter
 
 @Tag(name = SwaggerTag.SEGMENTS_SWAGGER_TAG, description = "세그먼트 API")
 @Validated
@@ -47,8 +45,14 @@ class SegmentController(
     private val deleteSegmentUseCase: DeleteSegmentUseCase,
     private val browseSegmentUseCase: BrowseSegmentUseCase,
     private val getSegmentUseCase: GetSegmentUseCase,
-    private val getSegmentMatchedUsersUseCase: GetSegmentMatchedUsersUseCase
+    private val segmentTargetingService: SegmentTargetingService,
+    private val userRepository: UserRepository,
+    private val objectMapper: ObjectMapper
 ) {
+    companion object {
+        private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    }
+
     @PostMapping
     suspend fun create(
         @Valid
@@ -60,7 +64,14 @@ class SegmentController(
                 name = request.name,
                 description = request.description,
                 active = request.active ?: true,
-                conditions = request.conditions.map { condition -> condition.toConditionIn() }
+                conditions = request.conditions.map { condition ->
+                    PostSegmentConditionIn(
+                        field = condition.field,
+                        operator = condition.operator,
+                        valueType = condition.valueType,
+                        value = condition.value
+                    )
+                }
             )
         ).let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
     }
@@ -74,9 +85,19 @@ class SegmentController(
     ): ApiResponse<ApiResponse.SuccessBody<PostSegmentUseCaseOut>> {
         val existing = getSegmentUseCase.execute(GetSegmentUseCaseIn(id)).segment
         val conditions = request.conditions?.map { condition ->
-            condition.toConditionIn()
+            PostSegmentConditionIn(
+                field = condition.field,
+                operator = condition.operator,
+                valueType = condition.valueType,
+                value = condition.value
+            )
         } ?: existing.conditions.map { condition ->
-            condition.toPostSegmentConditionIn()
+            PostSegmentConditionIn(
+                field = condition.field,
+                operator = condition.operator,
+                valueType = condition.valueType,
+                value = condition.value
+            )
         }
 
         return postSegmentUseCase.execute(
@@ -92,7 +113,7 @@ class SegmentController(
 
     @DeleteMapping("/{id}")
     suspend fun delete(@PathVariable id: Long): ApiResponse<Void> {
-        deleteSegmentUseCase.execute(DeleteSegmentUseCaseIn(id = id))
+        deleteSegmentUseCase.execute(id)
         return ApiResponseGenerator.fail(HttpStatus.NO_CONTENT)
     }
 
@@ -116,10 +137,40 @@ class SegmentController(
         @PathVariable id: Long,
         @RequestParam(required = false) campaignId: Long?
     ): ApiResponse<ApiResponse.SuccessBody<List<SegmentMatchedUserDto>>> {
-        val result = getSegmentMatchedUsersUseCase.execute(
-            GetSegmentMatchedUsersUseCaseIn(segmentId = id, campaignId = campaignId)
-        )
-        return ApiResponseGenerator.success(result.users, HttpStatus.OK)
+        val targetUserIds = segmentTargetingService.resolveUserIds(id, campaignId)
+        if (targetUserIds.isEmpty()) {
+            return ApiResponseGenerator.success(emptyList(), HttpStatus.OK)
+        }
+
+        val targetIdSet = targetUserIds.toSet()
+        val users = mutableListOf<com.manage.crm.user.domain.User>()
+        var page = 0
+        val size = 500
+        while (true) {
+            val batch = userRepository.findAllWithPagination(page, size)
+            if (batch.isEmpty()) {
+                break
+            }
+            users += batch.filter { user -> user.id != null && targetIdSet.contains(user.id) }
+            if (batch.size < size) {
+                break
+            }
+            page += 1
+        }
+
+        val matchedUsers = users.mapNotNull { user ->
+            val userId = user.id ?: return@mapNotNull null
+            val userAttributes = runCatching { objectMapper.readTree(user.userAttributes.value) }.getOrNull()
+            SegmentMatchedUserDto(
+                id = userId,
+                externalId = user.externalId,
+                email = userAttributes?.get("email")?.asText(),
+                name = userAttributes?.get("name")?.asText(),
+                createdAt = user.createdAt?.format(formatter)
+            )
+        }.sortedBy { it.id }
+
+        return ApiResponseGenerator.success(matchedUsers, HttpStatus.OK)
     }
 
     @ExceptionHandler(InvalidSegmentConditionException::class)
@@ -127,13 +178,12 @@ class SegmentController(
     fun handleInvalidSegmentConditionException(e: InvalidSegmentConditionException): ApiResponse<ApiResponse.FailureBody> {
         return ApiResponseGenerator.fail(e.message ?: "invalid segment condition", HttpStatus.BAD_REQUEST)
     }
-
-    private fun SegmentConditionRequest.toConditionIn(): PostSegmentConditionIn {
-        return PostSegmentConditionIn(
-            field = this.field,
-            operator = this.operator,
-            valueType = this.valueType,
-            value = this.value
-        )
-    }
 }
+
+data class SegmentMatchedUserDto(
+    val id: Long,
+    val externalId: String,
+    val email: String?,
+    val name: String?,
+    val createdAt: String?
+)

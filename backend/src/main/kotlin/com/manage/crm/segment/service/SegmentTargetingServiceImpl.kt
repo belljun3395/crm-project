@@ -5,9 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
 import com.manage.crm.event.domain.repository.EventRepository
+import com.manage.crm.segment.application.SegmentOperator
+import com.manage.crm.segment.application.SegmentValueType
 import com.manage.crm.segment.domain.SegmentCondition
-import com.manage.crm.segment.domain.SegmentOperator
-import com.manage.crm.segment.domain.SegmentValueType
 import com.manage.crm.segment.domain.repository.SegmentConditionRepository
 import com.manage.crm.segment.domain.repository.SegmentRepository
 import com.manage.crm.support.exception.NotFoundByIdException
@@ -30,15 +30,6 @@ class SegmentTargetingServiceImpl(
     private val objectMapper: ObjectMapper
 ) : SegmentTargetingService {
 
-    /**
-     * Evaluates all conditions in the segment and returns matched user ids.
-     *
-     * Flow:
-     * 1. Validate segment existence/activation.
-     * 2. Load ordered conditions.
-     * 3. Build evaluation scope (campaign scoped or global).
-     * 4. Keep users that satisfy every condition.
-     */
     override suspend fun resolveUserIds(segmentId: Long, campaignId: Long?): List<Long> {
         val segment = segmentRepository.findById(segmentId) ?: throw NotFoundByIdException("Segment", segmentId)
         if (!segment.active) {
@@ -102,16 +93,10 @@ class SegmentTargetingServiceImpl(
             .mapNotNull { it.id }
     }
 
-    /**
-     * Parses user attribute json into a tree for dynamic field lookup.
-     */
     private fun parseUserAttributes(user: User): JsonNode? {
         return runCatching { objectMapper.readTree(user.userAttributes.value) }.getOrNull()
     }
 
-    /**
-     * Dispatches one condition evaluation by field name.
-     */
     private fun matchesCondition(
         user: User,
         userAttributes: JsonNode?,
@@ -130,11 +115,6 @@ class SegmentTargetingServiceImpl(
         }
     }
 
-    /**
-     * Evaluates an event-field condition against a list of actual values.
-     *
-     * `NEQ` requires all values to satisfy inequality, while other operators match on any value.
-     */
     private fun matchMany(
         actualValues: List<Any>,
         condition: SegmentCondition,
@@ -150,9 +130,6 @@ class SegmentTargetingServiceImpl(
         }
     }
 
-    /**
-     * Evaluates a single actual value using parsed operator/valueType.
-     */
     private fun matchSingle(
         actualValue: Any?,
         condition: SegmentCondition,
@@ -173,9 +150,6 @@ class SegmentTargetingServiceImpl(
         }
     }
 
-    /**
-     * Matches string values for string-compatible operators.
-     */
     private fun matchString(actual: String, operator: SegmentOperator, expectedValue: JsonNode): Boolean {
         return when (operator) {
             SegmentOperator.EQ -> actual == expectedValue.asText()
@@ -186,9 +160,6 @@ class SegmentTargetingServiceImpl(
         }
     }
 
-    /**
-     * Matches numeric values for number operators including `IN` and `BETWEEN`.
-     */
     private fun matchNumber(actual: BigDecimal, operator: SegmentOperator, expectedValue: JsonNode): Boolean {
         return when (operator) {
             SegmentOperator.EQ -> actual.compareTo(expectedValue.decimalValue()) == 0
@@ -207,9 +178,6 @@ class SegmentTargetingServiceImpl(
         }
     }
 
-    /**
-     * Matches date-time values using ISO-8601 parsing with offset/local fallback.
-     */
     private fun matchDateTime(actual: LocalDateTime, operator: SegmentOperator, expectedValue: JsonNode): Boolean {
         fun parseOrNull(value: String): LocalDateTime? {
             return runCatching {
@@ -234,9 +202,6 @@ class SegmentTargetingServiceImpl(
         }
     }
 
-    /**
-     * Matches boolean values for EQ/NEQ operators.
-     */
     private fun matchBoolean(actual: Boolean, operator: SegmentOperator, expectedValue: JsonNode): Boolean {
         val expected = expectedValue.asBoolean()
         return when (operator) {
@@ -246,9 +211,6 @@ class SegmentTargetingServiceImpl(
         }
     }
 
-    /**
-     * Converts runtime value to [BigDecimal] for number evaluation.
-     */
     private fun toBigDecimal(value: Any): BigDecimal? {
         return when (value) {
             is BigDecimal -> value
@@ -258,9 +220,6 @@ class SegmentTargetingServiceImpl(
         }
     }
 
-    /**
-     * Converts runtime value to [LocalDateTime] using ISO-8601 offset/local parsing.
-     */
     private fun toLocalDateTime(value: Any): LocalDateTime? {
         return when (value) {
             is LocalDateTime -> value
@@ -271,9 +230,6 @@ class SegmentTargetingServiceImpl(
         }
     }
 
-    /**
-     * Converts runtime value to strict boolean.
-     */
     private fun toBoolean(value: Any): Boolean? {
         return when (value) {
             is Boolean -> value
