@@ -13,8 +13,8 @@ export const useEvents = () => {
     const normalizedEventName = eventName.trim();
     const normalizedWhere = where.trim();
 
-    if (!normalizedEventName) {
-      setError('eventName은 필수입니다.');
+    if (!normalizedEventName && !normalizedWhere) {
+      setError('eventName 또는 where 조건이 필요합니다.');
       setEvents([]);
       return [];
     }

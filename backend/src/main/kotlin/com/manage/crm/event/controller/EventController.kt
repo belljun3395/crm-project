@@ -82,6 +82,10 @@ class EventController(
 
     @Parameters(
         Parameter(
+            name = "eventName",
+            description = "검색할 이벤트 이름 (선택). eventName 또는 where 중 하나 이상 필요"
+        ),
+        Parameter(
             name = "where",
             description = """
 검색 조건을 설정합니다.
@@ -97,9 +101,12 @@ ex) key1&value1&operation&joinOperation,key2&value2&operation&joinOperation...
     )
     @GetMapping
     suspend fun searchEvents(
-        @RequestParam eventName: String,
+        @RequestParam(required = false, defaultValue = "") eventName: String,
         @RequestParam(required = false, defaultValue = "") where: String
     ): ApiResponse<ApiResponse.SuccessBody<SearchEventsUseCaseOut>> {
+        if (eventName.isBlank() && where.isBlank()) {
+            throw InvalidSearchConditionException("eventName 또는 where 조건이 필요합니다.")
+        }
         return searchEventsUseCase
             .execute(
                 SearchEventsUseCaseIn(
