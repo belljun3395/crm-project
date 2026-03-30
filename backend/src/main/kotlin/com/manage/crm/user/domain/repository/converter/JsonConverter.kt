@@ -9,12 +9,11 @@ import org.springframework.data.convert.WritingConverter
 @ReadingConverter
 class UserAttributeReadingConverter : Converter<Any, UserAttributes> {
     override fun convert(source: Any): UserAttributes {
-        return UserAttributes(
-            when (source) {
-                is Json -> source.asString()
-                else -> source.toString()
-            }
-        )
+        return when (source) {
+            is UserAttributes -> source
+            is Json -> UserAttributes(source.asString())
+            else -> UserAttributes(source.toString())
+        }
     }
 }
 

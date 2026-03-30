@@ -8,6 +8,10 @@ import org.springframework.data.convert.WritingConverter
 @ReadingConverter
 class EventIdReadingConverter : Converter<Any, EventId> {
     override fun convert(source: Any): EventId? {
+        if (source is EventId) {
+            return source
+        }
+
         val text = source.toString()
         return if (text.isEmpty()) {
             null

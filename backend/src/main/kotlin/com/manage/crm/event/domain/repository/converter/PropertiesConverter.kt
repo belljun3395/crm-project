@@ -26,6 +26,10 @@ private fun Any.toStoredJson(): String {
 @ReadingConverter
 class EventPropertiesReadingConverter : Converter<Any, EventProperties> {
     override fun convert(source: Any): EventProperties {
+        if (source is EventProperties) {
+            return source
+        }
+
         return EventProperties(
             objectMapper.readValue(source.toStoredJson(), List::class.java).stream()
                 .map { objectMapper.convertValue(it, Map::class.java) }
@@ -45,6 +49,10 @@ class EventPropertiesWritingConverter : Converter<EventProperties, Json> {
 @ReadingConverter
 class CampaignPropertiesReadingConverter : Converter<Any, CampaignProperties> {
     override fun convert(source: Any): CampaignProperties {
+        if (source is CampaignProperties) {
+            return source
+        }
+
         return CampaignProperties(
             objectMapper.readValue(source.toStoredJson(), List::class.java).stream()
                 .map { objectMapper.convertValue(it, Map::class.java) }

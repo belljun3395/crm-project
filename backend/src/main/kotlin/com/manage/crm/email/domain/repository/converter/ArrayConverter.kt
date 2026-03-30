@@ -9,6 +9,10 @@ import org.springframework.data.convert.WritingConverter
 @ReadingConverter
 class VariablesReadingConverter : Converter<Any, Variables> {
     override fun convert(source: Any): Variables {
+        if (source is Variables) {
+            return source
+        }
+
         val text = source.toString()
         if (text.isEmpty()) {
             return Variables()

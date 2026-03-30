@@ -11,6 +11,10 @@ import org.springframework.data.convert.WritingConverter
 @ReadingConverter
 class WebhookEventsReadingConverter : Converter<Any, WebhookEvents> {
     override fun convert(source: Any): WebhookEvents {
+        if (source is WebhookEvents) {
+            return source
+        }
+
         val values = objectMapper.readValue(
             when (source) {
                 is Json -> source.asString()

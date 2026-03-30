@@ -10,6 +10,14 @@ class JsonConverterTest : FeatureSpec({
     val writingConverter = UserAttributeWritingConverter()
 
     feature("UserAttributeReadingConverter#convert") {
+        scenario("returns existing UserAttributes values as-is") {
+            val source = UserAttributes("""{"email":"existing@example.com"}""")
+
+            val result = readingConverter.convert(source)
+
+            result shouldBe source
+        }
+
         scenario("converts any database value to UserAttributes via toString") {
             val source = object {
                 override fun toString(): String = """{"email":"example@example.com"}"""

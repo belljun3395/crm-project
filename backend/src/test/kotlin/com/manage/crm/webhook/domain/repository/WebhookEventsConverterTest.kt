@@ -8,6 +8,14 @@ import io.r2dbc.postgresql.codec.Json
 
 class WebhookEventsConverterTest : FeatureSpec({
     feature("WebhookEvents converters") {
+        scenario("return existing WebhookEvents as-is") {
+            val source = WebhookEvents(listOf(WebhookEventType.USER_CREATED, WebhookEventType.EMAIL_SENT))
+
+            val result = WebhookEventsReadingConverter().convert(source)
+
+            result shouldBe source
+        }
+
         scenario("write WebhookEvents as PostgreSQL Json") {
             val source = WebhookEvents(listOf(WebhookEventType.USER_CREATED, WebhookEventType.EMAIL_SENT))
 

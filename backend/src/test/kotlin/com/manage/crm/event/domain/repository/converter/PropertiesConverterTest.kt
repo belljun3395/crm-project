@@ -10,6 +10,14 @@ import io.r2dbc.postgresql.codec.Json
 
 class PropertiesConverterTest : FeatureSpec({
     feature("EventProperties converters") {
+        scenario("return existing EventProperties as-is") {
+            val source = EventProperties(listOf(EventProperty("product_id", "12345")))
+
+            val result = EventPropertiesReadingConverter().convert(source)
+
+            result shouldBe source
+        }
+
         scenario("write EventProperties as PostgreSQL Json") {
             val source = EventProperties(listOf(EventProperty("product_id", "12345")))
 
@@ -28,6 +36,14 @@ class PropertiesConverterTest : FeatureSpec({
     }
 
     feature("CampaignProperties converters") {
+        scenario("return existing CampaignProperties as-is") {
+            val source = CampaignProperties(listOf(CampaignProperty("audience", "premium")))
+
+            val result = CampaignPropertiesReadingConverter().convert(source)
+
+            result shouldBe source
+        }
+
         scenario("write CampaignProperties as PostgreSQL Json") {
             val source = CampaignProperties(listOf(CampaignProperty("audience", "premium")))
 
