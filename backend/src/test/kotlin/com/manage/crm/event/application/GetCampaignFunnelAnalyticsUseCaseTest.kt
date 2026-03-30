@@ -6,7 +6,6 @@ import com.manage.crm.event.domain.PropertiesFixtures
 import com.manage.crm.event.service.CampaignEventsService
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
-import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.mockk

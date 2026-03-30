@@ -102,7 +102,9 @@ class GetCampaignDashboardUseCaseTest : BehaviorSpec({
             )
             every {
                 campaignDashboardMetricsRepository.findByCampaignIdAndTimeWindowStartBetween(
-                    campaignId, start, end
+                    campaignId,
+                    start,
+                    end
                 )
             } returns flowOf(metric)
             coEvery {
@@ -121,7 +123,9 @@ class GetCampaignDashboardUseCaseTest : BehaviorSpec({
                 result.metrics shouldHaveSize 1
                 verify(exactly = 1) {
                     campaignDashboardMetricsRepository.findByCampaignIdAndTimeWindowStartBetween(
-                        campaignId, start, end
+                        campaignId,
+                        start,
+                        end
                     )
                 }
             }
