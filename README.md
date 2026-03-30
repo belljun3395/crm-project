@@ -9,7 +9,7 @@ CRM API 서버(백엔드)와 운영 콘솔(프론트엔드)로 구성된 CRM 프
 
 - `backend/`: Spring Boot 3 + Kotlin + WebFlux + R2DBC(MySQL)
 - `frontend/`: React 기반 운영 콘솔
-- `docs/`: 아키텍처/플로우/대시보드/OpenAPI 산출물
+- `docs/`: OpenAPI 산출물 (`openapi.json`)
 - `scripts/`: 개발 환경 초기화/검증 스크립트
 - `resources/crm-local-develop-environment/`: 로컬 docker-compose 환경
 
@@ -64,19 +64,6 @@ cd backend
 ./gradlew generateOpenApiDocs
 cp ./build/openapi.json ../docs/openapi.json
 ```
-
-## Core Documents
-
-- [도메인/유즈케이스 플로우](./docs/Domain-and-UseCase-Flows.md)
-- [캠페인 대시보드 구현 문서](./docs/CAMPAIGN_DASHBOARD_IMPLEMENTATION.md)
-- [백엔드 대시보드 운영 문서](./backend/docs/campaign-dashboard/README.md)
-- [OpenAPI 산출물](./docs/openapi.json)
-
-## Notes
-
-- 쓰기 API 일부는 `Idempotency-Key` 헤더를 요구합니다.
-- Webhook 기능은 `webhook.enabled` 설정으로 토글됩니다.
-- Flyway 마이그레이션 위치는 `backend/src/main/resources/db/migration/entity` 입니다.
 
 ## Seed Test Data
 

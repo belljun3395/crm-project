@@ -184,8 +184,8 @@ export const FeatureGuidePage: React.FC = () => {
         <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">Static Documentation</p>
         <h2 className="mt-1 text-2xl font-semibold text-white">CRM 기능 가이드</h2>
         <p className="mt-2 text-sm text-slate-200">
-          이 페이지는 이슈/PR과 현재 구현 코드를 기준으로 정리한 운영 콘솔 기능 문서입니다. 상세 문서는
-          <code className="ml-1 rounded bg-slate-900/70 px-2 py-0.5 text-xs">docs/CONSOLE_FEATURE_GUIDE.md</code>를 참고하세요.
+          이 페이지는 이슈/PR과 현재 구현 코드를 기준으로 정리한 운영 콘솔 기능 문서입니다. API 스펙은
+          <code className="ml-1 rounded bg-slate-900/70 px-2 py-0.5 text-xs">docs/openapi.json</code>을 참고하세요.
         </p>
       </header>
 
