@@ -28,4 +28,3 @@ class UserEmailWritingConverter : Converter<Email, String> {
     }
 }
 
-class EmailConverter

@@ -24,7 +24,7 @@ class CampaignCacheManager(
     private val mapper: Jackson2HashMapper,
     private val objectMapper: ObjectMapper
 ) {
-    val log = KotlinLogging.logger {}
+    private val log = KotlinLogging.logger {}
     companion object {
         private const val SPLIT = "::"
         private const val CAMPAIGN_CACHE_KEY = "campaign"

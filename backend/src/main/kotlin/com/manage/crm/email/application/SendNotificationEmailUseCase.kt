@@ -158,7 +158,7 @@ class SendNotificationEmailUseCase(
 
     private suspend fun getTargetUsers(userIds: List<Long>, sendType: String, campaignId: Long?): List<User> {
         return when {
-            campaignId != null && !userIds.isEmpty() -> {
+            campaignId != null && userIds.isNotEmpty() -> {
                 val allUserIdsInCampaign =
                     campaignEventsService.findAllEventsByCampaignId(campaignId).map { it.userId }.toSet()
                 userIds.filter { allUserIdsInCampaign.contains(it) }

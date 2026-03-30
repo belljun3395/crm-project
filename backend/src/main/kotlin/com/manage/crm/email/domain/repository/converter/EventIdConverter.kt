@@ -28,4 +28,3 @@ class EventIdWritingConverter : Converter<EventId, String> {
     }
 }
 
-class EventIdConverter

@@ -23,4 +23,3 @@ class EmailTemplateVersionWritingConverter : Converter<EmailTemplateVersion, Flo
     }
 }
 
-class EmailTemplateVersionConverter

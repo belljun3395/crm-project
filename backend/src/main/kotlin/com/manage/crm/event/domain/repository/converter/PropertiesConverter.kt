@@ -11,7 +11,7 @@ import org.springframework.core.convert.converter.Converter
 import org.springframework.data.convert.ReadingConverter
 import org.springframework.data.convert.WritingConverter
 
-val objectMapper = ObjectMapper().apply {
+private val objectMapper = ObjectMapper().apply {
     findAndRegisterModules()
     registerModules(JavaTimeModule())
 }
@@ -69,8 +69,3 @@ class CampaignPropertiesWritingConverter : Converter<CampaignProperties, Json> {
     }
 }
 
-class PropertiesConverter
-
-class EventPropertiesConverter
-
-class CampaignPropertiesConverter

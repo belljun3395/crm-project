@@ -24,4 +24,3 @@ class UserAttributeWritingConverter : Converter<UserAttributes, Json> {
     }
 }
 
-class JsonConverter

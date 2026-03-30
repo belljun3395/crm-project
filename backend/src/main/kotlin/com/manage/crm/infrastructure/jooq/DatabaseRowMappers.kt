@@ -4,6 +4,7 @@ import java.sql.Timestamp
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
 internal fun Map<String, Any>.requireLocalDateTime(column: String): LocalDateTime {
@@ -21,7 +22,7 @@ private fun Any?.toLocalDateTimeOrNull(): LocalDateTime? {
         is LocalDateTime -> this
         is OffsetDateTime -> toLocalDateTime()
         is ZonedDateTime -> toLocalDateTime()
-        is Instant -> OffsetDateTime.ofInstant(this, OffsetDateTime.now().offset).toLocalDateTime()
+        is Instant -> OffsetDateTime.ofInstant(this, ZoneOffset.UTC).toLocalDateTime()
         is Timestamp -> toLocalDateTime()
         else -> null
     }

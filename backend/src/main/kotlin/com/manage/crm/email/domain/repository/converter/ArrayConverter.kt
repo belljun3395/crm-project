@@ -28,4 +28,3 @@ class VariablesWritingConverter : Converter<Variables, String> {
     }
 }
 
-class ArrayConverter
