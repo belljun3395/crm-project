@@ -16,7 +16,7 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 
-class EventRepositoryCustomTest(
+class EventCustomRepositoryTest(
     val eventRepository: EventRepository
 ) : EventModuleTestTemplate() {
     @AfterEach

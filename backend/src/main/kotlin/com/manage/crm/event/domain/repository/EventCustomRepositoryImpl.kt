@@ -25,10 +25,10 @@ import java.time.LocalDateTime
  * Side effects: reads events from DB using parameter-bound SQL.
  */
 @Repository
-class EventRepositoryCustomImpl(
+class EventCustomRepositoryImpl(
     private val dataBaseClient: DatabaseClient,
     private val objectMapper: ObjectMapper
-) : EventRepositoryCustom {
+) : EventCustomRepository {
 
     private data class QueryClause(
         val clause: String,
