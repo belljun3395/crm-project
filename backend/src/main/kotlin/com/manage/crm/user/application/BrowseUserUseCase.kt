@@ -30,7 +30,7 @@ class BrowseUserUseCase(
                 id = user.id!!,
                 externalId = user.externalId,
                 userAttributes = user.userAttributes.value,
-                updatedAt = user.updatedAt!!,
+                updatedAt = user.updatedAt ?: user.createdAt!!,
                 createdAt = user.createdAt!!
             )
         }

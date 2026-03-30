@@ -206,5 +206,27 @@ class BrowseUserUseCaseTest : BehaviorSpec({
                 result.users.totalPages shouldBe 1
             }
         }
+
+        `when`("browse users with null updatedAt") {
+            val page = 0
+            val size = 20
+            val createdAt = LocalDateTime.now()
+            val expectedUser = User(
+                id = 1L,
+                externalId = "user-without-update",
+                userAttributes = UserAttributes("""{"email":"null-updated@example.com"}"""),
+                createdAt = createdAt,
+                updatedAt = null
+            )
+
+            coEvery { userRepository.findAllWithPagination(page, size) } returns listOf(expectedUser)
+            coEvery { userRepository.countAll() } returns 1L
+
+            val result = useCase.execute(BrowseUsersUseCaseIn())
+
+            then("should fall back to createdAt for updatedAt") {
+                result.users.content.single().updatedAt shouldBe createdAt
+            }
+        }
     }
 })
