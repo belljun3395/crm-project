@@ -72,7 +72,7 @@ class SearchEventsUseCase(
                 )
             }
 
-            else -> eventRepository.findAllByName(eventName)
+            else -> if (eventName.isNotBlank()) eventRepository.findAllByName(eventName) else emptyList()
         }
     }
 }

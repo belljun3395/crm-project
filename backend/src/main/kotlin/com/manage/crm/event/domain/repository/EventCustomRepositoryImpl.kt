@@ -22,9 +22,18 @@ class EventCustomRepositoryImpl(
     private val objectMapper: ObjectMapper
 ) : EventCustomRepository {
 
+    companion object {
+        private const val MAX_SEARCH_CANDIDATE_LIMIT = 1000
+    }
+
     override suspend fun searchByProperty(query: SearchByPropertyQuery): List<Event> {
-        return fetchAllByEventName(query.eventName)
-            .filter { event -> matchesSingleQuery(event, query) }
+        val candidates = if (query.eventName.isBlank()) {
+            fetchAll(MAX_SEARCH_CANDIDATE_LIMIT)
+        } else {
+            fetchAllByEventName(query.eventName)
+        }
+
+        return candidates.filter { event -> matchesSingleQuery(event, query) }
     }
 
     override suspend fun searchByProperties(queries: List<SearchByPropertyQuery>): List<Event> {
@@ -37,8 +46,12 @@ class EventCustomRepositoryImpl(
             throw InvalidSearchConditionException("All queries must have the same eventName")
         }
 
-        return fetchAllByEventName(eventName)
-            .filter { event -> matchesQueryChain(event, queries) }
+        val candidates = if (eventName.isNotBlank()) {
+            fetchAllByEventName(eventName)
+        } else {
+            fetchAll(MAX_SEARCH_CANDIDATE_LIMIT)
+        }
+        return candidates.filter { event -> matchesQueryChain(event, queries) }
     }
 
     private suspend fun fetchAllByEventName(eventName: String): List<Event> {
@@ -46,6 +59,33 @@ class EventCustomRepositoryImpl(
             .select()
             .from(CrmJooqTables.Events.table)
             .where(CrmJooqTables.Events.name.eq(eventName))
+
+        return jooqExecutor.fetchList(query) { row ->
+            Event.new(
+                id = (row["id"] as Number).toLong(),
+                name = row["name"] as String,
+                userId = (row["user_id"] as Number).toLong(),
+                properties = (row["properties"] as String)
+                    .let { properties ->
+                        objectMapper.readValue(properties, List::class.java).stream()
+                            .map { objectMapper.convertValue(it, Map::class.java) }
+                            .map { EventProperty(it["key"] as String, it["value"] as String) }
+                            .toList()
+                            .let { EventProperties(it) }
+                    },
+                createdAt = row["created_at"] as LocalDateTime
+            )
+        }
+            .distinctBy { it.id }
+            .sortedBy { it.id }
+    }
+
+    private suspend fun fetchAll(limit: Int): List<Event> {
+        val query = dslContext
+            .select()
+            .from(CrmJooqTables.Events.table)
+            .orderBy(CrmJooqTables.Events.id.asc())
+            .limit(limit)
 
         return jooqExecutor.fetchList(query) { row ->
             Event.new(

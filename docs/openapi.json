@@ -987,9 +987,11 @@
           {
             "name": "eventName",
             "in": "query",
-            "required": true,
+            "description": "검색할 이벤트 이름 (선택). eventName 또는 where 중 하나 이상 필요",
+            "required": false,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "default": ""
             }
           },
           {
