@@ -584,6 +584,105 @@ class PostEventUseCaseTest : BehaviorSpec({
             }
         }
 
+        `when`("segmentId and campaignName are both provided") {
+            val useCaseIn = PostEventUseCaseIn(
+                name = "event",
+                externalId = "ignored",
+                segmentId = 77L,
+                properties = listOf(PostEventPropertyDto(key = "key1", value = "value1")),
+                campaignName = "seg-campaign"
+            )
+
+            coEvery { segmentTargetingService.resolveUserIds(77L, null) } returns listOf(1L, 2L)
+            coEvery { eventRepository.save(any(Event::class)) } answers {
+                firstArg<Event>().apply { id = if (userId == 1L) 201L else 202L }
+            }
+
+            val campaign = CampaignFixtures.giveMeOne()
+                .withName("seg-campaign")
+                .withProperties(CampaignProperties(listOf(CampaignProperty("key1", "value1"))))
+                .build()
+
+            coEvery {
+                campaignCacheManager.loadAndSaveIfMiss(
+                    eq(Campaign.UNIQUE_FIELDS.NAME),
+                    eq("seg-campaign"),
+                    captureLambda<suspend () -> Campaign?>()
+                )
+            } coAnswers { campaign }
+
+            coEvery { campaignEventsRepository.save(any(CampaignEvents::class)) } answers { firstArg() }
+
+            val result = postEventUseCase.execute(useCaseIn)
+
+            then("returns segment+campaign combined message") {
+                result.message shouldBe "Event saved with campaign for segment users (2)"
+            }
+
+            then("saves campaign-event links for each segment user") {
+                coVerify(exactly = 2) { campaignEventsRepository.save(any(CampaignEvents::class)) }
+            }
+        }
+
+        `when`("segmentId provided but campaign not found") {
+            val useCaseIn = PostEventUseCaseIn(
+                name = "event",
+                externalId = "ignored",
+                segmentId = 88L,
+                properties = listOf(PostEventPropertyDto(key = "key1", value = "value1")),
+                campaignName = "missing-campaign"
+            )
+
+            coEvery { segmentTargetingService.resolveUserIds(88L, null) } returns listOf(10L)
+            coEvery { eventRepository.save(any(Event::class)) } answers {
+                firstArg<Event>().apply { id = 301L }
+            }
+
+            coEvery {
+                campaignCacheManager.loadAndSaveIfMiss(
+                    eq(Campaign.UNIQUE_FIELDS.NAME),
+                    eq("missing-campaign"),
+                    captureLambda<suspend () -> Campaign?>()
+                )
+            } coAnswers { lambda<suspend () -> Campaign?>().coInvoke() }
+
+            coEvery { campaignRepository.findCampaignByName("missing-campaign") } throws
+                NotFoundByException("Campaign", "name", "missing-campaign")
+
+            val result = postEventUseCase.execute(useCaseIn)
+
+            then("returns segment-specific not-in-campaign message") {
+                result.message shouldBe "Event saved for segment users (1) but not in campaign"
+            }
+        }
+
+        `when`("journey trigger publish fails") {
+            val useCaseIn = PostEventUseCaseIn(
+                name = "event",
+                externalId = "user-1",
+                properties = listOf(PostEventPropertyDto(key = "k", value = "v")),
+                campaignName = null
+            )
+
+            val user = UserFixtures.giveMeOne()
+                .withExternalId("user-1")
+                .withUserAttributes(UserAttributesFixtures.giveMeOne().withValue("{}").build())
+                .build()
+            coEvery { userRepository.findByExternalId("user-1") } returns user
+            coEvery { eventRepository.save(any(Event::class)) } answers {
+                firstArg<Event>().apply { id = 401L }
+            }
+            coEvery { journeyTriggerQueuePublisher.publishEventTrigger(any()) } throws
+                RuntimeException("queue unavailable")
+
+            val result = postEventUseCase.execute(useCaseIn)
+
+            then("event save succeeds despite journey trigger failure") {
+                result.id shouldBe 401L
+                result.message shouldBe SaveEventMessage.EVENT_SAVE_SUCCESS.message
+            }
+        }
+
         `when`("post event with not found user") {
             val useCaseIn = PostEventUseCaseIn(
                 name = "event",

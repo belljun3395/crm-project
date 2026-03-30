@@ -114,6 +114,25 @@ class BrowseEventsUseCaseTest : BehaviorSpec({
             }
         }
 
+        `when`("event has no matching user (orphan event)") {
+            val event = EventFixtures.giveMeOne()
+                .withId(1L)
+                .withUserId(999L) // userId with no corresponding user
+                .withProperties(PropertiesFixtures.giveMeOneEventProperties())
+                .withCreatedAt(LocalDateTime.now())
+                .build()
+
+            coEvery { eventRepository.findAll() } returns flowOf(event)
+            coEvery { userRepository.findAllByIdIn(any()) } returns emptyList() // no users found
+
+            val result = browseEventsUseCase.execute(BrowseEventsUseCaseIn(limit = 10))
+
+            then("externalId is null for orphan event") {
+                result.events.size shouldBe 1
+                result.events.first().externalId shouldBe null
+            }
+        }
+
         `when`("no events exist") {
             coEvery { eventRepository.findAll() } returns flowOf()
             coEvery { userRepository.findAllByIdIn(any()) } returns emptyList()

@@ -111,6 +111,45 @@ class GetCampaignSegmentComparisonUseCaseTest : BehaviorSpec({
             }
         }
 
+        `when`("segment no longer exists (deleted segment)") {
+            val campaignId = 13L
+            val now = LocalDateTime.now()
+            val events = listOf(segEvent(1L, 101L, "click", now))
+
+            coEvery { campaignEventsService.findCampaignEvents(campaignId, null, null) } returns events
+            coEvery { segmentRepository.findById(99L) } returns null
+            coEvery { segmentTargetingService.resolveUserIds(99L, campaignId) } returns listOf(101L)
+
+            val result = getCampaignSegmentComparisonUseCase.execute(
+                GetCampaignSegmentComparisonUseCaseIn(campaignId, listOf(99L), null, null, null)
+            )
+
+            then("segmentName is null for missing segment") {
+                result.segmentMetrics.first().segmentName shouldBe null
+                result.segmentMetrics.first().segmentId shouldBe 99L
+            }
+        }
+
+        `when`("startTime and endTime filter are provided") {
+            val campaignId = 14L
+            val start = LocalDateTime.of(2026, 1, 1, 0, 0)
+            val end = LocalDateTime.of(2026, 1, 31, 0, 0)
+
+            coEvery { campaignEventsService.findCampaignEvents(campaignId, start, end) } returns emptyList()
+            coEvery { segmentRepository.findById(1L) } returns Segment.new(1L, "s1", null, true)
+            coEvery { segmentTargetingService.resolveUserIds(1L, campaignId) } returns emptyList()
+
+            getCampaignSegmentComparisonUseCase.execute(
+                GetCampaignSegmentComparisonUseCaseIn(campaignId, listOf(1L), null, start, end)
+            )
+
+            then("time range is passed to campaignEventsService") {
+                io.mockk.coVerify(exactly = 1) {
+                    campaignEventsService.findCampaignEvents(campaignId, start, end)
+                }
+            }
+        }
+
         `when`("no segment target users have matching events") {
             val campaignId = 12L
             val now = LocalDateTime.now()

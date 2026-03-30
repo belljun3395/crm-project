@@ -173,6 +173,22 @@ class SearchEventsUseCaseTest : BehaviorSpec({
             }
         }
 
+        `when`("search events return empty result") {
+            val useCaseIn = SearchEventsUseCaseIn(
+                eventName = "nonexistent-event",
+                propertyAndOperations = emptyList()
+            )
+
+            coEvery { eventRepository.findAllByName(any()) } answers { emptyList() }
+            coEvery { userRepository.findAllByIdIn(emptyList()) } returns emptyList()
+
+            val result = searchEventsUseCase.execute(useCaseIn)
+
+            then("returns empty event list") {
+                result.events shouldBe emptyList()
+            }
+        }
+
         `when`("search events without properties") {
             val useCaseIn = SearchEventsUseCaseIn(
                 eventName = "event",

@@ -3,6 +3,7 @@ package com.manage.crm.event.application
 import com.manage.crm.event.application.dto.CampaignPropertyUseCaseDto
 import com.manage.crm.event.application.dto.UpdateCampaignUseCaseIn
 import com.manage.crm.event.domain.CampaignFixtures
+import com.manage.crm.event.domain.CampaignSegments
 import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
@@ -164,6 +165,68 @@ class UpdateCampaignUseCaseTest : BehaviorSpec({
 
             then("does not save campaign") {
                 coVerify(exactly = 0) { campaignRepository.save(any()) }
+            }
+        }
+
+        `when`("segmentIds is null — existing segments are preserved") {
+            val campaignId = 6L
+            val existing = CampaignFixtures.giveMeOne().withId(campaignId).withName("keep-segs").build()
+            val existingSegmentIds = listOf(30L, 40L)
+
+            coEvery { campaignRepository.findById(campaignId) } returns existing
+            coEvery { campaignRepository.findCampaignByName("keep-segs") } returns null
+            coEvery { campaignRepository.save(any()) } answers { firstArg() }
+            coEvery { campaignSegmentsRepository.findAllByCampaignId(campaignId) } returns
+                existingSegmentIds.map {
+                    com.manage.crm.event.domain.CampaignSegments.new(campaignId = campaignId, segmentId = it)
+                }
+            coEvery {
+                transactionSynchronizationTemplate.afterCommit(
+                    eq(Dispatchers.IO),
+                    eq("refresh campaign cache after update"),
+                    captureLambda<suspend () -> Unit>()
+                )
+            } coAnswers { lambda<suspend () -> Unit>().coInvoke() }
+            coJustRun { campaignCacheManager.evict(any(), any()) }
+            coEvery { campaignCacheManager.save(any()) } answers { firstArg() }
+
+            val result = updateCampaignUseCase.execute(
+                UpdateCampaignUseCaseIn(campaignId, "keep-segs", emptyList(), segmentIds = null)
+            )
+
+            then("does not replace segments") {
+                coVerify(exactly = 0) { campaignSegmentsRepository.deleteAllByCampaignId(any()) }
+            }
+
+            then("returns existing segment ids") {
+                result.segmentIds shouldBe existingSegmentIds
+            }
+        }
+
+        `when`("input name has leading and trailing whitespace") {
+            val campaignId = 7L
+            val existing = CampaignFixtures.giveMeOne().withId(campaignId).withName("old").build()
+
+            coEvery { campaignRepository.findById(campaignId) } returns existing
+            coEvery { campaignRepository.findCampaignByName("trimmed") } returns null
+            coEvery { campaignRepository.save(any()) } answers { firstArg() }
+            coEvery { campaignSegmentsRepository.findAllByCampaignId(campaignId) } returns emptyList()
+            coEvery {
+                transactionSynchronizationTemplate.afterCommit(
+                    eq(Dispatchers.IO),
+                    eq("refresh campaign cache after update"),
+                    captureLambda<suspend () -> Unit>()
+                )
+            } coAnswers { lambda<suspend () -> Unit>().coInvoke() }
+            coJustRun { campaignCacheManager.evict(any(), any()) }
+            coEvery { campaignCacheManager.save(any()) } answers { firstArg() }
+
+            val result = updateCampaignUseCase.execute(
+                UpdateCampaignUseCaseIn(campaignId, "  trimmed  ", emptyList())
+            )
+
+            then("name is trimmed before saving") {
+                result.name shouldBe "trimmed"
             }
         }
 

@@ -42,6 +42,20 @@ class ListCampaignsUseCaseTest : BehaviorSpec({
             }
         }
 
+        `when`("limit is within valid range") {
+            val campaigns = (1..3).map { i ->
+                CampaignFixtures.giveMeOne().withId(i.toLong()).withName("camp-$i").build()
+            }
+            every { campaignRepository.findRecentCampaigns(10) } returns flowOf(*campaigns.toTypedArray())
+
+            val result = listCampaignsUseCase.execute(ListCampaignsUseCaseIn(limit = 10))
+
+            then("returns campaigns as-is") {
+                result.campaigns shouldHaveSize 3
+                verify(exactly = 1) { campaignRepository.findRecentCampaigns(10) }
+            }
+        }
+
         `when`("limit is less than min bound") {
             every { campaignRepository.findRecentCampaigns(1) } returns emptyFlow()
 

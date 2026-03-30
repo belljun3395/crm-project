@@ -272,6 +272,23 @@ class PostCampaignUseCaseTest : BehaviorSpec({
             }
         }
 
+        `when`("DataIntegrityViolationException is not a name duplicate") {
+            val useCaseIn = PostCampaignUseCaseIn(
+                name = "unique_campaign",
+                properties = listOf(PostCampaignPropertyDto(key = "k", value = "v"))
+            )
+
+            coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
+            coEvery { campaignRepository.save(any()) } throws
+                org.springframework.dao.DataIntegrityViolationException("some_other_constraint violated")
+
+            then("re-throws original DataIntegrityViolationException") {
+                io.kotest.assertions.throwables.shouldThrow<org.springframework.dao.DataIntegrityViolationException> {
+                    postCampaignUseCase.execute(useCaseIn)
+                }
+            }
+        }
+
         `when`("post campaign with missing segment id") {
             val useCaseIn = PostCampaignUseCaseIn(
                 name = "invalid_target_campaign",

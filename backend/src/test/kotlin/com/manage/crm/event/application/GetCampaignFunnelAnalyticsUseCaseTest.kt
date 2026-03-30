@@ -131,6 +131,39 @@ class GetCampaignFunnelAnalyticsUseCaseTest : BehaviorSpec({
             }
         }
 
+        `when`("same user fires the same step event multiple times") {
+            val now = LocalDateTime.now()
+            val events = listOf(
+                event(1L, 101L, "view", now.plusMinutes(1)),
+                event(2L, 101L, "view", now.plusMinutes(2)), // duplicate view from user 101
+                event(3L, 101L, "click", now.plusMinutes(3))
+            )
+
+            coEvery { campaignEventsService.findCampaignEvents(6L, null, null) } returns events
+
+            val result = getCampaignFunnelAnalyticsUseCase.execute(
+                GetCampaignFunnelAnalyticsUseCaseIn(6L, listOf("view", "click"), null, null)
+            )
+
+            then("qualifiedUserCount is 1 (deduplicated) but eventCount includes duplicates") {
+                result.stepMetrics[0].qualifiedUserCount shouldBe 1
+                result.stepMetrics[0].eventCount shouldBe 2
+                result.stepMetrics[1].qualifiedUserCount shouldBe 1
+            }
+        }
+
+        `when`("steps contain leading and trailing whitespace") {
+            coEvery { campaignEventsService.findCampaignEvents(7L, null, null) } returns emptyList()
+
+            val result = getCampaignFunnelAnalyticsUseCase.execute(
+                GetCampaignFunnelAnalyticsUseCaseIn(7L, listOf(" view ", " click "), null, null)
+            )
+
+            then("steps are trimmed and blank entries are removed") {
+                result.stepMetrics.map { it.step } shouldBe listOf("view", "click")
+            }
+        }
+
         `when`("time range filter is applied") {
             val start = LocalDateTime.of(2026, 1, 1, 0, 0)
             val end = LocalDateTime.of(2026, 1, 2, 0, 0)
