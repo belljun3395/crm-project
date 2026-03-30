@@ -9,12 +9,14 @@ import io.lettuce.core.internal.HostAndPort
 import io.lettuce.core.resource.ClientResources
 import io.lettuce.core.resource.DnsResolvers
 import io.lettuce.core.resource.MappingSocketAddressResolver
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
 import org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory
 import org.springframework.data.redis.connection.RedisClusterConfiguration
 import org.springframework.data.redis.connection.RedisConnectionFactory
@@ -51,7 +53,15 @@ class RedisConfig {
     }
 
     @Bean
+    @Primary
     fun redisConnectionFactory(rcp: RedisConfigurationProperties): RedisConnectionFactory {
+        return createConnectionFactory(rcp, ReadFrom.REPLICA_PREFERRED)
+    }
+
+    private fun createConnectionFactory(
+        rcp: RedisConfigurationProperties,
+        readFrom: ReadFrom
+    ): LettuceConnectionFactory {
         val redisClusterConfiguration = RedisClusterConfiguration(rcp.nodes!!).apply {
             password = RedisPassword.of(rcp.password!!)
             maxRedirects = rcp.maxRedirects!!
@@ -86,14 +96,18 @@ class RedisConfig {
         val clientConfiguration = LettuceClientConfiguration.builder()
             .clientOptions(clientOptions)
             .clientResources(clientResources)
-            .readFrom(ReadFrom.REPLICA_PREFERRED)
+            .readFrom(readFrom)
             .build()
 
         return LettuceConnectionFactory(redisClusterConfiguration, clientConfiguration)
     }
 
     @Bean
-    fun redisTemplate(redisConnectionFactory: RedisConnectionFactory, serializer: RedisSerializer<Any>): RedisTemplate<String, Any> {
+    @Primary
+    fun redisTemplate(
+        @Qualifier("redisConnectionFactory") redisConnectionFactory: RedisConnectionFactory,
+        serializer: RedisSerializer<Any>
+    ): RedisTemplate<String, Any> {
         val redisTemplate = RedisTemplate<String, Any>()
         redisTemplate.connectionFactory = redisConnectionFactory
         redisTemplate.keySerializer = StringRedisSerializer()
@@ -105,12 +119,40 @@ class RedisConfig {
 
     // ----------------- Reactive -----------------
     @Bean
-    fun reactiveRedisConnectionFactory(redisConnectionFactory: RedisConnectionFactory): ReactiveRedisConnectionFactory {
+    fun reactiveRedisConnectionFactory(
+        @Qualifier("redisConnectionFactory") redisConnectionFactory: RedisConnectionFactory
+    ): ReactiveRedisConnectionFactory {
         return redisConnectionFactory as ReactiveRedisConnectionFactory
     }
 
     @Bean
-    fun reactiveRedisTemplate(redisConnectionFactory: ReactiveRedisConnectionFactory, serializer: RedisSerializer<Any>): ReactiveRedisTemplate<String, Any> {
+    @Primary
+    fun reactiveRedisTemplate(
+        @Qualifier("reactiveRedisConnectionFactory") redisConnectionFactory: ReactiveRedisConnectionFactory,
+        serializer: RedisSerializer<Any>
+    ): ReactiveRedisTemplate<String, Any> {
+        val builder = newSerializationContext<String, Any>(StringRedisSerializer())
+        val keySerializer = StringRedisSerializer()
+        val context = builder
+            .key(keySerializer)
+            .value(serializer)
+            .hashValue(serializer)
+            .hashKey(keySerializer)
+            .build()
+        return ReactiveRedisTemplate(redisConnectionFactory, context)
+    }
+
+    @Bean("idempotencyReactiveRedisConnectionFactory")
+    fun idempotencyReactiveRedisConnectionFactory(rcp: RedisConfigurationProperties): ReactiveRedisConnectionFactory {
+        return createConnectionFactory(rcp, ReadFrom.MASTER).apply { afterPropertiesSet() }
+    }
+
+    @Bean("idempotencyReactiveRedisTemplate")
+    fun idempotencyReactiveRedisTemplate(
+        @Qualifier("idempotencyReactiveRedisConnectionFactory")
+        redisConnectionFactory: ReactiveRedisConnectionFactory,
+        serializer: RedisSerializer<Any>
+    ): ReactiveRedisTemplate<String, Any> {
         val builder = newSerializationContext<String, Any>(StringRedisSerializer())
         val keySerializer = StringRedisSerializer()
         val context = builder
@@ -123,7 +165,26 @@ class RedisConfig {
     }
 
     @Bean
-    fun reactiveStringRedisTemplate(redisConnectionFactory: ReactiveRedisConnectionFactory): ReactiveRedisTemplate<String, String> {
+    @Primary
+    fun reactiveStringRedisTemplate(
+        @Qualifier("reactiveRedisConnectionFactory") redisConnectionFactory: ReactiveRedisConnectionFactory
+    ): ReactiveRedisTemplate<String, String> {
+        val serializer = StringRedisSerializer()
+        val builder = newSerializationContext<String, String>(serializer)
+        val context = builder
+            .key(serializer)
+            .value(serializer)
+            .hashKey(serializer)
+            .hashValue(serializer)
+            .build()
+        return ReactiveRedisTemplate(redisConnectionFactory, context)
+    }
+
+    @Bean("idempotencyReactiveStringRedisTemplate")
+    fun idempotencyReactiveStringRedisTemplate(
+        @Qualifier("idempotencyReactiveRedisConnectionFactory")
+        redisConnectionFactory: ReactiveRedisConnectionFactory
+    ): ReactiveRedisTemplate<String, String> {
         val serializer = StringRedisSerializer()
         val builder = newSerializationContext<String, String>(serializer)
         val context = builder

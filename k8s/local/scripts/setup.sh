@@ -37,15 +37,15 @@ echo "▶ Creating namespace '${NAMESPACE}'..."
 kubectl apply -f "${PROJECT_ROOT}/k8s/local/namespace.yaml"
 
 # ────────────────────────────────────────────────
-# 4. MySQL init ConfigMap 적용
+# 4. Database init ConfigMap 적용
 # ────────────────────────────────────────────────
-echo "▶ Applying MySQL init ConfigMap..."
+echo "▶ Applying database init ConfigMap..."
 kubectl apply -f "${PROJECT_ROOT}/k8s/local/mysql-init/configmap.yaml"
 
 # ────────────────────────────────────────────────
 # 5. Helm 인프라 설치
 # ────────────────────────────────────────────────
-echo "▶ Installing MySQL (bitnami/mysql)..."
+echo "▶ Installing database (bitnami/mysql)..."
 if ! helm status crm-mysql -n "${NAMESPACE}" &>/dev/null; then
   helm install crm-mysql bitnami/mysql \
     -n "${NAMESPACE}" \
@@ -108,7 +108,7 @@ echo "  eval \$(minikube docker-env)   # minikube Docker 환경 활성화 (터�
 echo "  skaffold dev                  # 백엔드/프론트엔드 빌드 + 배포 + 포트포워드"
 echo ""
 echo "포트 매핑 (Docker Compose와 동일):"
-echo "  MySQL    : localhost:13306"
+echo "  Database : localhost:13306"
 echo "  Adminer  : http://localhost:18080"
 echo "  Redis    : crm-redis-headless (클러스터 내부)"
 echo "  RedisUI  : http://localhost:18081"

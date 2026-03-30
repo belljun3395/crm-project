@@ -123,33 +123,42 @@ class SendNotificationEmailUseCase(
             templateVersion != null -> {
                 emailTemplateHistoryRepository
                     .findByTemplateIdAndVersion(templateId, templateVersion)
-                    ?.let {
-                        NotificationEmailTemplateVariablesModel(
-                            subject = it.subject,
-                            body = it.body,
-                            variables = it.variables
-                        )
-                    } ?: throw NotFoundByException("EmailTemplate", "templateId", templateId, "version", templateVersion)
+                    ?.let(::toNotificationVariables)
+                    ?: emailTemplateRepository
+                        .findById(templateId)
+                        ?.takeIf { it.version.value == templateVersion }
+                        ?.let(::toNotificationVariables)
+                    ?: throw NotFoundByException("EmailTemplate", "templateId", templateId, "version", templateVersion)
             }
 
             else -> {
                 emailTemplateRepository
                     .findById(templateId)
-                    ?.let {
-                        NotificationEmailTemplateVariablesModel(
-                            subject = it.subject,
-                            body = it.body,
-                            variables = it.variables
-                        )
-                    }
+                    ?.let(::toNotificationVariables)
                     ?: throw NotFoundByIdException("EmailTemplate", templateId)
             }
         }
     }
 
+    private fun toNotificationVariables(template: com.manage.crm.email.domain.EmailTemplate): NotificationEmailTemplateVariablesModel {
+        return NotificationEmailTemplateVariablesModel(
+            subject = template.subject,
+            body = template.body,
+            variables = template.variables
+        )
+    }
+
+    private fun toNotificationVariables(template: com.manage.crm.email.domain.EmailTemplateHistory): NotificationEmailTemplateVariablesModel {
+        return NotificationEmailTemplateVariablesModel(
+            subject = template.subject,
+            body = template.body,
+            variables = template.variables
+        )
+    }
+
     private suspend fun getTargetUsers(userIds: List<Long>, sendType: String, campaignId: Long?): List<User> {
         return when {
-            campaignId != null && !userIds.isEmpty() -> {
+            campaignId != null && userIds.isNotEmpty() -> {
                 val allUserIdsInCampaign =
                     campaignEventsService.findAllEventsByCampaignId(campaignId).map { it.userId }.toSet()
                 userIds.filter { allUserIdsInCampaign.contains(it) }

@@ -39,6 +39,7 @@ class UserCacheManager(
                     is Long -> value
                     is Int -> value.toLong()
                     is Number -> value.toLong()
+                    is String -> value.toLongOrNull() ?: 0L
                     else -> {
                         log.warn { "Unexpected type for total user count: ${value::class}" }
                         0L
@@ -58,6 +59,7 @@ class UserCacheManager(
                     is Long -> value
                     is Int -> value.toLong()
                     is Number -> value.toLong()
+                    is String -> value.toLongOrNull() ?: 0L
                     else -> {
                         log.warn { "Unexpected type for total user count updated at: ${value::class}" }
                         0L

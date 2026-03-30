@@ -7,12 +7,17 @@ import org.springframework.data.convert.ReadingConverter
 import org.springframework.data.convert.WritingConverter
 
 @ReadingConverter
-class VariablesReadingConverter : Converter<String, Variables> {
-    override fun convert(source: String): Variables {
-        if (source.isEmpty()) {
+class VariablesReadingConverter : Converter<Any, Variables> {
+    override fun convert(source: Any): Variables {
+        if (source is Variables) {
+            return source
+        }
+
+        val text = source.toString()
+        if (text.isEmpty()) {
             return Variables()
         }
-        return source.split(",").map { it.trim() }.stringListToVariables()
+        return text.split(",").map { it.trim() }.stringListToVariables()
     }
 }
 
@@ -22,5 +27,3 @@ class VariablesWritingConverter : Converter<Variables, String> {
         return source.value.map { it.displayValue() }.toString().let { it.substring(1, it.length - 1) }
     }
 }
-
-class ArrayConverter

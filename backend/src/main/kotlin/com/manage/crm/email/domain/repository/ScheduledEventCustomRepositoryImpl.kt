@@ -4,11 +4,11 @@ import com.manage.crm.email.domain.ScheduledEvent
 import com.manage.crm.email.domain.vo.EventId
 import com.manage.crm.infrastructure.jooq.CrmJooqTables
 import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
+import com.manage.crm.infrastructure.jooq.requireLocalDateTime
 import org.jooq.DSLContext
 import org.jooq.impl.DSL.concat
 import org.jooq.impl.DSL.inline
 import org.springframework.stereotype.Repository
-import java.time.LocalDateTime
 
 @Repository
 class ScheduledEventCustomRepositoryImpl(
@@ -47,7 +47,7 @@ class ScheduledEventCustomRepositoryImpl(
             isNotConsumed = toBoolean(row["is_not_consumed"]),
             canceled = toBoolean(row["canceled"]),
             scheduledAt = row["scheduled_at"] as String,
-            createdAt = row["created_at"] as LocalDateTime
+            createdAt = row.requireLocalDateTime("created_at")
         )
     }
 

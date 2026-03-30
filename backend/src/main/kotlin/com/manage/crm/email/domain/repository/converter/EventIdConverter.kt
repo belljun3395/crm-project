@@ -6,12 +6,17 @@ import org.springframework.data.convert.ReadingConverter
 import org.springframework.data.convert.WritingConverter
 
 @ReadingConverter
-class EventIdReadingConverter : Converter<String, EventId> {
-    override fun convert(source: String): EventId? {
-        return if (source.isEmpty()) {
+class EventIdReadingConverter : Converter<Any, EventId> {
+    override fun convert(source: Any): EventId? {
+        if (source is EventId) {
+            return source
+        }
+
+        val text = source.toString()
+        return if (text.isEmpty()) {
             null
         } else {
-            EventId(source)
+            EventId(text)
         }
     }
 }
@@ -22,5 +27,3 @@ class EventIdWritingConverter : Converter<EventId, String> {
         return source.value
     }
 }
-
-class EventIdConverter

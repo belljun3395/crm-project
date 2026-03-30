@@ -3,6 +3,8 @@
 기존 Docker Compose 환경을 대체하는 minikube 기반 로컬 K8s 개발 환경입니다.
 프로덕션(EKS/GKE)과 동일한 Kubernetes 워크플로우로 로컬 개발을 진행할 수 있습니다.
 
+현재 이 로컬 스택의 데이터베이스는 MySQL입니다. PostgreSQL 전환은 백엔드 설정과 Helm 차트를 함께 바꿔야 하므로, 아래 문서에는 현재 상태와 전환 갭을 같이 적어둡니다.
+
 ## 목차
 
 1. [사전 준비](#1-사전-준비)
@@ -28,7 +30,7 @@ brew install minikube helm skaffold
 | 도구 | 버전 | 용도 |
 |------|------|------|
 | minikube | 최신 | 로컬 Kubernetes 클러스터 |
-| helm | 3.x | MySQL / Redis / Kafka 패키지 관리 |
+| helm | 3.x | Database / Redis / Kafka 패키지 관리 |
 | skaffold | 최신 | 백엔드/프론트엔드 빌드·배포·포트포워드 자동화 |
 | docker | 최신 | minikube Docker driver (이미 설치되어 있어야 함) |
 
@@ -61,7 +63,7 @@ minikube (namespace: crm-local)
 ├── crm-localstack            localstack/localstack:3.8
 │         SES / SQS / SNS / EventBridge / Scheduler / IAM
 │
-├── crm-adminer               MySQL 웹 관리 UI
+├── crm-adminer               Database 웹 관리 UI
 ├── crm-kafka-ui              Kafka 웹 관리 UI
 ├── crm-redis-insight         Redis 웹 관리 UI
 │
@@ -73,6 +75,18 @@ minikube (namespace: crm-local)
 
 백엔드는 `SPRING_PROFILES_ACTIVE=k8s`로 기동됩니다.
 설정 파일: `backend/src/main/resources/application-k8s.yml`
+
+### PostgreSQL 전환 갭
+
+이 문서는 현재 로컬 실행 상태를 기준으로 유지하지만, PostgreSQL로 넘어가려면 아래 항목을 같이 바꿔야 합니다.
+
+- `backend/src/main/resources/application-k8s.yml`의 R2DBC URL과 드라이버
+- `k8s/local/helm-values/mysql.yaml`을 대체할 PostgreSQL Helm values
+- `k8s/local/backend/deployment.yaml`의 DB readiness 대기 조건과 포트
+- `k8s/local/mysql-init/configmap.yaml`의 초기화 SQL
+- `resources/crm-local-develop-environment/docker-compose.yml`의 DB 서비스와 init script
+
+지금 상태에서는 `crm-mysql`과 Adminer가 로컬 DB 진입점입니다. PostgreSQL 전환 브랜치가 들어오기 전까지는 이 가이드를 현재 런타임 기준 문서로 봐야 합니다.
 
 ---
 
@@ -92,8 +106,8 @@ minikube (namespace: crm-local)
 1. minikube 클러스터 시작 (CPU 4코어, 메모리 8GB)
 2. Bitnami Helm 레포지터리 등록
 3. `crm-local` 네임스페이스 생성
-4. MySQL init ConfigMap 적용 (DB / 유저 초기화 SQL)
-5. MySQL, Redis Cluster, Kafka Helm 설치 (각 서비스 Ready 대기)
+4. Database init ConfigMap 적용 (현재는 MySQL DB / 유저 초기화 SQL)
+5. Database, Redis Cluster, Kafka Helm 설치 (각 서비스 Ready 대기)
 6. LocalStack, Adminer, Kafka UI, Redis Insight 매니페스트 적용
 
 소요 시간: **약 5~10분** (이미지 최초 다운로드 시 더 걸릴 수 있음)
@@ -151,7 +165,7 @@ skaffold dev
 ```
 
 > `skaffold dev`를 종료(Ctrl+C)하면 배포된 앱 서비스(backend, frontend)가 자동으로 삭제됩니다.
-> 인프라(MySQL, Redis, Kafka 등)는 유지됩니다.
+> 인프라(Database, Redis, Kafka 등)는 유지됩니다.
 
 ### 4-2. 백엔드 / 프론트엔드만 재배포
 
@@ -199,11 +213,11 @@ minikube delete
 | **Frontend** | http://localhost:3000 | React 앱 |
 | **Backend API** | http://localhost:8080 | Spring Boot |
 | **Swagger UI** | http://localhost:8080/swagger-ui.html | API 문서 |
-| **Adminer** | http://localhost:18080 | MySQL 웹 관리 |
+| **Adminer** | http://localhost:18080 | Database 웹 관리 |
 | **Kafka UI** | http://localhost:18082 | Kafka 웹 관리 |
 | **Redis Insight** | http://localhost:18081 | Redis 웹 관리 |
 | **LocalStack** | http://localhost:4566 | AWS 서비스 목 |
-| **MySQL** | localhost:13306 | root / root |
+| **Database** | localhost:13306 | root / root |
 | **Kafka** | localhost:9092 | |
 
 > 기존 Docker Compose 포트 번호와 동일하게 맞춰놨습니다.
@@ -211,6 +225,7 @@ minikube delete
 ### Adminer 접속
 
 - 서버: `crm-mysql`
+- PostgreSQL 전환 후에는 이 항목을 새 DB 서비스명으로 바꿔야 합니다.
 - 사용자: `root`
 - 비밀번호: `root`
 - 데이터베이스: `crm`
@@ -273,7 +288,7 @@ kubectl logs -n crm-local pod/crm-redis-0 -f
 # 백엔드 컨테이너 쉘
 kubectl exec -it -n crm-local deployment/crm-backend -- sh
 
-# MySQL 클라이언트
+# DB 클라이언트
 kubectl exec -it -n crm-local statefulset/crm-mysql -- mysql -uroot -proot crm
 
 # Redis CLI (클러스터 모드)
@@ -381,7 +396,7 @@ eval $(minikube docker-env --unset)
 | 앱 재빌드 | `docker compose build` | `skaffold dev` 자동 감지 |
 | 로그 확인 | `docker compose logs -f` | `kubectl logs -f` |
 | 서비스 접속 | 직접 포트 매핑 | `skaffold dev` 포트포워드 |
-| 데이터 유지 | 볼륨 마운트 | PersistentVolume (MySQL) |
+| 데이터 유지 | 볼륨 마운트 | PersistentVolume (database) |
 | LocalStack SERVICES | `ses,sqs,events,scheduler` | `ses,sqs,sns,events,scheduler,iam` (SNS/IAM 추가) |
 
 > **포트 번호는 Docker Compose와 동일하게 맞춰놨습니다.**

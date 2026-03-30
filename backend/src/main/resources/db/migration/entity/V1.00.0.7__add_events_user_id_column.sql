@@ -1,1 +1,1 @@
-alter table  events add column user_id bigint null;
+alter table events add column user_id bigint null;

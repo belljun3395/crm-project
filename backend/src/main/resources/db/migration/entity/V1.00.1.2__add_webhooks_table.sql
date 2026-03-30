@@ -1,9 +1,9 @@
 create table webhooks
 (
-    id          bigint auto_increment primary key,
+    id          bigserial primary key,
     name        varchar(255)  not null unique,
     url         varchar(1024) not null,
-    events      json          not null,
+    events      jsonb         not null,
     active      boolean       not null default true,
-    created_at  datetime(6)   not null default current_timestamp(6)
+    created_at  timestamp(6)   not null default current_timestamp(6)
 );

@@ -7,7 +7,7 @@ CRM API 서버(백엔드)와 운영 콘솔(프론트엔드)로 구성된 CRM 프
 
 ## Repository Structure
 
-- `backend/`: Spring Boot 3 + Kotlin + WebFlux + R2DBC(MySQL)
+- `backend/`: Spring Boot 3 + Kotlin + WebFlux + R2DBC
 - `frontend/`: React 기반 운영 콘솔
 - `docs/`: OpenAPI 산출물 (`openapi.json`)
 - `scripts/`: 개발 환경 초기화/검증 스크립트
@@ -23,7 +23,9 @@ CRM API 서버(백엔드)와 운영 콘솔(프론트엔드)로 구성된 CRM 프
 cd scripts && bash local-develop-env-reset
 ```
 
-`local-develop-env-reset`는 MySQL/LocalStack/PubSub/Kafka 헬스와 init 컨테이너 완료까지 대기한 뒤 종료됩니다.
+`local-develop-env-reset`는 현재 로컬 DB(MySQL)/LocalStack/PubSub/Kafka 헬스와 init 컨테이너 완료까지 대기한 뒤 종료됩니다.
+
+현재 로컬/Kubernetes 개발 스택은 아직 MySQL 기반입니다. PostgreSQL 전환은 Terraform 인프라 문서와 백엔드 전환 브랜치에서 같이 맞춰야 합니다.
 
 ### 2. 백엔드 빌드/실행
 

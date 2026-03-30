@@ -1,6 +1,7 @@
 package com.manage.crm.user.application.service
 
 import com.manage.crm.user.domain.cache.UserCacheManager
+import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.event.RefreshTotalUsersCommand
 import com.manage.crm.user.support.UserEventPublisher
 import io.kotest.core.spec.style.FeatureSpec
@@ -12,12 +13,14 @@ import io.mockk.mockk
 class CacheUserServiceImplTest : FeatureSpec({
     lateinit var userCacheManager: UserCacheManager
     lateinit var userEventPublisher: UserEventPublisher
+    lateinit var userRepository: UserRepository
     lateinit var userService: CacheUserServiceImpl
 
     beforeTest {
         userCacheManager = mockk()
         userEventPublisher = mockk(relaxed = true)
-        userService = CacheUserServiceImpl(userCacheManager, userEventPublisher)
+        userRepository = mockk(relaxed = true)
+        userService = CacheUserServiceImpl(userCacheManager, userEventPublisher, userRepository)
     }
 
     feature("CacheUserServiceImpl#getTotalUserCount") {
