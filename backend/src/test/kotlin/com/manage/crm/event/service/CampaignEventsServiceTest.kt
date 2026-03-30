@@ -39,8 +39,8 @@ class CampaignEventsServiceTest : BehaviorSpec({
             val campaignId = 11L
             val eventIds = listOf(1L, 2L)
             val events = listOf(
-                Event.new(1L, "e1", 101L, PropertiesFixtures.giveMeOneEventProperties(), LocalDateTime.now()),
-                Event.new(2L, "e2", 102L, PropertiesFixtures.giveMeOneEventProperties(), LocalDateTime.now())
+                Event.new(1L, "e1", 101L, PropertiesFixtures.giveMeOne().buildEvent(), LocalDateTime.now()),
+                Event.new(2L, "e2", 102L, PropertiesFixtures.giveMeOne().buildEvent(), LocalDateTime.now())
             )
             coEvery { campaignEventsRepository.findEventIdsByCampaignId(campaignId) } returns eventIds
             coEvery { eventRepository.findAllByIdIn(eventIds) } returns events
@@ -58,8 +58,8 @@ class CampaignEventsServiceTest : BehaviorSpec({
             val end = LocalDateTime.of(2026, 3, 2, 0, 0)
             val eventIds = listOf(10L, 11L)
             val events = listOf(
-                Event.new(10L, "a", 1L, PropertiesFixtures.giveMeOneEventProperties(), start.plusHours(1)),
-                Event.new(11L, "b", 2L, PropertiesFixtures.giveMeOneEventProperties(), start.plusHours(2))
+                Event.new(10L, "a", 1L, PropertiesFixtures.giveMeOne().buildEvent(), start.plusHours(1)),
+                Event.new(11L, "b", 2L, PropertiesFixtures.giveMeOne().buildEvent(), start.plusHours(2))
             )
             coEvery { campaignRepository.findById(campaignId) } returns CampaignFixtures.giveMeOne().withId(campaignId).build()
             coEvery {
@@ -91,9 +91,9 @@ class CampaignEventsServiceTest : BehaviorSpec({
             val start = LocalDateTime.of(2026, 3, 1, 0, 0)
             val allEventIds = listOf(20L, 21L, 22L)
             val events = listOf(
-                Event.new(20L, "old", 1L, PropertiesFixtures.giveMeOneEventProperties(), start.minusMinutes(1)),
-                Event.new(21L, "ok", 2L, PropertiesFixtures.giveMeOneEventProperties(), start.plusMinutes(1)),
-                Event.new(22L, "null-created-at", 3L, PropertiesFixtures.giveMeOneEventProperties(), start).apply { createdAt = null }
+                Event.new(20L, "old", 1L, PropertiesFixtures.giveMeOne().buildEvent(), start.minusMinutes(1)),
+                Event.new(21L, "ok", 2L, PropertiesFixtures.giveMeOne().buildEvent(), start.plusMinutes(1)),
+                Event.new(22L, "null-created-at", 3L, PropertiesFixtures.giveMeOne().buildEvent(), start).apply { createdAt = null }
             )
             coEvery { campaignRepository.findById(campaignId) } returns CampaignFixtures.giveMeOne().withId(campaignId).build()
             coEvery { campaignEventsRepository.findEventIdsByCampaignId(campaignId) } returns allEventIds

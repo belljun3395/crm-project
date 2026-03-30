@@ -25,31 +25,45 @@ import io.mockk.mockk
 import io.mockk.slot
 
 class CampaignDashboardControllerTest : BehaviorSpec({
-    val listCampaignsUseCase = mockk<ListCampaignsUseCase>()
-    val getCampaignUseCase = mockk<GetCampaignUseCase>()
-    val updateCampaignUseCase = mockk<UpdateCampaignUseCase>()
-    val deleteCampaignUseCase = mockk<DeleteCampaignUseCase>()
-    val streamCampaignDashboardUseCase = mockk<StreamCampaignDashboardUseCase>()
-    val getCampaignDashboardUseCase = mockk<GetCampaignDashboardUseCase>()
-    val getCampaignFunnelAnalyticsUseCase = mockk<GetCampaignFunnelAnalyticsUseCase>()
-    val getCampaignSegmentComparisonUseCase = mockk<GetCampaignSegmentComparisonUseCase>()
-    val getCampaignSummaryUseCase = mockk<GetCampaignSummaryUseCase>()
-    val getCampaignDashboardStreamStatusUseCase = mockk<GetCampaignDashboardStreamStatusUseCase>()
-    val postCampaignUseCase = mockk<PostCampaignUseCase>()
+    lateinit var listCampaignsUseCase: ListCampaignsUseCase
+    lateinit var getCampaignUseCase: GetCampaignUseCase
+    lateinit var updateCampaignUseCase: UpdateCampaignUseCase
+    lateinit var deleteCampaignUseCase: DeleteCampaignUseCase
+    lateinit var streamCampaignDashboardUseCase: StreamCampaignDashboardUseCase
+    lateinit var getCampaignDashboardUseCase: GetCampaignDashboardUseCase
+    lateinit var getCampaignFunnelAnalyticsUseCase: GetCampaignFunnelAnalyticsUseCase
+    lateinit var getCampaignSegmentComparisonUseCase: GetCampaignSegmentComparisonUseCase
+    lateinit var getCampaignSummaryUseCase: GetCampaignSummaryUseCase
+    lateinit var getCampaignDashboardStreamStatusUseCase: GetCampaignDashboardStreamStatusUseCase
+    lateinit var postCampaignUseCase: PostCampaignUseCase
+    lateinit var controller: CampaignDashboardController
 
-    val controller = CampaignDashboardController(
-        listCampaignsUseCase = listCampaignsUseCase,
-        getCampaignUseCase = getCampaignUseCase,
-        updateCampaignUseCase = updateCampaignUseCase,
-        deleteCampaignUseCase = deleteCampaignUseCase,
-        streamCampaignDashboardUseCase = streamCampaignDashboardUseCase,
-        getCampaignDashboardUseCase = getCampaignDashboardUseCase,
-        getCampaignFunnelAnalyticsUseCase = getCampaignFunnelAnalyticsUseCase,
-        getCampaignSegmentComparisonUseCase = getCampaignSegmentComparisonUseCase,
-        getCampaignSummaryUseCase = getCampaignSummaryUseCase,
-        getCampaignDashboardStreamStatusUseCase = getCampaignDashboardStreamStatusUseCase,
-        postCampaignUseCase = postCampaignUseCase
-    )
+    beforeContainer {
+        listCampaignsUseCase = mockk()
+        getCampaignUseCase = mockk()
+        updateCampaignUseCase = mockk()
+        deleteCampaignUseCase = mockk()
+        streamCampaignDashboardUseCase = mockk()
+        getCampaignDashboardUseCase = mockk()
+        getCampaignFunnelAnalyticsUseCase = mockk()
+        getCampaignSegmentComparisonUseCase = mockk()
+        getCampaignSummaryUseCase = mockk()
+        getCampaignDashboardStreamStatusUseCase = mockk()
+        postCampaignUseCase = mockk()
+        controller = CampaignDashboardController(
+            listCampaignsUseCase = listCampaignsUseCase,
+            getCampaignUseCase = getCampaignUseCase,
+            updateCampaignUseCase = updateCampaignUseCase,
+            deleteCampaignUseCase = deleteCampaignUseCase,
+            streamCampaignDashboardUseCase = streamCampaignDashboardUseCase,
+            getCampaignDashboardUseCase = getCampaignDashboardUseCase,
+            getCampaignFunnelAnalyticsUseCase = getCampaignFunnelAnalyticsUseCase,
+            getCampaignSegmentComparisonUseCase = getCampaignSegmentComparisonUseCase,
+            getCampaignSummaryUseCase = getCampaignSummaryUseCase,
+            getCampaignDashboardStreamStatusUseCase = getCampaignDashboardStreamStatusUseCase,
+            postCampaignUseCase = postCampaignUseCase
+        )
+    }
 
     given("CampaignDashboardController funnel analytics") {
         `when`("steps query param is comma-separated string") {

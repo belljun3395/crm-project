@@ -32,14 +32,5 @@ class PropertyFixtures private constructor() {
                 .withValue(randomValue)
         }
 
-        fun aCampaignProperty() = PropertyFixtures()
-
-        fun giveMeOneCampaign(): PropertyFixtures {
-            val randomKey = "key" + UUID.randomUUID().toString().substring(0, 5)
-            val randomValue = "value" + UUID.randomUUID().toString().substring(0, 5)
-            return aCampaignProperty()
-                .withKey(randomKey)
-                .withValue(randomValue)
-        }
     }
 }

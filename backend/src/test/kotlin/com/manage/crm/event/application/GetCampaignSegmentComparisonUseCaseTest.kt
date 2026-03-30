@@ -174,4 +174,4 @@ class GetCampaignSegmentComparisonUseCaseTest : BehaviorSpec({
 })
 
 private fun segEvent(id: Long, userId: Long, name: String, createdAt: LocalDateTime): Event =
-    Event.new(id, name, userId, PropertiesFixtures.giveMeOneEventProperties(), createdAt)
+    Event.new(id, name, userId, PropertiesFixtures.giveMeOne().buildEvent(), createdAt)

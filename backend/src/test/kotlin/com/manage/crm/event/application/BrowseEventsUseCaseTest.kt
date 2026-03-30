@@ -31,7 +31,7 @@ class BrowseEventsUseCaseTest : BehaviorSpec({
                 EventFixtures.giveMeOne()
                     .withId(i.toLong())
                     .withUserId(i.toLong())
-                    .withProperties(PropertiesFixtures.giveMeOneEventProperties())
+                    .withProperties(PropertiesFixtures.giveMeOne().buildEvent())
                     .withCreatedAt(LocalDateTime.now().minusMinutes(i.toLong()))
                     .build()
             }
@@ -65,7 +65,7 @@ class BrowseEventsUseCaseTest : BehaviorSpec({
                 EventFixtures.giveMeOne()
                     .withId(i.toLong())
                     .withUserId(i.toLong())
-                    .withProperties(PropertiesFixtures.giveMeOneEventProperties())
+                    .withProperties(PropertiesFixtures.giveMeOne().buildEvent())
                     .withCreatedAt(LocalDateTime.now().minusMinutes(i.toLong()))
                     .build()
             }
@@ -92,7 +92,7 @@ class BrowseEventsUseCaseTest : BehaviorSpec({
                 EventFixtures.giveMeOne()
                     .withId(i.toLong())
                     .withUserId(i.toLong())
-                    .withProperties(PropertiesFixtures.giveMeOneEventProperties())
+                    .withProperties(PropertiesFixtures.giveMeOne().buildEvent())
                     .withCreatedAt(LocalDateTime.now().minusMinutes(i.toLong()))
                     .build()
             }
@@ -118,7 +118,7 @@ class BrowseEventsUseCaseTest : BehaviorSpec({
             val event = EventFixtures.giveMeOne()
                 .withId(1L)
                 .withUserId(999L) // userId with no corresponding user
-                .withProperties(PropertiesFixtures.giveMeOneEventProperties())
+                .withProperties(PropertiesFixtures.giveMeOne().buildEvent())
                 .withCreatedAt(LocalDateTime.now())
                 .build()
 
