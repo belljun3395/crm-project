@@ -63,7 +63,7 @@ spring-modulith-starter-test = { module = "org.springframework.modulith:spring-m
 springdoc-openapi-starter-webflux-ui = { module = "org.springdoc:springdoc-openapi-starter-webflux-ui", version.ref = "springdoc" }
 
 r2dbc-pool = { module = "io.r2dbc:r2dbc-pool" }
-r2dbc-postgresql = { module = "io.r2dbc:r2dbc-postgresql" }
+r2dbc-postgresql = { module = "org.postgresql:r2dbc-postgresql" }
 postgresql = { module = "org.postgresql:postgresql" }
 hikari-cp = { module = "com.zaxxer:HikariCP", version.ref = "hikari-cp" }
 

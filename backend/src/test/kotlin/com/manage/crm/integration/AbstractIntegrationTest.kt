@@ -10,6 +10,7 @@ import com.amazonaws.services.simpleemail.model.ConfigurationSetAlreadyExistsExc
 import com.amazonaws.services.simpleemail.model.CreateConfigurationSetRequest
 import com.amazonaws.services.simpleemail.model.VerifyEmailIdentityRequest
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.manage.crm.integration.config.PostgresContainerSupport
 import com.manage.crm.integration.config.TestContainerConfig
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.extensions.spring.SpringExtension
@@ -69,12 +70,12 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
 
         private val useLocalStack = System.getProperty("useLocalStack", localStackConfig.enabled.toString()).toBoolean()
 
-        // Spring properties are configured via application-test.yml (docker-compose fixed ports).
-        // This method only runs pre-context AWS service setup when LocalStack is enabled.
+        // Database properties are wired from a shared PostgreSQL Testcontainer.
+        // This method also runs pre-context AWS service setup when LocalStack is enabled.
         @DynamicPropertySource
         @JvmStatic
-        @Suppress("UNUSED_PARAMETER")
         fun configureProperties(registry: DynamicPropertyRegistry) {
+            PostgresContainerSupport.register(registry)
             if (useLocalStack) {
                 setupAwsServices()
             }
