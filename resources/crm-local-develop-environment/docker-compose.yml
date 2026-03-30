@@ -1,5 +1,6 @@
 services:
     crm-mysql:
+        # Current local database stack. PostgreSQL migration will replace this service and init scripts.
         container_name: crm-mysql8
         image: mysql/mysql-server:8.0.27
         environment:
@@ -12,7 +13,7 @@ services:
         volumes:
             - ./mysql-init.d:/docker-entrypoint-initdb.d
 
-    crm-adminer: # mysql web admin
+    crm-adminer: # database web admin
         container_name: crm-adminer
         image: adminer:4
         ports:
