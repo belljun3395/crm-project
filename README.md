@@ -67,6 +67,13 @@ cp ./build/openapi.json ../docs/openapi.json
 
 ## Core Documents
 
+- [문서 인덱스(Current State)](./docs/index.md)
+- [API 기능/사용 허브](./docs/CRM_API_CAPABILITY_AND_USAGE.md)
+- [아키텍처/구현 허브](./docs/CRM_ARCHITECTURE_AND_IMPLEMENTATION.md)
+- [API 현재 상태 요약](./docs/publish/API_CURRENT_STATE.md)
+- [API 도메인별 기능/엔드포인트](./docs/publish/API_DOMAIN_CAPABILITIES.md)
+- [아키텍처 현재 상태](./docs/publish/ARCHITECTURE_CURRENT_STATE.md)
+- [런타임 플로우/운영 제약](./docs/publish/ARCHITECTURE_RUNTIME_FLOWS.md)
 - [도메인/유즈케이스 플로우](./docs/Domain-and-UseCase-Flows.md)
 - [캠페인 대시보드 구현 문서](./docs/CAMPAIGN_DASHBOARD_IMPLEMENTATION.md)
 - [백엔드 대시보드 운영 문서](./backend/docs/campaign-dashboard/README.md)

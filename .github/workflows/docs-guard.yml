@@ -1,0 +1,66 @@
+name: Docs Guard
+
+on:
+  pull_request:
+    branches: ["main", "dev"]
+  push:
+    branches: ["main", "dev"]
+    paths:
+      - 'backend/src/main/kotlin/com/manage/crm/**/controller/*.kt'
+      - 'docs/**'
+      - '.github/workflows/docs-guard.yml'
+
+concurrency:
+  group: docs-guard-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api_or_controller: ${{ steps.filter.outputs.api_or_controller }}
+      docs_publish: ${{ steps.filter.outputs.docs_publish }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            api_or_controller:
+              - 'backend/src/main/kotlin/com/manage/crm/**/controller/*.kt'
+            docs_publish:
+              - 'docs/publish/**'
+              - 'docs/CRM_API_CAPABILITY_AND_USAGE.md'
+              - 'docs/CRM_ARCHITECTURE_AND_IMPLEMENTATION.md'
+              - 'docs/index.md'
+
+  require-doc-update:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.api_or_controller == 'true'
+    steps:
+      - name: Require docs update when API/controller changes
+        run: |
+          if [ "${{ needs.changes.outputs.docs_publish }}" != "true" ]; then
+            echo "Controller/API 변경이 감지되었습니다. docs/publish 또는 canonical 문서를 함께 갱신하세요."
+            exit 1
+          fi
+
+  enforce-current-state-tone:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Block roadmap/history-heavy wording in publish docs
+        run: |
+          if grep -RInE "로드맵|미구현 도메인|히스토리 중심|history-first" docs/publish; then
+            echo "publish 문서는 최신 상태 중심으로 유지해야 합니다. 금지 키워드를 제거하세요."
+            exit 1
+          fi

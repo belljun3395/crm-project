@@ -4,8 +4,13 @@
 
 이 문서는 `main` 브랜치 기준 구현 상태를 기준으로 CRM의 도메인 모델/유즈케이스 흐름을 정리합니다.
 
-- 기준일: 2026-02-25
-- 문서 대상: 현재 구현된 기능 + 명확히 분리된 로드맵
+> 발행용 기준 문서:
+>
+> - API 기능/사용 가이드: `docs/CRM_API_CAPABILITY_AND_USAGE.md`
+> - 아키텍처/구현 가이드: `docs/CRM_ARCHITECTURE_AND_IMPLEMENTATION.md`
+
+- 기준일: 2026-03-30
+- 문서 대상: 현재 구현된 기능
 - 아키텍처 스타일: Clean Architecture + DDD
 
 ## 시스템 구성 요약
@@ -16,14 +21,13 @@
 - Email (Template / Send / Schedule / History)
 - Event (Event/Campaign/Event Search)
 - Campaign Dashboard (Metrics + SSE)
-- Webhook
-
-로드맵 도메인(미구현)
-
-- Segment / Audience
+- Segment
 - Journey
-- Action Provider (Slack/Discord 등)
-- Delivery / DeliveryAttempt 고도화
+- Action
+- Webhook
+- Audit
+
+이 문서는 로드맵/히스토리보다 현재 구현 상태를 우선합니다.
 
 ## 아키텍처 레이어
 
@@ -158,6 +162,35 @@ graph TB
 - `GET /api/v1/webhooks`
 - `GET /api/v1/webhooks/{id}`
 
+### Segment API
+
+- `POST /api/v1/segments`
+- `PUT /api/v1/segments/{id}`
+- `DELETE /api/v1/segments/{id}`
+- `GET /api/v1/segments`
+- `GET /api/v1/segments/{id}`
+- `GET /api/v1/segments/{id}/users`
+
+### Journey API
+
+- `POST /api/v1/journeys`
+- `PUT /api/v1/journeys/{journeyId}`
+- `POST /api/v1/journeys/{journeyId}/pause`
+- `POST /api/v1/journeys/{journeyId}/resume`
+- `POST /api/v1/journeys/{journeyId}/archive`
+- `GET /api/v1/journeys`
+- `GET /api/v1/journeys/executions`
+- `GET /api/v1/journeys/executions/{executionId}/histories`
+
+### Action API
+
+- `POST /api/v1/actions/dispatch`
+- `GET /api/v1/actions/dispatch/histories`
+
+### Audit API
+
+- `GET /api/v1/audit-logs`
+
 ## 유즈케이스 플로우
 
 ### 1) 사용자 등록/갱신
@@ -260,15 +293,11 @@ sequenceDiagram
 - 최신 무결성 보강 마이그레이션: `V1.00.1.3__harden_db_integrity_constraints.sql`
 - local 프로필 기준 DB: MySQL + Redis Cluster + LocalStack + Kafka
 
-## 로드맵(미구현) 명시
+## 참고
 
-아래 항목은 현재 코드베이스에 구현되지 않았으며, 별도 이슈에서 진행합니다.
+현재 상태 중심 발행 문서는 아래를 우선 참고하세요.
 
-- Segment/Audience 도메인 및 CRUD (`#188`)
-- Campaign- Segment 타기팅 통합 (`#186`)
-- 멀티채널 Action Provider (`#185`)
-- Journey 자동화 엔진 (`#187`)
-- RBAC/컴플라이언스 (`#190`)
-- 개인정보 보존/삭제 정책 (`#198`)
-
-해당 기능은 구현 완료 전까지 이 문서의 "구현 기준" 섹션에 포함하지 않습니다.
+- `docs/publish/API_CURRENT_STATE.md`
+- `docs/publish/API_DOMAIN_CAPABILITIES.md`
+- `docs/publish/ARCHITECTURE_CURRENT_STATE.md`
+- `docs/publish/ARCHITECTURE_RUNTIME_FLOWS.md`
