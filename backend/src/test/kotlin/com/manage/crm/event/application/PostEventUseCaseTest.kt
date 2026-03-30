@@ -500,7 +500,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                     PropertiesFixtures.giveMeOne()
                         .withValue(
                             notMatchProperties.map {
-                                PropertyFixtures.giveMeOneCampaign()
+                                PropertyFixtures.giveMeOne()
                                     .withKey(it.key)
                                     .withValue(it.value)
                                     .buildEvent()

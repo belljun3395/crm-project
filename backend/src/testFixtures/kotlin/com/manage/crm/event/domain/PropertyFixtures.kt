@@ -31,6 +31,5 @@ class PropertyFixtures private constructor() {
                 .withKey(randomKey)
                 .withValue(randomValue)
         }
-
     }
 }

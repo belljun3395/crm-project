@@ -75,7 +75,7 @@ class PostCampaignUseCaseTest : BehaviorSpec({
                     PropertiesFixtures.giveMeOne()
                         .withValue(
                             useCaseIn.properties.map {
-                                PropertyFixtures.giveMeOneCampaign()
+                                PropertyFixtures.giveMeOne()
                                     .withKey(it.key)
                                     .withValue(it.value)
                                     .buildEvent()
