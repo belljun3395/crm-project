@@ -27,4 +27,3 @@ class UserEmailWritingConverter : Converter<Email, String> {
         return source.value
     }
 }
-

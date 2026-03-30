@@ -68,4 +68,3 @@ class CampaignPropertiesWritingConverter : Converter<CampaignProperties, Json> {
         return Json.of(objectMapper.writeValueAsString(source.value))
     }
 }
-

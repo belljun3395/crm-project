@@ -27,4 +27,3 @@ class EventIdWritingConverter : Converter<EventId, String> {
         return source.value
     }
 }
-

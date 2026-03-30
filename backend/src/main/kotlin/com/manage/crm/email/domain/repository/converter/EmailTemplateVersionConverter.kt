@@ -22,4 +22,3 @@ class EmailTemplateVersionWritingConverter : Converter<EmailTemplateVersion, Flo
         return source.value
     }
 }
-

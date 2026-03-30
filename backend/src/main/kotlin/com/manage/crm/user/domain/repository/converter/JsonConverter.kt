@@ -23,4 +23,3 @@ class UserAttributeWritingConverter : Converter<UserAttributes, Json> {
         return Json.of(source.value)
     }
 }
-

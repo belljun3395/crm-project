@@ -27,4 +27,3 @@ class VariablesWritingConverter : Converter<Variables, String> {
         return source.value.map { it.displayValue() }.toString().let { it.substring(1, it.length - 1) }
     }
 }
-

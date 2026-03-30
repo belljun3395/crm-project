@@ -42,7 +42,7 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
             webTestClient = WebTestClient.bindToServer()
                 .baseUrl("http://localhost:$port")
                 .entityExchangeResultConsumer {
-                    val sb = StringBuffer()
+                    val sb = StringBuilder()
                     sb.appendLine()
                     sb.appendLine("================= HTTP Exchange Result ================")
                     sb.appendLine("Request: ${it.method} ${it.url}")

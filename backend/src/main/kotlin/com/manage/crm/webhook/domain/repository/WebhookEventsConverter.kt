@@ -40,4 +40,3 @@ class WebhookEventsWritingConverter : Converter<WebhookEvents, Json> {
         return Json.of(objectMapper.writeValueAsString(source.toValues()))
     }
 }
-
