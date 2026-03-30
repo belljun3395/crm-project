@@ -8,51 +8,23 @@ import com.manage.crm.event.domain.repository.query.SearchByPropertyQuery
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.event.exception.InvalidSearchConditionException
-import kotlinx.coroutines.reactive.awaitFirst
-import org.springframework.r2dbc.core.DatabaseClient
-import org.springframework.r2dbc.core.DatabaseClient.GenericExecuteSpec
+import com.manage.crm.infrastructure.jooq.CrmJooqTables
+import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
+import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
-/**
- * DM-EVENT-001
- * Builds and executes dynamic event-property search queries.
- *
- * Input: event name, property filters, operation, and optional join operation.
- * Success: returns matched events with deduplicated ids.
- * Failure: throws InvalidSearchConditionException for invalid filter contracts.
- * Side effects: reads events from DB using parameter-bound SQL.
- */
 @Repository
 class EventCustomRepositoryImpl(
-    private val dataBaseClient: DatabaseClient,
+    private val dslContext: DSLContext,
+    private val jooqExecutor: JooqR2dbcExecutor,
     private val objectMapper: ObjectMapper
 ) : EventCustomRepository {
 
-    private data class QueryClause(
-        val clause: String,
-        val bindings: Map<String, Any>
-    )
-
     override suspend fun searchByProperty(query: SearchByPropertyQuery): List<Event> {
-        var selectQuery = """
-            SELECT * FROM events 
-            CROSS JOIN JSON_TABLE(properties, '$[*]' 
-                COLUMNS (
-                    `key` VARCHAR(255) PATH '$.key',
-                    `value` VARCHAR(255) PATH '$.value'
-                )            
-            ) AS properties
-        """.trimIndent()
-
-        val queryClause = when (query.operation) {
-            Operation.BETWEEN -> buildBetweenClause(query.properties)
-            else -> buildSinglePropertyClause(query.operation, query.properties)
-        }
-
-        selectQuery = "$selectQuery WHERE ${queryClause.clause} AND name = :eventName"
-        return fetchQuery(selectQuery, queryClause.bindings + mapOf("eventName" to query.eventName))
+        return fetchAllByEventName(query.eventName)
+            .filter { event -> matchesSingleQuery(event, query) }
     }
 
     override suspend fun searchByProperties(queries: List<SearchByPropertyQuery>): List<Event> {
@@ -65,16 +37,33 @@ class EventCustomRepositoryImpl(
             throw InvalidSearchConditionException("All queries must have the same eventName")
         }
 
-        // Fetch candidate events once, then evaluate query clauses in memory.
         return fetchAllByEventName(eventName)
             .filter { event -> matchesQueryChain(event, queries) }
     }
 
     private suspend fun fetchAllByEventName(eventName: String): List<Event> {
-        val query = """
-            SELECT * FROM events WHERE name = :eventName
-        """.trimIndent()
-        return fetchQuery(query, mapOf("eventName" to eventName))
+        val query = dslContext
+            .select()
+            .from(CrmJooqTables.Events.table)
+            .where(CrmJooqTables.Events.name.eq(eventName))
+
+        return jooqExecutor.fetchList(query) { row ->
+            Event.new(
+                id = (row["id"] as Number).toLong(),
+                name = row["name"] as String,
+                userId = (row["user_id"] as Number).toLong(),
+                properties = (row["properties"] as String)
+                    .let { properties ->
+                        objectMapper.readValue(properties, List::class.java).stream()
+                            .map { objectMapper.convertValue(it, Map::class.java) }
+                            .map { EventProperty(it["key"] as String, it["value"] as String) }
+                            .toList()
+                            .let { EventProperties(it) }
+                    },
+                createdAt = row["created_at"] as LocalDateTime
+            )
+        }
+            .distinctBy { it.id }
             .sortedBy { it.id }
     }
 
@@ -194,93 +183,5 @@ class EventCustomRepositoryImpl(
     private fun toBigDecimal(value: String): BigDecimal {
         return value.toBigDecimalOrNull()
             ?: throw InvalidSearchConditionException("Numeric value expected but got: $value")
-    }
-
-    private suspend fun fetchQuery(selectQuery: String, bindings: Map<String, Any>): List<Event> {
-        var executeSpec: GenericExecuteSpec = dataBaseClient.sql(selectQuery)
-        bindings.forEach { (key, value) ->
-            executeSpec = executeSpec.bind(key, value)
-        }
-
-        return executeSpec
-            .fetch()
-            .all()
-            .map { it ->
-                Event.new(
-                    id = it["id"] as Long,
-                    name = it["name"] as String,
-                    userId = it["user_id"] as Long,
-                    properties = (it["properties"] as String)
-                        .let { properties ->
-                            objectMapper.readValue(properties, List::class.java).stream()
-                                .map { objectMapper.convertValue(it, Map::class.java) }
-                                .map { EventProperty(it["key"] as String, it["value"] as String) }
-                                .toList()
-                                .let { EventProperties(it) }
-                        },
-                    createdAt = it["created_at"] as LocalDateTime
-                )
-            }
-            .distinct { it.id!! }
-            .collectList()
-            .awaitFirst()
-    }
-
-    private fun buildSinglePropertyClause(
-        operation: Operation,
-        properties: EventProperties
-    ): QueryClause {
-        if (properties.value.size != operation.paramsCnt) {
-            throw InvalidSearchConditionException("Operation ${operation.name} needs ${operation.paramsCnt} params")
-        }
-
-        val property = properties.value.first()
-        val bindings = mutableMapOf<String, Any>()
-        bindings["key0"] = property.key
-        val valueKey = "value0"
-
-        val valueClause = if (property.isNum() && operation != Operation.LIKE) {
-            bindings[valueKey] = property.value.toBigDecimalOrNull()
-                ?: throw InvalidSearchConditionException("Numeric value expected for operation ${operation.name}")
-            "CAST(properties.value AS DECIMAL(65, 10)) ${operation.value} :$valueKey"
-        } else {
-            bindings[valueKey] = property.value
-            "properties.value ${operation.value} :$valueKey"
-        }
-
-        return QueryClause(
-            clause = "properties.key = :key0 AND $valueClause",
-            bindings = bindings
-        )
-    }
-
-    private fun buildBetweenClause(properties: EventProperties): QueryClause {
-        if (properties.value.size != Operation.BETWEEN.paramsCnt) {
-            throw InvalidSearchConditionException("Operation BETWEEN needs ${Operation.BETWEEN.paramsCnt} params")
-        }
-
-        val first = properties.value.first()
-        val second = properties.value.last()
-        if (first.key != second.key) {
-            throw InvalidSearchConditionException("Between operation needs same key. But ${first.key} and ${second.key} are different")
-        }
-
-        val bindings = mutableMapOf<String, Any>("betweenKey" to first.key)
-        val betweenClause = if (first.isNum() && second.isNum()) {
-            bindings["betweenStart"] = first.value.toBigDecimalOrNull()
-                ?: throw InvalidSearchConditionException("Numeric value expected for BETWEEN operation")
-            bindings["betweenEnd"] = second.value.toBigDecimalOrNull()
-                ?: throw InvalidSearchConditionException("Numeric value expected for BETWEEN operation")
-            "CAST(properties.value AS DECIMAL(65, 10)) BETWEEN :betweenStart AND :betweenEnd"
-        } else {
-            bindings["betweenStart"] = first.value
-            bindings["betweenEnd"] = second.value
-            "properties.value BETWEEN :betweenStart AND :betweenEnd"
-        }
-
-        return QueryClause(
-            clause = "properties.key = :betweenKey AND $betweenClause",
-            bindings = bindings
-        )
     }
 }

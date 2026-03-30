@@ -29,6 +29,7 @@ kotlin-logging = "7.0.0"
 commons-io = "2.19.0"
 spring-cloud-gcp = "5.6.0"
 loki4j = "1.4.2"
+jooq = "3.19.18"
 
 [libraries]
 spring-modulith-bom = { module = "org.springframework.modulith:spring-modulith-bom", version.ref = "spring-modulith" }
@@ -87,6 +88,7 @@ jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
 loki-logback-appender = { module = "com.github.loki4j:loki-logback-appender", version.ref = "loki4j" }
 kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlin-logging" }
+jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
 
 reactor-test = { module = "io.projectreactor:reactor-test" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }

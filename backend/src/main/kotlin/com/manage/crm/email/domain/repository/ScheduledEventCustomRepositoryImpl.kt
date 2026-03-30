@@ -2,46 +2,39 @@ package com.manage.crm.email.domain.repository
 
 import com.manage.crm.email.domain.ScheduledEvent
 import com.manage.crm.email.domain.vo.EventId
-import kotlinx.coroutines.reactive.awaitFirst
-import kotlinx.coroutines.reactive.awaitFirstOrNull
-import org.springframework.r2dbc.core.DatabaseClient
+import com.manage.crm.infrastructure.jooq.CrmJooqTables
+import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
+import org.jooq.DSLContext
+import org.jooq.impl.DSL.concat
+import org.jooq.impl.DSL.inline
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
 @Repository
 class ScheduledEventCustomRepositoryImpl(
-    private val dataBaseClient: DatabaseClient
+    private val dslContext: DSLContext,
+    private val jooqExecutor: JooqR2dbcExecutor
 ) : ScheduledEventCustomRepository {
     override suspend fun findAllByEmailTemplateIdAndCompletedFalse(templateId: Long): List<ScheduledEvent> {
-        val selectQuery = """
-            SELECT * FROM scheduled_events
-            WHERE event_payload LIKE CONCAT('%\"templateId\":', :templateId, '%')
-              AND completed = false
-        """.trimIndent()
+        val likePattern = concat(inline("%\"templateId\":"), inline(templateId.toString()), inline("%"))
+        val query = dslContext
+            .select()
+            .from(CrmJooqTables.ScheduledEvents.table)
+            .where(CrmJooqTables.ScheduledEvents.eventPayload.like(likePattern))
+            .and(CrmJooqTables.ScheduledEvents.completed.eq(false))
 
-        return dataBaseClient.sql(selectQuery)
-            .bind("templateId", templateId)
-            .fetch()
-            .all()
-            .map(::toScheduledEvent)
-            .collectList()
-            .awaitFirst()
+        return jooqExecutor.fetchList(query, ::toScheduledEvent)
     }
 
     override suspend fun findByEventIdAndCompletedFalseForUpdate(eventId: EventId): ScheduledEvent? {
-        return dataBaseClient.sql(
-            """
-            SELECT * FROM scheduled_events
-            WHERE event_id = :eventId
-              AND completed = false
-            FOR UPDATE
-            """.trimIndent()
-        )
-            .bind("eventId", eventId.value)
-            .fetch()
-            .one()
-            .map(::toScheduledEvent)
-            .awaitFirstOrNull()
+        val query = dslContext
+            .select()
+            .from(CrmJooqTables.ScheduledEvents.table)
+            .where(CrmJooqTables.ScheduledEvents.eventId.eq(eventId.value))
+            .and(CrmJooqTables.ScheduledEvents.completed.eq(false))
+            .forUpdate()
+
+        return jooqExecutor.fetchOne(query, ::toScheduledEvent)
     }
 
     private fun toScheduledEvent(row: Map<String, Any>): ScheduledEvent {

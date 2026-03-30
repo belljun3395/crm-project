@@ -1,10 +1,11 @@
 package com.manage.crm.user.domain.repository
 
+import com.manage.crm.infrastructure.jooq.CrmJooqTables
+import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.vo.UserAttributes
-import kotlinx.coroutines.reactive.awaitFirst
-import kotlinx.coroutines.reactive.awaitFirstOrNull
-import org.springframework.r2dbc.core.DatabaseClient
+import org.jooq.DSLContext
+import org.jooq.impl.DSL.count
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
@@ -21,104 +22,73 @@ private const val LIKE_ESCAPE_CHARACTER = "\\"
  */
 @Repository
 class UserCustomRepositoryImpl(
-    private val dataBaseClient: DatabaseClient
+    private val dslContext: DSLContext,
+    private val jooqExecutor: JooqR2dbcExecutor
 ) : UserCustomRepository {
 
     override suspend fun findAllExistByUserAttributesKey(key: String?): List<User> {
-        val query = """
-            SELECT * FROM users
-            WHERE user_attributes LIKE CONCAT('%', :key, '%')
-        """.trimIndent()
+        val query = dslContext
+            .select()
+            .from(CrmJooqTables.Users.table)
+            .where(CrmJooqTables.Users.userAttributes.like("%${key ?: "email"}%"))
 
-        return dataBaseClient.sql(query)
-            .bind("key", key ?: "email")
-            .fetch()
-            .all()
-            .map(::toUser)
-            .collectList()
-            .awaitFirst()
+        return jooqExecutor.fetchList(query, ::toUser)
     }
 
     override suspend fun findByEmail(email: String): User? {
-        val selectQuery = """
-            SELECT * FROM users
-            WHERE user_attributes LIKE :pattern ESCAPE '\\'
-        """.trimIndent()
         val pattern = "%\"email\": \"${escapeLikePattern(email)}\"%"
+        val query = dslContext
+            .select()
+            .from(CrmJooqTables.Users.table)
+            .where(CrmJooqTables.Users.userAttributes.like(pattern).escape('\\'))
 
-        return dataBaseClient.sql(selectQuery)
-            .bind("pattern", pattern)
-            .fetch()
-            .all()
-            .map(::toUser)
-            .awaitFirstOrNull()
+        return jooqExecutor.fetchOne(query, ::toUser)
     }
 
     override suspend fun findAllWithPagination(page: Int, size: Int): List<User> {
         val offset = page * size
-        // ORDER BY id DESC: Return users in reverse chronological order (newest first)
-        val query = """
-            SELECT * FROM users
-            ORDER BY id DESC
-            LIMIT :limit OFFSET :offset
-        """.trimIndent()
+        val query = dslContext
+            .select()
+            .from(CrmJooqTables.Users.table)
+            .orderBy(CrmJooqTables.Users.id.desc())
+            .limit(size)
+            .offset(offset)
 
-        return dataBaseClient.sql(query)
-            .bind("limit", size)
-            .bind("offset", offset)
-            .fetch()
-            .all()
-            .map(::toUser)
-            .collectList()
-            .awaitFirst()
+        return jooqExecutor.fetchList(query, ::toUser)
     }
 
     override suspend fun countAll(): Long {
-        val query = "SELECT COUNT(*) as count FROM users"
+        val query = dslContext
+            .select(count().`as`("count"))
+            .from(CrmJooqTables.Users.table)
 
-        return dataBaseClient.sql(query)
-            .fetch()
-            .one()
-            .map { it["count"] as Long }
-            .awaitFirstOrNull() ?: 0L
+        return jooqExecutor.fetchOne(query) { (it["count"] as Number).toLong() } ?: 0L
     }
 
     override suspend fun searchUsers(query: String, page: Int, size: Int): List<User> {
         val offset = page * size
-        val sql = """
-            SELECT * FROM users
-            WHERE external_id LIKE :pattern ESCAPE '\\'
-               OR user_attributes LIKE :pattern ESCAPE '\\'
-            ORDER BY id DESC
-            LIMIT :limit OFFSET :offset
-        """.trimIndent()
         val pattern = "%${escapeLikePattern(query)}%"
+        val searchQuery = dslContext
+            .select()
+            .from(CrmJooqTables.Users.table)
+            .where(CrmJooqTables.Users.externalId.like(pattern).escape('\\'))
+            .or(CrmJooqTables.Users.userAttributes.like(pattern).escape('\\'))
+            .orderBy(CrmJooqTables.Users.id.desc())
+            .limit(size)
+            .offset(offset)
 
-        return dataBaseClient.sql(sql)
-            .bind("pattern", pattern)
-            .bind("limit", size)
-            .bind("offset", offset)
-            .fetch()
-            .all()
-            .map(::toUser)
-            .collectList()
-            .awaitFirst()
+        return jooqExecutor.fetchList(searchQuery, ::toUser)
     }
 
     override suspend fun countSearchUsers(query: String): Long {
-        val sql = """
-            SELECT COUNT(*) as count FROM users
-            WHERE external_id LIKE :pattern ESCAPE '\\'
-               OR user_attributes LIKE :pattern ESCAPE '\\'
-        """.trimIndent()
         val pattern = "%${escapeLikePattern(query)}%"
+        val countQuery = dslContext
+            .select(count().`as`("count"))
+            .from(CrmJooqTables.Users.table)
+            .where(CrmJooqTables.Users.externalId.like(pattern).escape('\\'))
+            .or(CrmJooqTables.Users.userAttributes.like(pattern).escape('\\'))
 
-        return dataBaseClient.sql(sql)
-            .bind("pattern", pattern)
-            .fetch()
-            .one()
-            .map { it["count"] as Long }
-            .awaitFirstOrNull() ?: 0L
+        return jooqExecutor.fetchOne(countQuery) { (it["count"] as Number).toLong() } ?: 0L
     }
 
     private fun escapeLikePattern(query: String): String {

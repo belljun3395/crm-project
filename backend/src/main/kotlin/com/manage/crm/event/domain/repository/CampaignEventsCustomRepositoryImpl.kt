@@ -1,63 +1,45 @@
 package com.manage.crm.event.domain.repository
 
-import kotlinx.coroutines.reactive.awaitFirst
-import kotlinx.coroutines.reactive.awaitFirstOrNull
-import org.springframework.r2dbc.core.DatabaseClient
+import com.manage.crm.infrastructure.jooq.CrmJooqTables
+import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
+import org.jooq.DSLContext
+import org.jooq.impl.DSL.count
+import org.jooq.impl.DSL.countDistinct
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
-private const val CAMPAIGN_EVENTS_JOIN_EVENTS = """
-    FROM campaign_events ce
-    INNER JOIN events e ON ce.event_id = e.id
-"""
-
-private const val CAMPAIGN_AND_USER_CONDITION = """
-    ce.campaign_id = :campaignId
-    AND e.user_id = :userId
-"""
-
-private const val CAMPAIGN_AND_CREATED_AT_RANGE_CONDITION = """
-    ce.campaign_id = :campaignId
-    AND e.created_at >= :startTime
-    AND e.created_at < :endTime
-"""
-
 @Repository
 class CampaignEventsCustomRepositoryImpl(
-    private val dataBaseClient: DatabaseClient
+    private val dslContext: DSLContext,
+    private val jooqExecutor: JooqR2dbcExecutor
 ) : CampaignEventsCustomRepository {
 
+    private val campaignEventsTable = CrmJooqTables.CampaignEvents.table
+    private val eventsTable = CrmJooqTables.Events.table
+    private val ceCampaignId = CrmJooqTables.CampaignEvents.campaignId
+    private val ceEventId = CrmJooqTables.CampaignEvents.eventId
+    private val eId = CrmJooqTables.Events.id
+    private val eUserId = CrmJooqTables.Events.userId
+    private val eCreatedAt = CrmJooqTables.Events.createdAt
+
     override suspend fun findEventIdsByCampaignId(campaignId: Long): List<Long> {
-        return dataBaseClient.sql(
-            """
-            SELECT ce.event_id
-            FROM campaign_events ce
-            WHERE ce.campaign_id = :campaignId
-            """.trimIndent()
-        )
-            .bind("campaignId", campaignId)
-            .fetch()
-            .all()
-            .map { (it["event_id"] as Number).toLong() }
-            .collectList()
-            .awaitFirst()
+        val query = dslContext
+            .select(ceEventId)
+            .from(campaignEventsTable)
+            .where(ceCampaignId.eq(campaignId))
+
+        return jooqExecutor.fetchList(query) { (it["event_id"] as Number).toLong() }
     }
 
     override suspend fun findEventIdsByCampaignIdAndUserId(campaignId: Long, userId: Long): List<Long> {
-        return dataBaseClient.sql(
-            """
-            SELECT ce.event_id
-            $CAMPAIGN_EVENTS_JOIN_EVENTS
-            WHERE $CAMPAIGN_AND_USER_CONDITION
-            """.trimIndent()
-        )
-            .bind("campaignId", campaignId)
-            .bind("userId", userId)
-            .fetch()
-            .all()
-            .map { (it["event_id"] as Number).toLong() }
-            .collectList()
-            .awaitFirst()
+        val query = dslContext
+            .select(ceEventId)
+            .from(campaignEventsTable)
+            .join(eventsTable)
+            .on(ceEventId.eq(eId))
+            .where(ceCampaignId.eq(campaignId).and(eUserId.eq(userId)))
+
+        return jooqExecutor.fetchList(query) { (it["event_id"] as Number).toLong() }
     }
 
     override suspend fun findEventIdsByCampaignIdAndCreatedAtRange(
@@ -65,21 +47,18 @@ class CampaignEventsCustomRepositoryImpl(
         startTime: LocalDateTime,
         endTime: LocalDateTime
     ): List<Long> {
-        return dataBaseClient.sql(
-            """
-            SELECT ce.event_id
-            $CAMPAIGN_EVENTS_JOIN_EVENTS
-            WHERE $CAMPAIGN_AND_CREATED_AT_RANGE_CONDITION
-            """.trimIndent()
-        )
-            .bind("campaignId", campaignId)
-            .bind("startTime", startTime)
-            .bind("endTime", endTime)
-            .fetch()
-            .all()
-            .map { (it["event_id"] as Number).toLong() }
-            .collectList()
-            .awaitFirst()
+        val query = dslContext
+            .select(ceEventId)
+            .from(campaignEventsTable)
+            .join(eventsTable)
+            .on(ceEventId.eq(eId))
+            .where(
+                ceCampaignId.eq(campaignId)
+                    .and(eCreatedAt.ge(startTime))
+                    .and(eCreatedAt.lt(endTime))
+            )
+
+        return jooqExecutor.fetchList(query) { (it["event_id"] as Number).toLong() }
     }
 
     override suspend fun countEventsByCampaignIdAndCreatedAtRange(
@@ -87,20 +66,18 @@ class CampaignEventsCustomRepositoryImpl(
         startTime: LocalDateTime,
         endTime: LocalDateTime
     ): Long {
-        return dataBaseClient.sql(
-            """
-            SELECT COUNT(*) AS count
-            $CAMPAIGN_EVENTS_JOIN_EVENTS
-            WHERE $CAMPAIGN_AND_CREATED_AT_RANGE_CONDITION
-            """.trimIndent()
-        )
-            .bind("campaignId", campaignId)
-            .bind("startTime", startTime)
-            .bind("endTime", endTime)
-            .fetch()
-            .one()
-            .map { (it["count"] as Number).toLong() }
-            .awaitFirstOrNull() ?: 0L
+        val query = dslContext
+            .select(count().`as`("count"))
+            .from(campaignEventsTable)
+            .join(eventsTable)
+            .on(ceEventId.eq(eId))
+            .where(
+                ceCampaignId.eq(campaignId)
+                    .and(eCreatedAt.ge(startTime))
+                    .and(eCreatedAt.lt(endTime))
+            )
+
+        return jooqExecutor.fetchOne(query) { (it["count"] as Number).toLong() } ?: 0L
     }
 
     override suspend fun countDistinctUsersByCampaignIdAndCreatedAtRange(
@@ -108,19 +85,17 @@ class CampaignEventsCustomRepositoryImpl(
         startTime: LocalDateTime,
         endTime: LocalDateTime
     ): Long {
-        return dataBaseClient.sql(
-            """
-            SELECT COUNT(DISTINCT e.user_id) AS count
-            $CAMPAIGN_EVENTS_JOIN_EVENTS
-            WHERE $CAMPAIGN_AND_CREATED_AT_RANGE_CONDITION
-            """.trimIndent()
-        )
-            .bind("campaignId", campaignId)
-            .bind("startTime", startTime)
-            .bind("endTime", endTime)
-            .fetch()
-            .one()
-            .map { (it["count"] as Number).toLong() }
-            .awaitFirstOrNull() ?: 0L
+        val query = dslContext
+            .select(countDistinct(eUserId).`as`("count"))
+            .from(campaignEventsTable)
+            .join(eventsTable)
+            .on(ceEventId.eq(eId))
+            .where(
+                ceCampaignId.eq(campaignId)
+                    .and(eCreatedAt.ge(startTime))
+                    .and(eCreatedAt.lt(endTime))
+            )
+
+        return jooqExecutor.fetchOne(query) { (it["count"] as Number).toLong() } ?: 0L
     }
 }

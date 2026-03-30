@@ -1,12 +1,14 @@
 package com.manage.crm.journey.domain.repository
 
-import kotlinx.coroutines.reactive.awaitFirst
-import org.springframework.r2dbc.core.DatabaseClient
+import com.manage.crm.infrastructure.jooq.CrmJooqTables
+import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
+import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 
 @Repository
 class JourneyCustomRepositoryImpl(
-    private val dataBaseClient: DatabaseClient
+    private val dslContext: DSLContext,
+    private val jooqExecutor: JooqR2dbcExecutor
 ) : JourneyCustomRepository {
     override suspend fun updateLifecycleStatusIfVersionMatches(
         journeyId: Long,
@@ -15,24 +17,14 @@ class JourneyCustomRepositoryImpl(
         expectedVersion: Int,
         newVersion: Int
     ): Int {
-        return dataBaseClient.sql(
-            """
-            UPDATE journeys
-            SET lifecycle_status = :lifecycleStatus,
-                active = :active,
-                version = :newVersion
-            WHERE id = :journeyId
-              AND version = :expectedVersion
-            """.trimIndent()
-        )
-            .bind("journeyId", journeyId)
-            .bind("lifecycleStatus", lifecycleStatus)
-            .bind("active", active)
-            .bind("expectedVersion", expectedVersion)
-            .bind("newVersion", newVersion)
-            .fetch()
-            .rowsUpdated()
-            .awaitFirst()
-            .toInt()
+        val query = dslContext
+            .update(CrmJooqTables.Journeys.table)
+            .set(CrmJooqTables.Journeys.lifecycleStatus, lifecycleStatus)
+            .set(CrmJooqTables.Journeys.active, active)
+            .set(CrmJooqTables.Journeys.version, newVersion)
+            .where(CrmJooqTables.Journeys.id.eq(journeyId))
+            .and(CrmJooqTables.Journeys.version.eq(expectedVersion))
+
+        return jooqExecutor.execute(query)
     }
 }

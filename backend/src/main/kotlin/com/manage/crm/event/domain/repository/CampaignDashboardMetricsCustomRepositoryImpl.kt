@@ -3,16 +3,32 @@ package com.manage.crm.event.domain.repository
 import com.manage.crm.event.domain.MetricType
 import com.manage.crm.event.domain.TimeWindowUnit
 import com.manage.crm.event.domain.repository.projection.CampaignSummaryMetricsProjection
-import kotlinx.coroutines.reactive.awaitFirst
-import kotlinx.coroutines.reactive.awaitFirstOrNull
-import org.springframework.r2dbc.core.DatabaseClient
+import com.manage.crm.infrastructure.jooq.CrmJooqTables
+import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
+import org.jooq.DSLContext
+import org.jooq.impl.DSL.coalesce
+import org.jooq.impl.DSL.greatest
+import org.jooq.impl.DSL.inline
+import org.jooq.impl.DSL.sum
+import org.jooq.impl.DSL.`when`
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
 @Repository
 class CampaignDashboardMetricsCustomRepositoryImpl(
-    private val dataBaseClient: DatabaseClient
+    private val dslContext: DSLContext,
+    private val jooqExecutor: JooqR2dbcExecutor
 ) : CampaignDashboardMetricsCustomRepository {
+
+    private val metricsTable = CrmJooqTables.CampaignDashboardMetrics.table
+    private val campaignIdField = CrmJooqTables.CampaignDashboardMetrics.campaignId
+    private val metricTypeField = CrmJooqTables.CampaignDashboardMetrics.metricType
+    private val metricValueField = CrmJooqTables.CampaignDashboardMetrics.metricValue
+    private val timeWindowStartField = CrmJooqTables.CampaignDashboardMetrics.timeWindowStart
+    private val timeWindowEndField = CrmJooqTables.CampaignDashboardMetrics.timeWindowEnd
+    private val timeWindowUnitField = CrmJooqTables.CampaignDashboardMetrics.timeWindowUnit
+    private val createdAtField = CrmJooqTables.CampaignDashboardMetrics.createdAt
+    private val updatedAtField = CrmJooqTables.CampaignDashboardMetrics.updatedAt
 
     override suspend fun upsertMetric(
         campaignId: Long,
@@ -22,27 +38,34 @@ class CampaignDashboardMetricsCustomRepositoryImpl(
         timeWindowEnd: LocalDateTime,
         timeWindowUnit: TimeWindowUnit
     ): Int {
-        return dataBaseClient.sql(
-            """
-            INSERT INTO campaign_dashboard_metrics
-                (campaign_id, metric_type, metric_value, time_window_start, time_window_end, time_window_unit, created_at, updated_at)
-            VALUES
-                (:campaignId, :metricType, :metricValue, :timeWindowStart, :timeWindowEnd, :timeWindowUnit, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            ON DUPLICATE KEY UPDATE
-                metric_value = metric_value + VALUES(metric_value),
-                updated_at = CURRENT_TIMESTAMP
-            """.trimIndent()
-        )
-            .bind("campaignId", campaignId)
-            .bind("metricType", metricType.name)
-            .bind("metricValue", metricValue)
-            .bind("timeWindowStart", timeWindowStart)
-            .bind("timeWindowEnd", timeWindowEnd)
-            .bind("timeWindowUnit", timeWindowUnit.name)
-            .fetch()
-            .rowsUpdated()
-            .awaitFirst()
-            .toInt()
+        val now = LocalDateTime.now()
+        val query = dslContext
+            .insertInto(metricsTable)
+            .columns(
+                campaignIdField,
+                metricTypeField,
+                metricValueField,
+                timeWindowStartField,
+                timeWindowEndField,
+                timeWindowUnitField,
+                createdAtField,
+                updatedAtField
+            )
+            .values(
+                campaignId,
+                metricType.name,
+                metricValue,
+                timeWindowStart,
+                timeWindowEnd,
+                timeWindowUnit.name,
+                now,
+                now
+            )
+            .onDuplicateKeyUpdate()
+            .set(metricValueField, metricValueField.plus(inline(metricValue)))
+            .set(updatedAtField, LocalDateTime.now())
+
+        return jooqExecutor.execute(query)
     }
 
     override suspend fun upsertMetricAbsolute(
@@ -53,27 +76,34 @@ class CampaignDashboardMetricsCustomRepositoryImpl(
         timeWindowEnd: LocalDateTime,
         timeWindowUnit: TimeWindowUnit
     ): Int {
-        return dataBaseClient.sql(
-            """
-            INSERT INTO campaign_dashboard_metrics
-                (campaign_id, metric_type, metric_value, time_window_start, time_window_end, time_window_unit, created_at, updated_at)
-            VALUES
-                (:campaignId, :metricType, :metricValue, :timeWindowStart, :timeWindowEnd, :timeWindowUnit, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            ON DUPLICATE KEY UPDATE
-                metric_value = GREATEST(metric_value, VALUES(metric_value)),
-                updated_at = CURRENT_TIMESTAMP
-            """.trimIndent()
-        )
-            .bind("campaignId", campaignId)
-            .bind("metricType", metricType.name)
-            .bind("metricValue", metricValue)
-            .bind("timeWindowStart", timeWindowStart)
-            .bind("timeWindowEnd", timeWindowEnd)
-            .bind("timeWindowUnit", timeWindowUnit.name)
-            .fetch()
-            .rowsUpdated()
-            .awaitFirst()
-            .toInt()
+        val now = LocalDateTime.now()
+        val query = dslContext
+            .insertInto(metricsTable)
+            .columns(
+                campaignIdField,
+                metricTypeField,
+                metricValueField,
+                timeWindowStartField,
+                timeWindowEndField,
+                timeWindowUnitField,
+                createdAtField,
+                updatedAtField
+            )
+            .values(
+                campaignId,
+                metricType.name,
+                metricValue,
+                timeWindowStart,
+                timeWindowEnd,
+                timeWindowUnit.name,
+                now,
+                now
+            )
+            .onDuplicateKeyUpdate()
+            .set(metricValueField, greatest(metricValueField, inline(metricValue)))
+            .set(updatedAtField, LocalDateTime.now())
+
+        return jooqExecutor.execute(query)
     }
 
     override suspend fun getCampaignSummaryMetrics(
@@ -81,30 +111,37 @@ class CampaignDashboardMetricsCustomRepositoryImpl(
         last24Hours: LocalDateTime,
         last7Days: LocalDateTime
     ): CampaignSummaryMetricsProjection {
-        return dataBaseClient.sql(
-            """
-            SELECT
-                COALESCE(SUM(metric_value), 0) AS total_events,
-                COALESCE(SUM(CASE WHEN time_window_start > :last24Hours THEN metric_value ELSE 0 END), 0) AS events_last_24_hours,
-                COALESCE(SUM(CASE WHEN time_window_start > :last7Days THEN metric_value ELSE 0 END), 0) AS events_last_7_days
-            FROM campaign_dashboard_metrics
-            WHERE campaign_id = :campaignId
-              AND metric_type = 'EVENT_COUNT'
-              AND time_window_unit = 'HOUR'
-            """.trimIndent()
-        )
-            .bind("campaignId", campaignId)
-            .bind("last24Hours", last24Hours)
-            .bind("last7Days", last7Days)
-            .fetch()
-            .one()
-            .map { row ->
-                CampaignSummaryMetricsProjection(
-                    totalEvents = (row["total_events"] as Number).toLong(),
-                    eventsLast24Hours = (row["events_last_24_hours"] as Number).toLong(),
-                    eventsLast7Days = (row["events_last_7_days"] as Number).toLong()
-                )
-            }
-            .awaitFirstOrNull() ?: CampaignSummaryMetricsProjection(0, 0, 0)
+        val totalEventsField = coalesce(sum(metricValueField), 0L).`as`("total_events")
+        val eventsLast24HoursField = coalesce(
+            sum(
+                `when`(timeWindowStartField.gt(last24Hours), metricValueField)
+                    .otherwise(0L)
+            ),
+            0L
+        ).`as`("events_last_24_hours")
+        val eventsLast7DaysField = coalesce(
+            sum(
+                `when`(timeWindowStartField.gt(last7Days), metricValueField)
+                    .otherwise(0L)
+            ),
+            0L
+        ).`as`("events_last_7_days")
+
+        val query = dslContext
+            .select(totalEventsField, eventsLast24HoursField, eventsLast7DaysField)
+            .from(metricsTable)
+            .where(
+                campaignIdField.eq(campaignId)
+                    .and(metricTypeField.eq("EVENT_COUNT"))
+                    .and(timeWindowUnitField.eq("HOUR"))
+            )
+
+        return jooqExecutor.fetchOne(query) { row ->
+            CampaignSummaryMetricsProjection(
+                totalEvents = (row["total_events"] as Number).toLong(),
+                eventsLast24Hours = (row["events_last_24_hours"] as Number).toLong(),
+                eventsLast7Days = (row["events_last_7_days"] as Number).toLong()
+            )
+        } ?: CampaignSummaryMetricsProjection(0, 0, 0)
     }
 }

@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.reactor)
     implementation(libs.reactor.kotlin.extensions)
     implementation(libs.jackson.module.kotlin)
+    implementation(libs.jooq)
 
     /** spring */
     implementation(libs.spring.boot.starter.validation)
