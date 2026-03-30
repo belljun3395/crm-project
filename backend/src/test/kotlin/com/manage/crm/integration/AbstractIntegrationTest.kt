@@ -10,8 +10,7 @@ import com.amazonaws.services.simpleemail.model.ConfigurationSetAlreadyExistsExc
 import com.amazonaws.services.simpleemail.model.CreateConfigurationSetRequest
 import com.amazonaws.services.simpleemail.model.VerifyEmailIdentityRequest
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.manage.crm.integration.config.PostgresContainerSupport
-import com.manage.crm.integration.config.TestContainerConfig
+import com.manage.crm.integration.config.TestInfraSupport
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.extensions.spring.SpringExtension
 import org.slf4j.LoggerFactory
@@ -63,26 +62,23 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
     companion object {
         private val logger = LoggerFactory.getLogger(AbstractIntegrationTest::class.java)
 
-        private val config = TestContainerConfig.load()
-        private val localStackConfig = config.testcontainers.localstack
-        private val awsConfig = config.testcontainers.aws
-        private val retryConfig = config.testcontainers.retry
-
-        private val useLocalStack = System.getProperty("useLocalStack", localStackConfig.enabled.toString()).toBoolean()
+        private val awsConfig = TestInfraSupport.awsConfig
+        private val retryConfig = TestInfraSupport.retryConfig
+        private val useLocalStack = TestInfraSupport.useLocalStack
 
         // Database properties are wired from a shared PostgreSQL Testcontainer.
         // This method also runs pre-context AWS service setup when LocalStack is enabled.
         @DynamicPropertySource
         @JvmStatic
         fun configureProperties(registry: DynamicPropertyRegistry) {
-            PostgresContainerSupport.register(registry)
+            TestInfraSupport.register(registry)
             if (useLocalStack) {
                 setupAwsServices()
             }
         }
 
         private fun setupAwsServices() {
-            val endpoint = "http://localhost:4566"
+            val endpoint = TestInfraSupport.localStackEndpoint
             setupLocalStackSES(endpoint) // fatal — 실패 시 예외 전파
             try {
                 setupLocalStackScheduler(endpoint) // non-fatal — mocked 기능이므로 실패해도 계속 진행

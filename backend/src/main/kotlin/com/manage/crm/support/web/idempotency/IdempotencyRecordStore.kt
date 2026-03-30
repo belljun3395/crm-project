@@ -1,6 +1,7 @@
 package com.manage.crm.support.web.idempotency
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.ReactiveRedisTemplate
 import org.springframework.stereotype.Service
@@ -9,7 +10,8 @@ import java.time.Duration
 
 @Service
 class IdempotencyRecordStore(
-    private val redisTemplate: ReactiveRedisTemplate<String, Any>,
+    @Qualifier("idempotencyReactiveStringRedisTemplate")
+    private val redisTemplate: ReactiveRedisTemplate<String, String>,
     private val objectMapper: ObjectMapper,
     @Value("\${idempotency.ttl-seconds:86400}")
     private val ttlSeconds: Long
@@ -17,7 +19,7 @@ class IdempotencyRecordStore(
     fun get(method: String, path: String, key: String): Mono<IdempotencyRecord> {
         return redisTemplate.opsForValue()
             .get(redisKey(method, path, key))
-            .map { toRecord(it) }
+            .map { objectMapper.readValue(it, IdempotencyRecord::class.java) }
             .onErrorResume { Mono.empty() }
     }
 
@@ -31,7 +33,7 @@ class IdempotencyRecordStore(
         )
 
         return redisTemplate.opsForValue()
-            .setIfAbsent(redisKey(method, path, key), record, Duration.ofSeconds(ttlSeconds))
+            .setIfAbsent(redisKey(method, path, key), objectMapper.writeValueAsString(record), Duration.ofSeconds(ttlSeconds))
             .defaultIfEmpty(false)
             .onErrorReturn(false)
     }
@@ -60,7 +62,7 @@ class IdempotencyRecordStore(
         )
 
         return redisTemplate.opsForValue()
-            .set(redisKey(method, path, key), record, Duration.ofSeconds(ttlSeconds))
+            .set(redisKey(method, path, key), objectMapper.writeValueAsString(record), Duration.ofSeconds(ttlSeconds))
             .defaultIfEmpty(false)
             .onErrorReturn(false)
     }
@@ -70,14 +72,6 @@ class IdempotencyRecordStore(
             .map { it > 0 }
             .defaultIfEmpty(false)
             .onErrorReturn(false)
-    }
-
-    private fun toRecord(value: Any): IdempotencyRecord {
-        return if (value is IdempotencyRecord) {
-            value
-        } else {
-            objectMapper.convertValue(value, IdempotencyRecord::class.java)
-        }
     }
 
     private fun redisKey(method: String, path: String, key: String): String {

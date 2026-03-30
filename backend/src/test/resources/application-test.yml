@@ -4,12 +4,12 @@ spring:
     application:
         name: crm
     r2dbc:
-        url: r2dbc:pool:postgresql://localhost:5432/test
+        url: r2dbc:pool:postgresql://localhost:5432/crm
         username: postgres
         password: postgres
         routing:
-            master-url: r2dbc:pool:postgresql://localhost:5432/test
-            replica-url: r2dbc:pool:postgresql://localhost:5432/test
+            master-url: r2dbc:pool:postgresql://localhost:5432/crm
+            replica-url: r2dbc:pool:postgresql://localhost:5432/crm
             username: postgres
             password: postgres
     data:
@@ -61,7 +61,7 @@ spring:
         validate-on-migrate: false
     # ----- Only for test profile -----
     datasource:
-        jdbcUrl: jdbc:postgresql://localhost:5432/test
+        jdbcUrl: jdbc:postgresql://localhost:5432/crm
         username: postgres
         password: postgres
         driver-class-name: org.postgresql.Driver

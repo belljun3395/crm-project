@@ -1,7 +1,7 @@
 package com.manage.crm.email
 
 import com.manage.crm.config.TestTransactionConfiguration
-import com.manage.crm.integration.config.PostgresContainerSupport
+import com.manage.crm.integration.config.TestInfraSupport
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
@@ -20,7 +20,7 @@ abstract class EmailModuleTestTemplate {
         @DynamicPropertySource
         @JvmStatic
         fun registerPostgresProperties(registry: DynamicPropertyRegistry) {
-            PostgresContainerSupport.register(registry)
+            TestInfraSupport.register(registry)
         }
     }
 }

@@ -3,6 +3,7 @@ package com.manage.crm.webhook.domain.repository
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.infrastructure.jooq.CrmJooqTables
 import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
+import com.manage.crm.infrastructure.jooq.requireLocalDateTime
 import com.manage.crm.webhook.domain.Webhook
 import com.manage.crm.webhook.domain.WebhookEvents
 import io.r2dbc.postgresql.codec.Json
@@ -11,7 +12,6 @@ import org.jooq.impl.DSL.condition
 import org.jooq.impl.DSL.inline
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Repository
-import java.time.LocalDateTime
 
 @Repository
 @ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
@@ -46,7 +46,7 @@ class WebhookCustomRepositoryImpl(
                     is Number -> v.toInt() != 0
                     else -> throw IllegalStateException("Unexpected active type: ${v?.javaClass}")
                 },
-                createdAt = row["created_at"] as LocalDateTime
+                createdAt = row.requireLocalDateTime("created_at")
             )
         }
     }

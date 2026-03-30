@@ -114,10 +114,13 @@ class CampaignCacheManager(
      * Reads campaign by id from cache and falls back to source loader on miss.
      */
     suspend fun loadAndSaveIfMiss(id: Long, findForLoad: suspend () -> Campaign?): Campaign? {
-        return load(id) ?: run {
-            findForLoad.invoke()
-                ?.also { save(it) }
-        }
+        return runCatching { load(id) }
+            .onFailure { log.warn(it) { "Failed to load campaign cache by id=$id. Falling back to repository" } }
+            .getOrNull()
+            ?: run {
+                findForLoad.invoke()
+                    ?.also { save(it) }
+            }
     }
 
     /**
@@ -135,10 +138,13 @@ class CampaignCacheManager(
      * Reads campaign by unique field from cache and fills cache on miss.
      */
     suspend fun loadAndSaveIfMiss(uniqKey: String, value: String, findForLoad: suspend () -> Campaign?): Campaign? {
-        return load(uniqKey, value) ?: run {
-            findForLoad.invoke()
-                ?.also { save(it) }
-        }
+        return runCatching { load(uniqKey, value) }
+            .onFailure { log.warn(it) { "Failed to load campaign cache by $uniqKey=$value. Falling back to repository" } }
+            .getOrNull()
+            ?: run {
+                findForLoad.invoke()
+                    ?.also { save(it) }
+            }
     }
 
     /**

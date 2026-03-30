@@ -10,11 +10,11 @@ import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.event.exception.InvalidSearchConditionException
 import com.manage.crm.infrastructure.jooq.CrmJooqTables
 import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
+import com.manage.crm.infrastructure.jooq.requireLocalDateTime
 import io.r2dbc.postgresql.codec.Json
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 import java.math.BigDecimal
-import java.time.LocalDateTime
 
 @Repository
 class EventCustomRepositoryImpl(
@@ -80,7 +80,7 @@ class EventCustomRepositoryImpl(
                 name = row["name"] as String,
                 userId = (row["user_id"] as Number).toLong(),
                 properties = readProperties(row),
-                createdAt = row["created_at"] as LocalDateTime
+                createdAt = row.requireLocalDateTime("created_at")
             )
         }
             .distinctBy { it.id }
@@ -100,7 +100,7 @@ class EventCustomRepositoryImpl(
                 name = row["name"] as String,
                 userId = (row["user_id"] as Number).toLong(),
                 properties = readProperties(row),
-                createdAt = row["created_at"] as LocalDateTime
+                createdAt = row.requireLocalDateTime("created_at")
             )
         }
             .distinctBy { it.id }

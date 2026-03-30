@@ -6,13 +6,16 @@ import org.testcontainers.utility.DockerImageName
 
 object PostgresContainerSupport {
     private const val dockerApiCompatibilityVersion = "1.44"
+    private val postgresService = ComposeTestInfraConfig.service("crm-postgres")
 
     private val container: PostgreSQLContainer<*> by lazy {
         ensureDockerApiCompatibility()
-        PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine"))
-            .withDatabaseName("test")
-            .withUsername("postgres")
-            .withPassword("postgres")
+        PostgreSQLContainer(
+            DockerImageName.parse(postgresService.image ?: "postgres:16-alpine")
+        )
+            .withDatabaseName(postgresService.environment["POSTGRES_DB"] ?: "crm")
+            .withUsername(postgresService.environment["POSTGRES_USER"] ?: "postgres")
+            .withPassword(postgresService.environment["POSTGRES_PASSWORD"] ?: "postgres")
             .apply { start() }
     }
 

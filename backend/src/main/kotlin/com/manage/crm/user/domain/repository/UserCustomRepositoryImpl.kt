@@ -2,6 +2,7 @@ package com.manage.crm.user.domain.repository
 
 import com.manage.crm.infrastructure.jooq.CrmJooqTables
 import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
+import com.manage.crm.infrastructure.jooq.optionalLocalDateTime
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.vo.UserAttributes
 import io.r2dbc.postgresql.codec.Json
@@ -10,7 +11,6 @@ import org.jooq.impl.DSL.condition
 import org.jooq.impl.DSL.count
 import org.jooq.impl.DSL.inline
 import org.springframework.stereotype.Repository
-import java.time.LocalDateTime
 
 private const val LIKE_ESCAPE_CHARACTER = "\\"
 
@@ -113,8 +113,8 @@ class UserCustomRepositoryImpl(
             id = (row["id"] as Number).toLong(),
             externalId = row["external_id"] as String,
             userAttributes = UserAttributes(userAttributes),
-            createdAt = row["created_at"] as? LocalDateTime,
-            updatedAt = row["updated_at"] as? LocalDateTime
+            createdAt = row.optionalLocalDateTime("created_at"),
+            updatedAt = row.optionalLocalDateTime("updated_at")
         )
     }
 }

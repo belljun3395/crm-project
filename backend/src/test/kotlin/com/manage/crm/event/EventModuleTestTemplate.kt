@@ -1,7 +1,7 @@
 package com.manage.crm.event
 
 import com.manage.crm.config.TestTransactionConfiguration
-import com.manage.crm.integration.config.PostgresContainerSupport
+import com.manage.crm.integration.config.TestInfraSupport
 import io.awspring.cloud.autoconfigure.sqs.SqsAutoConfiguration
 import org.junit.jupiter.api.DisplayNameGeneration
 import org.junit.jupiter.api.DisplayNameGenerator
@@ -26,7 +26,7 @@ abstract class EventModuleTestTemplate {
         @DynamicPropertySource
         @JvmStatic
         fun registerPostgresProperties(registry: DynamicPropertyRegistry) {
-            PostgresContainerSupport.register(registry)
+            TestInfraSupport.register(registry)
         }
     }
 }

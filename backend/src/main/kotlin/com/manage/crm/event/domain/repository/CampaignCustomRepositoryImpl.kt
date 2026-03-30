@@ -6,11 +6,11 @@ import com.manage.crm.event.domain.vo.CampaignProperties
 import com.manage.crm.event.domain.vo.CampaignProperty
 import com.manage.crm.infrastructure.jooq.CrmJooqTables
 import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
+import com.manage.crm.infrastructure.jooq.optionalLocalDateTime
 import io.r2dbc.postgresql.codec.Json
 import kotlinx.coroutines.flow.flow
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
-import java.time.LocalDateTime
 
 @Repository
 class CampaignCustomRepositoryImpl(
@@ -41,7 +41,7 @@ class CampaignCustomRepositoryImpl(
                         .map { CampaignProperty(it["key"] as String, it["value"] as String) }
                         .toList()
                 ),
-                createdAt = row["created_at"] as? LocalDateTime
+                createdAt = row.optionalLocalDateTime("created_at")
             )
         }
         campaigns.forEach { emit(it) }
