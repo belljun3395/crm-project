@@ -3,7 +3,7 @@ locals {
     Project     = var.project
     Environment = "dr"
     ManagedBy   = "Terraform"
-    DR_Role     = "active" # Active-Active 구성
+    DR_Role     = "secondary"
   }
 
   secrets_manager_secret_name = coalesce(
@@ -16,12 +16,53 @@ locals {
     "CRM DR runtime configuration"
   )
 
-  app_env_secret_values = {
-    for key, value in var.app_env :
-    key => tostring(value)
-  }
+  generated_secret_values = merge(
+    {
+      CLOUD_PROVIDER                      = "aws"
+      MAIL_PROVIDER                       = "ses"
+      SCHEDULER_PROVIDER                  = "aws"
+      MAIL_USERNAME                       = module.app_runtime.runtime_access_key_id
+      MAIL_PASSWORD                       = module.app_runtime.runtime_secret_access_key
+      AWS_ACCESS_KEY                      = module.app_runtime.runtime_access_key_id
+      AWS_SECRET_KEY                      = module.app_runtime.runtime_secret_access_key
+      AWS_CONFIGURATION_SET               = module.app_runtime.ses_configuration_set_name
+      AWS_SCHEDULE_ROLE_ARN               = module.app_runtime.schedule_role_arn
+      AWS_SCHEDULE_SQS_ARN                = module.app_runtime.schedule_queue_arn
+      AWS_SCHEDULE_GROUP_NAME             = module.app_runtime.schedule_group_name
+      AWS_SNS_CACHE_INVALIDATION_TOPIC_ARN = module.app_runtime.cache_invalidation_topic_arn
+      KAFKA_BOOTSTRAP_SERVERS             = var.kafka_bootstrap_servers
+    },
+    var.enable_rds ? {
+      DATABASE_URL = format(
+        "r2dbc:pool:postgresql://%s:%s/%s",
+        module.rds[0].db_instance_address,
+        module.rds[0].db_instance_port,
+        module.rds[0].db_instance_name
+      )
+      MASTER_DATABASE_URL = format(
+        "r2dbc:pool:postgresql://%s:%s/%s",
+        module.rds[0].db_instance_address,
+        module.rds[0].db_instance_port,
+        module.rds[0].db_instance_name
+      )
+      REPLICA_DATABASE_URL = format(
+        "r2dbc:pool:postgresql://%s:%s/%s",
+        module.rds[0].db_instance_address,
+        module.rds[0].db_instance_port,
+        module.rds[0].db_instance_name
+      )
+      DATABASE_USERNAME = var.rds_master_username
+      DATABASE_PASSWORD = coalesce(var.rds_master_password, random_password.rds_master_password.result)
+    } : {},
+    var.enable_elasticache ? {
+      REDIS_HOST          = module.elasticache[0].configuration_endpoint_address
+      REDIS_MAX_REDIRECTS = "3"
+      REDIS_PASSWORD      = coalesce(var.elasticache_auth_token, random_password.elasticache_auth_token.result)
+      REDIS_NODES         = "${module.elasticache[0].configuration_endpoint_address}:${module.elasticache[0].port}"
+    } : {}
+  )
 
-  merged_secret_values = merge(local.app_env_secret_values, var.additional_secret_values)
+  merged_secret_values = merge(var.additional_secret_values, local.generated_secret_values)
 }
 
 # Networking
@@ -67,6 +108,25 @@ module "ecr" {
   tags            = local.common_tags
 }
 
+resource "random_password" "rds_master_password" {
+  length           = 24
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}:?"
+}
+
+resource "random_password" "elasticache_auth_token" {
+  length           = 32
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}:?"
+}
+
+module "app_runtime" {
+  source = "../../../modules/aws-app-runtime"
+
+  name_prefix = var.cluster_name
+  tags        = local.common_tags
+}
+
 # Secrets Manager
 module "app_secret" {
   source = "../../../modules/aws-secrets-manager"
@@ -79,7 +139,7 @@ module "app_secret" {
   tags                    = local.common_tags
 }
 
-# Database (PostgreSQL) - Primary for Active-Active
+# Database (PostgreSQL)
 module "rds" {
   source = "../../../modules/rds"
 
@@ -92,41 +152,22 @@ module "rds" {
   allocated_storage       = var.rds_allocated_storage
   storage_encrypted       = var.rds_storage_encrypted
   kms_key_id              = var.rds_kms_key_id
-  db_name                 = var.rds_database_name
-  username                = var.rds_master_username
-  password                = var.rds_master_password
+  database_name           = var.rds_database_name
+  master_username         = var.rds_master_username
+  master_password         = coalesce(var.rds_master_password, random_password.rds_master_password.result)
   vpc_id                  = module.networking.vpc_id
   subnet_ids              = module.networking.private_subnet_ids
-  allowed_cidr_blocks     = concat(var.rds_allowed_cidr_blocks, [var.gcp_vpc_cidr])
+  allowed_cidr_blocks        = var.rds_allowed_cidr_blocks
+  allowed_security_group_ids = [module.eks.node_security_group_id]
   multi_az                = var.rds_multi_az
   backup_retention_period = var.rds_backup_retention_period
   skip_final_snapshot     = var.rds_skip_final_snapshot
   deletion_protection     = var.rds_deletion_protection
 
-  # Logical Replication 활성화 (GCP 복제를 위해)
-  parameters = [
-    {
-      name  = "rds.logical_replication"
-      value = "1"
-    },
-    {
-      name  = "wal_sender_timeout"
-      value = "0"
-    },
-    {
-      name  = "max_wal_senders"
-      value = "10"
-    },
-    {
-      name  = "max_replication_slots"
-      value = "10"
-    }
-  ]
-
   tags = local.common_tags
 }
 
-# Cache (Redis) - Primary for Active-Active
+# Cache (Redis)
 module "elasticache" {
   source = "../../../modules/elasticache"
 
@@ -139,9 +180,11 @@ module "elasticache" {
   num_cache_clusters         = var.elasticache_num_cache_clusters
   vpc_id                     = module.networking.vpc_id
   subnet_ids                 = module.networking.private_subnet_ids
-  allowed_cidr_blocks        = concat(var.elasticache_allowed_cidr_blocks, [var.gcp_vpc_cidr])
+  allowed_cidr_blocks        = var.elasticache_allowed_cidr_blocks
+  allowed_security_group_ids = [module.eks.node_security_group_id]
+  cluster_mode_enabled       = true
   auth_token_enabled         = var.elasticache_auth_token_enabled
-  auth_token                 = var.elasticache_auth_token
+  auth_token                 = coalesce(var.elasticache_auth_token, random_password.elasticache_auth_token.result)
   transit_encryption_enabled = var.elasticache_transit_encryption_enabled
   at_rest_encryption_enabled = var.elasticache_at_rest_encryption_enabled
   snapshot_retention_limit   = var.elasticache_snapshot_retention_limit
@@ -155,9 +198,9 @@ module "msk" {
   source = "../../../modules/msk"
   count  = var.enable_kafka ? 1 : 0
 
-  name_prefix            = local.name_prefix
+  name_prefix            = var.cluster_name
   vpc_id                 = module.networking.vpc_id
-  client_subnets         = [for i in range(length(module.networking.private_subnets)) : module.networking.private_subnets[i]]
+  client_subnets         = module.networking.private_subnet_ids
   allowed_cidr_blocks    = concat([var.vpc_cidr], var.kafka_allowed_cidr_blocks)
   kafka_version          = var.kafka_version
   number_of_broker_nodes = var.kafka_number_of_brokers
@@ -165,26 +208,6 @@ module "msk" {
   volume_size            = var.kafka_volume_size
 
   tags = local.common_tags
-}
-
-# VPN Connection to GCP (조건부)
-module "vpn_to_gcp" {
-  source = "../../../modules/aws-gcp-vpn"
-
-  count = var.enable_vpn ? 1 : 0
-
-  name_prefix                 = var.cluster_name
-  aws_vpc_id                  = module.networking.vpc_id
-  aws_private_route_table_ids = module.networking.private_route_table_ids
-  gcp_network_id              = var.gcp_network_id
-  gcp_region                  = var.gcp_region
-  tunnel1_preshared_key       = var.vpn_tunnel1_preshared_key
-  tunnel2_preshared_key       = var.vpn_tunnel2_preshared_key
-  advertised_ip_ranges        = [var.gcp_vpc_cidr]
-  remote_cidr_ranges          = [var.vpc_cidr]
-  tags                        = local.common_tags
-
-  depends_on = [module.networking]
 }
 
 # Application Load Balancer (CloudFlare와 연결)
@@ -256,7 +279,7 @@ resource "aws_lb_target_group" "app" {
     unhealthy_threshold = 2
     timeout             = 5
     interval            = 30
-    path                = "/health"
+    path                = "/actuator/health"
     matcher             = "200"
   }
 

@@ -136,44 +136,23 @@ variable "secrets_manager_recovery_window_in_days" {
   default     = 7
 }
 
-variable "app_env" {
-  description = "Application runtime environment variables that will be stored in AWS Secrets Manager."
-  type = object({
-    DATABASE_URL            = string
-    DATABASE_USERNAME       = string
-    DATABASE_PASSWORD       = string
-    REDIS_HOST              = string
-    REDIS_MAX_REDIRECTS     = string
-    REDIS_PASSWORD          = string
-    REDIS_NODES             = string
-    MAIL_USERNAME           = string
-    MAIL_PASSWORD           = string
-    AWS_ACCESS_KEY          = string
-    AWS_SECRET_KEY          = string
-    AWS_CONFIGURATION_SET   = string
-    AWS_SCHEDULE_ROLE_ARN   = string
-    AWS_SCHEDULE_SQS_ARN    = string
-    AWS_SCHEDULE_GROUP_NAME = string
-    KAFKA_BOOTSTRAP_SERVERS = string
-    SCHEDULER_PROVIDER      = optional(string, "aws")
-  })
+variable "kafka_bootstrap_servers" {
+  description = "Kafka bootstrap servers required by the application secret contract."
+  type        = string
+  default     = "unused:9092"
 }
 
 variable "additional_secret_values" {
   description = "Additional key/value pairs to merge into the application secret."
   type        = map(string)
   default     = {}
-  validation {
-    condition     = length(setintersection(toset(keys(var.additional_secret_values)), toset(keys(var.app_env)))) == 0
-    error_message = "additional_secret_values keys must not overlap with app_env keys."
-  }
 }
 
 # RDS Variables
 variable "enable_rds" {
   description = "Enable RDS PostgreSQL database"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "rds_engine_version" {
@@ -259,7 +238,7 @@ variable "rds_deletion_protection" {
 variable "enable_elasticache" {
   description = "Enable ElastiCache Redis cluster"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "elasticache_engine_version" {

@@ -42,36 +42,71 @@ output "app_secret_name" {
 # RDS Outputs
 output "rds_endpoint" {
   description = "RDS instance endpoint"
-  value       = var.enable_rds ? module.rds[0].endpoint : null
+  value       = try(module.rds[0].db_instance_endpoint, null)
 }
 
 output "rds_address" {
   description = "RDS instance address"
-  value       = var.enable_rds ? module.rds[0].address : null
+  value       = try(module.rds[0].db_instance_address, null)
 }
 
 output "rds_port" {
   description = "RDS instance port"
-  value       = var.enable_rds ? module.rds[0].port : null
+  value       = try(module.rds[0].db_instance_port, null)
 }
 
 output "rds_database_name" {
   description = "RDS database name"
-  value       = var.enable_rds ? module.rds[0].database_name : null
+  value       = try(module.rds[0].db_instance_name, null)
 }
 
 # ElastiCache Outputs
 output "elasticache_primary_endpoint" {
   description = "ElastiCache primary endpoint"
-  value       = var.enable_elasticache ? module.elasticache[0].primary_endpoint_address : null
+  value       = try(module.elasticache[0].primary_endpoint_address, null)
 }
 
 output "elasticache_reader_endpoint" {
   description = "ElastiCache reader endpoint"
-  value       = var.enable_elasticache ? module.elasticache[0].reader_endpoint_address : null
+  value       = try(module.elasticache[0].reader_endpoint_address, null)
+}
+
+output "elasticache_configuration_endpoint" {
+  description = "ElastiCache configuration endpoint"
+  value       = try(module.elasticache[0].configuration_endpoint_address, null)
 }
 
 output "elasticache_port" {
   description = "ElastiCache port"
-  value       = var.enable_elasticache ? module.elasticache[0].port : null
+  value       = try(module.elasticache[0].port, null)
+}
+
+output "app_runtime_cache_invalidation_topic_arn" {
+  description = "SNS topic ARN used for cache invalidation"
+  value       = module.app_runtime.cache_invalidation_topic_arn
+}
+
+output "app_runtime_schedule_queue_arn" {
+  description = "SQS queue ARN used by EventBridge Scheduler"
+  value       = module.app_runtime.schedule_queue_arn
+}
+
+output "app_runtime_schedule_role_arn" {
+  description = "IAM role ARN used by EventBridge Scheduler"
+  value       = module.app_runtime.schedule_role_arn
+}
+
+output "app_runtime_schedule_group_name" {
+  description = "EventBridge Scheduler group name"
+  value       = module.app_runtime.schedule_group_name
+}
+
+output "app_runtime_ses_configuration_set_name" {
+  description = "SES configuration set name"
+  value       = module.app_runtime.ses_configuration_set_name
+}
+
+output "app_runtime_ses_queue_arn" {
+  description = "SQS queue ARN used for SES notifications"
+  value       = module.app_runtime.ses_queue_arn
 }

@@ -88,6 +88,12 @@ variable "allowed_cidr_blocks" {
   type        = list(string)
 }
 
+variable "allowed_security_group_ids" {
+  description = "List of security group IDs allowed to access the RDS instance"
+  type        = list(string)
+  default     = []
+}
+
 variable "publicly_accessible" {
   description = "Whether the RDS instance is publicly accessible"
   type        = bool

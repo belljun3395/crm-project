@@ -50,12 +50,16 @@ resource "aws_security_group" "this" {
   description = "Security group for ${var.identifier} RDS instance"
   vpc_id      = var.vpc_id
 
-  ingress {
-    description = "PostgreSQL from VPC"
-    from_port   = var.port
-    to_port     = var.port
-    protocol    = "tcp"
-    cidr_blocks = var.allowed_cidr_blocks
+  dynamic "ingress" {
+    for_each = length(var.allowed_cidr_blocks) > 0 ? [1] : []
+
+    content {
+      description = "PostgreSQL from VPC"
+      from_port   = var.port
+      to_port     = var.port
+      protocol    = "tcp"
+      cidr_blocks = var.allowed_cidr_blocks
+    }
   }
 
   egress {
@@ -72,6 +76,17 @@ resource "aws_security_group" "this" {
       Name = "${var.identifier}-rds-sg"
     }
   )
+}
+
+resource "aws_security_group_rule" "this_from_security_groups" {
+  for_each = toset(var.allowed_security_group_ids)
+
+  type                     = "ingress"
+  from_port                = var.port
+  to_port                  = var.port
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.this.id
+  source_security_group_id = each.value
 }
 
 # RDS Instance

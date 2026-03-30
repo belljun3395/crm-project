@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crm-backend-config
+  namespace: crm-local
+data:
+  CLOUD_PROVIDER: aws
+  MAIL_PROVIDER: ses
+  SCHEDULER_PROVIDER: aws
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,prometheus,info
+  SPRING_R2DBC_URL: r2dbc:pool:mysql://crm-database.crm-local.svc.cluster.local:3306/crm
+  SPRING_R2DBC_ROUTING_MASTER_URL: r2dbc:pool:mysql://crm-database.crm-local.svc.cluster.local:3306/crm
+  SPRING_R2DBC_ROUTING_REPLICA_URL: r2dbc:pool:mysql://crm-database.crm-local.svc.cluster.local:3306/crm
+  SPRING_DATA_REDIS_CLUSTER_MAX_REDIRECTS: "3"
+  SPRING_DATA_REDIS_CLUSTER_NODES: crm-redis-0.crm-redis-headless.crm-local.svc.cluster.local:6379,crm-redis-1.crm-redis-headless.crm-local.svc.cluster.local:6379,crm-redis-2.crm-redis-headless.crm-local.svc.cluster.local:6379,crm-redis-3.crm-redis-headless.crm-local.svc.cluster.local:6379,crm-redis-4.crm-redis-headless.crm-local.svc.cluster.local:6379,crm-redis-5.crm-redis-headless.crm-local.svc.cluster.local:6379
+  SPRING_AWS_REGION: ap-northeast-2
+  SPRING_AWS_ENDPOINT_URL: http://crm-localstack:4566
+  SPRING_AWS_MAIL_CONFIGURATION_SET_DEFAULT: local-configuration-set
+  SPRING_AWS_SCHEDULE_ROLE_ARN: arn:aws:iam::000000000000:role/LocalEventBridgeSchedulerRole
+  SPRING_AWS_SCHEDULE_SQS_ARN: arn:aws:sqs:ap-northeast-2:000000000000:crm_schedule_event_sqs
+  SPRING_AWS_SCHEDULE_GROUP_NAME: local-schedule-group
+  SPRING_AWS_SNS_CACHE_INVALIDATION_TOPIC_ARN: arn:aws:sns:ap-northeast-2:000000000000:cache-invalidation-topic
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: crm-kafka:9092

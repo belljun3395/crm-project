@@ -66,6 +66,12 @@ variable "allowed_cidr_blocks" {
   type        = list(string)
 }
 
+variable "allowed_security_group_ids" {
+  description = "List of security group IDs allowed to access the ElastiCache cluster"
+  type        = list(string)
+  default     = []
+}
+
 variable "create_parameter_group" {
   description = "Whether to create a parameter group"
   type        = bool

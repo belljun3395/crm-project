@@ -14,17 +14,17 @@ spec:
         app: crm-backend
     spec:
       initContainers:
-        # MySQL 기동 대기
-        - name: wait-for-mysql
+        # Database 기동 대기
+        - name: wait-for-database
           image: busybox:1.36
           command:
             - sh
             - -c
             - |
-              until nc -z crm-mysql 3306; do
-                echo "Waiting for MySQL..."; sleep 3
+              until nc -z crm-database 3306; do
+                echo "Waiting for database..."; sleep 3
               done
-              echo "MySQL is ready"
+              echo "Database is ready"
         # Kafka 기동 대기
         - name: wait-for-kafka
           image: busybox:1.36
@@ -42,11 +42,22 @@ spec:
           imagePullPolicy: Never  # minikube 로컬 이미지 사용
           ports:
             - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: crm-backend-config
+            - secretRef:
+                name: crm-backend-secret
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: "k8s"
             - name: TZ
               value: "Asia/Seoul"
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 30
           readinessProbe:
             httpGet:
               path: /actuator/health
@@ -60,6 +71,14 @@ spec:
               port: 8080
             initialDelaySeconds: 60
             periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               memory: 512Mi

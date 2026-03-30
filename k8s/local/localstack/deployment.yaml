@@ -20,7 +20,7 @@ spec:
             - containerPort: 4566
           env:
             - name: SERVICES
-              value: "ses,sqs,sns,events,scheduler,iam"
+              value: "ses,sqs,sns,scheduler,iam"
             - name: DEBUG
               value: "1"
             - name: START_WEB

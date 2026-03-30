@@ -23,6 +23,9 @@ deploy:
     manifests:
       - k8s/local/namespace.yaml
       - k8s/local/mysql-init/configmap.yaml
+      - k8s/local/backend/configmap.yaml
+      - k8s/local/backend/secret.yaml
+      - k8s/local/database/service.yaml
       - k8s/local/localstack/configmap.yaml
       - k8s/local/localstack/deployment.yaml
       - k8s/local/localstack/service.yaml

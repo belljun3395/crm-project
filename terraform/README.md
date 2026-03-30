@@ -1,171 +1,84 @@
-# CRM 프로젝트 - 멀티 클라우드 인프라
+# CRM Terraform Infrastructure
 
-Active-Active 재해복구(DR)를 지원하는 멀티 클라우드 Kubernetes 인프라
+이 디렉터리는 CRM 애플리케이션의 AWS 인프라를 Terraform으로 관리합니다.
 
-[![Terraform](https://img.shields.io/badge/Terraform-1.5+-purple?logo=terraform)](https://www.terraform.io/)
-[![AWS](https://img.shields.io/badge/AWS-EKS-orange?logo=amazon-aws)](https://aws.amazon.com/)
-[![GCP](https://img.shields.io/badge/GCP-GKE-blue?logo=google-cloud)](https://cloud.google.com/)
+## 구성 범위
 
-## 목차
+- VPC, public/private subnet, NAT gateway
+- EKS cluster
+- ECR repository
+- RDS PostgreSQL
+- ElastiCache Redis
+- Secrets Manager application secret
+- 애플리케이션 런타임용 AWS 리소스
+  - SNS cache invalidation topic
+  - SQS queues
+  - EventBridge Scheduler group / role
+  - SES configuration set
+  - runtime IAM user / access key
 
-- [개요](#개요)
-- [아키텍처](#아키텍처)
-- [주요 기능](#주요-기능)
-- [빠른 시작](#빠른-시작)
-- [문서](#문서)
-- [디렉터리 구조](#디렉터리-구조)
+## 환경
 
----
+- `terraform/environments/aws/dev`
+- `terraform/environments/aws/staging`
+- `terraform/environments/aws/production`
+- `terraform/environments/aws/dr`
 
-## 개요
+각 환경은 동일한 모듈 구조를 공유하고, 용량과 보호 설정만 다르게 가져갑니다.
 
-이 프로젝트는 AWS와 GCP에서 **Active-Active 재해복구(DR)** 구성을 제공하는 프로덕션급 멀티 클라우드 Kubernetes 인프라입니다.
+## 런타임 시크릿 계약
 
-### 핵심 특징
+각 환경은 Secrets Manager에 애플리케이션 런타임 값을 JSON 형태로 저장합니다.
 
-- Active-Active DR: 양쪽 클라우드가 동시에 트래픽 처리
-- 자동 장애조치: 30초 내 자동 전환
-- 데이터베이스 복제: PostgreSQL 실시간 복제 (1-5초 지연)
-- 글로벌 로드밸런싱: CloudFlare 기반 지능형 라우팅
-- 고가용성: 99.99% 가용성 목표 (Multi-AZ NAT, EKS/GKE HA 구성)
-- 보안 강화: Kubernetes 제어부 프라이빗 액세스 제한, VPN 기반 내부 통신
-- 모듈화: 재사용 가능한 Terraform 모듈
+- `DATABASE_URL`
+- `MASTER_DATABASE_URL`
+- `REPLICA_DATABASE_URL`
+- `DATABASE_USERNAME`
+- `DATABASE_PASSWORD`
+- `REDIS_HOST`
+- `REDIS_NODES`
+- `REDIS_PASSWORD`
+- `REDIS_MAX_REDIRECTS`
+- `AWS_ACCESS_KEY`
+- `AWS_SECRET_KEY`
+- `AWS_CONFIGURATION_SET`
+- `AWS_SCHEDULE_ROLE_ARN`
+- `AWS_SCHEDULE_SQS_ARN`
+- `AWS_SCHEDULE_GROUP_NAME`
+- `AWS_SNS_CACHE_INVALIDATION_TOPIC_ARN`
+- `CLOUD_PROVIDER`
+- `MAIL_PROVIDER`
+- `SCHEDULER_PROVIDER`
+- `KAFKA_BOOTSTRAP_SERVERS`
 
----
-
-## 아키텍처
-
-### Active-Active DR 구성
-
-```
-                    CloudFlare 글로벌 로드밸런서
-                    (Dynamic Latency Routing)
-                             │
-              ┌──────────────┴──────────────┐
-              ▼ 50%                      50% ▼
-        AWS (Active)                GCP (Active)
-        ┌──────────────┐            ┌──────────────┐
-        │ EKS Cluster  │            │ GKE Cluster  │
-        │              │            │              │
-        │ RDS          │◀─ 복제 ────│ Cloud SQL    │
-        │ (Primary)    │   VPN      │ (Replica)    │
-        │              │            │              │
-        │ ElastiCache  │◀─ 동기화 ──│ Memorystore  │
-        │              │            │              │
-        │ ALB          │            │ Load Balancer│
-        └──────────────┘            └──────────────┘
-```
-
-상세 아키텍처는 [ARCHITECTURE.md](./ARCHITECTURE.md) 참조
-
----
-
-## 주요 기능
-
-### 인프라 컴포넌트
-
-#### AWS 환경
-- EKS: Kubernetes 클러스터
-- RDS: PostgreSQL (Primary)
-- ElastiCache: Redis (Multi-AZ)
-- MSK: Kafka (Event Streaming)
-- VPN: AWS-GCP 연결
-
-#### GCP 환경
-- GKE: Kubernetes 클러스터
-- Cloud SQL: PostgreSQL (Replica)
-- Memorystore: Redis (HA)
-- Kafka: Strimzi on GKE (Event Streaming)
-- VPN: GCP-AWS 연결
-
-### 환경 구성
-
-- dev: 개발 환경 (최소 리소스)
-- staging: 스테이징 (중간 리소스, HA)
-- production: 프로덕션 (대규모 리소스, 완전 HA)
-- dr: DR 환경 (Active-Active, 양쪽 클라우드)
-
----
+기본값 생성이 가능한 항목은 인프라에서 자동 생성하고, 환경별 override가 필요한 값은 변수나 `additional_secret_values`로 주입합니다.
 
 ## 빠른 시작
 
-### 개발 환경 배포
-
 ```bash
-# AWS 개발 환경
 cd terraform/environments/aws/dev
+cp terraform.tfvars.example terraform.tfvars
 terraform init
-terraform apply
-
-# GCP 개발 환경
-cd terraform/environments/gcp/dev
-terraform init
+terraform plan
 terraform apply
 ```
 
-### DR 환경 배포
+적용 전 확인 항목:
 
-상세 가이드는 [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) 참조
-
----
+- `cluster_public_access_cidrs`
+- `rds_master_password`
+- `elasticache_auth_token`
+- `kafka_bootstrap_servers`
+- `secrets_manager_secret_name`
 
 ## 문서
 
-| 문서 | 설명 |
-|------|------|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | 전체 아키텍처 및 DR 전략 |
-| [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) | 배포 가이드 (Active-Active 포함) |
-| [MODULES.md](./MODULES.md) | 모듈 레퍼런스 |
+- [ARCHITECTURE.md](./ARCHITECTURE.md)
+- [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
+- [MODULES.md](./MODULES.md)
 
----
+## 운영 메모
 
-## 디렉터리 구조
-
-```
-terraform/
-├── modules/               # 15개 모듈
-│   ├── AWS (7개)
-│   ├── GCP (6개)
-│   └── DR (2개)
-│
-├── environments/          # 8개 환경
-│   ├── aws/
-│   │   ├── dev/
-│   │   ├── staging/
-│   │   ├── production/
-│   │   └── dr/
-│   └── gcp/
-│       ├── dev/
-│       ├── staging/
-│       ├── production/
-│       └── dr/
-│
-└── docs/                  # 추가 문서
-```
-
----
-
-## 예상 비용 (월간)
-
-| 환경 | AWS | GCP | 합계 |
-|------|-----|-----|------|
-| dev | $200 | $150 | $350 |
-| staging | $600 | $500 | $1,100 |
-| production | $1,200 | $1,000 | $2,200 |
-| **dr** | **$1,059** | **$959** | **$2,268** |
-
-*DR 환경은 CloudFlare ($50) 및 데이터 전송 비용 포함
-
----
-
-## 성능 지표 (DR)
-
-- 가용성: 99.99% (연간 다운타임 < 53분)
-- RTO: 30초-5분
-- RPO: 5초
-- 응답 시간: p95 < 200ms
-
----
-
-**최종 업데이트**: 2025년 1월  
-**버전**: 2.0
+- 애플리케이션 코드에는 `crm_schedule_event_sqs`, `crm_ses_sqs`, `crm-dr-cache-invalidation-queue-aws` 같은 큐 이름이 고정돼 있습니다.
+- 같은 AWS 계정과 리전에서 여러 환경을 동시에 운영하려면 queue naming 전략도 함께 관리해야 합니다.
+- PostgreSQL 전환 작업은 애플리케이션 브랜치와 함께 맞춰야 하며, 이 Terraform 패키지는 그 인프라 수용면을 제공합니다.

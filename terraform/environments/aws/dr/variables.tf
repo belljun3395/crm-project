@@ -136,37 +136,16 @@ variable "secrets_manager_recovery_window_in_days" {
   default     = 7
 }
 
-variable "app_env" {
-  description = "Application runtime environment variables that will be stored in AWS Secrets Manager."
-  type = object({
-    DATABASE_URL            = string
-    DATABASE_USERNAME       = string
-    DATABASE_PASSWORD       = string
-    REDIS_HOST              = string
-    REDIS_MAX_REDIRECTS     = string
-    REDIS_PASSWORD          = string
-    REDIS_NODES             = string
-    MAIL_USERNAME           = string
-    MAIL_PASSWORD           = string
-    AWS_ACCESS_KEY          = string
-    AWS_SECRET_KEY          = string
-    AWS_CONFIGURATION_SET   = string
-    AWS_SCHEDULE_ROLE_ARN   = string
-    AWS_SCHEDULE_SQS_ARN    = string
-    AWS_SCHEDULE_GROUP_NAME = string
-    KAFKA_BOOTSTRAP_SERVERS = string
-    SCHEDULER_PROVIDER      = optional(string, "aws")
-  })
+variable "kafka_bootstrap_servers" {
+  description = "Kafka bootstrap servers required by the application secret contract."
+  type        = string
+  default     = "unused:9092"
 }
 
 variable "additional_secret_values" {
   description = "Additional key/value pairs to merge into the application secret."
   type        = map(string)
   default     = {}
-  validation {
-    condition     = length(setintersection(toset(keys(var.additional_secret_values)), toset(keys(var.app_env)))) == 0
-    error_message = "additional_secret_values keys must not overlap with app_env keys."
-  }
 }
 
 # RDS Variables
@@ -327,50 +306,6 @@ variable "elasticache_multi_az_enabled" {
   description = "Enable Multi-AZ deployment"
   type        = bool
   default     = true
-}
-
-# VPN Configuration
-variable "enable_vpn" {
-  description = "Enable VPN connection to GCP"
-  type        = bool
-  default     = true
-}
-
-variable "gcp_project_id" {
-  description = "GCP Project ID for VPN connection"
-  type        = string
-}
-
-variable "gcp_network_id" {
-  description = "GCP VPC network ID for VPN"
-  type        = string
-  default     = ""
-}
-
-variable "gcp_region" {
-  description = "GCP region for VPN"
-  type        = string
-  default     = "asia-northeast3"
-}
-
-variable "gcp_vpc_cidr" {
-  description = "GCP VPC CIDR for security group rules"
-  type        = string
-  default     = "10.20.0.0/20"
-}
-
-variable "vpn_tunnel1_preshared_key" {
-  description = "Pre-shared key for VPN tunnel 1"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "vpn_tunnel2_preshared_key" {
-  description = "Pre-shared key for VPN tunnel 2"
-  type        = string
-  sensitive   = true
-  default     = ""
 }
 
 # ALB Configuration
