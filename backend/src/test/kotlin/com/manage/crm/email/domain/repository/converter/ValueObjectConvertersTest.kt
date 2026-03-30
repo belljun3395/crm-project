@@ -48,7 +48,7 @@ class ValueObjectConvertersTest : FeatureSpec({
 
             val result = VariablesWritingConverter().convert(source)
 
-            result shouldBe "user.email,campaign.targetAudience"
+            result shouldBe "user.email, campaign.targetAudience"
         }
     }
 
