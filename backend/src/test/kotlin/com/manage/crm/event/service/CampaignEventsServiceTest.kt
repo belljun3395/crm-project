@@ -107,6 +107,48 @@ class CampaignEventsServiceTest : BehaviorSpec({
             }
         }
 
+        `when`("finding campaign events with only endTime bound") {
+            val campaignId = 15L
+            val end = LocalDateTime.of(2026, 3, 1, 12, 0)
+            val allEventIds = listOf(30L, 31L, 32L)
+            val events = listOf(
+                Event.new(30L, "old", 1L, PropertiesFixtures.giveMeOne().buildEvent(), end.minusMinutes(10)),
+                Event.new(31L, "new", 2L, PropertiesFixtures.giveMeOne().buildEvent(), end.plusMinutes(1)),
+                Event.new(32L, "null-created-at", 3L, PropertiesFixtures.giveMeOne().buildEvent(), end).apply { createdAt = null }
+            )
+            coEvery { campaignRepository.findById(campaignId) } returns CampaignFixtures.giveMeOne().withId(campaignId).build()
+            coEvery { campaignEventsRepository.findEventIdsByCampaignId(campaignId) } returns allEventIds
+            coEvery { eventRepository.findAllByIdIn(allEventIds) } returns events
+
+            val result = campaignEventsService.findCampaignEvents(campaignId, null, end)
+
+            then("filters out events at or after endTime and null createdAt") {
+                result shouldHaveSize 1
+                result.first().name shouldBe "old"
+            }
+        }
+
+        `when`("finding all events by campaign id and user id") {
+            val campaignId = 16L
+            val userId = 101L
+            val eventIds = listOf(40L, 41L)
+            val events = listOf(
+                Event.new(40L, "a", userId, PropertiesFixtures.giveMeOne().buildEvent(), LocalDateTime.now()),
+                Event.new(41L, "b", userId, PropertiesFixtures.giveMeOne().buildEvent(), LocalDateTime.now())
+            )
+            coEvery { campaignEventsRepository.findEventIdsByCampaignIdAndUserId(campaignId, userId) } returns eventIds
+            coEvery { eventRepository.findAllByIdIn(eventIds) } returns events
+
+            val result = campaignEventsService.findAllEventsByCampaignIdAndUserId(campaignId, userId)
+
+            then("hydrates events using relation ids for the user") {
+                result.shouldContainExactly(events)
+                coVerify(exactly = 1) {
+                    campaignEventsRepository.findEventIdsByCampaignIdAndUserId(campaignId, userId)
+                }
+            }
+        }
+
         `when`("campaign does not exist") {
             val campaignId = 14L
             coEvery { campaignRepository.findById(campaignId) } returns null
