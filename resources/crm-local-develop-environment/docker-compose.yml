@@ -1,17 +1,20 @@
 services:
-    crm-mysql:
-        # Current local database stack. PostgreSQL migration will replace this service and init scripts.
-        container_name: crm-mysql8
-        image: mysql/mysql-server:8.0.27
+    crm-postgres:
+        container_name: crm-postgres16
+        image: postgres:16-alpine
         environment:
-            - MYSQL_ROOT_PASSWORD=root
-            - MYSQL_ROOT_HOST=%
+            - POSTGRES_DB=crm
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=postgres
             - TZ=Asia/Seoul
-        command: [ "--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci", "--lower_case_table_names=1", "--max_connections=2048", "--wait_timeout=3600" ]
         ports:
-            - "13306:3306"
-        volumes:
-            - ./mysql-init.d:/docker-entrypoint-initdb.d
+            - "5432:5432"
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U postgres -d crm" ]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+            start_period: 10s
 
     crm-adminer: # database web admin
         container_name: crm-adminer
@@ -19,7 +22,7 @@ services:
         ports:
             - "18080:8080"
         environment:
-            - ADMINER_DEFAULT_SERVER=crm-mysql8
+            - ADMINER_DEFAULT_SERVER=crm-postgres16
             - ADMINER_DESIGN=nette
             - ADMINER_PLUGINS=tables-filter tinymce
 

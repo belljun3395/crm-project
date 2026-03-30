@@ -6,8 +6,8 @@ import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.vo.UserAttributes
 import org.jooq.DSLContext
 import org.jooq.impl.DSL.condition
-import org.jooq.impl.DSL.inline
 import org.jooq.impl.DSL.count
+import org.jooq.impl.DSL.inline
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
