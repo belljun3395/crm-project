@@ -15,6 +15,7 @@ import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -37,6 +38,8 @@ class PostSegmentUseCase(
     private val journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher,
     private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate
 ) {
+    private val log = KotlinLogging.logger {}
+
     @Transactional
     suspend fun execute(useCaseIn: PostSegmentUseCaseIn): PostSegmentUseCaseOut {
         validateConditions(useCaseIn.conditions)
@@ -65,8 +68,11 @@ class PostSegmentUseCase(
                     )
                 )
             }
-        } catch (_: DataIntegrityViolationException) {
-            throw AlreadyExistsException("Segment", "name", useCaseIn.name)
+        } catch (error: DataIntegrityViolationException) {
+            if (isSegmentNameDuplicate(error)) {
+                throw AlreadyExistsException("Segment", "name", useCaseIn.name)
+            }
+            throw error
         }
 
         val segmentId = saved.id ?: throw IllegalStateException("Saved segment id is null")
@@ -76,6 +82,10 @@ class PostSegmentUseCase(
                 blockDescription = "enqueue journey segment trigger after segment commit"
             ) {
                 journeyTriggerQueuePublisher.publishSegmentContextTrigger(null)
+            }
+        }.onFailure { error ->
+            log.error(error) {
+                "Failed to register afterCommit segment context trigger for segmentId=$segmentId"
             }
         }
 
@@ -121,5 +131,17 @@ class PostSegmentUseCase(
                 value = condition.value
             )
         }
+    }
+
+    private fun isSegmentNameDuplicate(exception: DataIntegrityViolationException): Boolean {
+        var cause: Throwable? = exception
+        while (cause != null) {
+            val message = cause.message?.lowercase()
+            if (message != null && "uq_segments_name" in message) {
+                return true
+            }
+            cause = cause.cause
+        }
+        return false
     }
 }

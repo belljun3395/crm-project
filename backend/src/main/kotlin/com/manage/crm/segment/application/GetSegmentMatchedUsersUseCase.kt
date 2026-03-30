@@ -6,8 +6,10 @@ import com.manage.crm.segment.application.dto.GetSegmentMatchedUsersUseCaseIn
 import com.manage.crm.segment.application.dto.GetSegmentMatchedUsersUseCaseOut
 import com.manage.crm.segment.application.dto.SegmentMatchedUserDto
 import com.manage.crm.segment.service.SegmentTargetingService
+import com.manage.crm.support.out
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import java.time.format.DateTimeFormatter
 
@@ -24,6 +26,8 @@ class GetSegmentMatchedUsersUseCase(
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper
 ) {
+    private val log = KotlinLogging.logger {}
+
     companion object {
         private val FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME
         private const val PAGE_SIZE = 500
@@ -32,10 +36,12 @@ class GetSegmentMatchedUsersUseCase(
     /**
      * Resolves user ids from segment targeting and materializes user summaries.
      */
-    suspend fun execute(input: GetSegmentMatchedUsersUseCaseIn): GetSegmentMatchedUsersUseCaseOut {
-        val targetUserIds = segmentTargetingService.resolveUserIds(input.segmentId, input.campaignId)
+    suspend fun execute(useCaseIn: GetSegmentMatchedUsersUseCaseIn): GetSegmentMatchedUsersUseCaseOut {
+        val targetUserIds = segmentTargetingService.resolveUserIds(useCaseIn.segmentId, useCaseIn.campaignId)
         if (targetUserIds.isEmpty()) {
-            return GetSegmentMatchedUsersUseCaseOut(users = emptyList())
+            return out {
+                GetSegmentMatchedUsersUseCaseOut(users = emptyList())
+            }
         }
 
         val targetIdSet = targetUserIds.toSet()
@@ -44,7 +50,9 @@ class GetSegmentMatchedUsersUseCase(
             .mapNotNull { user -> toMatchedUserDtoOrNull(user) }
             .sortedBy { it.id }
 
-        return GetSegmentMatchedUsersUseCaseOut(users = matchedUsers)
+        return out {
+            GetSegmentMatchedUsersUseCaseOut(users = matchedUsers)
+        }
     }
 
     /**
@@ -89,6 +97,12 @@ class GetSegmentMatchedUsersUseCase(
      * Parses user attribute json and tolerates malformed json.
      */
     private fun parseUserAttributes(user: User): JsonNode? {
-        return runCatching { objectMapper.readTree(user.userAttributes.value) }.getOrNull()
+        return runCatching { objectMapper.readTree(user.userAttributes.value) }
+            .onFailure { error ->
+                log.warn(error) {
+                    "Failed to parse userAttributes JSON for userId=${user.id}, externalId=${user.externalId}"
+                }
+            }
+            .getOrNull()
     }
 }

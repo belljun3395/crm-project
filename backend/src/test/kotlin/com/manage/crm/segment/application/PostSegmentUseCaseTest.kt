@@ -161,7 +161,7 @@ class PostSegmentUseCaseTest : BehaviorSpec({
                 )
 
                 coEvery { segmentRepository.findByName("active-users") } returns null
-                coEvery { segmentRepository.save(any()) } throws DataIntegrityViolationException("duplicate key")
+                coEvery { segmentRepository.save(any()) } throws DataIntegrityViolationException("Duplicate entry for key 'uq_segments_name'")
 
                 shouldThrow<AlreadyExistsException> {
                     useCase.execute(request)
