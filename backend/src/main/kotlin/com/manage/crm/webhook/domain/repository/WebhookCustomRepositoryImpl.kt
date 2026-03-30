@@ -5,6 +5,7 @@ import com.manage.crm.infrastructure.jooq.CrmJooqTables
 import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
 import com.manage.crm.webhook.domain.Webhook
 import com.manage.crm.webhook.domain.WebhookEvents
+import io.r2dbc.postgresql.codec.Json
 import org.jooq.DSLContext
 import org.jooq.impl.DSL.condition
 import org.jooq.impl.DSL.inline
@@ -24,15 +25,20 @@ class WebhookCustomRepositoryImpl(
             .select()
             .from(CrmJooqTables.Webhooks.table)
             .where(CrmJooqTables.Webhooks.active.eq(true))
-            .and(condition("{0} ? {1}", CrmJooqTables.Webhooks.events, inline(eventType)))
+            .and(condition("jsonb_exists({0}, {1})", CrmJooqTables.Webhooks.events, inline(eventType)))
 
         return jooqExecutor.fetchList(query) { row ->
+            val eventsJson = when (val value = row["events"]) {
+                is Json -> value.asString()
+                else -> value.toString()
+            }
+
             Webhook.new(
                 id = (row["id"] as Number).toLong(),
                 name = row["name"] as String,
                 url = row["url"] as String,
                 events = WebhookEvents.fromValues(
-                    objectMapper.readValue(row["events"].toString(), List::class.java)
+                    objectMapper.readValue(eventsJson, List::class.java)
                         .map { it.toString() }
                 ),
                 active = when (val v = row["active"]) {

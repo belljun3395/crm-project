@@ -6,6 +6,7 @@ import com.manage.crm.event.domain.vo.CampaignProperties
 import com.manage.crm.event.domain.vo.CampaignProperty
 import com.manage.crm.infrastructure.jooq.CrmJooqTables
 import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
+import io.r2dbc.postgresql.codec.Json
 import kotlinx.coroutines.flow.flow
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
@@ -25,11 +26,16 @@ class CampaignCustomRepositoryImpl(
             .limit(limit)
 
         val campaigns = jooqExecutor.fetchList(query) { row ->
+            val propertiesJson = when (val value = row["properties"]) {
+                is Json -> value.asString()
+                else -> value.toString()
+            }
+
             Campaign(
                 id = (row["id"] as Number).toLong(),
                 name = row["name"] as String,
                 properties = CampaignProperties(
-                    objectMapper.readValue(row["properties"].toString(), List::class.java)
+                    objectMapper.readValue(propertiesJson, List::class.java)
                         .stream()
                         .map { objectMapper.convertValue(it, Map::class.java) }
                         .map { CampaignProperty(it["key"] as String, it["value"] as String) }

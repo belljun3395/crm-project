@@ -4,6 +4,7 @@ import com.manage.crm.infrastructure.jooq.CrmJooqTables
 import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.vo.UserAttributes
+import io.r2dbc.postgresql.codec.Json
 import org.jooq.DSLContext
 import org.jooq.impl.DSL.condition
 import org.jooq.impl.DSL.count
@@ -33,7 +34,7 @@ class UserCustomRepositoryImpl(
         val query = dslContext
             .select()
             .from(CrmJooqTables.Users.table)
-            .where(condition("{0} ? {1}", CrmJooqTables.Users.userAttributes, inline(attributeKey)))
+            .where(condition("jsonb_exists({0}, {1})", CrmJooqTables.Users.userAttributes, inline(attributeKey)))
 
         return jooqExecutor.fetchList(query, ::toUser)
     }
@@ -42,7 +43,7 @@ class UserCustomRepositoryImpl(
         val query = dslContext
             .select()
             .from(CrmJooqTables.Users.table)
-            .where(condition("{0} ->> 'email' = {1}", CrmJooqTables.Users.userAttributes, inline(email)))
+            .where(condition("jsonb_extract_path_text({0}, 'email') = {1}", CrmJooqTables.Users.userAttributes, inline(email)))
 
         return jooqExecutor.fetchOne(query, ::toUser)
     }
@@ -103,10 +104,15 @@ class UserCustomRepositoryImpl(
     }
 
     private fun toUser(row: Map<String, Any>): User {
+        val userAttributes = when (val value = row["user_attributes"]) {
+            is Json -> value.asString()
+            else -> value.toString()
+        }
+
         return User(
             id = (row["id"] as Number).toLong(),
             externalId = row["external_id"] as String,
-            userAttributes = UserAttributes(row["user_attributes"].toString()),
+            userAttributes = UserAttributes(userAttributes),
             createdAt = row["created_at"] as? LocalDateTime,
             updatedAt = row["updated_at"] as? LocalDateTime
         )

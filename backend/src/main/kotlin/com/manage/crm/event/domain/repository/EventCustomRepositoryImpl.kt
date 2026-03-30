@@ -10,6 +10,7 @@ import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.event.exception.InvalidSearchConditionException
 import com.manage.crm.infrastructure.jooq.CrmJooqTables
 import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
+import io.r2dbc.postgresql.codec.Json
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 import java.math.BigDecimal
@@ -24,6 +25,19 @@ class EventCustomRepositoryImpl(
 
     companion object {
         private const val MAX_SEARCH_CANDIDATE_LIMIT = 1000
+    }
+
+    private fun readProperties(row: Map<String, Any>): EventProperties {
+        val propertiesJson = when (val value = row["properties"]) {
+            is Json -> value.asString()
+            else -> value.toString()
+        }
+
+        return objectMapper.readValue(propertiesJson, List::class.java).stream()
+            .map { objectMapper.convertValue(it, Map::class.java) }
+            .map { EventProperty(it["key"] as String, it["value"] as String) }
+            .toList()
+            .let { EventProperties(it) }
     }
 
     override suspend fun searchByProperty(query: SearchByPropertyQuery): List<Event> {
@@ -65,14 +79,7 @@ class EventCustomRepositoryImpl(
                 id = (row["id"] as Number).toLong(),
                 name = row["name"] as String,
                 userId = (row["user_id"] as Number).toLong(),
-                properties = row["properties"].toString()
-                    .let { properties ->
-                        objectMapper.readValue(properties, List::class.java).stream()
-                            .map { objectMapper.convertValue(it, Map::class.java) }
-                            .map { EventProperty(it["key"] as String, it["value"] as String) }
-                            .toList()
-                            .let { EventProperties(it) }
-                    },
+                properties = readProperties(row),
                 createdAt = row["created_at"] as LocalDateTime
             )
         }
@@ -92,14 +99,7 @@ class EventCustomRepositoryImpl(
                 id = (row["id"] as Number).toLong(),
                 name = row["name"] as String,
                 userId = (row["user_id"] as Number).toLong(),
-                properties = row["properties"].toString()
-                    .let { properties ->
-                        objectMapper.readValue(properties, List::class.java).stream()
-                            .map { objectMapper.convertValue(it, Map::class.java) }
-                            .map { EventProperty(it["key"] as String, it["value"] as String) }
-                            .toList()
-                            .let { EventProperties(it) }
-                    },
+                properties = readProperties(row),
                 createdAt = row["created_at"] as LocalDateTime
             )
         }

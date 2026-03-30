@@ -97,7 +97,7 @@ dependencies {
 
     /** data */
     runtimeOnly(libs.postgresql)
-    runtimeOnly(libs.r2dbc.postgresql)
+    implementation(libs.r2dbc.postgresql)
     testRuntimeOnly(libs.postgresql)
     testImplementation(libs.hikari.cp)
 
