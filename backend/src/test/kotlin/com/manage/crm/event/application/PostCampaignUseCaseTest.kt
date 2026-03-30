@@ -49,7 +49,7 @@ class PostCampaignUseCaseTest : BehaviorSpec({
             )
     }
 
-    given("PostCampaignUseCase") {
+    given("UC-CAMPAIGN-001: PostCampaignUseCase") {
         `when`("post campaign") {
             val useCaseIn = PostCampaignUseCaseIn(
                 name = "campaign",

@@ -34,7 +34,7 @@ class SearchEventsUseCaseTest : BehaviorSpec({
         searchEventsUseCase = SearchEventsUseCase(eventRepository, userRepository)
     }
 
-    given("SearchEventsUseCase") {
+    given("UC-EVENT-003: SearchEventsUseCase") {
         `when`("search events with one property") {
             val useCaseIn = SearchEventsUseCaseIn(
                 eventName = "event",
