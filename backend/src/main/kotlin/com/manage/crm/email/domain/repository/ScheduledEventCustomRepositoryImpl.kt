@@ -3,6 +3,7 @@ package com.manage.crm.email.domain.repository
 import com.manage.crm.email.domain.ScheduledEvent
 import com.manage.crm.email.domain.vo.EventId
 import kotlinx.coroutines.reactive.awaitFirst
+import kotlinx.coroutines.reactive.awaitFirstOrNull
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
@@ -12,29 +13,58 @@ class ScheduledEventCustomRepositoryImpl(
     private val dataBaseClient: DatabaseClient
 ) : ScheduledEventCustomRepository {
     override suspend fun findAllByEmailTemplateIdAndCompletedFalse(templateId: Long): List<ScheduledEvent> {
-        var selectQuery = """
+        val selectQuery = """
             SELECT * FROM scheduled_events
+            WHERE event_payload LIKE CONCAT('%\"templateId\":', :templateId, '%')
+              AND completed = false
         """.trimIndent()
-        val whereClause = mutableListOf<String>()
-        whereClause.add("event_payload LIKE '%\"templateId\":$templateId%'")
-        whereClause.add("completed = false")
-        selectQuery = selectQuery.plus(" WHERE ${whereClause.joinToString(" AND ")}")
 
         return dataBaseClient.sql(selectQuery)
+            .bind("templateId", templateId)
             .fetch()
             .all()
-            .map {
-                ScheduledEvent.new(
-                    id = it["id"] as Long,
-                    eventId = EventId(it["event_id"] as String),
-                    eventClass = it["event_class"] as String,
-                    eventPayload = it["event_payload"] as String,
-                    completed = it["completed"] as Boolean,
-                    isNotConsumed = it["is_not_consumed"] as Boolean,
-                    canceled = it["canceled"] as Boolean,
-                    scheduledAt = it["scheduled_at"] as String,
-                    createdAt = it["created_at"] as LocalDateTime
-                )
-            }.collectList().awaitFirst()
+            .map(::toScheduledEvent)
+            .collectList()
+            .awaitFirst()
+    }
+
+    override suspend fun findByEventIdAndCompletedFalseForUpdate(eventId: EventId): ScheduledEvent? {
+        return dataBaseClient.sql(
+            """
+            SELECT * FROM scheduled_events
+            WHERE event_id = :eventId
+              AND completed = false
+            FOR UPDATE
+            """.trimIndent()
+        )
+            .bind("eventId", eventId.value)
+            .fetch()
+            .one()
+            .map(::toScheduledEvent)
+            .awaitFirstOrNull()
+    }
+
+    private fun toScheduledEvent(row: Map<String, Any>): ScheduledEvent {
+        return ScheduledEvent.new(
+            id = (row["id"] as Number).toLong(),
+            eventId = EventId(row["event_id"] as String),
+            eventClass = row["event_class"] as String,
+            eventPayload = row["event_payload"] as String,
+            completed = toBoolean(row["completed"]),
+            isNotConsumed = toBoolean(row["is_not_consumed"]),
+            canceled = toBoolean(row["canceled"]),
+            scheduledAt = row["scheduled_at"] as String,
+            createdAt = row["created_at"] as LocalDateTime
+        )
+    }
+
+    private fun toBoolean(value: Any?): Boolean {
+        return when (value) {
+            is Boolean -> value
+            is Number -> value.toInt() != 0
+            is ByteArray -> value.firstOrNull()?.toInt() != 0
+            is String -> value == "1" || value.equals("true", ignoreCase = true)
+            else -> false
+        }
     }
 }

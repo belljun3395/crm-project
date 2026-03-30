@@ -11,10 +11,10 @@ import java.time.LocalDateTime
 
 @Repository
 @ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
-class WebhookRepositoryCustomImpl(
+class WebhookCustomRepositoryImpl(
     private val dataBaseClient: DatabaseClient,
     private val objectMapper: ObjectMapper
-) : WebhookRepositoryCustom {
+) : WebhookCustomRepository {
     override suspend fun findActiveByEvent(eventType: String): List<Webhook> {
         val sql = """
             SELECT * FROM webhooks

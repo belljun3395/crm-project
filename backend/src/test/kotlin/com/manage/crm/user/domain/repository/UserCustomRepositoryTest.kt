@@ -9,7 +9,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 
-class UserRepositoryCustomTest(
+class UserCustomRepositoryTest(
     private val userRepository: UserRepository
 ) : UserModuleTestTemplate() {
 

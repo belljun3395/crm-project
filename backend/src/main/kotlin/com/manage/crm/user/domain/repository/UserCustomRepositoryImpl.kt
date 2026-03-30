@@ -20,9 +20,24 @@ private const val LIKE_ESCAPE_CHARACTER = "\\"
  * Side effects: reads user records from DB using LIKE-escaped and bound patterns.
  */
 @Repository
-class UserRepositoryCustomImpl(
+class UserCustomRepositoryImpl(
     private val dataBaseClient: DatabaseClient
-) : UserRepositoryCustom {
+) : UserCustomRepository {
+
+    override suspend fun findAllExistByUserAttributesKey(key: String?): List<User> {
+        val query = """
+            SELECT * FROM users
+            WHERE user_attributes LIKE CONCAT('%', :key, '%')
+        """.trimIndent()
+
+        return dataBaseClient.sql(query)
+            .bind("key", key ?: "email")
+            .fetch()
+            .all()
+            .map(::toUser)
+            .collectList()
+            .awaitFirst()
+    }
 
     override suspend fun findByEmail(email: String): User? {
         val selectQuery = """
@@ -35,15 +50,7 @@ class UserRepositoryCustomImpl(
             .bind("pattern", pattern)
             .fetch()
             .all()
-            .map {
-                User.new(
-                    id = it["id"] as Long,
-                    externalId = it["external_id"] as String,
-                    userAttributes = UserAttributes(it["user_attributes"] as String),
-                    createdAt = it["created_at"] as LocalDateTime,
-                    updatedAt = it["updated_at"] as LocalDateTime
-                )
-            }
+            .map(::toUser)
             .awaitFirstOrNull()
     }
 
@@ -61,15 +68,7 @@ class UserRepositoryCustomImpl(
             .bind("offset", offset)
             .fetch()
             .all()
-            .map {
-                User.new(
-                    id = it["id"] as Long,
-                    externalId = it["external_id"] as String,
-                    userAttributes = UserAttributes(it["user_attributes"] as String),
-                    createdAt = it["created_at"] as LocalDateTime,
-                    updatedAt = it["updated_at"] as LocalDateTime
-                )
-            }
+            .map(::toUser)
             .collectList()
             .awaitFirst()
     }
@@ -101,15 +100,7 @@ class UserRepositoryCustomImpl(
             .bind("offset", offset)
             .fetch()
             .all()
-            .map {
-                User.new(
-                    id = it["id"] as Long,
-                    externalId = it["external_id"] as String,
-                    userAttributes = UserAttributes(it["user_attributes"] as String),
-                    createdAt = it["created_at"] as LocalDateTime,
-                    updatedAt = it["updated_at"] as LocalDateTime
-                )
-            }
+            .map(::toUser)
             .collectList()
             .awaitFirst()
     }
@@ -135,5 +126,15 @@ class UserRepositoryCustomImpl(
             .replace(LIKE_ESCAPE_CHARACTER, "\\\\")
             .replace("%", "\\%")
             .replace("_", "\\_")
+    }
+
+    private fun toUser(row: Map<String, Any>): User {
+        return User(
+            id = (row["id"] as Number).toLong(),
+            externalId = row["external_id"] as String,
+            userAttributes = UserAttributes(row["user_attributes"] as String),
+            createdAt = row["created_at"] as? LocalDateTime,
+            updatedAt = row["updated_at"] as? LocalDateTime
+        )
     }
 }
