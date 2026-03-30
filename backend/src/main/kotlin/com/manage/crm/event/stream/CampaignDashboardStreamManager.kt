@@ -1,5 +1,6 @@
 package com.manage.crm.event.stream
 
+import com.manage.crm.event.event.CampaignDashboardEvent
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,15 +22,6 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.collections.get
-
-data class CampaignDashboardEvent(
-    val campaignId: Long,
-    val eventId: Long,
-    val userId: Long,
-    val eventName: String,
-    val timestamp: LocalDateTime,
-    val streamId: String? = null
-)
 
 /**
  * Encapsulates Redis Stream IO for campaign dashboard events.

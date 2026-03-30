@@ -12,8 +12,8 @@ import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
-import com.manage.crm.event.stream.CampaignDashboardEvent
-import com.manage.crm.event.stream.CampaignEventPublisher
+import com.manage.crm.event.event.CampaignDashboardEvent
+import com.manage.crm.event.event.CampaignEventPublisher
 import com.manage.crm.journey.queue.JourneyEventPayload
 import com.manage.crm.journey.queue.JourneyEventPropertyPayload
 import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher

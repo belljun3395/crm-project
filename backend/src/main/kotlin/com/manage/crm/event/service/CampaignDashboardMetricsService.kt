@@ -4,7 +4,7 @@ import com.manage.crm.event.domain.MetricType
 import com.manage.crm.event.domain.TimeWindowUnit
 import com.manage.crm.event.domain.repository.CampaignDashboardMetricsRepository
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
-import com.manage.crm.event.stream.CampaignDashboardEvent
+import com.manage.crm.event.event.CampaignDashboardEvent
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit

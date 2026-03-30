@@ -15,7 +15,7 @@ import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.vo.CampaignProperties
 import com.manage.crm.event.domain.vo.CampaignProperty
-import com.manage.crm.event.stream.CampaignEventPublisher
+import com.manage.crm.event.event.CampaignEventPublisher
 import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
 import com.manage.crm.segment.service.SegmentTargetingService
 import com.manage.crm.support.exception.NotFoundByException

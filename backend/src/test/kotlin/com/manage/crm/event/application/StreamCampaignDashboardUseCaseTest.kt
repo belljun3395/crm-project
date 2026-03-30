@@ -1,7 +1,7 @@
 package com.manage.crm.event.application
 
 import com.manage.crm.event.application.dto.StreamCampaignDashboardUseCaseIn
-import com.manage.crm.event.stream.CampaignDashboardEvent
+import com.manage.crm.event.event.CampaignDashboardEvent
 import com.manage.crm.event.stream.CampaignDashboardStreamManager
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldHaveSize
