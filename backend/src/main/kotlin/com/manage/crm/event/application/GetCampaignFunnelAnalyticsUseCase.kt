@@ -62,6 +62,14 @@ class GetCampaignFunnelAnalyticsUseCase(
         )
     }
 
+    /**
+     * 이벤트를 시간순(동률 시 id순)으로 정렬해 퍼널 단계를 앞에서부터 순차적으로 매칭하고,
+     * 사용자가 연속적으로 도달한 마지막 단계의 인덱스를 반환한다.
+     *
+     * 예) steps = [A, B, C]이고 이벤트가 A, B, C 순서면 2를 반환한다.
+     * 예) steps = [A, B, C]이고 이벤트가 A, C, B 순서면 B까지 연속 도달하지 못했으므로 0을 반환한다.
+     * 매칭된 단계가 없으면 -1을 반환한다.
+     */
     private fun calculateHighestReachedStepIndex(events: List<Event>, steps: List<String>): Int {
         if (events.isEmpty()) {
             return -1
