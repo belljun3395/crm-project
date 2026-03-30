@@ -15,7 +15,7 @@ import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
 import kotlinx.coroutines.Dispatchers
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
 /**
@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional
  * Success: returns updated campaign detail.
  * Failure: throws when campaign/segment is missing or name is duplicated.
  */
-@Service
+@Component
 class UpdateCampaignUseCase(
     private val campaignRepository: CampaignRepository,
     private val campaignSegmentsRepository: CampaignSegmentsRepository,

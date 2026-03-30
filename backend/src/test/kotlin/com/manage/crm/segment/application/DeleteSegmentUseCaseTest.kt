@@ -21,7 +21,7 @@ class DeleteSegmentUseCaseTest : BehaviorSpec({
         )
     }
 
-    given("delete segment") {
+    given("UC-SEGMENT-004 DeleteSegmentUseCase") {
         `when`("segment exists") {
             then("delete segment once") {
                 val segmentId = 10L

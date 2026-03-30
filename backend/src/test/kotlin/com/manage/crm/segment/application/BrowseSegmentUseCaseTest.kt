@@ -30,7 +30,7 @@ class BrowseSegmentUseCaseTest : BehaviorSpec({
         )
     }
 
-    given("browse segments") {
+    given("UC-SEGMENT-002 BrowseSegmentUseCase") {
         `when`("segments exist") {
             then("return segments with grouped conditions") {
                 val firstSegment = Segment.new(
@@ -94,6 +94,26 @@ class BrowseSegmentUseCaseTest : BehaviorSpec({
                 verify(exactly = 0) {
                     segmentConditionRepository.findBySegmentIdInOrderBySegmentIdAscPositionAsc(any())
                 }
+            }
+        }
+
+        `when`("limit is below minimum") {
+            then("clamps to 1") {
+                every { segmentRepository.findAllByOrderByCreatedAtDesc() } returns emptyFlow()
+
+                useCase.execute(BrowseSegmentUseCaseIn(limit = 0))
+
+                verify { segmentRepository.findAllByOrderByCreatedAtDesc() }
+            }
+        }
+
+        `when`("limit is above maximum") {
+            then("clamps to 200") {
+                every { segmentRepository.findAllByOrderByCreatedAtDesc() } returns emptyFlow()
+
+                useCase.execute(BrowseSegmentUseCaseIn(limit = 9999))
+
+                verify { segmentRepository.findAllByOrderByCreatedAtDesc() }
             }
         }
     }

@@ -31,7 +31,7 @@ class GetSegmentUseCaseTest : BehaviorSpec({
         )
     }
 
-    given("get segment") {
+    given("UC-SEGMENT-003 GetSegmentUseCase") {
         `when`("segment does not exist") {
             then("throw not found") {
                 val segmentId = 999L

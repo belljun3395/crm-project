@@ -39,7 +39,7 @@ class PostSegmentUseCaseTest : BehaviorSpec({
         )
     }
 
-    given("post segment") {
+    given("UC-SEGMENT-001 PostSegmentUseCase") {
         `when`("segment name already exists on create") {
             then("throw duplicate exception") {
                 val request = PostSegmentUseCaseIn(
@@ -166,6 +166,46 @@ class PostSegmentUseCaseTest : BehaviorSpec({
                 shouldThrow<AlreadyExistsException> {
                     useCase.execute(request)
                 }
+            }
+        }
+
+        `when`("segment id is provided and segment exists") {
+            then("update segment and replace conditions") {
+                val objectMapper = jacksonObjectMapper()
+                val segmentId = 5L
+                val existing = Segment.new(
+                    id = segmentId,
+                    name = "old-name",
+                    description = "old desc",
+                    active = true
+                ).apply { createdAt = LocalDateTime.of(2024, 1, 1, 0, 0) }
+
+                val request = PostSegmentUseCaseIn(
+                    id = segmentId,
+                    name = "updated-name",
+                    description = "new desc",
+                    active = false,
+                    conditions = listOf(
+                        PostSegmentConditionIn(
+                            field = "user.email",
+                            operator = "EQ",
+                            valueType = "STRING",
+                            value = objectMapper.readTree("\"admin@example.com\"")
+                        )
+                    )
+                )
+
+                coEvery { segmentRepository.findByName("updated-name") } returns null
+                coEvery { segmentRepository.findById(segmentId) } returns existing
+                coEvery { segmentRepository.save(any()) } answers { firstArg() }
+                coEvery { segmentConditionRepository.deleteBySegmentId(segmentId) } returns 1L
+                coEvery { segmentConditionRepository.save(any()) } answers { firstArg() }
+
+                val result = useCase.execute(request)
+
+                result.segment.name shouldBe "updated-name"
+                result.segment.conditions.size shouldBe 1
+                coVerify(exactly = 1) { segmentConditionRepository.deleteBySegmentId(segmentId) }
             }
         }
 

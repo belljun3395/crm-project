@@ -162,8 +162,8 @@ class SegmentTargetingServiceImpl(
             return false
         }
 
-        val operator = SegmentOperator.Companion.from(condition.operator)
-        val valueType = SegmentValueType.Companion.from(condition.valueType)
+        val operator = SegmentOperator.from(condition.operator)
+        val valueType = SegmentValueType.from(condition.valueType)
 
         return when (valueType) {
             SegmentValueType.STRING -> matchString(actualValue.toString(), operator, expectedValue)
