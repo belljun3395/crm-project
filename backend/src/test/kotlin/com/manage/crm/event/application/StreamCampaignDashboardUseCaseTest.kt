@@ -1,7 +1,7 @@
 package com.manage.crm.event.application
 
 import com.manage.crm.event.application.dto.StreamCampaignDashboardUseCaseIn
-import com.manage.crm.event.event.CampaignDashboardEvent
+import com.manage.crm.event.event.CampaignDashboardEventFixtures
 import com.manage.crm.event.stream.CampaignDashboardStreamManager
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.collections.shouldHaveSize
@@ -27,14 +27,14 @@ class StreamCampaignDashboardUseCaseTest : BehaviorSpec({
             val campaignId = 1L
             val durationSeconds = 120L
             val lastEventId = "10-0"
-            val event = CampaignDashboardEvent(
-                campaignId = campaignId,
-                eventId = 100L,
-                userId = 200L,
-                eventName = "event-a",
-                timestamp = LocalDateTime.of(2026, 3, 27, 13, 0, 0),
-                streamId = "10-1"
-            )
+            val event = CampaignDashboardEventFixtures.aCampaignDashboardEvent()
+                .withCampaignId(campaignId)
+                .withEventId(100L)
+                .withUserId(200L)
+                .withEventName("event-a")
+                .withTimestamp(LocalDateTime.of(2026, 3, 27, 13, 0, 0))
+                .withStreamId("10-1")
+                .build()
             every {
                 campaignDashboardStreamManager.streamEvents(
                     campaignId = campaignId,

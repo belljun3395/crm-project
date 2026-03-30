@@ -24,13 +24,13 @@ class CampaignEventPublisherTest : BehaviorSpec({
 
     given("CampaignEventPublisher") {
         `when`("publishCampaignEvent is called") {
-            val event = CampaignDashboardEvent(
-                campaignId = 1L,
-                eventId = 10L,
-                userId = 100L,
-                eventName = "purchase",
-                timestamp = LocalDateTime.now()
-            )
+            val event = CampaignDashboardEventFixtures.aCampaignDashboardEvent()
+                .withCampaignId(1L)
+                .withEventId(10L)
+                .withUserId(100L)
+                .withEventName("purchase")
+                .withTimestamp(LocalDateTime.now())
+                .build()
 
             coJustRun { campaignDashboardStreamManager.publishEvent(event) }
             coJustRun { campaignStreamRegistryManager.registerCampaign(event.campaignId) }

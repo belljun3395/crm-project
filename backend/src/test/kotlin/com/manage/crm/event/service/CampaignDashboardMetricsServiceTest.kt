@@ -4,7 +4,7 @@ import com.manage.crm.event.domain.MetricType
 import com.manage.crm.event.domain.TimeWindowUnit
 import com.manage.crm.event.domain.repository.CampaignDashboardMetricsRepository
 import com.manage.crm.event.domain.repository.CampaignEventsRepository
-import com.manage.crm.event.event.CampaignDashboardEvent
+import com.manage.crm.event.event.CampaignDashboardEventFixtures
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.coEvery
 import io.mockk.coJustRun
@@ -29,22 +29,32 @@ class CampaignDashboardMetricsServiceTest : BehaviorSpec({
     given("CampaignDashboardMetricsService") {
         `when`("updateMetricsForEvents with a single event") {
             val timestamp = LocalDateTime.of(2026, 3, 15, 10, 30, 0)
-            val event = CampaignDashboardEvent(
-                campaignId = 1L,
-                eventId = 100L,
-                userId = 200L,
-                eventName = "purchase",
-                timestamp = timestamp
-            )
+            val event = CampaignDashboardEventFixtures.aCampaignDashboardEvent()
+                .withCampaignId(1L)
+                .withEventId(100L)
+                .withUserId(200L)
+                .withEventName("purchase")
+                .withTimestamp(timestamp)
+                .build()
 
             coJustRun {
                 campaignDashboardMetricsRepository.upsertMetric(
-                    any(), any(), any(), any(), any(), any()
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any()
                 )
             }
             coJustRun {
                 campaignDashboardMetricsRepository.upsertMetricAbsolute(
-                    any(), any(), any(), any(), any(), any()
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any()
                 )
             }
             coEvery { campaignEventsRepository.countEventsByCampaignIdAndCreatedAtRange(any(), any(), any()) } returns 5L
@@ -94,8 +104,20 @@ class CampaignDashboardMetricsServiceTest : BehaviorSpec({
         `when`("events span two campaigns") {
             val timestamp = LocalDateTime.of(2026, 3, 15, 10, 0, 0)
             val events = listOf(
-                CampaignDashboardEvent(1L, 1L, 10L, "e", timestamp),
-                CampaignDashboardEvent(2L, 2L, 20L, "e", timestamp)
+                CampaignDashboardEventFixtures.aCampaignDashboardEvent()
+                    .withCampaignId(1L)
+                    .withEventId(1L)
+                    .withUserId(10L)
+                    .withEventName("e")
+                    .withTimestamp(timestamp)
+                    .build(),
+                CampaignDashboardEventFixtures.aCampaignDashboardEvent()
+                    .withCampaignId(2L)
+                    .withEventId(2L)
+                    .withUserId(20L)
+                    .withEventName("e")
+                    .withTimestamp(timestamp)
+                    .build()
             )
 
             coJustRun { campaignDashboardMetricsRepository.upsertMetric(any(), any(), any(), any(), any(), any()) }
@@ -110,14 +132,22 @@ class CampaignDashboardMetricsServiceTest : BehaviorSpec({
             then("processes metrics independently for each campaign") {
                 coVerify(exactly = 5) {
                     campaignDashboardMetricsRepository.upsertMetric(
-                        campaignId = 1L, metricType = MetricType.EVENT_COUNT,
-                        metricValue = any(), timeWindowStart = any(), timeWindowEnd = any(), timeWindowUnit = any()
+                        campaignId = 1L,
+                        metricType = MetricType.EVENT_COUNT,
+                        metricValue = any(),
+                        timeWindowStart = any(),
+                        timeWindowEnd = any(),
+                        timeWindowUnit = any()
                     )
                 }
                 coVerify(exactly = 5) {
                     campaignDashboardMetricsRepository.upsertMetric(
-                        campaignId = 2L, metricType = MetricType.EVENT_COUNT,
-                        metricValue = any(), timeWindowStart = any(), timeWindowEnd = any(), timeWindowUnit = any()
+                        campaignId = 2L,
+                        metricType = MetricType.EVENT_COUNT,
+                        metricValue = any(),
+                        timeWindowStart = any(),
+                        timeWindowEnd = any(),
+                        timeWindowUnit = any()
                     )
                 }
             }
@@ -136,8 +166,20 @@ class CampaignDashboardMetricsServiceTest : BehaviorSpec({
         `when`("two events for same campaign fall in the same time window") {
             val timestamp = LocalDateTime.of(2026, 3, 15, 10, 5, 0)
             val events = listOf(
-                CampaignDashboardEvent(1L, 1L, 10L, "e", timestamp),
-                CampaignDashboardEvent(1L, 2L, 11L, "e", timestamp.plusSeconds(30))
+                CampaignDashboardEventFixtures.aCampaignDashboardEvent()
+                    .withCampaignId(1L)
+                    .withEventId(1L)
+                    .withUserId(10L)
+                    .withEventName("e")
+                    .withTimestamp(timestamp)
+                    .build(),
+                CampaignDashboardEventFixtures.aCampaignDashboardEvent()
+                    .withCampaignId(1L)
+                    .withEventId(2L)
+                    .withUserId(11L)
+                    .withEventName("e")
+                    .withTimestamp(timestamp.plusSeconds(30))
+                    .build()
             )
 
             coJustRun { campaignDashboardMetricsRepository.upsertMetric(any(), any(), any(), any(), any(), any()) }

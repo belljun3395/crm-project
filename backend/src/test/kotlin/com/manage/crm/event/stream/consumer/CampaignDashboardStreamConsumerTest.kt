@@ -1,6 +1,6 @@
 package com.manage.crm.event.stream.consumer
 
-import com.manage.crm.event.event.CampaignDashboardEvent
+import com.manage.crm.event.event.CampaignDashboardEventFixtures
 import com.manage.crm.event.service.CampaignDashboardMetricsService
 import com.manage.crm.event.stream.CampaignDashboardStreamManager
 import com.manage.crm.event.stream.CampaignStreamRegistryManager
@@ -44,8 +44,22 @@ class CampaignDashboardStreamConsumerTest : BehaviorSpec({
         `when`("active campaign has new events") {
             val campaignId = 1L
             val events = listOf(
-                CampaignDashboardEvent(campaignId, 1L, 10L, "purchase", LocalDateTime.now(), streamId = "1-1"),
-                CampaignDashboardEvent(campaignId, 2L, 11L, "purchase", LocalDateTime.now(), streamId = "1-2")
+                CampaignDashboardEventFixtures.aCampaignDashboardEvent()
+                    .withCampaignId(campaignId)
+                    .withEventId(1L)
+                    .withUserId(10L)
+                    .withEventName("purchase")
+                    .withTimestamp(LocalDateTime.now())
+                    .withStreamId("1-1")
+                    .build(),
+                CampaignDashboardEventFixtures.aCampaignDashboardEvent()
+                    .withCampaignId(campaignId)
+                    .withEventId(2L)
+                    .withUserId(11L)
+                    .withEventName("purchase")
+                    .withTimestamp(LocalDateTime.now())
+                    .withStreamId("1-2")
+                    .build()
             )
 
             coEvery { campaignStreamRegistryManager.getActiveCampaigns() } returns setOf(campaignId)
@@ -73,7 +87,14 @@ class CampaignDashboardStreamConsumerTest : BehaviorSpec({
         `when`("stream length exceeds max (10000)") {
             val campaignId = 2L
             val events = listOf(
-                CampaignDashboardEvent(campaignId, 1L, 10L, "e", LocalDateTime.now(), streamId = "2-1")
+                CampaignDashboardEventFixtures.aCampaignDashboardEvent()
+                    .withCampaignId(campaignId)
+                    .withEventId(1L)
+                    .withUserId(10L)
+                    .withEventName("e")
+                    .withTimestamp(LocalDateTime.now())
+                    .withStreamId("2-1")
+                    .build()
             )
 
             coEvery { campaignStreamRegistryManager.getActiveCampaigns() } returns setOf(campaignId)
@@ -110,7 +131,14 @@ class CampaignDashboardStreamConsumerTest : BehaviorSpec({
             val failingId = 10L
             val okId = 11L
             val events = listOf(
-                CampaignDashboardEvent(okId, 1L, 1L, "e", LocalDateTime.now(), streamId = "ok-1")
+                CampaignDashboardEventFixtures.aCampaignDashboardEvent()
+                    .withCampaignId(okId)
+                    .withEventId(1L)
+                    .withUserId(1L)
+                    .withEventName("e")
+                    .withTimestamp(LocalDateTime.now())
+                    .withStreamId("ok-1")
+                    .build()
             )
 
             coEvery { campaignStreamRegistryManager.getActiveCampaigns() } returns setOf(failingId, okId)
