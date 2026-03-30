@@ -5,12 +5,22 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 
 object PostgresContainerSupport {
+    private const val dockerApiCompatibilityVersion = "1.44"
+
     private val container: PostgreSQLContainer<*> by lazy {
+        ensureDockerApiCompatibility()
         PostgreSQLContainer(DockerImageName.parse("postgres:16-alpine"))
             .withDatabaseName("test")
             .withUsername("postgres")
             .withPassword("postgres")
             .apply { start() }
+    }
+
+    private fun ensureDockerApiCompatibility() {
+        if (System.getProperty("api.version").isNullOrBlank()) {
+            // Docker 29+ rejects the default API version negotiated by Testcontainers 1.x.
+            System.setProperty("api.version", dockerApiCompatibilityVersion)
+        }
     }
 
     fun register(registry: DynamicPropertyRegistry) {
