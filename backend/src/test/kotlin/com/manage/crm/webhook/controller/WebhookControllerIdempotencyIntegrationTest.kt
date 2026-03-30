@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Tag
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.reactive.server.expectBody
+import java.util.UUID
 
 @Tag("integration")
 @TestPropertySource(properties = ["webhook.enabled=true", "idempotency.enabled=true"])
@@ -15,7 +16,7 @@ class WebhookControllerIdempotencyIntegrationTest : AbstractIntegrationTest() {
             it("returns 400 when Idempotency-Key is missing for update") {
                 val createdId = createWebhook(
                     "missing-key-base",
-                    "idem-webhook-create-${System.currentTimeMillis()}"
+                    "idem-webhook-create-${UUID.randomUUID()}"
                 )
 
                 val updateJson = """
@@ -40,12 +41,12 @@ class WebhookControllerIdempotencyIntegrationTest : AbstractIntegrationTest() {
             it("replays completed response for same key and same update body") {
                 val createdId = createWebhook(
                     "same-body-base",
-                    "idem-webhook-create-${System.currentTimeMillis()}"
+                    "idem-webhook-create-${UUID.randomUUID()}"
                 )
-                val key = "idem-webhook-update-same-${System.currentTimeMillis()}"
+                val key = "idem-webhook-update-same-${UUID.randomUUID()}"
                 val updateJson = """
                     {
-                      "name": "updated-${System.currentTimeMillis()}",
+                      "name": "updated-${UUID.randomUUID()}",
                       "url": "https://example.com/updated",
                       "events": ["USER_CREATED", "EMAIL_SENT"],
                       "active": true
@@ -82,7 +83,7 @@ class WebhookControllerIdempotencyIntegrationTest : AbstractIntegrationTest() {
     private fun createWebhook(namePrefix: String, key: String): Long {
         val requestJson = """
             {
-              "name": "$namePrefix-${System.currentTimeMillis()}",
+              "name": "$namePrefix-${UUID.randomUUID()}",
               "url": "https://example.com/webhook",
               "events": ["USER_CREATED", "EMAIL_SENT"],
               "active": true
