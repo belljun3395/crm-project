@@ -6,9 +6,9 @@ import org.springframework.data.convert.ReadingConverter
 import org.springframework.data.convert.WritingConverter
 
 @ReadingConverter
-class EmailTemplateVersionReadingConverter : Converter<Float, EmailTemplateVersion> {
-    override fun convert(source: Float): EmailTemplateVersion {
-        return EmailTemplateVersion(source)
+class EmailTemplateVersionReadingConverter : Converter<Any, EmailTemplateVersion> {
+    override fun convert(source: Any): EmailTemplateVersion {
+        return EmailTemplateVersion(source.toString().toFloat())
     }
 }
 

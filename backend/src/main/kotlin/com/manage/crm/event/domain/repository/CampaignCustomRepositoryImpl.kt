@@ -29,7 +29,7 @@ class CampaignCustomRepositoryImpl(
                 id = (row["id"] as Number).toLong(),
                 name = row["name"] as String,
                 properties = CampaignProperties(
-                    objectMapper.readValue(row["properties"] as String, List::class.java)
+                    objectMapper.readValue(row["properties"].toString(), List::class.java)
                         .stream()
                         .map { objectMapper.convertValue(it, Map::class.java) }
                         .map { CampaignProperty(it["key"] as String, it["value"] as String) }

@@ -7,12 +7,13 @@ import org.springframework.data.convert.ReadingConverter
 import org.springframework.data.convert.WritingConverter
 
 @ReadingConverter
-class VariablesReadingConverter : Converter<String, Variables> {
-    override fun convert(source: String): Variables {
-        if (source.isEmpty()) {
+class VariablesReadingConverter : Converter<Any, Variables> {
+    override fun convert(source: Any): Variables {
+        val text = source.toString()
+        if (text.isEmpty()) {
             return Variables()
         }
-        return source.split(",").map { it.trim() }.stringListToVariables()
+        return text.split(",").map { it.trim() }.stringListToVariables()
     }
 }
 

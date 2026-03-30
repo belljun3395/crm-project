@@ -8,9 +8,9 @@ import org.springframework.data.convert.ReadingConverter
 import org.springframework.data.convert.WritingConverter
 
 @ReadingConverter
-class WebhookEventsReadingConverter : Converter<String, WebhookEvents> {
-    override fun convert(source: String): WebhookEvents {
-        val values = objectMapper.readValue(source, List::class.java)
+class WebhookEventsReadingConverter : Converter<Any, WebhookEvents> {
+    override fun convert(source: Any): WebhookEvents {
+        val values = objectMapper.readValue(source.toString(), List::class.java)
             .map { it.toString() }
         val eventTypes = values.map { WebhookEventType.fromValue(it) }
         return WebhookEvents(eventTypes)

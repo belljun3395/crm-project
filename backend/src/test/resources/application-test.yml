@@ -4,14 +4,14 @@ spring:
     application:
         name: crm
     r2dbc:
-        url: r2dbc:pool:mysql://localhost:13306/test
-        username: root
-        password: root
+        url: r2dbc:pool:postgresql://localhost:5432/test
+        username: postgres
+        password: postgres
         routing:
-            master-url: r2dbc:pool:mysql://localhost:13306/test
-            replica-url: r2dbc:pool:mysql://localhost:13306/test
-            username: root
-            password: root
+            master-url: r2dbc:pool:postgresql://localhost:5432/test
+            replica-url: r2dbc:pool:postgresql://localhost:5432/test
+            username: postgres
+            password: postgres
     data:
         redis:
             cluster:
@@ -61,10 +61,10 @@ spring:
         validate-on-migrate: false
     # ----- Only for test profile -----
     datasource:
-        jdbcUrl: jdbc:mysql://localhost:13306/test
-        username: root
-        password: root
-        type: com.mysql.cj.jdbc.MysqlDataSource
+        jdbcUrl: jdbc:postgresql://localhost:5432/test
+        username: postgres
+        password: postgres
+        driver-class-name: org.postgresql.Driver
 springdoc:
     swagger-ui:
         operations-sorter: alpha

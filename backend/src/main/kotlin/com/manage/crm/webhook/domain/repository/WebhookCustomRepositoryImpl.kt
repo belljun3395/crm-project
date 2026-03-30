@@ -7,6 +7,7 @@ import com.manage.crm.webhook.domain.Webhook
 import com.manage.crm.webhook.domain.WebhookEvents
 import org.jooq.DSLContext
 import org.jooq.impl.DSL.condition
+import org.jooq.impl.DSL.inline
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
@@ -19,12 +20,11 @@ class WebhookCustomRepositoryImpl(
     private val objectMapper: ObjectMapper
 ) : WebhookCustomRepository {
     override suspend fun findActiveByEvent(eventType: String): List<Webhook> {
-        val eventJson = objectMapper.writeValueAsString(eventType)
         val query = dslContext
             .select()
             .from(CrmJooqTables.Webhooks.table)
             .where(CrmJooqTables.Webhooks.active.eq(true))
-            .and(condition("JSON_CONTAINS({0}, {1})", CrmJooqTables.Webhooks.events, eventJson))
+            .and(condition("{0} ? {1}", CrmJooqTables.Webhooks.events, inline(eventType)))
 
         return jooqExecutor.fetchList(query) { row ->
             Webhook.new(
@@ -32,7 +32,7 @@ class WebhookCustomRepositoryImpl(
                 name = row["name"] as String,
                 url = row["url"] as String,
                 events = WebhookEvents.fromValues(
-                    objectMapper.readValue(row["events"] as String, List::class.java)
+                    objectMapper.readValue(row["events"].toString(), List::class.java)
                         .map { it.toString() }
                 ),
                 active = when (val v = row["active"]) {

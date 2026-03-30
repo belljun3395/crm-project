@@ -1,47 +1,62 @@
 UPDATE users
-SET external_id = CONCAT('legacy-user-', id)
-WHERE external_id IS NULL OR TRIM(external_id) = '';
+SET external_id = 'legacy-user-' || id
+WHERE external_id IS NULL OR btrim(external_id) = '';
 
+WITH duplicated_users AS (
+    SELECT id,
+           row_number() OVER (PARTITION BY external_id ORDER BY id) AS rn
+    FROM users
+)
 UPDATE users u
-    JOIN users u_prev
-      ON u.external_id = u_prev.external_id
-     AND u.id > u_prev.id
-SET u.external_id = CONCAT(u.external_id, '-dup-', u.id);
+SET external_id = u.external_id || '-dup-' || u.id
+FROM duplicated_users d
+WHERE u.id = d.id
+  AND d.rn > 1;
 
 UPDATE users
-SET user_attributes = JSON_OBJECT('email', CONCAT('unknown+', id, '@legacy.local'))
+SET user_attributes = jsonb_build_object('email', 'unknown+' || id || '@legacy.local')
 WHERE user_attributes IS NULL;
 
 ALTER TABLE users
-    MODIFY COLUMN external_id VARCHAR(255) NOT NULL,
-    MODIFY COLUMN user_attributes JSON NOT NULL;
+    ALTER COLUMN external_id SET NOT NULL,
+    ALTER COLUMN user_attributes SET NOT NULL;
 
 CREATE UNIQUE INDEX uk_users_external_id ON users (external_id);
 
 UPDATE campaigns
-SET name = CONCAT('legacy-campaign-', id)
-WHERE name IS NULL OR TRIM(name) = '';
+SET name = 'legacy-campaign-' || id
+WHERE name IS NULL OR btrim(name) = '';
 
+WITH duplicated_campaigns AS (
+    SELECT id,
+           row_number() OVER (PARTITION BY name ORDER BY id) AS rn
+    FROM campaigns
+)
 UPDATE campaigns c
-    JOIN campaigns c_prev
-      ON c.name = c_prev.name
-     AND c.id > c_prev.id
-SET c.name = CONCAT(c.name, '-dup-', c.id);
+SET name = c.name || '-dup-' || c.id
+FROM duplicated_campaigns d
+WHERE c.id = d.id
+  AND d.rn > 1;
 
 ALTER TABLE campaigns
-    MODIFY COLUMN name VARCHAR(255) NOT NULL;
+    ALTER COLUMN name SET NOT NULL;
 
 CREATE UNIQUE INDEX uk_campaigns_name ON campaigns (name);
 
 UPDATE email_templates
-SET template_name = CONCAT('legacy-template-', id)
-WHERE template_name IS NULL OR TRIM(template_name) = '';
+SET template_name = 'legacy-template-' || id
+WHERE template_name IS NULL OR btrim(template_name) = '';
 
+WITH duplicated_templates AS (
+    SELECT id,
+           row_number() OVER (PARTITION BY template_name ORDER BY id) AS rn
+    FROM email_templates
+)
 UPDATE email_templates t
-    JOIN email_templates t_prev
-      ON t.template_name = t_prev.template_name
-     AND t.id > t_prev.id
-SET t.template_name = CONCAT(t.template_name, '-dup-', t.id);
+SET template_name = t.template_name || '-dup-' || t.id
+FROM duplicated_templates d
+WHERE t.id = d.id
+  AND d.rn > 1;
 
 UPDATE email_templates
 SET subject = ''
@@ -60,11 +75,11 @@ SET version = 1.0
 WHERE version IS NULL;
 
 ALTER TABLE email_templates
-    MODIFY COLUMN template_name VARCHAR(255) NOT NULL,
-    MODIFY COLUMN subject VARCHAR(255) NOT NULL,
-    MODIFY COLUMN body LONGTEXT NOT NULL,
-    MODIFY COLUMN variables VARCHAR(255) NOT NULL,
-    MODIFY COLUMN version FLOAT NOT NULL;
+    ALTER COLUMN template_name SET NOT NULL,
+    ALTER COLUMN subject SET NOT NULL,
+    ALTER COLUMN body SET NOT NULL,
+    ALTER COLUMN variables SET NOT NULL,
+    ALTER COLUMN version SET NOT NULL;
 
 CREATE UNIQUE INDEX uk_email_templates_template_name ON email_templates (template_name);
 
@@ -87,19 +102,22 @@ UPDATE email_template_histories
 SET version = 1.0
 WHERE version IS NULL;
 
-DELETE h2
-FROM email_template_histories h1
-         JOIN email_template_histories h2
-              ON h1.template_id = h2.template_id
-                  AND h1.version = h2.version
-                  AND h1.id < h2.id;
+WITH duplicated_template_histories AS (
+    SELECT id,
+           row_number() OVER (PARTITION BY template_id, version ORDER BY id) AS rn
+    FROM email_template_histories
+)
+DELETE FROM email_template_histories h
+USING duplicated_template_histories d
+WHERE h.id = d.id
+  AND d.rn > 1;
 
 ALTER TABLE email_template_histories
-    MODIFY COLUMN template_id BIGINT NOT NULL,
-    MODIFY COLUMN subject VARCHAR(255) NOT NULL,
-    MODIFY COLUMN body LONGTEXT NOT NULL,
-    MODIFY COLUMN variables VARCHAR(255) NOT NULL,
-    MODIFY COLUMN version FLOAT NOT NULL;
+    ALTER COLUMN template_id SET NOT NULL,
+    ALTER COLUMN subject SET NOT NULL,
+    ALTER COLUMN body SET NOT NULL,
+    ALTER COLUMN variables SET NOT NULL,
+    ALTER COLUMN version SET NOT NULL;
 
 CREATE UNIQUE INDEX uk_email_template_histories_template_version
     ON email_template_histories (template_id, version);
@@ -108,74 +126,74 @@ DELETE FROM events
 WHERE user_id IS NULL;
 
 ALTER TABLE events
-    MODIFY COLUMN user_id BIGINT NOT NULL;
+    ALTER COLUMN user_id SET NOT NULL;
 
 CREATE INDEX idx_events_name_created_at ON events (name, created_at);
 CREATE INDEX idx_events_user_id_created_at ON events (user_id, created_at);
 
-DELETE ce2
-FROM campaign_events ce1
-         JOIN campaign_events ce2
-              ON ce1.campaign_id = ce2.campaign_id
-                  AND ce1.event_id = ce2.event_id
-                  AND ce1.id < ce2.id;
+WITH duplicated_campaign_events AS (
+    SELECT id,
+           row_number() OVER (PARTITION BY campaign_id, event_id ORDER BY id) AS rn
+    FROM campaign_events
+)
+DELETE FROM campaign_events ce
+USING duplicated_campaign_events d
+WHERE ce.id = d.id
+  AND d.rn > 1;
 
 CREATE UNIQUE INDEX uk_campaign_events_campaign_event
     ON campaign_events (campaign_id, event_id);
 CREATE INDEX idx_campaign_events_event_id ON campaign_events (event_id);
 
-DELETE FROM email_send_histories
-WHERE user_id IS NULL;
+UPDATE email_send_histories
+SET user_email = 'unknown+' || id || '@legacy.local'
+WHERE user_email IS NULL OR btrim(user_email) = '';
 
 UPDATE email_send_histories
-SET user_email = CONCAT('unknown+', id, '@legacy.local')
-WHERE user_email IS NULL OR TRIM(user_email) = '';
-
-UPDATE email_send_histories
-SET email_message_id = CONCAT('legacy-message-', id)
-WHERE email_message_id IS NULL OR TRIM(email_message_id) = '';
+SET email_message_id = 'legacy-message-' || id
+WHERE email_message_id IS NULL OR btrim(email_message_id) = '';
 
 UPDATE email_send_histories
 SET email_body = ''
 WHERE email_body IS NULL;
 
 DELETE FROM email_send_histories
-WHERE send_status IS NULL OR TRIM(send_status) = '';
+WHERE send_status IS NULL OR btrim(send_status) = '';
 
 UPDATE email_send_histories
 SET created_at = CURRENT_TIMESTAMP(6)
 WHERE created_at IS NULL;
 
 ALTER TABLE email_send_histories
-    MODIFY COLUMN user_id BIGINT NOT NULL,
-    MODIFY COLUMN user_email VARCHAR(255) NOT NULL,
-    MODIFY COLUMN email_message_id VARCHAR(255) NOT NULL,
-    MODIFY COLUMN email_body VARCHAR(255) NOT NULL,
-    MODIFY COLUMN send_status VARCHAR(255) NOT NULL,
-    MODIFY COLUMN created_at DATETIME(6) NOT NULL;
+    ALTER COLUMN user_id SET NOT NULL,
+    ALTER COLUMN user_email SET NOT NULL,
+    ALTER COLUMN email_message_id SET NOT NULL,
+    ALTER COLUMN email_body SET NOT NULL,
+    ALTER COLUMN send_status SET NOT NULL,
+    ALTER COLUMN created_at SET NOT NULL;
 
 CREATE INDEX idx_email_send_histories_created_at ON email_send_histories (created_at);
 CREATE INDEX idx_email_send_histories_message_id ON email_send_histories (email_message_id);
 
 UPDATE scheduled_events
-SET completed = b'0'
+SET completed = FALSE
 WHERE completed IS NULL;
 
 UPDATE scheduled_events
-SET is_not_consumed = b'0'
+SET is_not_consumed = FALSE
 WHERE is_not_consumed IS NULL;
 
 UPDATE scheduled_events
-SET canceled = b'0'
+SET canceled = FALSE
 WHERE canceled IS NULL;
 
 UPDATE scheduled_events
 SET event_class = 'UNKNOWN_EVENT'
-WHERE event_class IS NULL OR TRIM(event_class) = '';
+WHERE event_class IS NULL OR btrim(event_class) = '';
 
 UPDATE scheduled_events
-SET event_id = CONCAT('legacy-event-id-', id)
-WHERE event_id IS NULL OR TRIM(event_id) = '';
+SET event_id = 'legacy-event-id-' || id
+WHERE event_id IS NULL OR btrim(event_id) = '';
 
 UPDATE scheduled_events
 SET event_payload = '{}'
@@ -183,21 +201,21 @@ WHERE event_payload IS NULL;
 
 UPDATE scheduled_events
 SET scheduled_at = 'APP'
-WHERE scheduled_at IS NULL OR TRIM(scheduled_at) = '';
+WHERE scheduled_at IS NULL OR btrim(scheduled_at) = '';
 
 UPDATE scheduled_events
 SET created_at = CURRENT_TIMESTAMP(6)
 WHERE created_at IS NULL;
 
 ALTER TABLE scheduled_events
-    MODIFY COLUMN completed BIT NOT NULL,
-    MODIFY COLUMN is_not_consumed BIT NOT NULL,
-    MODIFY COLUMN canceled BIT NOT NULL,
-    MODIFY COLUMN event_class VARCHAR(255) NOT NULL,
-    MODIFY COLUMN event_id VARCHAR(255) NOT NULL,
-    MODIFY COLUMN event_payload VARCHAR(255) NOT NULL,
-    MODIFY COLUMN scheduled_at VARCHAR(255) NOT NULL,
-    MODIFY COLUMN created_at DATETIME(6) NOT NULL;
+    ALTER COLUMN completed SET NOT NULL,
+    ALTER COLUMN is_not_consumed SET NOT NULL,
+    ALTER COLUMN canceled SET NOT NULL,
+    ALTER COLUMN event_class SET NOT NULL,
+    ALTER COLUMN event_id SET NOT NULL,
+    ALTER COLUMN event_payload SET NOT NULL,
+    ALTER COLUMN scheduled_at SET NOT NULL,
+    ALTER COLUMN created_at SET NOT NULL;
 
 CREATE INDEX idx_scheduled_events_event_id_completed ON scheduled_events (event_id, completed);
 CREATE INDEX idx_scheduled_events_event_class_completed ON scheduled_events (event_class, completed);

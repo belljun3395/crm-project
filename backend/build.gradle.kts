@@ -96,9 +96,9 @@ dependencies {
     implementation(libs.springdoc.openapi.starter.webflux.ui)
 
     /** data */
-    runtimeOnly(libs.mysql.connector.j)
-    runtimeOnly(libs.r2dbc.mysql)
-    testRuntimeOnly(libs.mysql.connector.j)
+    runtimeOnly(libs.postgresql)
+    runtimeOnly(libs.r2dbc.postgresql)
+    testRuntimeOnly(libs.postgresql)
     testImplementation(libs.hikari.cp)
 
     /** commons-io */
@@ -106,7 +106,7 @@ dependencies {
 
     /** flyway */
     implementation(libs.flyway.core)
-    implementation(libs.flyway.mysql)
+    implementation(libs.flyway.database.postgresql)
 
     /** domain */
     implementation(libs.jmolecules.starter.ddd)
@@ -158,7 +158,7 @@ dependencies {
 
     /** testcontainers */
     testImplementation(libs.testcontainers.junit.jupiter)
-    testImplementation(libs.testcontainers.mysql)
+    testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.testcontainers)
 
     /** logger */

@@ -65,7 +65,7 @@ class EventCustomRepositoryImpl(
                 id = (row["id"] as Number).toLong(),
                 name = row["name"] as String,
                 userId = (row["user_id"] as Number).toLong(),
-                properties = (row["properties"] as String)
+                properties = row["properties"].toString()
                     .let { properties ->
                         objectMapper.readValue(properties, List::class.java).stream()
                             .map { objectMapper.convertValue(it, Map::class.java) }
@@ -92,7 +92,7 @@ class EventCustomRepositoryImpl(
                 id = (row["id"] as Number).toLong(),
                 name = row["name"] as String,
                 userId = (row["user_id"] as Number).toLong(),
-                properties = (row["properties"] as String)
+                properties = row["properties"].toString()
                     .let { properties ->
                         objectMapper.readValue(properties, List::class.java).stream()
                             .map { objectMapper.convertValue(it, Map::class.java) }

@@ -11,6 +11,6 @@ import org.springframework.context.annotation.Configuration
 class JooqConfig {
     @Bean
     fun dslContext(connectionFactory: ConnectionFactory): DSLContext {
-        return DSL.using(connectionFactory, SQLDialect.MYSQL)
+        return DSL.using(connectionFactory, SQLDialect.POSTGRES)
     }
 }

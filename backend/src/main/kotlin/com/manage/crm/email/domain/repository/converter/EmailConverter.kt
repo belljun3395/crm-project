@@ -6,12 +6,13 @@ import org.springframework.data.convert.ReadingConverter
 import org.springframework.data.convert.WritingConverter
 
 @ReadingConverter
-class UserEmailReadingConverter : Converter<String, Email> {
-    override fun convert(source: String): Email? {
-        return if (source.isEmpty()) {
+class UserEmailReadingConverter : Converter<Any, Email> {
+    override fun convert(source: Any): Email? {
+        val text = source.toString()
+        return if (text.isEmpty()) {
             null
         } else {
-            Email(source)
+            Email(text)
         }
     }
 }

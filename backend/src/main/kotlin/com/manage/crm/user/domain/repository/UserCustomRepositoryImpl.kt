@@ -5,6 +5,8 @@ import com.manage.crm.infrastructure.jooq.JooqR2dbcExecutor
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.vo.UserAttributes
 import org.jooq.DSLContext
+import org.jooq.impl.DSL.condition
+import org.jooq.impl.DSL.inline
 import org.jooq.impl.DSL.count
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
@@ -27,20 +29,20 @@ class UserCustomRepositoryImpl(
 ) : UserCustomRepository {
 
     override suspend fun findAllExistByUserAttributesKey(key: String?): List<User> {
+        val attributeKey = key ?: "email"
         val query = dslContext
             .select()
             .from(CrmJooqTables.Users.table)
-            .where(CrmJooqTables.Users.userAttributes.like("%${key ?: "email"}%"))
+            .where(condition("{0} ? {1}", CrmJooqTables.Users.userAttributes, inline(attributeKey)))
 
         return jooqExecutor.fetchList(query, ::toUser)
     }
 
     override suspend fun findByEmail(email: String): User? {
-        val pattern = "%\"email\": \"${escapeLikePattern(email)}\"%"
         val query = dslContext
             .select()
             .from(CrmJooqTables.Users.table)
-            .where(CrmJooqTables.Users.userAttributes.like(pattern).escape('\\'))
+            .where(condition("{0} ->> 'email' = {1}", CrmJooqTables.Users.userAttributes, inline(email)))
 
         return jooqExecutor.fetchOne(query, ::toUser)
     }
@@ -68,11 +70,12 @@ class UserCustomRepositoryImpl(
     override suspend fun searchUsers(query: String, page: Int, size: Int): List<User> {
         val offset = page * size
         val pattern = "%${escapeLikePattern(query)}%"
+        val userAttributesAsText = CrmJooqTables.Users.userAttributes.cast(String::class.java)
         val searchQuery = dslContext
             .select()
             .from(CrmJooqTables.Users.table)
             .where(CrmJooqTables.Users.externalId.like(pattern).escape('\\'))
-            .or(CrmJooqTables.Users.userAttributes.like(pattern).escape('\\'))
+            .or(userAttributesAsText.like(pattern).escape('\\'))
             .orderBy(CrmJooqTables.Users.id.desc())
             .limit(size)
             .offset(offset)
@@ -82,11 +85,12 @@ class UserCustomRepositoryImpl(
 
     override suspend fun countSearchUsers(query: String): Long {
         val pattern = "%${escapeLikePattern(query)}%"
+        val userAttributesAsText = CrmJooqTables.Users.userAttributes.cast(String::class.java)
         val countQuery = dslContext
             .select(count().`as`("count"))
             .from(CrmJooqTables.Users.table)
             .where(CrmJooqTables.Users.externalId.like(pattern).escape('\\'))
-            .or(CrmJooqTables.Users.userAttributes.like(pattern).escape('\\'))
+            .or(userAttributesAsText.like(pattern).escape('\\'))
 
         return jooqExecutor.fetchOne(countQuery) { (it["count"] as Number).toLong() } ?: 0L
     }
@@ -102,7 +106,7 @@ class UserCustomRepositoryImpl(
         return User(
             id = (row["id"] as Number).toLong(),
             externalId = row["external_id"] as String,
-            userAttributes = UserAttributes(row["user_attributes"] as String),
+            userAttributes = UserAttributes(row["user_attributes"].toString()),
             createdAt = row["created_at"] as? LocalDateTime,
             updatedAt = row["updated_at"] as? LocalDateTime
         )

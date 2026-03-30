@@ -16,10 +16,10 @@ val objectMapper = ObjectMapper().apply {
 }
 
 @ReadingConverter
-class EventPropertiesReadingConverter : Converter<String, EventProperties> {
-    override fun convert(source: String): EventProperties {
+class EventPropertiesReadingConverter : Converter<Any, EventProperties> {
+    override fun convert(source: Any): EventProperties {
         return EventProperties(
-            objectMapper.readValue(source, List::class.java).stream()
+            objectMapper.readValue(source.toString(), List::class.java).stream()
                 .map { objectMapper.convertValue(it, Map::class.java) }
                 .map { EventProperty(it["key"] as String, it["value"] as String) }
                 .toList()
@@ -35,10 +35,10 @@ class EventPropertiesWritingConverter : Converter<EventProperties, String> {
 }
 
 @ReadingConverter
-class CampaignPropertiesReadingConverter : Converter<String, CampaignProperties> {
-    override fun convert(source: String): CampaignProperties {
+class CampaignPropertiesReadingConverter : Converter<Any, CampaignProperties> {
+    override fun convert(source: Any): CampaignProperties {
         return CampaignProperties(
-            objectMapper.readValue(source, List::class.java).stream()
+            objectMapper.readValue(source.toString(), List::class.java).stream()
                 .map { objectMapper.convertValue(it, Map::class.java) }
                 .map { CampaignProperty(it["key"] as String, it["value"] as String) }
                 .toList()

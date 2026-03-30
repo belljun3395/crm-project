@@ -61,9 +61,15 @@ class CampaignDashboardMetricsCustomRepositoryImpl(
                 now,
                 now
             )
-            .onDuplicateKeyUpdate()
+            .onConflict(
+                campaignIdField,
+                metricTypeField,
+                timeWindowStartField,
+                timeWindowEndField
+            )
+            .doUpdate()
             .set(metricValueField, metricValueField.plus(inline(metricValue)))
-            .set(updatedAtField, LocalDateTime.now())
+            .set(updatedAtField, now)
 
         return jooqExecutor.execute(query)
     }
@@ -99,9 +105,15 @@ class CampaignDashboardMetricsCustomRepositoryImpl(
                 now,
                 now
             )
-            .onDuplicateKeyUpdate()
+            .onConflict(
+                campaignIdField,
+                metricTypeField,
+                timeWindowStartField,
+                timeWindowEndField
+            )
+            .doUpdate()
             .set(metricValueField, greatest(metricValueField, inline(metricValue)))
-            .set(updatedAtField, LocalDateTime.now())
+            .set(updatedAtField, now)
 
         return jooqExecutor.execute(query)
     }

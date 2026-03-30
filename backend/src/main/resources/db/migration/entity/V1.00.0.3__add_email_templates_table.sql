@@ -1,11 +1,10 @@
 create table email_templates
 (
-    id            bigint auto_increment
-        primary key,
-    body          longtext     null,
-    created_at    datetime(6)  null,
+    id            bigserial primary key,
+    body          text         null,
+    created_at    timestamp(6) null,
     subject       varchar(255) null,
     template_name varchar(255) null,
-    version       float        null,
+    version       real         null,
     variables     varchar(255) null
 );

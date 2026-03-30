@@ -1,6 +1,6 @@
 ALTER TABLE journeys
-    ADD COLUMN lifecycle_status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE' AFTER active,
-    ADD COLUMN version INT NOT NULL DEFAULT 1 AFTER lifecycle_status;
+    ADD COLUMN lifecycle_status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
+    ADD COLUMN version INT NOT NULL DEFAULT 1;
 
 UPDATE journeys
 SET lifecycle_status = 'PAUSED'

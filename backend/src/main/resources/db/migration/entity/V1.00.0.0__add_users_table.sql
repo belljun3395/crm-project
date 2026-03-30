@@ -1,11 +1,9 @@
 create table users
 (
-    id              bigint auto_increment
-        primary key,
-    created_at      datetime(6)  null,
+    id              bigserial primary key,
+    created_at      timestamp(6) null,
     external_id     varchar(255) null,
-    updated_at      datetime(6)  null,
-    user_attributes json         null
+    updated_at      timestamp(6) null,
+    user_attributes jsonb        null
 );
-
 
