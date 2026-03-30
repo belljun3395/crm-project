@@ -6,9 +6,9 @@ import org.springframework.data.convert.ReadingConverter
 import org.springframework.data.convert.WritingConverter
 
 @ReadingConverter
-class UserAttributeReadingConverter : Converter<String, UserAttributes> {
-    override fun convert(source: String): UserAttributes {
-        return UserAttributes(source)
+class UserAttributeReadingConverter : Converter<Any, UserAttributes> {
+    override fun convert(source: Any): UserAttributes {
+        return UserAttributes(source.toString())
     }
 }
 
