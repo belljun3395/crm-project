@@ -1,7 +1,7 @@
 package com.manage.crm.segment.application
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.manage.crm.segment.application.dto.SegmentConditionValidator
+import com.manage.crm.segment.util.SegmentConditionValidator
 import com.manage.crm.segment.exception.InvalidSegmentConditionException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -53,6 +53,20 @@ class SegmentConditionValidatorTest : BehaviorSpec({
             }
         }
 
+        `when`("valueType is unknown") {
+            then("throws unsupported valueType") {
+                val ex = shouldThrow<InvalidSegmentConditionException> {
+                    SegmentConditionValidator.validate(
+                        field = "user.email",
+                        operator = "EQ",
+                        valueType = "TEXT",
+                        value = objectMapper.readTree("\"a@b.com\"")
+                    )
+                }
+                ex.message shouldContain "Unsupported valueType"
+            }
+        }
+
         `when`("operator is not allowed for the valueType") {
             then("throws operator not allowed") {
                 val ex = shouldThrow<InvalidSegmentConditionException> {
@@ -64,6 +78,48 @@ class SegmentConditionValidatorTest : BehaviorSpec({
                     )
                 }
                 ex.message shouldContain "not allowed for valueType"
+            }
+        }
+
+        `when`("operator is unknown") {
+            then("throws unsupported operator") {
+                val ex = shouldThrow<InvalidSegmentConditionException> {
+                    SegmentConditionValidator.validate(
+                        field = "user.email",
+                        operator = "MATCHES",
+                        valueType = "STRING",
+                        value = objectMapper.readTree("\"a@b.com\"")
+                    )
+                }
+                ex.message shouldContain "Unsupported operator"
+            }
+        }
+
+        `when`("value is null node") {
+            then("throws value required") {
+                val ex = shouldThrow<InvalidSegmentConditionException> {
+                    SegmentConditionValidator.validate(
+                        field = "user.email",
+                        operator = "EQ",
+                        valueType = "STRING",
+                        value = objectMapper.readTree("null")
+                    )
+                }
+                ex.message shouldContain "value is required"
+            }
+        }
+
+        `when`("value is missing node") {
+            then("throws value required") {
+                val ex = shouldThrow<InvalidSegmentConditionException> {
+                    SegmentConditionValidator.validate(
+                        field = "user.email",
+                        operator = "EQ",
+                        valueType = "STRING",
+                        value = objectMapper.readTree("{}").path("missing")
+                    )
+                }
+                ex.message shouldContain "value is required"
             }
         }
 
@@ -218,6 +274,17 @@ class SegmentConditionValidatorTest : BehaviorSpec({
             }
         }
 
+        `when`("valid STRING IN condition") {
+            then("passes without exception") {
+                SegmentConditionValidator.validate(
+                    field = "user.email",
+                    operator = "IN",
+                    valueType = "STRING",
+                    value = objectMapper.readTree("[\"a@example.com\", \"b@example.com\"]")
+                )
+            }
+        }
+
         `when`("valid NUMBER BETWEEN condition") {
             then("passes without exception") {
                 SegmentConditionValidator.validate(
@@ -225,6 +292,17 @@ class SegmentConditionValidatorTest : BehaviorSpec({
                     operator = "BETWEEN",
                     valueType = "NUMBER",
                     value = objectMapper.readTree("[1, 100]")
+                )
+            }
+        }
+
+        `when`("valid lowercase operator/valueType is provided") {
+            then("passes without exception") {
+                SegmentConditionValidator.validate(
+                    field = "user.email",
+                    operator = "eq",
+                    valueType = "string",
+                    value = objectMapper.readTree("\"valid@example.com\"")
                 )
             }
         }

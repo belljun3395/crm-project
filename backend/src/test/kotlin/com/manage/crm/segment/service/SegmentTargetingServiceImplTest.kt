@@ -9,12 +9,15 @@ import com.manage.crm.segment.domain.Segment
 import com.manage.crm.segment.domain.SegmentCondition
 import com.manage.crm.segment.domain.repository.SegmentConditionRepository
 import com.manage.crm.segment.domain.repository.SegmentRepository
+import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.UserAttributes
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
@@ -45,6 +48,17 @@ class SegmentTargetingServiceImplTest : BehaviorSpec({
     }
 
     given("SegmentTargetingServiceImpl resolveUserIds") {
+        `when`("segment does not exist") {
+            val segmentId = 999L
+            coEvery { segmentRepository.findById(segmentId) } returns null
+
+            then("throws not found") {
+                shouldThrow<NotFoundByIdException> {
+                    service.resolveUserIds(segmentId, null)
+                }
+            }
+        }
+
         `when`("segment is inactive") {
             val segmentId = 11L
             coEvery {
@@ -220,6 +234,181 @@ class SegmentTargetingServiceImplTest : BehaviorSpec({
 
             then("returns empty list") {
                 service.resolveUserIds(segmentId, campaignId) shouldBe emptyList()
+            }
+        }
+
+        `when`("campaign scope contains duplicated event ids") {
+            val segmentId = 41L
+            val campaignId = 100L
+            val segment = Segment.new(id = segmentId, name = "campaign-users", description = null, active = true)
+            val condition = SegmentCondition.new(
+                segmentId = segmentId,
+                fieldName = "user.email",
+                operator = "EQ",
+                valueType = "STRING",
+                conditionValue = "\"target@example.com\"",
+                position = 1
+            )
+            val targetUser = User.new(
+                id = 1L,
+                externalId = "target",
+                userAttributes = UserAttributes("""{"email":"target@example.com"}"""),
+                createdAt = LocalDateTime.now().minusDays(1),
+                updatedAt = LocalDateTime.now()
+            )
+            val otherUser = User.new(
+                id = 2L,
+                externalId = "other",
+                userAttributes = UserAttributes("""{"email":"other@example.com"}"""),
+                createdAt = LocalDateTime.now().minusDays(1),
+                updatedAt = LocalDateTime.now()
+            )
+
+            coEvery { segmentRepository.findById(segmentId) } returns segment
+            every { segmentConditionRepository.findBySegmentIdOrderByPositionAsc(segmentId) } returns flowOf(condition)
+            coEvery { campaignEventsRepository.findEventIdsByCampaignId(campaignId) } returns listOf(100L, 100L, 101L)
+            coEvery { eventRepository.findAllByIdIn(listOf(100L, 101L)) } returns listOf(
+                Event.new(
+                    id = 100L,
+                    name = "view",
+                    userId = 1L,
+                    properties = EventProperties(emptyList()),
+                    createdAt = LocalDateTime.now()
+                ),
+                Event.new(
+                    id = 101L,
+                    name = "click",
+                    userId = 2L,
+                    properties = EventProperties(emptyList()),
+                    createdAt = LocalDateTime.now()
+                )
+            )
+            coEvery { userRepository.findAllByIdIn(listOf(1L, 2L)) } returns listOf(targetUser, otherUser)
+
+            then("deduplicates event ids and returns matched campaign users") {
+                service.resolveUserIds(segmentId, campaignId) shouldBe listOf(1L)
+                coVerify(exactly = 1) { eventRepository.findAllByIdIn(listOf(100L, 101L)) }
+            }
+        }
+
+        `when`("event.name NEQ condition is evaluated against all user events") {
+            val segmentId = 42L
+            val segment = Segment.new(id = segmentId, name = "non-purchase-users", description = null, active = true)
+            val condition = SegmentCondition.new(
+                segmentId = segmentId,
+                fieldName = "event.name",
+                operator = "NEQ",
+                valueType = "STRING",
+                conditionValue = "\"purchase\"",
+                position = 1
+            )
+            val firstUser = User.new(
+                id = 1L,
+                externalId = "u-1",
+                userAttributes = UserAttributes("{}"),
+                createdAt = LocalDateTime.now().minusDays(1),
+                updatedAt = LocalDateTime.now()
+            )
+            val secondUser = User.new(
+                id = 2L,
+                externalId = "u-2",
+                userAttributes = UserAttributes("{}"),
+                createdAt = LocalDateTime.now().minusDays(1),
+                updatedAt = LocalDateTime.now()
+            )
+
+            coEvery { segmentRepository.findById(segmentId) } returns segment
+            every { segmentConditionRepository.findBySegmentIdOrderByPositionAsc(segmentId) } returns flowOf(condition)
+            every { userRepository.findAll() } returns flowOf(firstUser, secondUser)
+            coEvery { eventRepository.findAllByUserIdIn(listOf(1L, 2L)) } returns listOf(
+                Event.new(
+                    id = 200L,
+                    name = "view",
+                    userId = 1L,
+                    properties = EventProperties(emptyList()),
+                    createdAt = LocalDateTime.now()
+                ),
+                Event.new(
+                    id = 201L,
+                    name = "click",
+                    userId = 1L,
+                    properties = EventProperties(emptyList()),
+                    createdAt = LocalDateTime.now()
+                ),
+                Event.new(
+                    id = 202L,
+                    name = "purchase",
+                    userId = 2L,
+                    properties = EventProperties(emptyList()),
+                    createdAt = LocalDateTime.now()
+                )
+            )
+
+            then("keeps only users whose every event name differs from expected value") {
+                service.resolveUserIds(segmentId, null) shouldBe listOf(1L)
+            }
+        }
+
+        `when`("user.createdAt BETWEEN condition is provided") {
+            val segmentId = 43L
+            val segment = Segment.new(id = segmentId, name = "recent-users", description = null, active = true)
+            val condition = SegmentCondition.new(
+                segmentId = segmentId,
+                fieldName = "user.createdAt",
+                operator = "BETWEEN",
+                valueType = "DATETIME",
+                conditionValue = "[\"2025-01-01T00:00:00\",\"2025-01-31T23:59:59\"]",
+                position = 1
+            )
+            val inRangeUser = User.new(
+                id = 1L,
+                externalId = "in-range",
+                userAttributes = UserAttributes("{}"),
+                createdAt = LocalDateTime.of(2025, 1, 20, 0, 0),
+                updatedAt = LocalDateTime.now()
+            )
+            val outRangeUser = User.new(
+                id = 2L,
+                externalId = "out-range",
+                userAttributes = UserAttributes("{}"),
+                createdAt = LocalDateTime.of(2025, 2, 1, 0, 0),
+                updatedAt = LocalDateTime.now()
+            )
+
+            coEvery { segmentRepository.findById(segmentId) } returns segment
+            every { segmentConditionRepository.findBySegmentIdOrderByPositionAsc(segmentId) } returns flowOf(condition)
+            every { userRepository.findAll() } returns flowOf(inRangeUser, outRangeUser)
+
+            then("returns only users within the datetime range") {
+                service.resolveUserIds(segmentId, null) shouldBe listOf(1L)
+            }
+        }
+
+        `when`("condition value is malformed json") {
+            val segmentId = 44L
+            val segment = Segment.new(id = segmentId, name = "malformed-condition", description = null, active = true)
+            val condition = SegmentCondition.new(
+                segmentId = segmentId,
+                fieldName = "user.email",
+                operator = "EQ",
+                valueType = "STRING",
+                conditionValue = "not-valid-json",
+                position = 1
+            )
+            val user = User.new(
+                id = 1L,
+                externalId = "u-1",
+                userAttributes = UserAttributes("""{"email":"target@example.com"}"""),
+                createdAt = LocalDateTime.now().minusDays(1),
+                updatedAt = LocalDateTime.now()
+            )
+
+            coEvery { segmentRepository.findById(segmentId) } returns segment
+            every { segmentConditionRepository.findBySegmentIdOrderByPositionAsc(segmentId) } returns flowOf(condition)
+            every { userRepository.findAll() } returns flowOf(user)
+
+            then("returns empty list instead of throwing") {
+                service.resolveUserIds(segmentId, null) shouldBe emptyList()
             }
         }
     }
