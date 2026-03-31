@@ -9,8 +9,6 @@ import com.manage.crm.email.event.relay.aws.ScheduledEventReverseRelay
 import com.manage.crm.email.event.relay.aws.mapper.ScheduledEventMessageMapper
 import com.manage.crm.email.support.EmailEventPublisher
 import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement
-import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Test
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
@@ -35,85 +33,79 @@ class NotificationEmailSendTimeOutEventListenerTest(
             scheduledEventMessageMapper
         )
 
-    @Test
-    fun `schedule task service new schedule method is called`() {
-        runTest {
-            // given
-            val template = EmailTemplateFixtures.giveMeOne().build()
-            val eventId = EventIdFixtures.giveMeOne().build()
-            val expiredTime = LocalDateTime.now().plusNanos(1)
-            val userIds = listOf(1L)
-            val input = NotificationEmailSendTimeOutEventInput(
-                templateId = template.id!!,
-                templateVersion = template.version.value,
-                userIds = userIds,
-                eventId = eventId,
-                expiredTime = expiredTime
-            )
-            `when`(
-                awsSchedulerService.createSchedule(
-                    name = input.eventId.value,
-                    schedule = input.expiredTime,
-                    input = input
+    init {
+        given("schedule task service") {
+            then("schedule task service new schedule method is called") {
+                val template = EmailTemplateFixtures.giveMeOne().build()
+                val eventId = EventIdFixtures.giveMeOne().build()
+                val expiredTime = LocalDateTime.now().plusNanos(1)
+                val userIds = listOf(1L)
+                val input = NotificationEmailSendTimeOutEventInput(
+                    templateId = template.id!!,
+                    templateVersion = template.version.value,
+                    userIds = userIds,
+                    eventId = eventId,
+                    expiredTime = expiredTime
                 )
-            ).thenReturn(CreateScheduleResponse.builder().scheduleArn("arn").build())
+                `when`(
+                    awsSchedulerService.createSchedule(
+                        name = input.eventId.value,
+                        schedule = input.expiredTime,
+                        input = input
+                    )
+                ).thenReturn(CreateScheduleResponse.builder().scheduleArn("arn").build())
 
-            val event = NotificationEmailSendTimeOutEvent(
-                eventId = eventId,
-                templateId = template.id!!,
-                templateVersion = template.version.value,
-                userIds = userIds,
-                expiredTime = expiredTime
-            )
-            doNothing().`when`(emailEventPublisher).publishEvent(event)
+                val event = NotificationEmailSendTimeOutEvent(
+                    eventId = eventId,
+                    templateId = template.id!!,
+                    templateVersion = template.version.value,
+                    userIds = userIds,
+                    expiredTime = expiredTime
+                )
+                doNothing().`when`(emailEventPublisher).publishEvent(event)
 
-            // when
-            scheduleTaskService.newSchedule(input)
+                scheduleTaskService.newSchedule(input)
 
-            // then
-            verify(emailEventPublisher, times(1)).publishEvent(
-                argThat<NotificationEmailSendTimeOutEvent> {
-                    eventId == event.eventId &&
-                        templateId == event.templateId &&
-                        templateVersion == event.templateVersion &&
-                        userIds == event.userIds
-                }
-            )
-        }
-    }
-
-    @Test
-    fun `scheduled notification email event from aws scheduler`() {
-        runTest {
-            // given
-            val message = """
-                    {
-                        "templateId": 1,
-                        "templateVersion": 1.0,
-                        "userIds": [1],
-                        "eventId": "1"
+                verify(emailEventPublisher, times(1)).publishEvent(
+                    argThat<NotificationEmailSendTimeOutEvent> {
+                        eventId == event.eventId &&
+                            templateId == event.templateId &&
+                            templateVersion == event.templateVersion &&
+                            userIds == event.userIds
                     }
-            """.trimIndent()
-            val acknowledgement = mock(Acknowledgement::class.java)
-            doNothing().`when`(acknowledgement).acknowledge()
+                )
+            }
+        }
 
-            val template = EmailTemplateFixtures.giveMeOne().build()
-            val eventId = EventIdFixtures.giveMeOne().build()
-            val userIds = listOf(1L)
-            val event = NotificationEmailSendTimeOutInvokeEvent(
-                timeOutEventId = eventId,
-                templateId = template.id!!,
-                templateVersion = template.version.value,
-                userIds = userIds
-            )
-            doNothing().`when`(scheduledEventReverseRelayEmailEventPublisher).publishEvent(event)
+        given("scheduled event reverse relay") {
+            then("scheduled notification email event from aws scheduler") {
+                val message = """
+                        {
+                            "templateId": 1,
+                            "templateVersion": 1.0,
+                            "userIds": [1],
+                            "eventId": "1"
+                        }
+                """.trimIndent()
+                val acknowledgement = mock(Acknowledgement::class.java)
+                doNothing().`when`(acknowledgement).acknowledge()
 
-            // when
-            scheduledEventReverseRelay.onMessage(message, acknowledgement)
+                val template = EmailTemplateFixtures.giveMeOne().build()
+                val eventId = EventIdFixtures.giveMeOne().build()
+                val userIds = listOf(1L)
+                val event = NotificationEmailSendTimeOutInvokeEvent(
+                    timeOutEventId = eventId,
+                    templateId = template.id!!,
+                    templateVersion = template.version.value,
+                    userIds = userIds
+                )
+                doNothing().`when`(scheduledEventReverseRelayEmailEventPublisher).publishEvent(event)
 
-            // then
-            verify(scheduledEventReverseRelayEmailEventPublisher, times(1))
-                .publishEvent(any<NotificationEmailSendTimeOutInvokeEvent>())
+                scheduledEventReverseRelay.onMessage(message, acknowledgement)
+
+                verify(scheduledEventReverseRelayEmailEventPublisher, times(1))
+                    .publishEvent(any<NotificationEmailSendTimeOutInvokeEvent>())
+            }
         }
     }
 }

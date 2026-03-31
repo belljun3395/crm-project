@@ -41,14 +41,9 @@ spring:
                     EnableSSL:
                         enable: true
 
-mail:
-    provider: mock
-
-scheduler:
-    provider: mock
     aws:
         region: ap-northeast-2
-        endpoint-url: http://localhost:4566  # LocalStack endpoint for testing
+        endpoint-url: http://localhost:4566
         credentials:
             access-key: test
             secret-key: test
@@ -67,12 +62,16 @@ scheduler:
         baseline-on-migrate: true
         baseline-version: 0
         validate-on-migrate: false
-    # ----- Only for test profile -----
     datasource:
         jdbcUrl: jdbc:postgresql://localhost:5432/crm
         username: postgres
         password: postgres
         driver-class-name: org.postgresql.Driver
+mail:
+    provider: mock
+
+scheduler:
+    provider: redis-kafka
 springdoc:
     swagger-ui:
         operations-sorter: alpha

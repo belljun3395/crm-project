@@ -12,8 +12,6 @@ import com.manage.crm.email.event.relay.aws.SesMessageReverseRelay
 import com.manage.crm.email.event.relay.aws.mapper.SesMessageMapper
 import com.manage.crm.email.support.EmailEventPublisher
 import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement
-import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Test
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
@@ -60,157 +58,133 @@ class EmailSendEventListenerTest(
             sesEmailEventFactory
         )
 
-    @Test
-    fun `after mail service is called`() {
-        runTest {
-            // given
-            val sendEmailInDto = SendEmailInDto(
-                to = "example@example.com",
-                subject = "subject",
-                template = "template",
-                content = NonContent(),
-                emailBody = "body",
-                destination = "example@example.com",
-                eventType = SentEmailStatus.SEND
-            )
-            `when`(mailServiceImpl.send(sendEmailInDto.emailArgs)).thenReturn("messageId")
+    init {
+        given("mail service") {
+            then("after mail service is called") {
+                val sendEmailInDto = SendEmailInDto(
+                    to = "example@example.com",
+                    subject = "subject",
+                    template = "template",
+                    content = NonContent(),
+                    emailBody = "body",
+                    destination = "example@example.com",
+                    eventType = SentEmailStatus.SEND
+                )
+                `when`(mailServiceImpl.send(sendEmailInDto.emailArgs)).thenReturn("messageId")
 
-            `when`(mailServiceImpl.send(sendEmailInDto)).thenReturn(
-                SendEmailOutDto(
+                `when`(mailServiceImpl.send(sendEmailInDto)).thenReturn(
+                    SendEmailOutDto(
+                        userId = 1,
+                        emailBody = "body",
+                        messageId = "messageId",
+                        destination = "example@example.com",
+                        provider = EmailProviderType.AWS
+                    )
+                )
+
+                val event = EmailSentEvent(
                     userId = 1,
                     emailBody = "body",
                     messageId = "messageId",
                     destination = "example@example.com",
                     provider = EmailProviderType.AWS
                 )
-            )
+                doNothing().`when`(emailEventPublisher).publishEvent(event)
 
-            val event = EmailSentEvent(
-                userId = 1,
-                emailBody = "body",
-                messageId = "messageId",
-                destination = "example@example.com",
-                provider = EmailProviderType.AWS
-            )
-            doNothing().`when`(emailEventPublisher).publishEvent(event)
+                mailService.send(sendEmailInDto)
 
-            // when
-            mailService.send(sendEmailInDto)
-
-            // then
-            verify(emailEventPublisher, times(1)).publishEvent(any<EmailSentEvent>())
+                verify(emailEventPublisher, times(1)).publishEvent(any<EmailSentEvent>())
+            }
         }
-    }
 
-    @Test
-    fun `receive open message from ses`() {
-        runTest {
-            // given
-            val zoneTime = ZonedDateTime.now()
-            val timeStamp = zoneTime.toLocalDateTime()
-            val email = "example@example.com"
-            val messageId = "messageId"
-            val message = getMessage(SentEmailStatus.OPEN, email, zoneTime, messageId)
-            val acknowledgement = mock(Acknowledgement::class.java)
-            doNothing().`when`(acknowledgement).acknowledge()
+        given("ses message reverse relay") {
+            then("receive open message from ses") {
+                val zoneTime = ZonedDateTime.now()
+                val timeStamp = zoneTime.toLocalDateTime()
+                val email = "example@example.com"
+                val messageId = "messageId"
+                val message = getMessage(SentEmailStatus.OPEN, email, zoneTime, messageId)
+                val acknowledgement = mock(Acknowledgement::class.java)
+                doNothing().`when`(acknowledgement).acknowledge()
 
-            val event = EmailOpenEvent(
-                messageId = messageId,
-                destination = email,
-                timestamp = timeStamp,
-                provider = EmailProviderType.AWS
-            )
-            doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
+                val event = EmailOpenEvent(
+                    messageId = messageId,
+                    destination = email,
+                    timestamp = timeStamp,
+                    provider = EmailProviderType.AWS
+                )
+                doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
 
-            // when
-            sesMessageReverseRelay.onMessage(message, acknowledgement)
+                sesMessageReverseRelay.onMessage(message, acknowledgement)
 
-            // then
-            verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailOpenEvent>())
-        }
-    }
+                verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailOpenEvent>())
+            }
 
-    @Test
-    fun `receive delivery message from ses`() {
-        runTest {
-            // given
-            val zoneTime = ZonedDateTime.now()
-            val timeStamp = zoneTime.toLocalDateTime()
-            val email = "example@example.com"
-            val messageId = "messageId"
-            val message = getMessage(SentEmailStatus.DELIVERY, email, zoneTime, messageId)
-            val acknowledgement = mock(Acknowledgement::class.java)
-            doNothing().`when`(acknowledgement).acknowledge()
+            then("receive delivery message from ses") {
+                val zoneTime = ZonedDateTime.now()
+                val timeStamp = zoneTime.toLocalDateTime()
+                val email = "example@example.com"
+                val messageId = "messageId"
+                val message = getMessage(SentEmailStatus.DELIVERY, email, zoneTime, messageId)
+                val acknowledgement = mock(Acknowledgement::class.java)
+                doNothing().`when`(acknowledgement).acknowledge()
 
-            val event = EmailDeliveryEvent(
-                messageId = messageId,
-                destination = email,
-                timestamp = timeStamp,
-                provider = EmailProviderType.AWS
-            )
-            doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
+                val event = EmailDeliveryEvent(
+                    messageId = messageId,
+                    destination = email,
+                    timestamp = timeStamp,
+                    provider = EmailProviderType.AWS
+                )
+                doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
 
-            // when
-            sesMessageReverseRelay.onMessage(message, acknowledgement)
+                sesMessageReverseRelay.onMessage(message, acknowledgement)
 
-            // then
-            verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailDeliveryEvent>())
-        }
-    }
+                verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailDeliveryEvent>())
+            }
 
-    @Test
-    fun `receive delivery delay message from ses`() {
-        runTest {
-            // given
-            val zoneTime = ZonedDateTime.now()
-            val timeStamp = zoneTime.toLocalDateTime()
-            val email = "example@example.com"
-            val messageId = "messageId"
-            val message = getMessage(SentEmailStatus.DELIVERYDELAY, email, zoneTime, messageId)
-            val acknowledgement = mock(Acknowledgement::class.java)
-            doNothing().`when`(acknowledgement).acknowledge()
+            then("receive delivery delay message from ses") {
+                val zoneTime = ZonedDateTime.now()
+                val timeStamp = zoneTime.toLocalDateTime()
+                val email = "example@example.com"
+                val messageId = "messageId"
+                val message = getMessage(SentEmailStatus.DELIVERYDELAY, email, zoneTime, messageId)
+                val acknowledgement = mock(Acknowledgement::class.java)
+                doNothing().`when`(acknowledgement).acknowledge()
 
-            val event = EmailDeliveryDelayEvent(
-                messageId = messageId,
-                destination = email,
-                timestamp = timeStamp,
-                provider = EmailProviderType.AWS
-            )
-            doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
+                val event = EmailDeliveryDelayEvent(
+                    messageId = messageId,
+                    destination = email,
+                    timestamp = timeStamp,
+                    provider = EmailProviderType.AWS
+                )
+                doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
 
-            // when
-            sesMessageReverseRelay.onMessage(message, acknowledgement)
+                sesMessageReverseRelay.onMessage(message, acknowledgement)
 
-            // then
-            verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailDeliveryDelayEvent>())
-        }
-    }
+                verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailDeliveryDelayEvent>())
+            }
 
-    @Test
-    fun `receive click message from ses`() {
-        runTest {
-            // given
-            val zoneTime = ZonedDateTime.now()
-            val timeStamp = zoneTime.toLocalDateTime()
-            val email = "example@example.com"
-            val messageId = "messageId"
-            val message = getMessage(SentEmailStatus.CLICK, email, zoneTime, messageId)
-            val acknowledgement = mock(Acknowledgement::class.java)
-            doNothing().`when`(acknowledgement).acknowledge()
+            then("receive click message from ses") {
+                val zoneTime = ZonedDateTime.now()
+                val timeStamp = zoneTime.toLocalDateTime()
+                val email = "example@example.com"
+                val messageId = "messageId"
+                val message = getMessage(SentEmailStatus.CLICK, email, zoneTime, messageId)
+                val acknowledgement = mock(Acknowledgement::class.java)
+                doNothing().`when`(acknowledgement).acknowledge()
 
-            val event = EmailClickEvent(
-                messageId = messageId,
-                destination = email,
-                timestamp = timeStamp,
-                provider = EmailProviderType.AWS
-            )
-            doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
+                val event = EmailClickEvent(
+                    messageId = messageId,
+                    destination = email,
+                    timestamp = timeStamp,
+                    provider = EmailProviderType.AWS
+                )
+                doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
 
-            // when
-            sesMessageReverseRelay.onMessage(message, acknowledgement)
+                sesMessageReverseRelay.onMessage(message, acknowledgement)
 
-            // then
-            verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailClickEvent>())
+                verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailClickEvent>())
+            }
         }
     }
 }
