@@ -46,6 +46,9 @@ mail:
 
 scheduler:
     provider: redis-kafka
+
+kafka:
+    enabled: false
     aws:
         region: ap-northeast-2
         endpoint-url: http://localhost:4566  # LocalStack endpoint for testing
