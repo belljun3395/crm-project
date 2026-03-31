@@ -40,6 +40,12 @@ spring:
                         enable: true
                     EnableSSL:
                         enable: true
+
+mail:
+    provider: mock
+
+scheduler:
+    provider: redis-kafka
     aws:
         region: ap-northeast-2
         endpoint-url: http://localhost:4566  # LocalStack endpoint for testing
@@ -53,6 +59,8 @@ spring:
             role-arn: arn:aws:iam::000000000000:role/LocalEventBridgeSchedulerRole
             sqs-arn: arn:aws:sqs:ap-northeast-2:000000000000:ses_sqs
             group-name: local-schedule-group
+    kafka:
+        bootstrap-servers: localhost:9092
     flyway:
         locations: classpath:db/migration/entity
         sql-migration-suffixes: sql
@@ -90,6 +98,3 @@ logging:
         software.amazon.awssdk: INFO
         org.testcontainers: INFO
 
-cache:
-    invalidation:
-        enabled: false
