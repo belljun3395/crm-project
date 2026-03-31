@@ -58,10 +58,6 @@ spring:
         baseline-on-migrate: true
         baseline-version: 0
 
-gcp:
-    pubsub:
-        cache-invalidation-topic: ${GCP_PUBSUB_CACHE_INVALIDATION_TOPIC:crm-cache-invalidation}
-        cache-invalidation-subscription: ${GCP_PUBSUB_CACHE_INVALIDATION_SUBSCRIPTION:crm-cache-invalidation-sub}
 
 springdoc:
     swagger-ui:

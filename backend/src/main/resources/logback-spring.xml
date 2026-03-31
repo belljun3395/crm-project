@@ -36,8 +36,6 @@
     <logger name="org.springframework.data.redis" level="WARN"/>
     <logger name="org.springframework.r2dbc.core" level="WARN"/>
     <logger name="org.springframework.web.reactive" level="INFO"/>
-    <logger name="com.manage.crm.infrastructure.cache.listener.CacheInvalidationListener" level="WARN"/>
-    <logger name="com.manage.crm.infrastructure.cache.provider.SnsCacheInvalidationPublisher" level="WARN"/>
     <logger name="org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport" level="WARN"/>
 
     <springProfile name="dev">

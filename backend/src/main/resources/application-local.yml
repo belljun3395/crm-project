@@ -67,14 +67,8 @@ spring:
         baseline-version: 0
     cloud:
         gcp:
-            project-id: local-project
             pubsub:
-                emulator-host: localhost:8085
-
-gcp:
-    pubsub:
-        cache-invalidation-topic: cache-invalidation-topic
-        cache-invalidation-subscription: cache-invalidation-subscription
+                enabled: false
 
 springdoc:
     swagger-ui:
@@ -117,6 +111,3 @@ resilience4j:
                 failure-rate-threshold: 100
                 wait-duration-in-open-state: 5s
 
-cache:
-    invalidation:
-        enabled: false

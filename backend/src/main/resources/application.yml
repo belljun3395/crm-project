@@ -27,8 +27,6 @@ spring:
     cloud:
         gcp:
             pubsub:
-                # Disabled by default to prevent GCP auto-configuration in AWS environments.
-                # Set to true via SPRING_CLOUD_GCP_PUBSUB_ENABLED=true when cloud.provider=gcp.
                 enabled: false
 
 mail:
@@ -38,12 +36,6 @@ mail:
     # - 'smtp': Uses SMTP via JavaMail (cloud-neutral, requires spring.mail.* settings)
     provider: ${MAIL_PROVIDER:ses}
 
-cloud:
-    # Cloud provider for infrastructure services (messaging, pubsub, etc.)
-    # Supported values:
-    # - 'aws': Uses AWS services (SQS, SNS) — Default
-    # - 'gcp': Uses GCP services (Pub/Sub)
-    provider: ${CLOUD_PROVIDER:aws}
 
 scheduler:
     # Scheduler implementation provider.
@@ -92,6 +84,3 @@ idempotency:
     enabled: ${IDEMPOTENCY_ENABLED:true}
     ttl-seconds: ${IDEMPOTENCY_TTL_SECONDS:86400}
 
-cache:
-    invalidation:
-        enabled: ${CACHE_INVALIDATION_ENABLED:true}
