@@ -1,6 +1,5 @@
 package com.manage.crm.user.application
 
-import com.manage.crm.infrastructure.cache.provider.CacheInvalidationPublisher
 import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
@@ -10,6 +9,7 @@ import com.manage.crm.user.application.dto.EnrollUserUseCaseOut
 import com.manage.crm.user.application.service.JsonService
 import com.manage.crm.user.application.service.UserRepositoryEventProcessor
 import com.manage.crm.user.domain.User
+import com.manage.crm.user.domain.cache.UserCacheManager
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
 import com.manage.crm.user.domain.vo.UserAttributes
@@ -31,7 +31,7 @@ class EnrollUserUseCase(
     private val userRepository: UserRepository,
     private val userRepositoryEventProcessor: UserRepositoryEventProcessor,
     private val jsonService: JsonService,
-    private val cacheInvalidationPublisher: CacheInvalidationPublisher,
+    private val userCacheManager: UserCacheManager,
     private val journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher,
     private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate
 ) {
@@ -62,9 +62,9 @@ class EnrollUserUseCase(
             }
         }
 
-        // Publish cache invalidation message
+        // Update user cache count
         val userId = updateOrSaveUser.id!!
-        cacheInvalidationPublisher.publishCacheInvalidation(listOf("user:$userId"))
+        userCacheManager.updateTotalUserCountUpdateAt()
         runCatching {
             transactionSynchronizationTemplate.afterCommit(
                 blockDescription = "enqueue journey segment trigger after user commit"

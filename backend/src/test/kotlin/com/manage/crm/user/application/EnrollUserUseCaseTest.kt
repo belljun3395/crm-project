@@ -1,6 +1,5 @@
 package com.manage.crm.user.application
 
-import com.manage.crm.infrastructure.cache.provider.CacheInvalidationPublisher
 import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
 import com.manage.crm.user.application.dto.EnrollUserUseCaseIn
@@ -8,6 +7,7 @@ import com.manage.crm.user.application.dto.EnrollUserUseCaseOut
 import com.manage.crm.user.application.service.JsonService
 import com.manage.crm.user.application.service.UserRepositoryEventProcessor
 import com.manage.crm.user.domain.User
+import com.manage.crm.user.domain.cache.UserCacheManager
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
 import com.manage.crm.user.domain.vo.UserAttributes
@@ -15,7 +15,6 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.justRun
 import io.mockk.mockk
 import java.time.LocalDateTime
 
@@ -23,7 +22,7 @@ class EnrollUserUseCaseTest : BehaviorSpec({
     lateinit var userRepository: UserRepository
     lateinit var userRepositoryEventProcessor: UserRepositoryEventProcessor
     lateinit var jsonService: JsonService
-    lateinit var cacheInvalidationPublisher: CacheInvalidationPublisher
+    lateinit var userCacheManager: UserCacheManager
     lateinit var journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher
     lateinit var transactionSynchronizationTemplate: TransactionSynchronizationTemplate
     lateinit var useCase: EnrollUserUseCase
@@ -32,15 +31,14 @@ class EnrollUserUseCaseTest : BehaviorSpec({
         userRepository = mockk()
         userRepositoryEventProcessor = mockk()
         jsonService = mockk()
-        cacheInvalidationPublisher = mockk()
+        userCacheManager = mockk(relaxed = true)
         journeyTriggerQueuePublisher = mockk(relaxed = true)
         transactionSynchronizationTemplate = mockk(relaxed = true)
-        justRun { cacheInvalidationPublisher.publishCacheInvalidation(any()) }
         useCase = EnrollUserUseCase(
             userRepository,
             userRepositoryEventProcessor,
             jsonService,
-            cacheInvalidationPublisher,
+            userCacheManager,
             journeyTriggerQueuePublisher,
             transactionSynchronizationTemplate
         )
