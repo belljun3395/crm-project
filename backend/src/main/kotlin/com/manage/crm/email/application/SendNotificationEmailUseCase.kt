@@ -18,7 +18,7 @@ import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
 import com.manage.crm.event.service.CampaignEventsService
-import com.manage.crm.segment.service.SegmentTargetingService
+import com.manage.crm.segment.application.port.query.SegmentReadPort
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
@@ -48,7 +48,7 @@ class SendNotificationEmailUseCase(
     private val campaignRepository: CampaignRepository,
     private val campaignSegmentsRepository: CampaignSegmentsRepository,
     private val userRepository: UserRepository,
-    private val segmentTargetingService: SegmentTargetingService,
+    private val segmentReadPort: SegmentReadPort,
     private val objectMapper: ObjectMapper
 ) {
     val log = KotlinLogging.logger { }
@@ -61,7 +61,7 @@ class SendNotificationEmailUseCase(
         val segmentId = useCaseIn.segmentId
         validateCampaignSegmentLink(campaignId = campaignId, segmentId = segmentId)
         val requestedUserIds = if (segmentId != null) {
-            segmentTargetingService.resolveUserIds(segmentId, campaignId)
+            segmentReadPort.findTargetUserIds(segmentId, campaignId)
         } else {
             userIds
         }

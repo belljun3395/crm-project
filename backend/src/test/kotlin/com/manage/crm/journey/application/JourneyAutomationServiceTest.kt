@@ -20,7 +20,7 @@ import com.manage.crm.journey.domain.repository.JourneySegmentCountStateReposito
 import com.manage.crm.journey.domain.repository.JourneySegmentUserStateRepository
 import com.manage.crm.journey.domain.repository.JourneyStepDeduplicationRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
-import com.manage.crm.segment.service.SegmentTargetingService
+import com.manage.crm.segment.application.port.query.SegmentReadPort
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.UserAttributes
@@ -44,7 +44,7 @@ class JourneyAutomationServiceTest : BehaviorSpec({
     lateinit var journeyStepDeduplicationRepository: JourneyStepDeduplicationRepository
     lateinit var journeySegmentUserStateRepository: JourneySegmentUserStateRepository
     lateinit var journeySegmentCountStateRepository: JourneySegmentCountStateRepository
-    lateinit var segmentTargetingService: SegmentTargetingService
+    lateinit var segmentReadPort: SegmentReadPort
     lateinit var actionDispatchService: ActionDispatchService
     lateinit var userRepository: UserRepository
     lateinit var service: JourneyAutomationService
@@ -57,7 +57,7 @@ class JourneyAutomationServiceTest : BehaviorSpec({
         journeyStepDeduplicationRepository = mockk()
         journeySegmentUserStateRepository = mockk()
         journeySegmentCountStateRepository = mockk()
-        segmentTargetingService = mockk()
+        segmentReadPort = mockk()
         actionDispatchService = mockk()
         userRepository = mockk()
 
@@ -69,7 +69,7 @@ class JourneyAutomationServiceTest : BehaviorSpec({
             journeyStepDeduplicationRepository = journeyStepDeduplicationRepository,
             journeySegmentUserStateRepository = journeySegmentUserStateRepository,
             journeySegmentCountStateRepository = journeySegmentCountStateRepository,
-            segmentTargetingService = segmentTargetingService,
+            segmentReadPort = segmentReadPort,
             actionDispatchService = actionDispatchService,
             userRepository = userRepository,
             objectMapper = ObjectMapper()
@@ -95,7 +95,7 @@ class JourneyAutomationServiceTest : BehaviorSpec({
             journeyStepDeduplicationRepository,
             journeySegmentUserStateRepository,
             journeySegmentCountStateRepository,
-            segmentTargetingService,
+            segmentReadPort,
             actionDispatchService,
             userRepository
         )

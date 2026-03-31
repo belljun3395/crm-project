@@ -24,7 +24,7 @@ import com.manage.crm.journey.domain.repository.JourneySegmentCountStateReposito
 import com.manage.crm.journey.domain.repository.JourneySegmentUserStateRepository
 import com.manage.crm.journey.domain.repository.JourneyStepDeduplicationRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
-import com.manage.crm.segment.service.SegmentTargetingService
+import com.manage.crm.segment.application.port.query.SegmentReadPort
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
@@ -50,7 +50,7 @@ class JourneyAutomationService(
     private val journeyStepDeduplicationRepository: JourneyStepDeduplicationRepository,
     private val journeySegmentUserStateRepository: JourneySegmentUserStateRepository,
     private val journeySegmentCountStateRepository: JourneySegmentCountStateRepository,
-    private val segmentTargetingService: SegmentTargetingService,
+    private val segmentReadPort: SegmentReadPort,
     private val actionDispatchService: ActionDispatchService,
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper
@@ -171,7 +171,7 @@ class JourneyAutomationService(
         changedUserIds: List<Long>?
     ) {
         val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }
-        val currentMatchedUserIds = segmentTargetingService.resolveUserIds(segmentId, null).toSet()
+        val currentMatchedUserIds = segmentReadPort.findTargetUserIds(segmentId, null).toSet()
         val existingStates = journeySegmentUserStateRepository.findAllByJourneyId(journeyId)
         val existingStateByUserId = existingStates.associateBy { it.userId }
 
@@ -270,7 +270,7 @@ class JourneyAutomationService(
             return
         }
 
-        val currentCount = segmentTargetingService.resolveUserIds(segmentId, null).size.toLong()
+        val currentCount = segmentReadPort.findTargetUserIds(segmentId, null).size.toLong()
         val previousState = journeySegmentCountStateRepository.findByJourneyId(journeyId)
         val previousCount = previousState?.lastCount ?: 0L
         val previousVersion = previousState?.transitionVersion ?: 0L

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.segment.application.dto.GetSegmentMatchedUsersUseCaseIn
 import com.manage.crm.segment.application.dto.GetSegmentMatchedUsersUseCaseOut
 import com.manage.crm.segment.application.dto.SegmentMatchedUserDto
-import com.manage.crm.segment.service.SegmentTargetingService
+import com.manage.crm.segment.application.port.query.SegmentReadPort
 import com.manage.crm.support.out
 import com.manage.crm.user.application.port.query.UserReadModel
 import com.manage.crm.user.application.port.query.UserReadPort
@@ -21,7 +21,7 @@ import java.time.format.DateTimeFormatter
  */
 @Component
 class GetSegmentMatchedUsersUseCase(
-    private val segmentTargetingService: SegmentTargetingService,
+    private val segmentReadPort: SegmentReadPort,
     private val userReadPort: UserReadPort,
     private val objectMapper: ObjectMapper
 ) {
@@ -32,7 +32,7 @@ class GetSegmentMatchedUsersUseCase(
     }
 
     suspend fun execute(useCaseIn: GetSegmentMatchedUsersUseCaseIn): GetSegmentMatchedUsersUseCaseOut {
-        val targetUserIds = segmentTargetingService.resolveUserIds(useCaseIn.segmentId, useCaseIn.campaignId)
+        val targetUserIds = segmentReadPort.findTargetUserIds(useCaseIn.segmentId, useCaseIn.campaignId)
         if (targetUserIds.isEmpty()) {
             return out {
                 GetSegmentMatchedUsersUseCaseOut(users = emptyList())
