@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
 @Component
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "mock")
 class MockSchedulerProvider : SchedulerProvider {
-    
+
     private val log = KotlinLogging.logger {}
     private val schedules = ConcurrentHashMap<String, DueSchedule>()
 
@@ -30,7 +30,7 @@ class MockSchedulerProvider : SchedulerProvider {
                 scheduleTime = scheduleTime,
                 payload = input
             )
-            
+
             schedules[name] = dueSchedule
             log.info { "Mock scheduler: Created schedule '$name' for $scheduleTime" }
             ScheduleCreationResult.Success(name)
@@ -53,7 +53,7 @@ class MockSchedulerProvider : SchedulerProvider {
         val now = LocalDateTime.now()
         return schedules.values.filter { it.scheduleTime.isBefore(now) || it.scheduleTime.isEqual(now) }
     }
-    
+
     /**
      * Test utility method to clear all schedules
      */
@@ -61,7 +61,7 @@ class MockSchedulerProvider : SchedulerProvider {
         schedules.clear()
         log.debug { "Mock scheduler: Cleared all schedules" }
     }
-    
+
     /**
      * Test utility method to get schedule count
      */
