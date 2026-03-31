@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
 
-class EventArchitectureKonsistTest {
+class EventArchitectureTest {
     @Test
     fun `event use case classes reside in application package`() {
         Konsist
