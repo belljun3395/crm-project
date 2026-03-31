@@ -48,11 +48,11 @@ spring:
             secret-key: test
         mail:
             configuration-set:
-                default: test-configuration-set
+                default: local-configuration-set
         schedule:
             role-arn: arn:aws:iam::000000000000:role/LocalEventBridgeSchedulerRole
-            sqs-arn: arn:aws:sqs:ap-northeast-2:000000000000:test_sqs
-            group-name: test-schedule-group
+            sqs-arn: arn:aws:sqs:ap-northeast-2:000000000000:ses_sqs
+            group-name: local-schedule-group
     flyway:
         locations: classpath:db/migration/entity
         sql-migration-suffixes: sql
@@ -87,7 +87,9 @@ logging:
         org.apache.kafka: WARN
         reactor.kafka: WARN
         io.lettuce.core: WARN
-        com.amazonaws: INFO
+        software.amazon.awssdk: INFO
         org.testcontainers: INFO
-        # LocalStack specific logging
-        localstack: INFO
+
+cache:
+    invalidation:
+        enabled: false

@@ -122,8 +122,8 @@ dependencies {
     implementation(libs.spring.cloud.aws.starter.sqs)
     implementation(libs.aws.sdk.sqs)
     implementation(libs.aws.sdk.sns)
+    implementation(libs.aws.sdk.ses)
     implementation(libs.aws.sdk.scheduler)
-    implementation(libs.aws.java.sdk.ses)
     implementation(libs.aws.query.protocol)
 
     /** gcp */
@@ -159,6 +159,8 @@ dependencies {
     /** testcontainers */
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.kafka)
+    testImplementation(libs.testcontainers.localstack)
     testImplementation(libs.testcontainers)
 
     /** logger */
