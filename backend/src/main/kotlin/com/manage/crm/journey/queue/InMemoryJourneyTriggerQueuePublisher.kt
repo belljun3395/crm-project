@@ -54,7 +54,7 @@ class InMemoryJourneyTriggerQueuePublisher(
         }
     }
 
-    override suspend fun publishSegmentContextTrigger(changedUserIds: List<Long>?) {
+    override suspend fun publishSegmentContextTrigger(changedUserIds: List<Long>) {
         val result = queue.trySend(
             JourneyTriggerQueueMessage(
                 triggerType = JourneyTriggerQueueType.SEGMENT_CONTEXT,

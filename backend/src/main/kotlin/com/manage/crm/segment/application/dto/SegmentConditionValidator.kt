@@ -1,4 +1,4 @@
-package com.manage.crm.segment.application
+package com.manage.crm.segment.application.dto
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.manage.crm.segment.domain.SegmentOperator
@@ -61,7 +61,7 @@ object SegmentConditionValidator {
             throw InvalidSegmentConditionException("Unsupported field: $field")
         }
 
-        val parsedValueType = SegmentValueType.from(valueType)
+        val parsedValueType = SegmentValueType.Companion.from(valueType)
         val requiredValueType = fieldValueTypeMap[field]
             ?: throw InvalidSegmentConditionException("Unsupported field: $field")
         if (parsedValueType != requiredValueType) {
@@ -70,7 +70,7 @@ object SegmentConditionValidator {
             )
         }
 
-        val parsedOperator = SegmentOperator.from(operator)
+        val parsedOperator = SegmentOperator.Companion.from(operator)
         val allowedOperators = allowedOperatorsByType[parsedValueType].orEmpty()
 
         if (parsedOperator !in allowedOperators) {

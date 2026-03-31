@@ -1,6 +1,5 @@
 package com.manage.crm.segment.application
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.segment.application.dto.GetSegmentMatchedUsersUseCaseIn
 import com.manage.crm.segment.application.dto.GetSegmentMatchedUsersUseCaseOut
@@ -30,12 +29,8 @@ class GetSegmentMatchedUsersUseCase(
 
     companion object {
         private val FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-        private const val PAGE_SIZE = 500
     }
 
-    /**
-     * Resolves user ids from segment targeting and materializes user summaries.
-     */
     suspend fun execute(useCaseIn: GetSegmentMatchedUsersUseCaseIn): GetSegmentMatchedUsersUseCaseOut {
         val targetUserIds = segmentTargetingService.resolveUserIds(useCaseIn.segmentId, useCaseIn.campaignId)
         if (targetUserIds.isEmpty()) {
@@ -44,8 +39,7 @@ class GetSegmentMatchedUsersUseCase(
             }
         }
 
-        val targetIdSet = targetUserIds.toSet()
-        val users = loadUsersInTargetSet(targetIdSet)
+        val users = userRepository.findAllByIdIn(targetUserIds)
         val matchedUsers = users
             .mapNotNull { user -> toMatchedUserDtoOrNull(user) }
             .sortedBy { it.id }
@@ -55,39 +49,15 @@ class GetSegmentMatchedUsersUseCase(
         }
     }
 
-    /**
-     * Loads users page-by-page and keeps only ids present in [targetIdSet].
-     * Stops paging as soon as all target ids are found.
-     */
-    private suspend fun loadUsersInTargetSet(targetIdSet: Set<Long>): List<User> {
-        val users = mutableListOf<User>()
-        val remainingIds = targetIdSet.toMutableSet()
-        var page = 0
-        while (remainingIds.isNotEmpty()) {
-            val batch = userRepository.findAllWithPagination(page, PAGE_SIZE)
-            if (batch.isEmpty()) {
-                break
-            }
-            batch.forEach { user ->
-                val userId = user.id ?: return@forEach
-                if (remainingIds.remove(userId)) {
-                    users += user
-                }
-            }
-            if (batch.size < PAGE_SIZE) {
-                break
-            }
-            page += 1
-        }
-        return users
-    }
-
-    /**
-     * Converts one domain user to API-facing matched-user dto.
-     */
     private fun toMatchedUserDtoOrNull(user: User): SegmentMatchedUserDto? {
         val userId = user.id ?: return null
-        val userAttributes = parseUserAttributes(user)
+        val userAttributes = runCatching { objectMapper.readTree(user.userAttributes.value) }
+            .onFailure { error ->
+                log.warn(error) {
+                    "Failed to parse userAttributes JSON for userId=${user.id}, externalId=${user.externalId}"
+                }
+            }
+            .getOrNull()
         return SegmentMatchedUserDto(
             id = userId,
             externalId = user.externalId,
@@ -95,18 +65,5 @@ class GetSegmentMatchedUsersUseCase(
             name = userAttributes?.get("name")?.asText(),
             createdAt = user.createdAt?.format(FORMATTER)
         )
-    }
-
-    /**
-     * Parses user attribute json and tolerates malformed json.
-     */
-    private fun parseUserAttributes(user: User): JsonNode? {
-        return runCatching { objectMapper.readTree(user.userAttributes.value) }
-            .onFailure { error ->
-                log.warn(error) {
-                    "Failed to parse userAttributes JSON for userId=${user.id}, externalId=${user.externalId}"
-                }
-            }
-            .getOrNull()
     }
 }

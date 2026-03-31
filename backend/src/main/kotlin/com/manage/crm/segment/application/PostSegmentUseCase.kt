@@ -4,6 +4,7 @@ import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
 import com.manage.crm.segment.application.dto.PostSegmentConditionIn
 import com.manage.crm.segment.application.dto.PostSegmentUseCaseIn
 import com.manage.crm.segment.application.dto.PostSegmentUseCaseOut
+import com.manage.crm.segment.application.dto.SegmentConditionValidator
 import com.manage.crm.segment.application.dto.toSegmentConditionDto
 import com.manage.crm.segment.application.dto.toSegmentDto
 import com.manage.crm.segment.domain.Segment
@@ -76,12 +77,25 @@ class PostSegmentUseCase(
         }
 
         val segmentId = saved.id ?: throw IllegalStateException("Saved segment id is null")
-        replaceConditions(segmentId, useCaseIn.conditions)
+        segmentConditionRepository.deleteBySegmentId(segmentId)
+        useCaseIn.conditions.forEachIndexed { index, condition ->
+            segmentConditionRepository.save(
+                SegmentCondition.new(
+                    segmentId = segmentId,
+                    fieldName = condition.field,
+                    operator = condition.operator.uppercase(),
+                    valueType = condition.valueType.uppercase(),
+                    conditionValue = condition.value.toString(),
+                    position = index + 1
+                )
+            )
+        }
+
         runCatching {
             transactionSynchronizationTemplate.afterCommit(
                 blockDescription = "enqueue journey segment trigger after segment commit"
             ) {
-                journeyTriggerQueuePublisher.publishSegmentContextTrigger(null)
+                journeyTriggerQueuePublisher.publishSegmentContextTrigger()
             }
         }.onFailure { error ->
             log.error(error) {
@@ -95,26 +109,6 @@ class PostSegmentUseCase(
         return out {
             PostSegmentUseCaseOut(
                 segment = saved.toSegmentDto(conditionDtos)
-            )
-        }
-    }
-
-    private suspend fun replaceConditions(
-        segmentId: Long,
-        conditions: List<PostSegmentConditionIn>
-    ) {
-        segmentConditionRepository.deleteBySegmentId(segmentId)
-
-        conditions.forEachIndexed { index, condition ->
-            segmentConditionRepository.save(
-                SegmentCondition.new(
-                    segmentId = segmentId,
-                    fieldName = condition.field,
-                    operator = condition.operator.uppercase(),
-                    valueType = condition.valueType.uppercase(),
-                    conditionValue = condition.value.toString(),
-                    position = index + 1
-                )
             )
         }
     }

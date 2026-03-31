@@ -228,7 +228,7 @@ class SegmentTargetingServiceImpl(
             SegmentOperator.BETWEEN -> {
                 val start = expectedValue[0]?.asText()?.let { parseOrNull(it) } ?: return false
                 val end = expectedValue[1]?.asText()?.let { parseOrNull(it) } ?: return false
-                actual >= start && actual <= end
+                actual in start..end
             }
             else -> false
         }

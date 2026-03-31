@@ -38,7 +38,7 @@ class GetSegmentMatchedUsersUseCaseTest : BehaviorSpec({
                 )
 
                 result.users shouldBe emptyList()
-                coVerify(exactly = 0) { userRepository.findAllWithPagination(any(), any()) }
+                coVerify(exactly = 0) { userRepository.findAllByIdIn(any()) }
             }
         }
 
@@ -58,16 +58,8 @@ class GetSegmentMatchedUsersUseCaseTest : BehaviorSpec({
                     createdAt = LocalDateTime.of(2025, 1, 2, 10, 0),
                     updatedAt = LocalDateTime.of(2025, 1, 2, 10, 0)
                 )
-                val notMatched = User.new(
-                    id = 3L,
-                    externalId = "user-3",
-                    userAttributes = UserAttributes("""{"email":"three@example.com","name":"Three"}"""),
-                    createdAt = LocalDateTime.of(2025, 1, 3, 10, 0),
-                    updatedAt = LocalDateTime.of(2025, 1, 3, 10, 0)
-                )
-
                 coEvery { segmentTargetingService.resolveUserIds(10L, 100L) } returns listOf(2L, 1L)
-                coEvery { userRepository.findAllWithPagination(0, 500) } returns listOf(firstUser, secondUser, notMatched)
+                coEvery { userRepository.findAllByIdIn(listOf(2L, 1L)) } returns listOf(firstUser, secondUser)
 
                 val result = useCase.execute(
                     GetSegmentMatchedUsersUseCaseIn(segmentId = 10L, campaignId = 100L)
@@ -76,7 +68,7 @@ class GetSegmentMatchedUsersUseCaseTest : BehaviorSpec({
                 result.users.map { it.id } shouldBe listOf(1L, 2L)
                 result.users[0].email shouldBe "one@example.com"
                 result.users[1].name shouldBe "Two"
-                coVerify(exactly = 1) { userRepository.findAllWithPagination(0, 500) }
+                coVerify(exactly = 1) { userRepository.findAllByIdIn(listOf(2L, 1L)) }
             }
         }
 
@@ -91,7 +83,7 @@ class GetSegmentMatchedUsersUseCaseTest : BehaviorSpec({
                 )
 
                 coEvery { segmentTargetingService.resolveUserIds(20L, null) } returns listOf(5L)
-                coEvery { userRepository.findAllWithPagination(0, 500) } returns listOf(malformedUser)
+                coEvery { userRepository.findAllByIdIn(listOf(5L)) } returns listOf(malformedUser)
 
                 val result = useCase.execute(
                     GetSegmentMatchedUsersUseCaseIn(segmentId = 20L)
