@@ -17,10 +17,12 @@ import com.manage.crm.event.domain.vo.CampaignProperties
 import com.manage.crm.event.domain.vo.CampaignProperty
 import com.manage.crm.event.event.CampaignEventPublisher
 import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
-import com.manage.crm.segment.service.SegmentTargetingService
+import com.manage.crm.segment.application.port.query.SegmentReadPort
 import com.manage.crm.support.exception.NotFoundByException
+import com.manage.crm.user.application.port.query.UserReadModel
+import com.manage.crm.user.application.port.query.UserReadPort
+import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.UserFixtures
-import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.UserAttributesFixtures
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
@@ -35,8 +37,8 @@ class PostEventUseCaseTest : BehaviorSpec({
     lateinit var campaignRepository: CampaignRepository
     lateinit var campaignEventsRepository: CampaignEventsRepository
     lateinit var campaignCacheManager: CampaignCacheManager
-    lateinit var userRepository: UserRepository
-    lateinit var segmentTargetingService: SegmentTargetingService
+    lateinit var userReadPort: UserReadPort
+    lateinit var segmentReadPort: SegmentReadPort
     lateinit var journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher
     lateinit var campaignEventPublisher: CampaignEventPublisher
     lateinit var postEventUseCase: PostEventUseCase
@@ -46,8 +48,8 @@ class PostEventUseCaseTest : BehaviorSpec({
         campaignRepository = mockk()
         campaignEventsRepository = mockk()
         campaignCacheManager = mockk()
-        userRepository = mockk()
-        segmentTargetingService = mockk()
+        userReadPort = mockk()
+        segmentReadPort = mockk()
         journeyTriggerQueuePublisher = mockk(relaxed = true)
         campaignEventPublisher = mockk(relaxed = true)
         postEventUseCase =
@@ -56,8 +58,8 @@ class PostEventUseCaseTest : BehaviorSpec({
                 campaignRepository,
                 campaignEventsRepository,
                 campaignCacheManager,
-                userRepository,
-                segmentTargetingService,
+                userReadPort,
+                segmentReadPort,
                 journeyTriggerQueuePublisher,
                 campaignEventPublisher
             )
@@ -85,7 +87,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 .withExternalId(useCaseIn.externalId)
                 .withUserAttributes(UserAttributesFixtures.giveMeOne().withValue("""{}""").build())
                 .build()
-            coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
+            coEvery { userReadPort.findByExternalId(useCaseIn.externalId) } answers { user.toReadModel() }
 
             val event = EventFixtures.giveMeOne()
                 .withName(useCaseIn.name)
@@ -112,7 +114,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             }
 
             then("find user by externalId") {
-                coVerify(exactly = 1) { userRepository.findByExternalId(useCaseIn.externalId) }
+                coVerify(exactly = 1) { userReadPort.findByExternalId(useCaseIn.externalId) }
             }
 
             then("save event") {
@@ -146,7 +148,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 .withExternalId(useCaseIn.externalId)
                 .withUserAttributes(UserAttributesFixtures.giveMeOne().withValue("""{}""").build())
                 .build()
-            coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
+            coEvery { userReadPort.findByExternalId(useCaseIn.externalId) } answers { user.toReadModel() }
 
             val eventProperties = PropertiesFixtures.giveMeOne()
                 .withValue(
@@ -200,7 +202,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             }
 
             then("find user by externalId") {
-                coVerify(exactly = 1) { userRepository.findByExternalId(useCaseIn.externalId) }
+                coVerify(exactly = 1) { userReadPort.findByExternalId(useCaseIn.externalId) }
             }
 
             then("save event") {
@@ -287,7 +289,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 .withExternalId(useCaseIn.externalId)
                 .withUserAttributes(UserAttributesFixtures.giveMeOne().withValue("""{}""").build())
                 .build()
-            coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
+            coEvery { userReadPort.findByExternalId(useCaseIn.externalId) } answers { user.toReadModel() }
 
             val eventProperties = PropertiesFixtures.giveMeOne()
                 .withValue(
@@ -375,7 +377,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 .withExternalId(useCaseIn.externalId)
                 .withUserAttributes(UserAttributesFixtures.giveMeOne().withValue("""{}""").build())
                 .build()
-            coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
+            coEvery { userReadPort.findByExternalId(useCaseIn.externalId) } answers { user.toReadModel() }
 
             val event = EventFixtures.giveMeOne()
                 .withName(useCaseIn.name)
@@ -417,7 +419,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             }
 
             then("find user by externalId") {
-                coVerify(exactly = 1) { userRepository.findByExternalId(useCaseIn.externalId) }
+                coVerify(exactly = 1) { userReadPort.findByExternalId(useCaseIn.externalId) }
             }
 
             then("save event") {
@@ -466,7 +468,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 .withExternalId(useCaseIn.externalId)
                 .withUserAttributes(UserAttributesFixtures.giveMeOne().withValue("""{}""").build())
                 .build()
-            coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers { user }
+            coEvery { userReadPort.findByExternalId(useCaseIn.externalId) } answers { user.toReadModel() }
 
             val event = EventFixtures.giveMeOne()
                 .withName(useCaseIn.name)
@@ -526,7 +528,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             }
 
             then("find user by externalId") {
-                coVerify(exactly = 1) { userRepository.findByExternalId(useCaseIn.externalId) }
+                coVerify(exactly = 1) { userReadPort.findByExternalId(useCaseIn.externalId) }
             }
 
             then("save event") {
@@ -567,7 +569,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 campaignName = null
             )
 
-            coEvery { segmentTargetingService.resolveUserIds(55L, null) } returns listOf(1L, 2L)
+            coEvery { segmentReadPort.findTargetUserIds(55L, null) } returns listOf(1L, 2L)
             coEvery { eventRepository.save(any(Event::class)) } answers {
                 firstArg<Event>().apply {
                     id = if (userId == 1L) 101L else 102L
@@ -578,8 +580,8 @@ class PostEventUseCaseTest : BehaviorSpec({
                 val result = postEventUseCase.execute(useCaseIn)
                 result.id shouldBe 101L
                 result.message shouldBe "Event saved for segment users (2)"
-                coVerify(exactly = 1) { segmentTargetingService.resolveUserIds(55L, null) }
-                coVerify(exactly = 0) { userRepository.findByExternalId(any()) }
+                coVerify(exactly = 1) { segmentReadPort.findTargetUserIds(55L, null) }
+                coVerify(exactly = 0) { userReadPort.findByExternalId(any()) }
                 coVerify(exactly = 2) { eventRepository.save(any(Event::class)) }
             }
         }
@@ -593,7 +595,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 campaignName = "seg-campaign"
             )
 
-            coEvery { segmentTargetingService.resolveUserIds(77L, null) } returns listOf(1L, 2L)
+            coEvery { segmentReadPort.findTargetUserIds(77L, null) } returns listOf(1L, 2L)
             coEvery { eventRepository.save(any(Event::class)) } answers {
                 firstArg<Event>().apply { id = if (userId == 1L) 201L else 202L }
             }
@@ -633,7 +635,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 campaignName = "missing-campaign"
             )
 
-            coEvery { segmentTargetingService.resolveUserIds(88L, null) } returns listOf(10L)
+            coEvery { segmentReadPort.findTargetUserIds(88L, null) } returns listOf(10L)
             coEvery { eventRepository.save(any(Event::class)) } answers {
                 firstArg<Event>().apply { id = 301L }
             }
@@ -668,7 +670,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 .withExternalId("user-1")
                 .withUserAttributes(UserAttributesFixtures.giveMeOne().withValue("{}").build())
                 .build()
-            coEvery { userRepository.findByExternalId("user-1") } returns user
+            coEvery { userReadPort.findByExternalId("user-1") } returns user.toReadModel()
             coEvery { eventRepository.save(any(Event::class)) } answers {
                 firstArg<Event>().apply { id = 401L }
             }
@@ -700,7 +702,7 @@ class PostEventUseCaseTest : BehaviorSpec({
                 campaignName = null
             )
 
-            coEvery { userRepository.findByExternalId(useCaseIn.externalId) } answers {
+            coEvery { userReadPort.findByExternalId(useCaseIn.externalId) } answers {
                 throw NotFoundByException("User", "externalId", useCaseIn.externalId)
             }
 
@@ -712,7 +714,7 @@ class PostEventUseCaseTest : BehaviorSpec({
             }
 
             then("find user by externalId") {
-                coVerify(exactly = 1) { userRepository.findByExternalId(useCaseIn.externalId) }
+                coVerify(exactly = 1) { userReadPort.findByExternalId(useCaseIn.externalId) }
             }
 
             then("not called save event") {
@@ -721,3 +723,10 @@ class PostEventUseCaseTest : BehaviorSpec({
         }
     }
 })
+
+private fun User.toReadModel(): UserReadModel = UserReadModel(
+    id = requireNotNull(id),
+    externalId = externalId,
+    userAttributesJson = userAttributes.value,
+    createdAt = createdAt
+)

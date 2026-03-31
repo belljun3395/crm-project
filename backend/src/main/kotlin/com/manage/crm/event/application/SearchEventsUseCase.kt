@@ -12,7 +12,7 @@ import com.manage.crm.event.domain.repository.query.SearchByPropertyQuery
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.support.out
-import com.manage.crm.user.domain.repository.UserRepository
+import com.manage.crm.user.application.port.query.UserReadPort
 import org.springframework.stereotype.Component
 
 /**
@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component
 @Component
 class SearchEventsUseCase(
     private val eventRepository: EventRepository,
-    private val userRepository: UserRepository
+    private val userReadPort: UserReadPort
 ) {
     suspend fun execute(useCaseIn: SearchEventsUseCaseIn): SearchEventsUseCaseOut {
         val eventName = useCaseIn.eventName
@@ -39,7 +39,7 @@ class SearchEventsUseCase(
         val events = searchEvents(eventName, propertyOperations)
 
         val userIds = events.map { it.userId }.toSet().toList()
-        val users = userRepository.findAllByIdIn(userIds).associateBy { it.id }
+        val users = userReadPort.findAllByIdIn(userIds).associateBy { it.id }
 
         return out {
             events.map { it ->

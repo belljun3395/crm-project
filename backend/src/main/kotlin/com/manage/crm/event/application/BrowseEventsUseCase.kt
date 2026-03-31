@@ -6,7 +6,7 @@ import com.manage.crm.event.application.dto.EventDto
 import com.manage.crm.event.application.dto.SearchEventPropertyDto
 import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.support.out
-import com.manage.crm.user.domain.repository.UserRepository
+import com.manage.crm.user.application.port.query.UserReadPort
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
@@ -21,7 +21,7 @@ import java.time.LocalDateTime
 @Component
 class BrowseEventsUseCase(
     private val eventRepository: EventRepository,
-    private val userRepository: UserRepository
+    private val userReadPort: UserReadPort
 ) {
     suspend fun execute(useCaseIn: BrowseEventsUseCaseIn): BrowseEventsUseCaseOut {
         val limit = useCaseIn.limit.coerceIn(1, 1000)
@@ -30,7 +30,7 @@ class BrowseEventsUseCase(
             .sortedByDescending { it.createdAt }
             .take(limit)
 
-        val usersById = userRepository.findAllByIdIn(events.map { it.userId }.distinct())
+        val usersById = userReadPort.findAllByIdIn(events.map { it.userId }.distinct())
             .associateBy { it.id }
 
         return out {

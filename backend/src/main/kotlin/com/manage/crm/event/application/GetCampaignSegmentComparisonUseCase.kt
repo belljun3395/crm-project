@@ -6,8 +6,7 @@ import com.manage.crm.event.application.dto.SegmentComparisonMetricDto
 import com.manage.crm.event.domain.Event
 import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.event.util.toPercentage
-import com.manage.crm.segment.domain.repository.SegmentRepository
-import com.manage.crm.segment.service.SegmentTargetingService
+import com.manage.crm.segment.application.port.query.SegmentReadPort
 import org.springframework.stereotype.Component
 
 /**
@@ -20,8 +19,7 @@ import org.springframework.stereotype.Component
 @Component
 class GetCampaignSegmentComparisonUseCase(
     private val campaignEventsService: CampaignEventsService,
-    private val segmentRepository: SegmentRepository,
-    private val segmentTargetingService: SegmentTargetingService
+    private val segmentReadPort: SegmentReadPort
 ) {
     suspend fun execute(input: GetCampaignSegmentComparisonUseCaseIn): GetCampaignSegmentComparisonUseCaseOut {
         val segmentIds = input.segmentIds
@@ -59,8 +57,8 @@ class GetCampaignSegmentComparisonUseCase(
      * conversionRate: eventUserCount / targetUserCount * 100 (타겟 중 이벤트 수행 유저 비율)
      */
     private suspend fun getMetrics(segmentId: Long, campaignId: Long, filteredEvents: List<Event>): SegmentComparisonMetricDto {
-        val segmentName = segmentRepository.findById(segmentId)?.name
-        val segmentTargetUserIds = segmentTargetingService.resolveUserIds(segmentId, campaignId).toSet()
+        val segmentName = segmentReadPort.findNameById(segmentId)
+        val segmentTargetUserIds = segmentReadPort.findTargetUserIds(segmentId, campaignId).toSet()
         val eventsFromSegmentTargets = filteredEvents.filter { event -> segmentTargetUserIds.contains(event.userId) }
         val usersWithEventCount = eventsFromSegmentTargets.map { it.userId }.toSet().size
         val segmentTargetUserCount = segmentTargetUserIds.size

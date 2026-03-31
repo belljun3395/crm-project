@@ -10,7 +10,7 @@ import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
 import com.manage.crm.event.domain.vo.CampaignProperties
 import com.manage.crm.event.domain.vo.CampaignProperty
-import com.manage.crm.segment.domain.repository.SegmentRepository
+import com.manage.crm.segment.application.port.query.SegmentReadPort
 import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
@@ -33,7 +33,7 @@ import org.springframework.transaction.annotation.Transactional
 class PostCampaignUseCase(
     private val campaignRepository: CampaignRepository,
     private val campaignSegmentsRepository: CampaignSegmentsRepository,
-    private val segmentRepository: SegmentRepository,
+    private val segmentReadPort: SegmentReadPort,
     private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate,
     private val campaignCacheManager: CampaignCacheManager
 ) {
@@ -48,7 +48,7 @@ class PostCampaignUseCase(
         }
 
         segmentIds.forEach { segmentId ->
-            if (segmentRepository.findById(segmentId) == null) {
+            if (!segmentReadPort.existsById(segmentId)) {
                 throw NotFoundByIdException("Segment", segmentId)
             }
         }
