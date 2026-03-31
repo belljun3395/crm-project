@@ -26,7 +26,6 @@ import org.springframework.kafka.support.serializer.JsonSerializer
  */
 @Configuration
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
-@ConditionalOnProperty(name = ["kafka.enabled"], havingValue = "true", matchIfMissing = true)
 class KafkaConfig {
 
     @Value("\${spring.kafka.bootstrap-servers}")
