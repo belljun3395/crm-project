@@ -16,6 +16,7 @@ import com.manage.crm.email.domain.vo.CampaignVariable
 import com.manage.crm.email.domain.vo.EmailProviderType
 import com.manage.crm.email.domain.vo.UserVariable
 import com.manage.crm.email.domain.vo.Variables
+import com.manage.crm.event.application.port.query.EventReadPort
 import com.manage.crm.event.domain.Campaign
 import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.repository.CampaignRepository
@@ -24,7 +25,7 @@ import com.manage.crm.event.domain.vo.CampaignProperties
 import com.manage.crm.event.domain.vo.CampaignProperty
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.service.CampaignEventsService
-import com.manage.crm.segment.service.SegmentTargetingService
+import com.manage.crm.segment.application.port.query.SegmentReadPort
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.user.domain.User
@@ -37,6 +38,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
 import java.time.LocalDateTime
 
 class SendNotificationEmailUseCaseTest : BehaviorSpec({
@@ -48,7 +50,8 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
     lateinit var campaignRepository: CampaignRepository
     lateinit var campaignSegmentsRepository: CampaignSegmentsRepository
     lateinit var userRepository: UserRepository
-    lateinit var segmentTargetingService: SegmentTargetingService
+    lateinit var eventReadPort: EventReadPort
+    lateinit var segmentReadPort: SegmentReadPort
     lateinit var useCase: SendNotificationEmailUseCase
 
     beforeContainer {
@@ -60,7 +63,8 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
         campaignRepository = mockk()
         campaignSegmentsRepository = mockk()
         userRepository = mockk()
-        segmentTargetingService = mockk()
+        eventReadPort = mockk()
+        segmentReadPort = mockk()
         useCase = SendNotificationEmailUseCase(
             emailTemplateRepository,
             emailTemplateHistoryRepository,
@@ -70,7 +74,8 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             campaignRepository,
             campaignSegmentsRepository,
             userRepository,
-            segmentTargetingService,
+            eventReadPort,
+            segmentReadPort,
             ObjectMapper()
         )
     }
@@ -649,7 +654,9 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
                 segmentId = 123L
             )
 
-            coEvery { segmentTargetingService.resolveUserIds(123L, null) } returns listOf(1L, 2L)
+            io.mockk.every { userRepository.findAll() } returns flowOf(userSubs(2)[0], userSubs(2)[1])
+            coEvery { eventReadPort.findAllByUserIdIn(any()) } returns emptyList()
+            coEvery { segmentReadPort.findTargetUserIds(123L, any(), any()) } returns listOf(1L, 2L)
             coEvery { emailTemplateRepository.findById(useCaseIn.templateId) } answers {
                 EmailTemplate.new(
                     id = 1,
@@ -675,7 +682,7 @@ class SendNotificationEmailUseCaseTest : BehaviorSpec({
             then("resolve target users from segment and ignore direct userIds") {
                 val result = useCase.execute(useCaseIn)
                 result.isSuccess shouldBe true
-                coVerify(exactly = 1) { segmentTargetingService.resolveUserIds(123L, null) }
+                coVerify(exactly = 1) { segmentReadPort.findTargetUserIds(123L, any(), any()) }
                 coVerify(exactly = 1) { userRepository.findAllByIdIn(listOf(1L, 2L)) }
                 coVerify(exactly = 0) { userRepository.findAllByIdIn(listOf(999L)) }
             }

@@ -1,7 +1,11 @@
 package com.manage.crm.segment.adapter.query
 
 import com.manage.crm.segment.application.port.query.SegmentReadPort
+import com.manage.crm.segment.application.port.query.SegmentTargetEventReadModel
+import com.manage.crm.segment.application.port.query.SegmentTargetUserReadModel
 import com.manage.crm.segment.domain.repository.SegmentRepository
+import com.manage.crm.segment.service.SegmentTargetEvent
+import com.manage.crm.segment.service.SegmentTargetUser
 import com.manage.crm.segment.service.SegmentTargetingService
 import org.springframework.stereotype.Component
 
@@ -18,7 +22,32 @@ class SegmentReadAdapter(
         return segmentRepository.findById(segmentId)?.name
     }
 
-    override suspend fun findTargetUserIds(segmentId: Long, campaignId: Long?): List<Long> {
-        return segmentTargetingService.resolveUserIds(segmentId, campaignId)
+    override suspend fun findTargetUserIds(
+        segmentId: Long,
+        users: List<SegmentTargetUserReadModel>,
+        eventsByUserId: Map<Long, List<SegmentTargetEventReadModel>>
+    ): List<Long> {
+        val ruleSet = segmentTargetingService.loadRuleSet(segmentId) ?: return emptyList()
+        val targetUsers = users.map { it.toTargetUser() }
+        val targetEventsByUserId = eventsByUserId.mapValues { (_, events) ->
+            events.map { event -> event.toTargetEvent() }
+        }
+        return segmentTargetingService.resolveUserIds(ruleSet, targetUsers, targetEventsByUserId)
     }
+}
+
+private fun SegmentTargetUserReadModel.toTargetUser(): SegmentTargetUser {
+    return SegmentTargetUser(
+        id = id,
+        userAttributesJson = userAttributesJson,
+        createdAt = createdAt
+    )
+}
+
+private fun SegmentTargetEventReadModel.toTargetEvent(): SegmentTargetEvent {
+    return SegmentTargetEvent(
+        userId = userId,
+        name = name,
+        occurredAt = occurredAt
+    )
 }

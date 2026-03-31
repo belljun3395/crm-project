@@ -5,6 +5,7 @@ import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
 import com.manage.crm.segment.application.dto.PostSegmentConditionIn
 import com.manage.crm.segment.application.dto.PostSegmentUseCaseIn
 import com.manage.crm.segment.domain.Segment
+import com.manage.crm.segment.domain.SegmentFixtures
 import com.manage.crm.segment.domain.repository.SegmentConditionRepository
 import com.manage.crm.segment.domain.repository.SegmentRepository
 import com.manage.crm.segment.exception.InvalidSegmentConditionException
@@ -26,7 +27,7 @@ class PostSegmentUseCaseTest : BehaviorSpec({
     lateinit var transactionSynchronizationTemplate: TransactionSynchronizationTemplate
     lateinit var useCase: PostSegmentUseCase
 
-    beforeTest {
+    beforeContainer {
         segmentRepository = mockk()
         segmentConditionRepository = mockk(relaxed = true)
         journeyTriggerQueuePublisher = mockk(relaxed = true)
@@ -39,7 +40,7 @@ class PostSegmentUseCaseTest : BehaviorSpec({
         )
     }
 
-    given("post segment") {
+    given("UC-SEGMENT-001 PostSegmentUseCase") {
         `when`("segment name already exists on create") {
             then("throw duplicate exception") {
                 val request = PostSegmentUseCaseIn(
@@ -55,12 +56,11 @@ class PostSegmentUseCaseTest : BehaviorSpec({
                         )
                     )
                 )
-                coEvery { segmentRepository.findByName("existing-segment") } returns Segment.new(
-                    id = 1L,
-                    name = "existing-segment",
-                    description = "already exists",
-                    active = true
-                )
+                val existingSegment = SegmentFixtures.aSegmentWithName("existing-segment")
+                    .withDescription("already exists")
+                    .withId(1L)
+                    .build()
+                coEvery { segmentRepository.findByName("existing-segment") } returns existingSegment
 
                 shouldThrow<AlreadyExistsException> {
                     useCase.execute(request)
@@ -161,11 +161,52 @@ class PostSegmentUseCaseTest : BehaviorSpec({
                 )
 
                 coEvery { segmentRepository.findByName("active-users") } returns null
-                coEvery { segmentRepository.save(any()) } throws DataIntegrityViolationException("duplicate key")
+                coEvery { segmentRepository.save(any()) } throws DataIntegrityViolationException("Duplicate entry for key 'uq_segments_name'")
 
                 shouldThrow<AlreadyExistsException> {
                     useCase.execute(request)
                 }
+            }
+        }
+
+        `when`("segment id is provided and segment exists") {
+            then("update segment and replace conditions") {
+                val objectMapper = jacksonObjectMapper()
+                val segmentId = 5L
+                val existing = SegmentFixtures.aSegment()
+                    .withId(segmentId)
+                    .withName("old-name")
+                    .withDescription("old desc")
+                    .withActive(true)
+                    .withCreatedAt(LocalDateTime.of(2024, 1, 1, 0, 0))
+                    .build()
+
+                val request = PostSegmentUseCaseIn(
+                    id = segmentId,
+                    name = "updated-name",
+                    description = "new desc",
+                    active = false,
+                    conditions = listOf(
+                        PostSegmentConditionIn(
+                            field = "user.email",
+                            operator = "EQ",
+                            valueType = "STRING",
+                            value = objectMapper.readTree("\"admin@example.com\"")
+                        )
+                    )
+                )
+
+                coEvery { segmentRepository.findByName("updated-name") } returns null
+                coEvery { segmentRepository.findById(segmentId) } returns existing
+                coEvery { segmentRepository.save(any()) } answers { firstArg() }
+                coEvery { segmentConditionRepository.deleteBySegmentId(segmentId) } returns 1L
+                coEvery { segmentConditionRepository.save(any()) } answers { firstArg() }
+
+                val result = useCase.execute(request)
+
+                result.segment.name shouldBe "updated-name"
+                result.segment.conditions.size shouldBe 1
+                coVerify(exactly = 1) { segmentConditionRepository.deleteBySegmentId(segmentId) }
             }
         }
 

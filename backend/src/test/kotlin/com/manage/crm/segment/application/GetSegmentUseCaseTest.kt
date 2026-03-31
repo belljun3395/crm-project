@@ -2,8 +2,8 @@ package com.manage.crm.segment.application
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.manage.crm.segment.application.dto.GetSegmentUseCaseIn
-import com.manage.crm.segment.domain.Segment
-import com.manage.crm.segment.domain.SegmentCondition
+import com.manage.crm.segment.domain.SegmentConditionFixtures
+import com.manage.crm.segment.domain.SegmentFixtures
 import com.manage.crm.segment.domain.repository.SegmentConditionRepository
 import com.manage.crm.segment.domain.repository.SegmentRepository
 import com.manage.crm.support.exception.NotFoundByIdException
@@ -21,7 +21,7 @@ class GetSegmentUseCaseTest : BehaviorSpec({
     lateinit var segmentConditionRepository: SegmentConditionRepository
     lateinit var useCase: GetSegmentUseCase
 
-    beforeTest {
+    beforeContainer {
         segmentRepository = mockk()
         segmentConditionRepository = mockk()
         useCase = GetSegmentUseCase(
@@ -31,7 +31,7 @@ class GetSegmentUseCaseTest : BehaviorSpec({
         )
     }
 
-    given("get segment") {
+    given("UC-SEGMENT-003 GetSegmentUseCase") {
         `when`("segment does not exist") {
             then("throw not found") {
                 val segmentId = 999L
@@ -46,22 +46,19 @@ class GetSegmentUseCaseTest : BehaviorSpec({
         `when`("segment exists") {
             then("return segment with conditions") {
                 val segmentId = 1L
-                val segment = Segment.new(
-                    id = segmentId,
-                    name = "power-users",
-                    description = "Power users",
-                    active = true
-                ).apply {
-                    createdAt = LocalDateTime.of(2024, 1, 1, 0, 0)
-                }
-                val condition = SegmentCondition.new(
-                    segmentId = segmentId,
-                    fieldName = "user.id",
-                    operator = "GT",
-                    valueType = "NUMBER",
-                    conditionValue = "100",
-                    position = 1
-                )
+                val segment = SegmentFixtures.aSegment()
+                    .withId(segmentId)
+                    .withName("power-users")
+                    .withDescription("Power users")
+                    .withActive(true)
+                    .withCreatedAt(LocalDateTime.of(2024, 1, 1, 0, 0))
+                    .build()
+
+                val condition = SegmentConditionFixtures.aUserIdCondition()
+                    .withSegmentId(segmentId)
+                    .withConditionValue("100")
+                    .withPosition(1)
+                    .build()
 
                 coEvery { segmentRepository.findById(segmentId) } returns segment
                 every { segmentConditionRepository.findBySegmentIdOrderByPositionAsc(segmentId) } returns flowOf(condition)

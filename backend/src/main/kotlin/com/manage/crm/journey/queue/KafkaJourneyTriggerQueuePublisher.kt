@@ -32,12 +32,12 @@ class KafkaJourneyTriggerQueuePublisher(
         }
     }
 
-    override suspend fun publishSegmentContextTrigger(changedUserIds: List<Long>?) {
+    override suspend fun publishSegmentContextTrigger(changedUserIds: List<Long>) {
         val message = JourneyTriggerQueueMessage(
             triggerType = JourneyTriggerQueueType.SEGMENT_CONTEXT,
-            changedUserIds = changedUserIds
+            changedUserIds = changedUserIds.ifEmpty { null }
         )
-        val key = "segment-context-${changedUserIds?.joinToString(",") ?: "all"}"
+        val key = "segment-context-${changedUserIds.joinToString(",").ifEmpty { "all" }}"
         val future = journeyTriggerKafkaTemplate.send(JourneyTriggerQueuePublisher.TOPIC, key, message)
         future.whenComplete { result: SendResult<String, JourneyTriggerQueueMessage>?, ex: Throwable? ->
             if (ex != null) {

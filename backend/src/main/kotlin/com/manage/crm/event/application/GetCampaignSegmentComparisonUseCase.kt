@@ -7,6 +7,9 @@ import com.manage.crm.event.domain.Event
 import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.event.util.toPercentage
 import com.manage.crm.segment.application.port.query.SegmentReadPort
+import com.manage.crm.segment.application.port.query.SegmentTargetEventReadModel
+import com.manage.crm.segment.application.port.query.SegmentTargetUserReadModel
+import com.manage.crm.user.application.port.query.UserReadPort
 import org.springframework.stereotype.Component
 
 /**
@@ -19,7 +22,8 @@ import org.springframework.stereotype.Component
 @Component
 class GetCampaignSegmentComparisonUseCase(
     private val campaignEventsService: CampaignEventsService,
-    private val segmentReadPort: SegmentReadPort
+    private val segmentReadPort: SegmentReadPort,
+    private val userReadPort: UserReadPort
 ) {
     suspend fun execute(input: GetCampaignSegmentComparisonUseCaseIn): GetCampaignSegmentComparisonUseCaseOut {
         val segmentIds = input.segmentIds
@@ -38,9 +42,40 @@ class GetCampaignSegmentComparisonUseCase(
                     baseEvents.filter { it.name == eventName }
                 }
             }
+        val campaignEvents = campaignEventsService.findAllEventsByCampaignId(input.campaignId)
+        val campaignUserIds = campaignEvents.map { it.userId }.distinct()
+        val users = if (campaignUserIds.isEmpty()) {
+            emptyList()
+        } else {
+            userReadPort.findAllByIdIn(campaignUserIds).map { user ->
+                SegmentTargetUserReadModel(
+                    id = user.id,
+                    userAttributesJson = user.userAttributesJson,
+                    createdAt = user.createdAt
+                )
+            }
+        }
+        val eventsByUserId = campaignEvents
+            .groupBy { it.userId }
+            .mapValues { (_, userEvents) ->
+                userEvents.map { event ->
+                    SegmentTargetEventReadModel(
+                        userId = event.userId,
+                        name = event.name,
+                        occurredAt = event.createdAt
+                    )
+                }
+            }
 
         val metrics = segmentIds
-            .map { segmentId -> getMetrics(segmentId, input.campaignId, events) }
+            .map { segmentId ->
+                getMetrics(
+                    segmentId = segmentId,
+                    filteredEvents = events,
+                    users = users,
+                    eventsByUserId = eventsByUserId
+                )
+            }
             .sortedByDescending { it.conversionRate }
 
         return GetCampaignSegmentComparisonUseCaseOut(
@@ -56,9 +91,18 @@ class GetCampaignSegmentComparisonUseCase(
      * eventCount: 대상 유저에게서 발생한 이벤트 총 횟수(중복 포함)
      * conversionRate: eventUserCount / targetUserCount * 100 (타겟 중 이벤트 수행 유저 비율)
      */
-    private suspend fun getMetrics(segmentId: Long, campaignId: Long, filteredEvents: List<Event>): SegmentComparisonMetricDto {
+    private suspend fun getMetrics(
+        segmentId: Long,
+        filteredEvents: List<Event>,
+        users: List<SegmentTargetUserReadModel>,
+        eventsByUserId: Map<Long, List<SegmentTargetEventReadModel>>
+    ): SegmentComparisonMetricDto {
         val segmentName = segmentReadPort.findNameById(segmentId)
-        val segmentTargetUserIds = segmentReadPort.findTargetUserIds(segmentId, campaignId).toSet()
+        val segmentTargetUserIds = segmentReadPort.findTargetUserIds(
+            segmentId = segmentId,
+            users = users,
+            eventsByUserId = eventsByUserId
+        ).toSet()
         val eventsFromSegmentTargets = filteredEvents.filter { event -> segmentTargetUserIds.contains(event.userId) }
         val usersWithEventCount = eventsFromSegmentTargets.map { it.userId }.toSet().size
         val segmentTargetUserCount = segmentTargetUserIds.size

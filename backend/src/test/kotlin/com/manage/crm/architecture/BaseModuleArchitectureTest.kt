@@ -181,6 +181,41 @@ abstract class BaseModuleArchitectureTest {
     }
 
     @Test
+    fun `service and adapter layers do not depend on external crm modules`() {
+        if (!spec.enforceInternalLayerNoCrossModuleDependency) {
+            return
+        }
+
+        val internalLayerClasses = Konsist
+            .scopeFromProduction()
+            .classes()
+            .filter { declaration ->
+                declaration.resideInPackage(spec.servicePackagePattern) ||
+                    declaration.resideInPackage(spec.adapterPackagePattern)
+            }
+
+        val violations = internalLayerClasses.flatMap { owner ->
+            constructorDependencyTypes(owner).mapNotNull { dependencyType ->
+                val dependency = dependencyType.sourceDeclaration?.asClassOrInterfaceOrObjectDeclaration()
+                    ?: return@mapNotNull null
+                val dependencyPackageName = dependency.packagee?.name ?: return@mapNotNull null
+                val dependencyModule = dependencyPackageName.crmModuleToken() ?: return@mapNotNull null
+                if (dependencyModule == spec.packageToken || dependencyModule in spec.internalLayerAllowedExternalModules) {
+                    return@mapNotNull null
+                }
+                "${owner.name} -> $dependencyPackageName.${dependency.name}"
+            }
+        }
+
+        check(violations.isEmpty()) {
+            violations.joinToString(
+                prefix = "[FAIL] service/adapter must not depend on external crm modules. Violations: ",
+                separator = ", "
+            )
+        }
+    }
+
+    @Test
     fun `use case has single execute signature with UseCaseIn parameter`() {
         if (!spec.enforceUseCaseExecuteSignature) {
             return

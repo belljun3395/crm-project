@@ -1,42 +1,11 @@
-package com.manage.crm.segment.application
+package com.manage.crm.segment.util
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.manage.crm.segment.domain.SegmentOperator
+import com.manage.crm.segment.domain.SegmentValueType
 import com.manage.crm.segment.exception.InvalidSegmentConditionException
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
-
-enum class SegmentValueType {
-    STRING,
-    NUMBER,
-    DATETIME,
-    BOOLEAN;
-
-    companion object {
-        fun from(value: String): SegmentValueType {
-            return entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
-                ?: throw InvalidSegmentConditionException("Unsupported valueType: $value")
-        }
-    }
-}
-
-enum class SegmentOperator {
-    EQ,
-    NEQ,
-    GT,
-    GTE,
-    LT,
-    LTE,
-    IN,
-    CONTAINS,
-    BETWEEN;
-
-    companion object {
-        fun from(value: String): SegmentOperator {
-            return entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
-                ?: throw InvalidSegmentConditionException("Unsupported operator: $value")
-        }
-    }
-}
 
 object SegmentConditionValidator {
     private val fieldValueTypeMap = mapOf(
@@ -92,7 +61,7 @@ object SegmentConditionValidator {
             throw InvalidSegmentConditionException("Unsupported field: $field")
         }
 
-        val parsedValueType = SegmentValueType.from(valueType)
+        val parsedValueType = SegmentValueType.Companion.from(valueType)
         val requiredValueType = fieldValueTypeMap[field]
             ?: throw InvalidSegmentConditionException("Unsupported field: $field")
         if (parsedValueType != requiredValueType) {
@@ -101,7 +70,7 @@ object SegmentConditionValidator {
             )
         }
 
-        val parsedOperator = SegmentOperator.from(operator)
+        val parsedOperator = SegmentOperator.Companion.from(operator)
         val allowedOperators = allowedOperatorsByType[parsedValueType].orEmpty()
 
         if (parsedOperator !in allowedOperators) {

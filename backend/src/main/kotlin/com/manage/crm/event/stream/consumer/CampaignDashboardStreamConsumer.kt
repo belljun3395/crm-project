@@ -18,7 +18,7 @@ class CampaignDashboardStreamConsumer(
         private const val MAX_STREAM_LENGTH = 10_000L
     }
 
-    val log = KotlinLogging.logger { }
+    private val log = KotlinLogging.logger { }
 
     @Scheduled(fixedDelay = 60_000)
     fun processStreamEvents() = runBlocking {
