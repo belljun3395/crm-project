@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
 
-class SegmentArchitectureKonsistTest {
+class SegmentArchitectureTest {
     @Test
     fun `segment use case classes reside in application package`() {
         Konsist

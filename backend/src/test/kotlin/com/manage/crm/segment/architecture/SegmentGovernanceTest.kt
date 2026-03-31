@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
  * 4. Every UseCase KDoc must have a Success: section.
  * 5. Every UseCase test file must reference the same UC code in a given() block.
  */
-class SegmentGovernanceKonsistTest {
+class SegmentGovernanceTest {
 
     @Test
     fun `segment use case classes have kdoc`() {
