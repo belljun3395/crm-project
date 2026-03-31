@@ -26,7 +26,6 @@ coroutine-test = "1.8.0"
 testcontainers = "1.20.4"
 kotlin-logging = "7.0.0"
 commons-io = "2.19.0"
-spring-cloud-gcp = "5.6.0"
 loki4j = "1.4.2"
 jooq = "3.19.18"
 
@@ -34,7 +33,6 @@ jooq = "3.19.18"
 spring-modulith-bom = { module = "org.springframework.modulith:spring-modulith-bom", version.ref = "spring-modulith" }
 spring-cloud-dependencies-bom = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "spring-cloud" }
 aws-sdk-bom = { module = "software.amazon.awssdk:bom", version.ref = "aws-sdk" }
-spring-cloud-gcp-dependencies-bom = { module = "com.google.cloud:spring-cloud-gcp-dependencies", version.ref = "spring-cloud-gcp" }
 
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5" }
@@ -81,7 +79,6 @@ aws-sdk-ses = { module = "software.amazon.awssdk:ses" }
 aws-sdk-scheduler = { module = "software.amazon.awssdk:scheduler" }
 aws-query-protocol = { module = "software.amazon.awssdk:aws-query-protocol" }
 
-spring-cloud-gcp-starter-pubsub = { module = "com.google.cloud:spring-cloud-gcp-starter-pubsub" }
 therapi-runtime-javadoc-scribe = { module = "com.github.therapi:therapi-runtime-javadoc-scribe", version.ref = "javadoc-scribe" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }

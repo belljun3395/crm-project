@@ -65,7 +65,6 @@ dependencyManagement {
         mavenBom(bomCoordinate(libs.spring.modulith.bom))
         mavenBom(bomCoordinate(libs.spring.cloud.dependencies.bom))
         mavenBom(bomCoordinate(libs.aws.sdk.bom))
-        mavenBom(bomCoordinate(libs.spring.cloud.gcp.dependencies.bom))
     }
 }
 
@@ -125,9 +124,6 @@ dependencies {
     implementation(libs.aws.sdk.ses)
     implementation(libs.aws.sdk.scheduler)
     implementation(libs.aws.query.protocol)
-
-    /** gcp */
-    implementation(libs.spring.cloud.gcp.starter.pubsub)
 
     /** docs */
     runtimeOnly(libs.therapi.runtime.javadoc.scribe)
