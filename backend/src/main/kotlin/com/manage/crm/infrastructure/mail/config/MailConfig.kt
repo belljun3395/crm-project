@@ -1,10 +1,5 @@
 package com.manage.crm.infrastructure.mail.config
 
-import com.amazonaws.auth.AWSCredentials
-import com.amazonaws.auth.AWSStaticCredentialsProvider
-import com.amazonaws.client.builder.AwsClientBuilder
-import com.amazonaws.services.simpleemail.AmazonSimpleEmailService
-import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClientBuilder
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.autoconfigure.mail.MailProperties
@@ -12,6 +7,10 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.JavaMailSenderImpl
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.ses.SesClient
+import java.net.URI
 import java.util.*
 
 @Configuration
@@ -19,7 +18,7 @@ class MailConfig {
     companion object {
         const val MAIL_PROPERTIES = "mailProperties"
         const val MAIL_SENDER = "javaMailSender"
-        const val AWS_EMAIL_SENDER = "awsEmailProvider"
+        const val SES_CLIENT = "sesClient"
 
         const val MAIL_SMTP_AUTH_KEY = "mail.smtp.auth"
         const val MAIL_SMTP_DEBUG_KEY = "mail.smtp.debug"
@@ -69,7 +68,6 @@ class MailConfig {
         return mailProperties
     }
 
-    // ----------------- Java Mail Config -----------------
     @Bean(name = [MAIL_SENDER])
     fun javaMailSender(): JavaMailSender {
         val javaMailSender = JavaMailSenderImpl()
@@ -92,26 +90,21 @@ class MailConfig {
         return javaMailSender
     }
 
-    // ----------------- AWS Config -----------------
-    @Value("\${spring.aws.region}")
-    val region: String? = null
+    @Value("\${spring.aws.region:#{null}}")
+    private val region: String? = null
 
     @Value("\${spring.aws.endpoint-url:#{null}}")
-    val endpointUrl: String? = null
+    private val endpointUrl: String? = null
 
-    @Bean(name = [AWS_EMAIL_SENDER])
+    @Bean(name = [SES_CLIENT])
     @ConditionalOnProperty(name = ["mail.provider"], havingValue = "ses")
-    fun awsEmailSender(awsCredentials: AWSCredentials): AmazonSimpleEmailService {
-        val awsStaticCredentialsProvider = AWSStaticCredentialsProvider(awsCredentials)
-        val clientBuilder = AmazonSimpleEmailServiceClientBuilder
-            .standard()
-            .withCredentials(awsStaticCredentialsProvider)
+    fun sesClient(awsCredentialsProvider: AwsCredentialsProvider): SesClient {
+        val builder = SesClient.builder()
+            .credentialsProvider(awsCredentialsProvider)
 
-        // Configure endpoint URL for LocalStack or use region for AWS
-        endpointUrl?.let {
-            clientBuilder.withEndpointConfiguration(AwsClientBuilder.EndpointConfiguration(endpointUrl, region))
-        } ?: clientBuilder.withRegion(region)
+        region?.let { builder.region(Region.of(it)) }
+        endpointUrl?.let { builder.endpointOverride(URI.create(it)) }
 
-        return clientBuilder.build()
+        return builder.build()
     }
 }

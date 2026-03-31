@@ -116,3 +116,7 @@ resilience4j:
             webhookDelivery:
                 failure-rate-threshold: 100
                 wait-duration-in-open-state: 5s
+
+cache:
+    invalidation:
+        enabled: false

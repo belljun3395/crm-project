@@ -1,6 +1,5 @@
 package com.manage.crm.infrastructure.message.config
 
-import com.amazonaws.auth.AWSCredentials
 import io.awspring.cloud.sqs.config.SqsMessageListenerContainerFactory
 import io.awspring.cloud.sqs.listener.acknowledgement.handler.AcknowledgementMode
 import io.awspring.cloud.sqs.operations.SqsTemplate
@@ -8,9 +7,10 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import software.amazon.awssdk.auth.credentials.AwsCredentials
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
+import java.net.URI
 
 @Configuration
 @ConditionalOnProperty(name = ["cloud.provider"], havingValue = "aws", matchIfMissing = true)
@@ -21,44 +21,32 @@ class MessageConfig {
         const val SQS_LISTENER_CONTAINER_FACTORY = "defaultSqsListenerContainerFactory"
     }
 
-    // ----------------- AWS SQS -----------------
-    @Value("\${spring.aws.region}")
-    val region: String? = null
+    @Value("\${spring.aws.region:#{null}}")
+    private val region: String? = null
 
     @Value("\${spring.aws.endpoint-url:#{null}}")
-    val endpointUrl: String? = null
+    private val endpointUrl: String? = null
 
     @Bean(SQS_ASYNC_CLIENT)
-    fun sqsAsyncClient(awsCredentials: AWSCredentials): SqsAsyncClient {
-        val clientBuilder = SqsAsyncClient
-            .builder()
-            .credentialsProvider {
-                object : AwsCredentials {
-                    override fun accessKeyId(): String = awsCredentials.awsAccessKeyId
-                    override fun secretAccessKey(): String = awsCredentials.awsSecretKey
-                }
-            }
-            .region(Region.of(region))
+    fun sqsAsyncClient(awsCredentialsProvider: AwsCredentialsProvider): SqsAsyncClient {
+        val builder = SqsAsyncClient.builder()
+            .credentialsProvider(awsCredentialsProvider)
 
-        // Configure endpoint URL for LocalStack
-        endpointUrl?.let { url ->
-            clientBuilder.endpointOverride(java.net.URI.create(url))
-        }
+        region?.let { builder.region(Region.of(it)) }
+        endpointUrl?.let { builder.endpointOverride(URI.create(it)) }
 
-        return clientBuilder.build()
+        return builder.build()
     }
 
     @Bean(SQS_LISTENER_CONTAINER_FACTORY)
-    fun defaultSqsListenerContainerFactory(awsCredentials: AWSCredentials): SqsMessageListenerContainerFactory<Any> =
+    fun defaultSqsListenerContainerFactory(sqsAsyncClient: SqsAsyncClient): SqsMessageListenerContainerFactory<Any> =
         SqsMessageListenerContainerFactory
             .builder<Any>()
-            .configure { opt ->
-                opt.acknowledgementMode(AcknowledgementMode.MANUAL)
-            }
-            .sqsAsyncClient(sqsAsyncClient(awsCredentials))
+            .configure { opt -> opt.acknowledgementMode(AcknowledgementMode.MANUAL) }
+            .sqsAsyncClient(sqsAsyncClient)
             .build()
 
     @Bean(SQS_TEMPLATE)
-    fun sqsTemplate(awsCredentials: AWSCredentials): SqsTemplate =
-        SqsTemplate.newTemplate(sqsAsyncClient(awsCredentials))
+    fun sqsTemplate(sqsAsyncClient: SqsAsyncClient): SqsTemplate =
+        SqsTemplate.newTemplate(sqsAsyncClient)
 }

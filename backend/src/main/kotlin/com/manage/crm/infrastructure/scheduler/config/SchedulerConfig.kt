@@ -1,16 +1,16 @@
 package com.manage.crm.infrastructure.scheduler.config
 
-import com.amazonaws.auth.AWSCredentials
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.scheduling.annotation.EnableScheduling
-import software.amazon.awssdk.auth.credentials.AwsCredentials
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration
 import software.amazon.awssdk.core.retry.RetryMode
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.scheduler.SchedulerClient
+import java.net.URI
 import java.time.Duration
 
 @Configuration
@@ -20,42 +20,28 @@ class SchedulerConfig {
         const val SCHEDULER_CLIENT = "schedulerClient"
     }
 
-    // ----------------- AWS Scheduler -----------------
-    @Value("\${spring.aws.region}")
-    val region: String? = null
+    @Value("\${spring.aws.region:#{null}}")
+    private val region: String? = null
 
     @Value("\${spring.aws.endpoint-url:#{null}}")
-    val endpointUrl: String? = null
+    private val endpointUrl: String? = null
 
     @Bean(name = [SCHEDULER_CLIENT])
     @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws", matchIfMissing = true)
-    fun awsSchedulerClient(
-        awsCredentials: AWSCredentials
-    ): SchedulerClient {
-        val overrideConfig =
-            ClientOverrideConfiguration
-                .builder()
-                .apiCallTimeout(Duration.ofMinutes(2))
-                .apiCallAttemptTimeout(Duration.ofSeconds(90))
-                .retryStrategy(RetryMode.STANDARD)
-                .build()
+    fun awsSchedulerClient(awsCredentialsProvider: AwsCredentialsProvider): SchedulerClient {
+        val overrideConfig = ClientOverrideConfiguration.builder()
+            .apiCallTimeout(Duration.ofMinutes(2))
+            .apiCallAttemptTimeout(Duration.ofSeconds(90))
+            .retryStrategy(RetryMode.STANDARD)
+            .build()
 
-        val clientBuilder = SchedulerClient
-            .builder()
-            .region(Region.of(region))
+        val builder = SchedulerClient.builder()
             .overrideConfiguration(overrideConfig)
-            .credentialsProvider({
-                object : AwsCredentials {
-                    override fun accessKeyId(): String = awsCredentials.awsAccessKeyId
-                    override fun secretAccessKey(): String = awsCredentials.awsSecretKey
-                }
-            })
+            .credentialsProvider(awsCredentialsProvider)
 
-        // Configure endpoint URL for LocalStack
-        endpointUrl?.let { url ->
-            clientBuilder.endpointOverride(java.net.URI.create(url))
-        }
+        region?.let { builder.region(Region.of(it)) }
+        endpointUrl?.let { builder.endpointOverride(URI.create(it)) }
 
-        return clientBuilder.build()
+        return builder.build()
     }
 }
