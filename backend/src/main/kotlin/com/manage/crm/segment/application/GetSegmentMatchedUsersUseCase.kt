@@ -57,18 +57,22 @@ class GetSegmentMatchedUsersUseCase(
 
     /**
      * Loads users page-by-page and keeps only ids present in [targetIdSet].
+     * Stops paging as soon as all target ids are found.
      */
     private suspend fun loadUsersInTargetSet(targetIdSet: Set<Long>): List<User> {
         val users = mutableListOf<User>()
+        val remainingIds = targetIdSet.toMutableSet()
         var page = 0
-        while (true) {
+        while (remainingIds.isNotEmpty()) {
             val batch = userRepository.findAllWithPagination(page, PAGE_SIZE)
             if (batch.isEmpty()) {
                 break
             }
-            users += batch.filter { user ->
-                val userId = user.id ?: return@filter false
-                targetIdSet.contains(userId)
+            batch.forEach { user ->
+                val userId = user.id ?: return@forEach
+                if (remainingIds.remove(userId)) {
+                    users += user
+                }
             }
             if (batch.size < PAGE_SIZE) {
                 break

@@ -79,5 +79,29 @@ class GetSegmentMatchedUsersUseCaseTest : BehaviorSpec({
                 coVerify(exactly = 1) { userRepository.findAllWithPagination(0, 500) }
             }
         }
+
+        `when`("matched user has malformed userAttributes JSON") {
+            then("return user with null profile fields without throwing") {
+                val malformedUser = User.new(
+                    id = 5L,
+                    externalId = "user-bad",
+                    userAttributes = UserAttributes("not-valid-json"),
+                    createdAt = LocalDateTime.of(2025, 1, 1, 0, 0),
+                    updatedAt = LocalDateTime.of(2025, 1, 1, 0, 0)
+                )
+
+                coEvery { segmentTargetingService.resolveUserIds(20L, null) } returns listOf(5L)
+                coEvery { userRepository.findAllWithPagination(0, 500) } returns listOf(malformedUser)
+
+                val result = useCase.execute(
+                    GetSegmentMatchedUsersUseCaseIn(segmentId = 20L)
+                )
+
+                result.users.size shouldBe 1
+                result.users[0].id shouldBe 5L
+                result.users[0].email shouldBe null
+                result.users[0].name shouldBe null
+            }
+        }
     }
 })

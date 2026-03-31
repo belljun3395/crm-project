@@ -22,5 +22,5 @@ interface CampaignRepository : CoroutineCrudRepository<Campaign, Long>, Campaign
         LIMIT :limit
         """
     )
-    fun findRecentCampaigns(limit: Int): Flow<Campaign>
+    override fun findRecentCampaigns(limit: Int): Flow<Campaign>
 }

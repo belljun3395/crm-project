@@ -1,5 +1,6 @@
 package com.manage.crm.event.stream
 
+import com.manage.crm.event.event.CampaignDashboardEvent
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

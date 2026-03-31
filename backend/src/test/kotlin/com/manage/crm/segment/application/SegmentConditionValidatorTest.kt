@@ -192,14 +192,14 @@ class SegmentConditionValidatorTest : BehaviorSpec({
             }
         }
 
-        `when`("BOOLEAN field with non-boolean value") {
-            then("throws boolean value required") {
+        `when`("NUMBER field with boolean value") {
+            then("throws numeric value required") {
                 val ex = shouldThrow<InvalidSegmentConditionException> {
                     SegmentConditionValidator.validate(
                         field = "user.id",
                         operator = "EQ",
                         valueType = "NUMBER",
-                        value = objectMapper.readTree("\"not-bool\"")
+                        value = objectMapper.readTree("true")
                     )
                 }
                 ex.message shouldContain "NUMBER value must be numeric"

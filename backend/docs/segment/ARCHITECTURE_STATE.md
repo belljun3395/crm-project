@@ -48,4 +48,6 @@
 ## 5. Build/Lint/Test Baseline
 
 - `./gradlew ktlintFormat`
-- `./gradlew test --tests "*segment*"`
+- `./gradlew test --tests "*Segment*"`
+- `./gradlew test`
+- `bash scripts/check-backend-spec-governance.sh`

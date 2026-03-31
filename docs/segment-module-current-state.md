@@ -69,4 +69,4 @@
 ## Operational Baseline
 - Validation commands:
   - `./gradlew ktlintFormat`
-  - `./gradlew test --tests "*segment*"`
+  - `./gradlew test --tests "*Segment*"`

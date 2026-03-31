@@ -42,8 +42,10 @@ class UpdateCampaignUseCase(
         val normalizedName = input.name.trim()
         ensureNameIsUnique(normalizedName, input.campaignId)
 
-        val requestedSegmentIds = input.segmentIds.distinct()
-        ensureSegmentsExist(requestedSegmentIds)
+        val requestedSegmentIds = input.segmentIds?.distinct()
+        if (requestedSegmentIds != null) {
+            ensureSegmentsExist(requestedSegmentIds)
+        }
 
         val previousName = campaign.name
         campaign.name = normalizedName
@@ -52,13 +54,17 @@ class UpdateCampaignUseCase(
         )
 
         val updatedCampaign = campaignRepository.save(campaign)
-        replaceCampaignSegments(input.campaignId, requestedSegmentIds)
+
+        val resultSegmentIds = if (requestedSegmentIds != null) {
+            replaceCampaignSegments(input.campaignId, requestedSegmentIds)
+            requestedSegmentIds
+        } else {
+            campaignSegmentsRepository.findAllByCampaignId(input.campaignId).map { it.segmentId }
+        }
 
         transactionSynchronizationTemplate.afterCommit(Dispatchers.IO, "refresh campaign cache after update") {
             refreshCampaignCache(updatedCampaign.id ?: input.campaignId, previousName, updatedCampaign)
         }
-
-        val resultSegmentIds = requestedSegmentIds
 
         return UpdateCampaignUseCaseOut(
             id = updatedCampaign.id ?: input.campaignId,

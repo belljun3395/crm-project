@@ -99,21 +99,33 @@ class BrowseSegmentUseCaseTest : BehaviorSpec({
 
         `when`("limit is below minimum") {
             then("clamps to 1") {
-                every { segmentRepository.findAllByOrderByCreatedAtDesc() } returns emptyFlow()
+                val segments = (1..5).map { i ->
+                    Segment.new(id = i.toLong(), name = "seg-$i", description = "desc-$i", active = true)
+                }
+                every { segmentRepository.findAllByOrderByCreatedAtDesc() } returns flowOf(*segments.toTypedArray())
+                every {
+                    segmentConditionRepository.findBySegmentIdInOrderBySegmentIdAscPositionAsc(any())
+                } returns emptyFlow()
 
-                useCase.execute(BrowseSegmentUseCaseIn(limit = 0))
+                val result = useCase.execute(BrowseSegmentUseCaseIn(limit = 0))
 
-                verify { segmentRepository.findAllByOrderByCreatedAtDesc() }
+                result.segments.size shouldBe 1
             }
         }
 
         `when`("limit is above maximum") {
             then("clamps to 200") {
-                every { segmentRepository.findAllByOrderByCreatedAtDesc() } returns emptyFlow()
+                val segments = (1..250).map { i ->
+                    Segment.new(id = i.toLong(), name = "seg-$i", description = "desc-$i", active = true)
+                }
+                every { segmentRepository.findAllByOrderByCreatedAtDesc() } returns flowOf(*segments.toTypedArray())
+                every {
+                    segmentConditionRepository.findBySegmentIdInOrderBySegmentIdAscPositionAsc(any())
+                } returns emptyFlow()
 
-                useCase.execute(BrowseSegmentUseCaseIn(limit = 9999))
+                val result = useCase.execute(BrowseSegmentUseCaseIn(limit = 9999))
 
-                verify { segmentRepository.findAllByOrderByCreatedAtDesc() }
+                result.segments.size shouldBe 200
             }
         }
     }
