@@ -1,14 +1,16 @@
-package com.manage.crm.segment.application
+package com.manage.crm.segment.util
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.manage.crm.segment.exception.InvalidSegmentConditionException
-import com.manage.crm.segment.util.SegmentConditionValidator
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.string.shouldContain
 
 class SegmentConditionValidatorTest : BehaviorSpec({
     val objectMapper = jacksonObjectMapper()
+
+    beforeContainer {
+    }
 
     given("SegmentConditionValidator") {
         `when`("field is blank") {

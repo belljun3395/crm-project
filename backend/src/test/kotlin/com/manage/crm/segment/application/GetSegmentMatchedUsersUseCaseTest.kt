@@ -22,7 +22,7 @@ class GetSegmentMatchedUsersUseCaseTest : BehaviorSpec({
     lateinit var userReadPort: UserReadPort
     lateinit var useCase: GetSegmentMatchedUsersUseCase
 
-    beforeTest {
+    beforeContainer {
         segmentReadPort = mockk()
         eventReadPort = mockk()
         campaignEventReadPort = mockk()
