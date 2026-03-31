@@ -4,9 +4,8 @@ import com.manage.crm.event.application.dto.BrowseEventsUseCaseIn
 import com.manage.crm.event.domain.EventFixtures
 import com.manage.crm.event.domain.PropertiesFixtures
 import com.manage.crm.event.domain.repository.EventRepository
-import com.manage.crm.user.domain.UserFixtures
-import com.manage.crm.user.domain.repository.UserRepository
-import com.manage.crm.user.domain.vo.UserAttributesFixtures
+import com.manage.crm.user.application.port.query.UserReadModel
+import com.manage.crm.user.application.port.query.UserReadPort
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -16,13 +15,13 @@ import java.time.LocalDateTime
 
 class BrowseEventsUseCaseTest : BehaviorSpec({
     lateinit var eventRepository: EventRepository
-    lateinit var userRepository: UserRepository
+    lateinit var userReadPort: UserReadPort
     lateinit var browseEventsUseCase: BrowseEventsUseCase
 
     beforeContainer {
         eventRepository = mockk()
-        userRepository = mockk()
-        browseEventsUseCase = BrowseEventsUseCase(eventRepository, userRepository)
+        userReadPort = mockk()
+        browseEventsUseCase = BrowseEventsUseCase(eventRepository, userReadPort)
     }
 
     given("UC-EVENT-002: BrowseEventsUseCase") {
@@ -36,15 +35,16 @@ class BrowseEventsUseCaseTest : BehaviorSpec({
                     .build()
             }
             val users = events.map { e ->
-                UserFixtures.giveMeOne()
-                    .withId(e.userId)
-                    .withExternalId("ext-${e.userId}")
-                    .withUserAttributes(UserAttributesFixtures.giveMeOne().withValue("{}").build())
-                    .build()
+                UserReadModel(
+                    id = e.userId,
+                    externalId = "ext-${e.userId}",
+                    userAttributesJson = "{}",
+                    createdAt = LocalDateTime.now()
+                )
             }
 
             coEvery { eventRepository.findAll() } returns flowOf(*events.toTypedArray())
-            coEvery { userRepository.findAllByIdIn(any()) } returns users
+            coEvery { userReadPort.findAllByIdIn(any()) } returns users
 
             val result = browseEventsUseCase.execute(BrowseEventsUseCaseIn(limit = 3))
 
@@ -70,15 +70,16 @@ class BrowseEventsUseCaseTest : BehaviorSpec({
                     .build()
             }
             val users = events.map { e ->
-                UserFixtures.giveMeOne()
-                    .withId(e.userId)
-                    .withExternalId("ext-${e.userId}")
-                    .withUserAttributes(UserAttributesFixtures.giveMeOne().withValue("{}").build())
-                    .build()
+                UserReadModel(
+                    id = e.userId,
+                    externalId = "ext-${e.userId}",
+                    userAttributesJson = "{}",
+                    createdAt = LocalDateTime.now()
+                )
             }
 
             coEvery { eventRepository.findAll() } returns flowOf(*events.toTypedArray())
-            coEvery { userRepository.findAllByIdIn(any()) } returns users
+            coEvery { userReadPort.findAllByIdIn(any()) } returns users
 
             val result = browseEventsUseCase.execute(BrowseEventsUseCaseIn(limit = 0))
 
@@ -97,15 +98,16 @@ class BrowseEventsUseCaseTest : BehaviorSpec({
                     .build()
             }
             val users = events.map { e ->
-                UserFixtures.giveMeOne()
-                    .withId(e.userId)
-                    .withExternalId("ext-${e.userId}")
-                    .withUserAttributes(UserAttributesFixtures.giveMeOne().withValue("{}").build())
-                    .build()
+                UserReadModel(
+                    id = e.userId,
+                    externalId = "ext-${e.userId}",
+                    userAttributesJson = "{}",
+                    createdAt = LocalDateTime.now()
+                )
             }
 
             coEvery { eventRepository.findAll() } returns flowOf(*events.toTypedArray())
-            coEvery { userRepository.findAllByIdIn(any()) } returns users
+            coEvery { userReadPort.findAllByIdIn(any()) } returns users
 
             val result = browseEventsUseCase.execute(BrowseEventsUseCaseIn(limit = 9999))
 
@@ -123,7 +125,7 @@ class BrowseEventsUseCaseTest : BehaviorSpec({
                 .build()
 
             coEvery { eventRepository.findAll() } returns flowOf(event)
-            coEvery { userRepository.findAllByIdIn(any()) } returns emptyList() // no users found
+            coEvery { userReadPort.findAllByIdIn(any()) } returns emptyList() // no users found
 
             val result = browseEventsUseCase.execute(BrowseEventsUseCaseIn(limit = 10))
 
@@ -135,7 +137,7 @@ class BrowseEventsUseCaseTest : BehaviorSpec({
 
         `when`("no events exist") {
             coEvery { eventRepository.findAll() } returns flowOf()
-            coEvery { userRepository.findAllByIdIn(any()) } returns emptyList()
+            coEvery { userReadPort.findAllByIdIn(any()) } returns emptyList()
 
             val result = browseEventsUseCase.execute(BrowseEventsUseCaseIn(limit = 10))
 

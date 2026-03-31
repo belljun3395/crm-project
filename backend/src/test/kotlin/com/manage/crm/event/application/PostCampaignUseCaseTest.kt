@@ -9,8 +9,7 @@ import com.manage.crm.event.domain.PropertyFixtures
 import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
-import com.manage.crm.segment.domain.Segment
-import com.manage.crm.segment.domain.repository.SegmentRepository
+import com.manage.crm.segment.application.port.query.SegmentReadPort
 import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
@@ -28,7 +27,7 @@ import org.springframework.dao.DataIntegrityViolationException
 class PostCampaignUseCaseTest : BehaviorSpec({
     lateinit var campaignRepository: CampaignRepository
     lateinit var campaignSegmentsRepository: CampaignSegmentsRepository
-    lateinit var segmentRepository: SegmentRepository
+    lateinit var segmentReadPort: SegmentReadPort
     lateinit var transactionSynchronizationTemplate: TransactionSynchronizationTemplate
     lateinit var campaignCacheManager: CampaignCacheManager
     lateinit var postCampaignUseCase: PostCampaignUseCase
@@ -36,14 +35,14 @@ class PostCampaignUseCaseTest : BehaviorSpec({
     beforeContainer {
         campaignRepository = mockk()
         campaignSegmentsRepository = mockk(relaxed = true)
-        segmentRepository = mockk()
+        segmentReadPort = mockk()
         transactionSynchronizationTemplate = mockk()
         campaignCacheManager = mockk()
         postCampaignUseCase =
             PostCampaignUseCase(
                 campaignRepository = campaignRepository,
                 campaignSegmentsRepository = campaignSegmentsRepository,
-                segmentRepository = segmentRepository,
+                segmentReadPort = segmentReadPort,
                 transactionSynchronizationTemplate = transactionSynchronizationTemplate,
                 campaignCacheManager = campaignCacheManager
             )
@@ -231,18 +230,8 @@ class PostCampaignUseCaseTest : BehaviorSpec({
             )
 
             coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
-            coEvery { segmentRepository.findById(10L) } returns Segment.new(
-                id = 10L,
-                name = "segment-10",
-                description = null,
-                active = true
-            )
-            coEvery { segmentRepository.findById(20L) } returns Segment.new(
-                id = 20L,
-                name = "segment-20",
-                description = null,
-                active = true
-            )
+            coEvery { segmentReadPort.existsById(10L) } returns true
+            coEvery { segmentReadPort.existsById(20L) } returns true
 
             val savedCampaign = CampaignFixtures.giveMeOne()
                 .withId(100L)
@@ -302,7 +291,7 @@ class PostCampaignUseCaseTest : BehaviorSpec({
             )
 
             coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
-            coEvery { segmentRepository.findById(999L) } returns null
+            coEvery { segmentReadPort.existsById(999L) } returns false
 
             then("throw not found before saving campaign") {
                 shouldThrow<NotFoundByIdException> {

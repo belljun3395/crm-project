@@ -7,8 +7,7 @@ import com.manage.crm.event.domain.CampaignSegments
 import com.manage.crm.event.domain.cache.CampaignCacheManager
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
-import com.manage.crm.segment.domain.Segment
-import com.manage.crm.segment.domain.repository.SegmentRepository
+import com.manage.crm.segment.application.port.query.SegmentReadPort
 import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
@@ -25,7 +24,7 @@ import kotlinx.coroutines.Dispatchers
 class UpdateCampaignUseCaseTest : BehaviorSpec({
     lateinit var campaignRepository: CampaignRepository
     lateinit var campaignSegmentsRepository: CampaignSegmentsRepository
-    lateinit var segmentRepository: SegmentRepository
+    lateinit var segmentReadPort: SegmentReadPort
     lateinit var transactionSynchronizationTemplate: TransactionSynchronizationTemplate
     lateinit var campaignCacheManager: CampaignCacheManager
     lateinit var updateCampaignUseCase: UpdateCampaignUseCase
@@ -33,13 +32,13 @@ class UpdateCampaignUseCaseTest : BehaviorSpec({
     beforeContainer {
         campaignRepository = mockk()
         campaignSegmentsRepository = mockk(relaxed = true)
-        segmentRepository = mockk()
+        segmentReadPort = mockk()
         transactionSynchronizationTemplate = mockk()
         campaignCacheManager = mockk()
         updateCampaignUseCase = UpdateCampaignUseCase(
             campaignRepository = campaignRepository,
             campaignSegmentsRepository = campaignSegmentsRepository,
-            segmentRepository = segmentRepository,
+            segmentReadPort = segmentReadPort,
             transactionSynchronizationTemplate = transactionSynchronizationTemplate,
             campaignCacheManager = campaignCacheManager
         )
@@ -153,7 +152,7 @@ class UpdateCampaignUseCaseTest : BehaviorSpec({
 
             coEvery { campaignRepository.findById(campaignId) } returns existing
             coEvery { campaignRepository.findCampaignByName("camp") } returns null
-            coEvery { segmentRepository.findById(777L) } returns null
+            coEvery { segmentReadPort.existsById(777L) } returns false
 
             then("throws NotFoundByIdException for missing segment") {
                 shouldThrow<NotFoundByIdException> {
@@ -236,8 +235,8 @@ class UpdateCampaignUseCaseTest : BehaviorSpec({
 
             coEvery { campaignRepository.findById(campaignId) } returns existing
             coEvery { campaignRepository.findCampaignByName("seg-camp") } returns null
-            coEvery { segmentRepository.findById(10L) } returns Segment.new(10L, "s1", null, true)
-            coEvery { segmentRepository.findById(20L) } returns Segment.new(20L, "s2", null, true)
+            coEvery { segmentReadPort.existsById(10L) } returns true
+            coEvery { segmentReadPort.existsById(20L) } returns true
             coEvery { campaignRepository.save(any()) } answers { firstArg() }
             coEvery {
                 transactionSynchronizationTemplate.afterCommit(

@@ -13,9 +13,8 @@ import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.repository.query.SearchByPropertyQuery
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
-import com.manage.crm.user.domain.UserFixtures
-import com.manage.crm.user.domain.repository.UserRepository
-import com.manage.crm.user.domain.vo.UserAttributes
+import com.manage.crm.user.application.port.query.UserReadModel
+import com.manage.crm.user.application.port.query.UserReadPort
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -25,13 +24,13 @@ import java.time.LocalDateTime
 
 class SearchEventsUseCaseTest : BehaviorSpec({
     lateinit var eventRepository: EventRepository
-    lateinit var userRepository: UserRepository
+    lateinit var userReadPort: UserReadPort
     lateinit var searchEventsUseCase: SearchEventsUseCase
 
     beforeContainer {
         eventRepository = mockk()
-        userRepository = mockk()
-        searchEventsUseCase = SearchEventsUseCase(eventRepository, userRepository)
+        userReadPort = mockk()
+        searchEventsUseCase = SearchEventsUseCase(eventRepository, userReadPort)
     }
 
     given("UC-EVENT-003: SearchEventsUseCase") {
@@ -72,14 +71,15 @@ class SearchEventsUseCaseTest : BehaviorSpec({
 
             val userIds = events.map { it.userId }.toSet().toList()
             val users = userIds.map {
-                UserFixtures.giveMeOne()
-                    .withId(it)
-                    .withExternalId("externalId-$it")
-                    .withUserAttributes(UserAttributes("""{}""".trimIndent()))
-                    .build()
+                UserReadModel(
+                    id = it,
+                    externalId = "externalId-$it",
+                    userAttributesJson = "{}",
+                    createdAt = LocalDateTime.now()
+                )
             }.toList()
 
-            coEvery { userRepository.findAllByIdIn(userIds) } answers {
+            coEvery { userReadPort.findAllByIdIn(userIds) } answers {
                 users
             }
 
@@ -93,7 +93,7 @@ class SearchEventsUseCaseTest : BehaviorSpec({
             }
 
             then("find all users by events userIds") {
-                coVerify(exactly = 1) { userRepository.findAllByIdIn(userIds) }
+                coVerify(exactly = 1) { userReadPort.findAllByIdIn(userIds) }
             }
         }
 
@@ -148,14 +148,15 @@ class SearchEventsUseCaseTest : BehaviorSpec({
 
             val userIds = events.map { it.userId }.toSet().toList()
             val users = userIds.map {
-                UserFixtures.giveMeOne()
-                    .withId(it)
-                    .withExternalId("externalId-$it")
-                    .withUserAttributes(UserAttributes("""{}""".trimIndent()))
-                    .build()
+                UserReadModel(
+                    id = it,
+                    externalId = "externalId-$it",
+                    userAttributesJson = "{}",
+                    createdAt = LocalDateTime.now()
+                )
             }.toList()
 
-            coEvery { userRepository.findAllByIdIn(userIds) } answers {
+            coEvery { userReadPort.findAllByIdIn(userIds) } answers {
                 users
             }
 
@@ -169,7 +170,7 @@ class SearchEventsUseCaseTest : BehaviorSpec({
             }
 
             then("find all users by events userIds") {
-                coVerify(exactly = 1) { userRepository.findAllByIdIn(userIds) }
+                coVerify(exactly = 1) { userReadPort.findAllByIdIn(userIds) }
             }
         }
 
@@ -180,7 +181,7 @@ class SearchEventsUseCaseTest : BehaviorSpec({
             )
 
             coEvery { eventRepository.findAllByName(any()) } answers { emptyList() }
-            coEvery { userRepository.findAllByIdIn(emptyList()) } returns emptyList()
+            coEvery { userReadPort.findAllByIdIn(emptyList()) } returns emptyList()
 
             val result = searchEventsUseCase.execute(useCaseIn)
 
@@ -210,14 +211,15 @@ class SearchEventsUseCaseTest : BehaviorSpec({
 
             val userIds = events.map { it.userId }.toSet().toList()
             val users = userIds.map {
-                UserFixtures.giveMeOne()
-                    .withId(it)
-                    .withExternalId("externalId-$it")
-                    .withUserAttributes(UserAttributes("""{}""".trimIndent()))
-                    .build()
+                UserReadModel(
+                    id = it,
+                    externalId = "externalId-$it",
+                    userAttributesJson = "{}",
+                    createdAt = LocalDateTime.now()
+                )
             }.toList()
 
-            coEvery { userRepository.findAllByIdIn(userIds) } answers {
+            coEvery { userReadPort.findAllByIdIn(userIds) } answers {
                 users
             }
 
@@ -231,7 +233,7 @@ class SearchEventsUseCaseTest : BehaviorSpec({
             }
 
             then("find all users by events userIds") {
-                coVerify(exactly = 1) { userRepository.findAllByIdIn(userIds) }
+                coVerify(exactly = 1) { userReadPort.findAllByIdIn(userIds) }
             }
         }
     }
