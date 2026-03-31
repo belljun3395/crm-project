@@ -24,6 +24,8 @@ data class ModuleRuleSpec(
     val crossModuleForbiddenLayerSegments: List<String> = DEFAULT_CROSS_MODULE_FORBIDDEN_LAYER_SEGMENTS,
     val crossModuleAllowedPortNameSuffixes: List<String> = DEFAULT_CROSS_MODULE_ALLOWED_PORT_NAME_SUFFIXES,
     val crossModuleReadMethodPrefixes: List<String> = DEFAULT_CROSS_MODULE_READ_METHOD_PREFIXES,
+    val enforceInternalLayerNoCrossModuleDependency: Boolean = false,
+    val internalLayerAllowedExternalModules: Set<String> = DEFAULT_INTERNAL_LAYER_ALLOWED_EXTERNAL_MODULES,
     val enforceUtilPureFunctions: Boolean = false,
     val utilForbiddenImportPrefixes: List<String> = DEFAULT_UTIL_FORBIDDEN_IMPORT_PREFIXES
 ) {
@@ -33,6 +35,7 @@ data class ModuleRuleSpec(
     val applicationDtoPackagePattern: String get() = "..$packageToken.application.dto.."
     val controllerPackagePattern: String get() = "..$packageToken.controller.."
     val servicePackagePattern: String get() = "..$packageToken.service.."
+    val adapterPackagePattern: String get() = "..$packageToken.adapter.."
     val utilPackagePattern: String get() = "..$packageToken.util.."
     val repositoryPackagePattern: String get() = "..$packageToken.domain.repository.."
     val utilPackageName: String get() = "$moduleBasePackage.util"
@@ -70,3 +73,5 @@ val DEFAULT_CROSS_MODULE_READ_METHOD_PREFIXES = listOf(
     "exists",
     "count"
 )
+
+val DEFAULT_INTERNAL_LAYER_ALLOWED_EXTERNAL_MODULES = setOf("support")

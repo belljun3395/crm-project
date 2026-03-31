@@ -5,6 +5,7 @@ import com.manage.crm.action.application.ActionChannel
 import com.manage.crm.action.application.ActionDispatchOut
 import com.manage.crm.action.application.ActionDispatchService
 import com.manage.crm.action.application.ActionDispatchStatus
+import com.manage.crm.event.application.port.query.EventReadPort
 import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
@@ -45,6 +46,7 @@ class JourneyAutomationServiceTest : BehaviorSpec({
     lateinit var journeySegmentUserStateRepository: JourneySegmentUserStateRepository
     lateinit var journeySegmentCountStateRepository: JourneySegmentCountStateRepository
     lateinit var segmentReadPort: SegmentReadPort
+    lateinit var eventReadPort: EventReadPort
     lateinit var actionDispatchService: ActionDispatchService
     lateinit var userRepository: UserRepository
     lateinit var service: JourneyAutomationService
@@ -58,6 +60,7 @@ class JourneyAutomationServiceTest : BehaviorSpec({
         journeySegmentUserStateRepository = mockk()
         journeySegmentCountStateRepository = mockk()
         segmentReadPort = mockk()
+        eventReadPort = mockk()
         actionDispatchService = mockk()
         userRepository = mockk()
 
@@ -70,6 +73,7 @@ class JourneyAutomationServiceTest : BehaviorSpec({
             journeySegmentUserStateRepository = journeySegmentUserStateRepository,
             journeySegmentCountStateRepository = journeySegmentCountStateRepository,
             segmentReadPort = segmentReadPort,
+            eventReadPort = eventReadPort,
             actionDispatchService = actionDispatchService,
             userRepository = userRepository,
             objectMapper = ObjectMapper()
@@ -96,6 +100,7 @@ class JourneyAutomationServiceTest : BehaviorSpec({
             journeySegmentUserStateRepository,
             journeySegmentCountStateRepository,
             segmentReadPort,
+            eventReadPort,
             actionDispatchService,
             userRepository
         )

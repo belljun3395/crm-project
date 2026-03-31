@@ -7,6 +7,7 @@ import com.manage.crm.action.application.ActionChannel
 import com.manage.crm.action.application.ActionDispatchIn
 import com.manage.crm.action.application.ActionDispatchService
 import com.manage.crm.action.application.ActionDispatchStatus
+import com.manage.crm.event.application.port.query.EventReadPort
 import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
@@ -25,6 +26,8 @@ import com.manage.crm.journey.domain.repository.JourneySegmentUserStateRepositor
 import com.manage.crm.journey.domain.repository.JourneyStepDeduplicationRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
 import com.manage.crm.segment.application.port.query.SegmentReadPort
+import com.manage.crm.segment.application.port.query.SegmentTargetEventReadModel
+import com.manage.crm.segment.application.port.query.SegmentTargetUserReadModel
 import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
@@ -51,6 +54,7 @@ class JourneyAutomationService(
     private val journeySegmentUserStateRepository: JourneySegmentUserStateRepository,
     private val journeySegmentCountStateRepository: JourneySegmentCountStateRepository,
     private val segmentReadPort: SegmentReadPort,
+    private val eventReadPort: EventReadPort,
     private val actionDispatchService: ActionDispatchService,
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper
@@ -171,7 +175,7 @@ class JourneyAutomationService(
         changedUserIds: List<Long>?
     ) {
         val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }
-        val currentMatchedUserIds = segmentReadPort.findTargetUserIds(segmentId, null).toSet()
+        val currentMatchedUserIds = resolveSegmentTargetUserIds(segmentId).toSet()
         val existingStates = journeySegmentUserStateRepository.findAllByJourneyId(journeyId)
         val existingStateByUserId = existingStates.associateBy { it.userId }
 
@@ -270,7 +274,7 @@ class JourneyAutomationService(
             return
         }
 
-        val currentCount = segmentReadPort.findTargetUserIds(segmentId, null).size.toLong()
+        val currentCount = resolveSegmentTargetUserIds(segmentId).size.toLong()
         val previousState = journeySegmentCountStateRepository.findByJourneyId(journeyId)
         val previousCount = previousState?.lastCount ?: 0L
         val previousVersion = previousState?.transitionVersion ?: 0L
@@ -335,6 +339,38 @@ class JourneyAutomationService(
             execution.lastError = error.message
             journeyExecutionRepository.save(execution)
         }
+    }
+
+    private suspend fun resolveSegmentTargetUserIds(segmentId: Long): List<Long> {
+        val users = userRepository.findAll().toList().mapNotNull { user ->
+            val userId = user.id ?: return@mapNotNull null
+            SegmentTargetUserReadModel(
+                id = userId,
+                userAttributesJson = user.userAttributes.value,
+                createdAt = user.createdAt
+            )
+        }
+        if (users.isEmpty()) {
+            return emptyList()
+        }
+
+        val eventsByUserId = eventReadPort.findAllByUserIdIn(users.map { it.id })
+            .groupBy { event -> event.userId }
+            .mapValues { (_, events) ->
+                events.map { event ->
+                    SegmentTargetEventReadModel(
+                        userId = event.userId,
+                        name = event.name,
+                        occurredAt = event.createdAt
+                    )
+                }
+            }
+
+        return segmentReadPort.findTargetUserIds(
+            segmentId = segmentId,
+            users = users,
+            eventsByUserId = eventsByUserId
+        )
     }
 
     private suspend fun executeJourneySteps(execution: JourneyExecution, event: Event) {

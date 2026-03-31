@@ -5,6 +5,8 @@ import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.PropertiesFixtures
 import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.segment.application.port.query.SegmentReadPort
+import com.manage.crm.user.application.port.query.UserReadModel
+import com.manage.crm.user.application.port.query.UserReadPort
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -15,14 +17,26 @@ import java.time.LocalDateTime
 class GetCampaignSegmentComparisonUseCaseTest : BehaviorSpec({
     lateinit var campaignEventsService: CampaignEventsService
     lateinit var segmentReadPort: SegmentReadPort
+    lateinit var userReadPort: UserReadPort
     lateinit var getCampaignSegmentComparisonUseCase: GetCampaignSegmentComparisonUseCase
 
     beforeContainer {
         campaignEventsService = mockk()
         segmentReadPort = mockk()
+        userReadPort = mockk()
         getCampaignSegmentComparisonUseCase = GetCampaignSegmentComparisonUseCase(
             campaignEventsService = campaignEventsService,
-            segmentReadPort = segmentReadPort
+            segmentReadPort = segmentReadPort,
+            userReadPort = userReadPort
+        )
+    }
+
+    fun toReadModel(userId: Long): UserReadModel {
+        return UserReadModel(
+            id = userId,
+            externalId = "u-$userId",
+            userAttributesJson = "{}",
+            createdAt = LocalDateTime.now()
         )
     }
 
@@ -53,10 +67,14 @@ class GetCampaignSegmentComparisonUseCaseTest : BehaviorSpec({
             )
 
             coEvery { campaignEventsService.findCampaignEvents(campaignId, null, null) } returns events
+            coEvery { campaignEventsService.findAllEventsByCampaignId(campaignId) } returns events
+            coEvery { userReadPort.findAllByIdIn(any()) } answers {
+                firstArg<Collection<Long>>().distinct().map(::toReadModel)
+            }
             coEvery { segmentReadPort.findNameById(1L) } returns "seg-a"
             coEvery { segmentReadPort.findNameById(2L) } returns "seg-b"
-            coEvery { segmentReadPort.findTargetUserIds(1L, campaignId) } returns listOf(101L, 102L)
-            coEvery { segmentReadPort.findTargetUserIds(2L, campaignId) } returns listOf(103L)
+            coEvery { segmentReadPort.findTargetUserIds(1L, any(), any()) } returns listOf(101L, 102L)
+            coEvery { segmentReadPort.findTargetUserIds(2L, any(), any()) } returns listOf(103L)
 
             val result = getCampaignSegmentComparisonUseCase.execute(
                 GetCampaignSegmentComparisonUseCaseIn(campaignId, listOf(1L, 2L), null, null, null)
@@ -93,8 +111,12 @@ class GetCampaignSegmentComparisonUseCaseTest : BehaviorSpec({
             )
 
             coEvery { campaignEventsService.findCampaignEvents(campaignId, null, null) } returns events
+            coEvery { campaignEventsService.findAllEventsByCampaignId(campaignId) } returns events
+            coEvery { userReadPort.findAllByIdIn(any()) } answers {
+                firstArg<Collection<Long>>().distinct().map(::toReadModel)
+            }
             coEvery { segmentReadPort.findNameById(1L) } returns "seg-a"
-            coEvery { segmentReadPort.findTargetUserIds(1L, campaignId) } returns listOf(101L)
+            coEvery { segmentReadPort.findTargetUserIds(1L, any(), any()) } returns listOf(101L)
 
             val result = getCampaignSegmentComparisonUseCase.execute(
                 GetCampaignSegmentComparisonUseCaseIn(campaignId, listOf(1L), "purchase", null, null)
@@ -112,8 +134,12 @@ class GetCampaignSegmentComparisonUseCaseTest : BehaviorSpec({
             val events = listOf(segEvent(1L, 101L, "click", now))
 
             coEvery { campaignEventsService.findCampaignEvents(campaignId, null, null) } returns events
+            coEvery { campaignEventsService.findAllEventsByCampaignId(campaignId) } returns events
+            coEvery { userReadPort.findAllByIdIn(any()) } answers {
+                firstArg<Collection<Long>>().distinct().map(::toReadModel)
+            }
             coEvery { segmentReadPort.findNameById(99L) } returns null
-            coEvery { segmentReadPort.findTargetUserIds(99L, campaignId) } returns listOf(101L)
+            coEvery { segmentReadPort.findTargetUserIds(99L, any(), any()) } returns listOf(101L)
 
             val result = getCampaignSegmentComparisonUseCase.execute(
                 GetCampaignSegmentComparisonUseCaseIn(campaignId, listOf(99L), null, null, null)
@@ -131,8 +157,10 @@ class GetCampaignSegmentComparisonUseCaseTest : BehaviorSpec({
             val end = LocalDateTime.of(2026, 1, 31, 0, 0)
 
             coEvery { campaignEventsService.findCampaignEvents(campaignId, start, end) } returns emptyList()
+            coEvery { campaignEventsService.findAllEventsByCampaignId(campaignId) } returns emptyList()
+            coEvery { userReadPort.findAllByIdIn(any()) } returns emptyList()
             coEvery { segmentReadPort.findNameById(1L) } returns "s1"
-            coEvery { segmentReadPort.findTargetUserIds(1L, campaignId) } returns emptyList()
+            coEvery { segmentReadPort.findTargetUserIds(1L, any(), any()) } returns emptyList()
 
             getCampaignSegmentComparisonUseCase.execute(
                 GetCampaignSegmentComparisonUseCaseIn(campaignId, listOf(1L), null, start, end)
@@ -153,8 +181,12 @@ class GetCampaignSegmentComparisonUseCaseTest : BehaviorSpec({
             )
 
             coEvery { campaignEventsService.findCampaignEvents(campaignId, null, null) } returns events
+            coEvery { campaignEventsService.findAllEventsByCampaignId(campaignId) } returns events
+            coEvery { userReadPort.findAllByIdIn(any()) } answers {
+                firstArg<Collection<Long>>().distinct().map(::toReadModel)
+            }
             coEvery { segmentReadPort.findNameById(1L) } returns "empty-seg"
-            coEvery { segmentReadPort.findTargetUserIds(1L, campaignId) } returns listOf(101L, 102L)
+            coEvery { segmentReadPort.findTargetUserIds(1L, any(), any()) } returns listOf(101L, 102L)
 
             val result = getCampaignSegmentComparisonUseCase.execute(
                 GetCampaignSegmentComparisonUseCaseIn(campaignId, listOf(1L), null, null, null)

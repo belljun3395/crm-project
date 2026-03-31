@@ -11,6 +11,7 @@ class SegmentArchitectureTest : BaseModuleArchitectureTest() {
         controllerReturnPolicy = ControllerReturnPolicy.USE_CASE_OUT_OR_DTO,
         enforceCrossModuleDependencyViaQueryFacade = true,
         enforceCrossModuleReadPortPrefix = true,
+        enforceInternalLayerNoCrossModuleDependency = true,
         enforceUtilPureFunctions = false
     )
 }

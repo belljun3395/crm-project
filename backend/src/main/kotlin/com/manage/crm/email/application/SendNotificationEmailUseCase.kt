@@ -15,10 +15,13 @@ import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.vo.Email
 import com.manage.crm.email.domain.vo.NotificationType
 import com.manage.crm.email.domain.vo.SentEmailStatus
+import com.manage.crm.event.application.port.query.EventReadPort
 import com.manage.crm.event.domain.repository.CampaignRepository
 import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
 import com.manage.crm.event.service.CampaignEventsService
 import com.manage.crm.segment.application.port.query.SegmentReadPort
+import com.manage.crm.segment.application.port.query.SegmentTargetEventReadModel
+import com.manage.crm.segment.application.port.query.SegmentTargetUserReadModel
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
@@ -26,6 +29,7 @@ import com.manage.crm.user.domain.User
 import com.manage.crm.user.domain.repository.UserRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.toList
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 
@@ -48,6 +52,7 @@ class SendNotificationEmailUseCase(
     private val campaignRepository: CampaignRepository,
     private val campaignSegmentsRepository: CampaignSegmentsRepository,
     private val userRepository: UserRepository,
+    private val eventReadPort: EventReadPort,
     private val segmentReadPort: SegmentReadPort,
     private val objectMapper: ObjectMapper
 ) {
@@ -60,8 +65,17 @@ class SendNotificationEmailUseCase(
         val userIds = useCaseIn.userIds
         val segmentId = useCaseIn.segmentId
         validateCampaignSegmentLink(campaignId = campaignId, segmentId = segmentId)
+        val (segmentUsers, eventsByUserId) = if (segmentId != null) {
+            resolveSegmentEvaluationScope(campaignId)
+        } else {
+            emptyList<SegmentTargetUserReadModel>() to emptyMap()
+        }
         val requestedUserIds = if (segmentId != null) {
-            segmentReadPort.findTargetUserIds(segmentId, campaignId)
+            segmentReadPort.findTargetUserIds(
+                segmentId = segmentId,
+                users = segmentUsers,
+                eventsByUserId = eventsByUserId
+            )
         } else {
             userIds
         }
@@ -201,6 +215,61 @@ class SendNotificationEmailUseCase(
                     }
             }
         }
+    }
+
+    private suspend fun resolveSegmentEvaluationScope(
+        campaignId: Long?
+    ): Pair<List<SegmentTargetUserReadModel>, Map<Long, List<SegmentTargetEventReadModel>>> {
+        if (campaignId != null) {
+            val campaignEvents = campaignEventsService.findAllEventsByCampaignId(campaignId)
+            val campaignUserIds = campaignEvents.map { it.userId }.distinct()
+            if (campaignUserIds.isEmpty()) {
+                return emptyList<SegmentTargetUserReadModel>() to emptyMap()
+            }
+            val users = userRepository.findAllByIdIn(campaignUserIds).map { user ->
+                SegmentTargetUserReadModel(
+                    id = requireNotNull(user.id) { "User id cannot be null" },
+                    userAttributesJson = user.userAttributes.value,
+                    createdAt = user.createdAt
+                )
+            }
+            val eventsByUserId = campaignEvents
+                .groupBy { it.userId }
+                .mapValues { (_, events) ->
+                    events.map { event ->
+                        SegmentTargetEventReadModel(
+                            userId = event.userId,
+                            name = event.name,
+                            occurredAt = event.createdAt
+                        )
+                    }
+                }
+            return users to eventsByUserId
+        }
+
+        val users = userRepository.findAll().toList().mapNotNull { user ->
+            val userId = user.id ?: return@mapNotNull null
+            SegmentTargetUserReadModel(
+                id = userId,
+                userAttributesJson = user.userAttributes.value,
+                createdAt = user.createdAt
+            )
+        }
+        if (users.isEmpty()) {
+            return emptyList<SegmentTargetUserReadModel>() to emptyMap()
+        }
+        val eventsByUserId = eventReadPort.findAllByUserIdIn(users.map { it.id })
+            .groupBy { it.userId }
+            .mapValues { (_, events) ->
+                events.map { event ->
+                    SegmentTargetEventReadModel(
+                        userId = event.userId,
+                        name = event.name,
+                        occurredAt = event.createdAt
+                    )
+                }
+            }
+        return users to eventsByUserId
     }
 
     private fun extractEmailAndUser(user: User, notificationEmailType: String): Pair<Email, User>? {

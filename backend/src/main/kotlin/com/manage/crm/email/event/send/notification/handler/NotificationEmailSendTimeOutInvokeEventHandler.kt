@@ -12,10 +12,15 @@ import com.manage.crm.email.domain.repository.EmailTemplateRepository
 import com.manage.crm.email.domain.repository.ScheduledEventRepository
 import com.manage.crm.email.domain.vo.SentEmailStatus
 import com.manage.crm.email.event.send.notification.NotificationEmailSendTimeOutInvokeEvent
+import com.manage.crm.event.application.port.query.CampaignEventReadPort
+import com.manage.crm.event.application.port.query.EventReadPort
 import com.manage.crm.event.domain.repository.CampaignSegmentsRepository
 import com.manage.crm.segment.application.port.query.SegmentReadPort
+import com.manage.crm.segment.application.port.query.SegmentTargetEventReadModel
+import com.manage.crm.segment.application.port.query.SegmentTargetUserReadModel
 import com.manage.crm.user.domain.repository.UserRepository
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey
+import kotlinx.coroutines.flow.toList
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 
@@ -27,6 +32,8 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
     private val emailTemplateHistoryRepository: EmailTemplateHistoryRepository,
     private val emailSendHistoryRepository: EmailSendHistoryRepository,
     private val userRepository: UserRepository,
+    private val eventReadPort: EventReadPort,
+    private val campaignEventReadPort: CampaignEventReadPort,
     private val segmentReadPort: SegmentReadPort,
     private val campaignSegmentsRepository: CampaignSegmentsRepository,
     @Qualifier("mailServiceImpl")
@@ -52,8 +59,17 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
         val templateVersion = event.templateVersion
         val campaignId = event.campaignId
         validateCampaignSegmentLink(campaignId = campaignId, segmentId = event.segmentId)
+        val (segmentUsers, eventsByUserId) = if (event.segmentId != null) {
+            resolveSegmentEvaluationScope(campaignId)
+        } else {
+            emptyList<SegmentTargetUserReadModel>() to emptyMap()
+        }
         val userIds = if (event.segmentId != null) {
-            segmentReadPort.findTargetUserIds(event.segmentId, campaignId)
+            segmentReadPort.findTargetUserIds(
+                segmentId = event.segmentId,
+                users = segmentUsers,
+                eventsByUserId = eventsByUserId
+            )
         } else {
             event.userIds
         }
@@ -129,5 +145,66 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
         }
 
         throw IllegalArgumentException("segmentId $segmentId is not linked to campaignId $campaignId")
+    }
+
+    private suspend fun resolveSegmentEvaluationScope(
+        campaignId: Long?
+    ): Pair<List<SegmentTargetUserReadModel>, Map<Long, List<SegmentTargetEventReadModel>>> {
+        if (campaignId != null) {
+            val campaignEventIds = campaignEventReadPort.findEventIdsByCampaignId(campaignId).distinct()
+            if (campaignEventIds.isEmpty()) {
+                return emptyList<SegmentTargetUserReadModel>() to emptyMap()
+            }
+
+            val campaignEvents = eventReadPort.findAllByIdIn(campaignEventIds)
+            val campaignUserIds = campaignEvents.map { it.userId }.distinct()
+            if (campaignUserIds.isEmpty()) {
+                return emptyList<SegmentTargetUserReadModel>() to emptyMap()
+            }
+
+            val users = userRepository.findAllByIdIn(campaignUserIds).map { user ->
+                SegmentTargetUserReadModel(
+                    id = requireNotNull(user.id) { "User id cannot be null" },
+                    userAttributesJson = user.userAttributes.value,
+                    createdAt = user.createdAt
+                )
+            }
+            val eventsByUserId = campaignEvents
+                .groupBy { it.userId }
+                .mapValues { (_, events) ->
+                    events.map { event ->
+                        SegmentTargetEventReadModel(
+                            userId = event.userId,
+                            name = event.name,
+                            occurredAt = event.createdAt
+                        )
+                    }
+                }
+            return users to eventsByUserId
+        }
+
+        val users = userRepository.findAll().toList().mapNotNull { user ->
+            val userId = user.id ?: return@mapNotNull null
+            SegmentTargetUserReadModel(
+                id = userId,
+                userAttributesJson = user.userAttributes.value,
+                createdAt = user.createdAt
+            )
+        }
+        if (users.isEmpty()) {
+            return emptyList<SegmentTargetUserReadModel>() to emptyMap()
+        }
+        val eventsByUserId = eventReadPort.findAllByUserIdIn(users.map { it.id })
+            .groupBy { it.userId }
+            .mapValues { (_, events) ->
+                events.map { event ->
+                    SegmentTargetEventReadModel(
+                        userId = event.userId,
+                        name = event.name,
+                        occurredAt = event.createdAt
+                    )
+                }
+            }
+        return users to eventsByUserId
     }
 }

@@ -1,10 +1,14 @@
 package com.manage.crm.segment.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.manage.crm.event.application.port.query.CampaignEventReadPort
+import com.manage.crm.event.application.port.query.EventReadPort
 import com.manage.crm.segment.application.dto.GetSegmentMatchedUsersUseCaseIn
 import com.manage.crm.segment.application.dto.GetSegmentMatchedUsersUseCaseOut
 import com.manage.crm.segment.application.dto.SegmentMatchedUserDto
 import com.manage.crm.segment.application.port.query.SegmentReadPort
+import com.manage.crm.segment.application.port.query.SegmentTargetEventReadModel
+import com.manage.crm.segment.application.port.query.SegmentTargetUserReadModel
 import com.manage.crm.support.out
 import com.manage.crm.user.application.port.query.UserReadModel
 import com.manage.crm.user.application.port.query.UserReadPort
@@ -22,6 +26,8 @@ import java.time.format.DateTimeFormatter
 @Component
 class GetSegmentMatchedUsersUseCase(
     private val segmentReadPort: SegmentReadPort,
+    private val eventReadPort: EventReadPort,
+    private val campaignEventReadPort: CampaignEventReadPort,
     private val userReadPort: UserReadPort,
     private val objectMapper: ObjectMapper
 ) {
@@ -32,7 +38,12 @@ class GetSegmentMatchedUsersUseCase(
     }
 
     suspend fun execute(useCaseIn: GetSegmentMatchedUsersUseCaseIn): GetSegmentMatchedUsersUseCaseOut {
-        val targetUserIds = segmentReadPort.findTargetUserIds(useCaseIn.segmentId, useCaseIn.campaignId)
+        val (targetUsers, eventsByUserId) = resolveEvaluationScope(useCaseIn.campaignId)
+        val targetUserIds = segmentReadPort.findTargetUserIds(
+            segmentId = useCaseIn.segmentId,
+            users = targetUsers,
+            eventsByUserId = eventsByUserId
+        )
         if (targetUserIds.isEmpty()) {
             return out {
                 GetSegmentMatchedUsersUseCaseOut(users = emptyList())
@@ -49,6 +60,54 @@ class GetSegmentMatchedUsersUseCase(
         }
     }
 
+    private suspend fun resolveEvaluationScope(
+        campaignId: Long?
+    ): Pair<List<SegmentTargetUserReadModel>, Map<Long, List<SegmentTargetEventReadModel>>> {
+        if (campaignId == null) {
+            val users = userReadPort.findAll().map { it.toTargetUserReadModel() }
+            if (users.isEmpty()) {
+                return emptyList<SegmentTargetUserReadModel>() to emptyMap()
+            }
+            val eventsByUserId = eventReadPort.findAllByUserIdIn(users.map { it.id })
+                .groupBy { it.userId }
+                .mapValues { (_, events) ->
+                    events.map { event ->
+                        SegmentTargetEventReadModel(
+                            userId = event.userId,
+                            name = event.name,
+                            occurredAt = event.createdAt
+                        )
+                    }
+                }
+            return users to eventsByUserId
+        }
+
+        val campaignEventIds = campaignEventReadPort.findEventIdsByCampaignId(campaignId).distinct()
+        if (campaignEventIds.isEmpty()) {
+            return emptyList<SegmentTargetUserReadModel>() to emptyMap()
+        }
+
+        val campaignEvents = eventReadPort.findAllByIdIn(campaignEventIds)
+        val campaignUserIds = campaignEvents.map { it.userId }.distinct()
+        if (campaignUserIds.isEmpty()) {
+            return emptyList<SegmentTargetUserReadModel>() to emptyMap()
+        }
+
+        val users = userReadPort.findAllByIdIn(campaignUserIds).map { it.toTargetUserReadModel() }
+        val eventsByUserId = campaignEvents
+            .groupBy { it.userId }
+            .mapValues { (_, events) ->
+                events.map { event ->
+                    SegmentTargetEventReadModel(
+                        userId = event.userId,
+                        name = event.name,
+                        occurredAt = event.createdAt
+                    )
+                }
+            }
+        return users to eventsByUserId
+    }
+
     private fun toMatchedUserDtoOrNull(user: UserReadModel): SegmentMatchedUserDto? {
         val userAttributes = runCatching { objectMapper.readTree(user.userAttributesJson) }
             .onFailure { error ->
@@ -63,6 +122,14 @@ class GetSegmentMatchedUsersUseCase(
             email = userAttributes?.get("email")?.asText(),
             name = userAttributes?.get("name")?.asText(),
             createdAt = user.createdAt?.format(FORMATTER)
+        )
+    }
+
+    private fun UserReadModel.toTargetUserReadModel(): SegmentTargetUserReadModel {
+        return SegmentTargetUserReadModel(
+            id = id,
+            userAttributesJson = userAttributesJson,
+            createdAt = createdAt
         )
     }
 }
