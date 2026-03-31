@@ -31,7 +31,7 @@ fun JsonNode.campaignId() = this["campaignId"]?.asLong()
 
 fun JsonNode.expiredTime() = LocalDateTimeExtension().parseExpiredTime(this["expiredTime"].asText())
 
-@Profile("!test")
+@Profile("!test & !openapi")
 @Component
 class NotificationEmailSendTimeOutEventRePlayer(
     private val eventScheduleRepository: ScheduledEventRepository,
