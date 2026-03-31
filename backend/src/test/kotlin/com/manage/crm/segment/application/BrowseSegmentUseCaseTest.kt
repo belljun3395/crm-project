@@ -8,6 +8,7 @@ import com.manage.crm.segment.domain.repository.SegmentConditionRepository
 import com.manage.crm.segment.domain.repository.SegmentRepository
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.Called
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -91,9 +92,7 @@ class BrowseSegmentUseCaseTest : BehaviorSpec({
                 val result = useCase.execute(BrowseSegmentUseCaseIn(limit = 10))
 
                 result.segments.size shouldBe 0
-                verify(exactly = 0) {
-                    segmentConditionRepository.findBySegmentIdInOrderBySegmentIdAscPositionAsc(any())
-                }
+                verify(exactly = 0) { segmentConditionRepository wasNot Called }
             }
         }
 
