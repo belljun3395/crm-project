@@ -1,8 +1,8 @@
 package com.manage.crm.segment.application
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.manage.crm.segment.util.SegmentConditionValidator
 import com.manage.crm.segment.exception.InvalidSegmentConditionException
+import com.manage.crm.segment.util.SegmentConditionValidator
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.string.shouldContain

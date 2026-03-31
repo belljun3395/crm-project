@@ -1,7 +1,7 @@
 package com.manage.crm.segment.application.dto
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.NullNode
 import com.manage.crm.segment.domain.Segment
 import com.manage.crm.segment.domain.SegmentCondition

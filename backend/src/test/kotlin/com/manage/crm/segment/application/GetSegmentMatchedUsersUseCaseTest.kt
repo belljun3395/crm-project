@@ -3,9 +3,8 @@ package com.manage.crm.segment.application
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.manage.crm.segment.application.dto.GetSegmentMatchedUsersUseCaseIn
 import com.manage.crm.segment.service.SegmentTargetingService
-import com.manage.crm.user.domain.User
-import com.manage.crm.user.domain.repository.UserRepository
-import com.manage.crm.user.domain.vo.UserAttributes
+import com.manage.crm.user.application.port.query.UserReadModel
+import com.manage.crm.user.application.port.query.UserReadPort
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -15,15 +14,15 @@ import java.time.LocalDateTime
 
 class GetSegmentMatchedUsersUseCaseTest : BehaviorSpec({
     lateinit var segmentTargetingService: SegmentTargetingService
-    lateinit var userRepository: UserRepository
+    lateinit var userReadPort: UserReadPort
     lateinit var useCase: GetSegmentMatchedUsersUseCase
 
     beforeTest {
         segmentTargetingService = mockk()
-        userRepository = mockk()
+        userReadPort = mockk()
         useCase = GetSegmentMatchedUsersUseCase(
             segmentTargetingService = segmentTargetingService,
-            userRepository = userRepository,
+            userReadPort = userReadPort,
             objectMapper = jacksonObjectMapper()
         )
     }
@@ -38,28 +37,26 @@ class GetSegmentMatchedUsersUseCaseTest : BehaviorSpec({
                 )
 
                 result.users shouldBe emptyList()
-                coVerify(exactly = 0) { userRepository.findAllByIdIn(any()) }
+                coVerify(exactly = 0) { userReadPort.findAllByIdIn(any()) }
             }
         }
 
         `when`("matched user ids are resolved") {
             then("return sorted matched users with profile fields") {
-                val firstUser = User.new(
+                val firstUser = UserReadModel(
                     id = 2L,
                     externalId = "user-2",
-                    userAttributes = UserAttributes("""{"email":"two@example.com","name":"Two"}"""),
-                    createdAt = LocalDateTime.of(2025, 1, 1, 10, 0),
-                    updatedAt = LocalDateTime.of(2025, 1, 1, 10, 0)
+                    userAttributesJson = """{"email":"two@example.com","name":"Two"}""",
+                    createdAt = LocalDateTime.of(2025, 1, 1, 10, 0)
                 )
-                val secondUser = User.new(
+                val secondUser = UserReadModel(
                     id = 1L,
                     externalId = "user-1",
-                    userAttributes = UserAttributes("""{"email":"one@example.com","name":"One"}"""),
-                    createdAt = LocalDateTime.of(2025, 1, 2, 10, 0),
-                    updatedAt = LocalDateTime.of(2025, 1, 2, 10, 0)
+                    userAttributesJson = """{"email":"one@example.com","name":"One"}""",
+                    createdAt = LocalDateTime.of(2025, 1, 2, 10, 0)
                 )
                 coEvery { segmentTargetingService.resolveUserIds(10L, 100L) } returns listOf(2L, 1L)
-                coEvery { userRepository.findAllByIdIn(listOf(2L, 1L)) } returns listOf(firstUser, secondUser)
+                coEvery { userReadPort.findAllByIdIn(listOf(2L, 1L)) } returns listOf(firstUser, secondUser)
 
                 val result = useCase.execute(
                     GetSegmentMatchedUsersUseCaseIn(segmentId = 10L, campaignId = 100L)
@@ -68,22 +65,21 @@ class GetSegmentMatchedUsersUseCaseTest : BehaviorSpec({
                 result.users.map { it.id } shouldBe listOf(1L, 2L)
                 result.users[0].email shouldBe "one@example.com"
                 result.users[1].name shouldBe "Two"
-                coVerify(exactly = 1) { userRepository.findAllByIdIn(listOf(2L, 1L)) }
+                coVerify(exactly = 1) { userReadPort.findAllByIdIn(listOf(2L, 1L)) }
             }
         }
 
         `when`("matched user has malformed userAttributes JSON") {
             then("return user with null profile fields without throwing") {
-                val malformedUser = User.new(
+                val malformedUser = UserReadModel(
                     id = 5L,
                     externalId = "user-bad",
-                    userAttributes = UserAttributes("not-valid-json"),
-                    createdAt = LocalDateTime.of(2025, 1, 1, 0, 0),
-                    updatedAt = LocalDateTime.of(2025, 1, 1, 0, 0)
+                    userAttributesJson = "not-valid-json",
+                    createdAt = LocalDateTime.of(2025, 1, 1, 0, 0)
                 )
 
                 coEvery { segmentTargetingService.resolveUserIds(20L, null) } returns listOf(5L)
-                coEvery { userRepository.findAllByIdIn(listOf(5L)) } returns listOf(malformedUser)
+                coEvery { userReadPort.findAllByIdIn(listOf(5L)) } returns listOf(malformedUser)
 
                 val result = useCase.execute(
                     GetSegmentMatchedUsersUseCaseIn(segmentId = 20L)

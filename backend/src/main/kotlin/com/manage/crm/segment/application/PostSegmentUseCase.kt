@@ -4,7 +4,6 @@ import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
 import com.manage.crm.segment.application.dto.PostSegmentConditionIn
 import com.manage.crm.segment.application.dto.PostSegmentUseCaseIn
 import com.manage.crm.segment.application.dto.PostSegmentUseCaseOut
-import com.manage.crm.segment.util.SegmentConditionValidator
 import com.manage.crm.segment.application.dto.toSegmentConditionDto
 import com.manage.crm.segment.application.dto.toSegmentDto
 import com.manage.crm.segment.domain.Segment
@@ -12,6 +11,7 @@ import com.manage.crm.segment.domain.SegmentCondition
 import com.manage.crm.segment.domain.repository.SegmentConditionRepository
 import com.manage.crm.segment.domain.repository.SegmentRepository
 import com.manage.crm.segment.exception.InvalidSegmentConditionException
+import com.manage.crm.segment.util.SegmentConditionValidator
 import com.manage.crm.support.exception.AlreadyExistsException
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out

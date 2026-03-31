@@ -6,8 +6,8 @@ import com.manage.crm.segment.application.dto.GetSegmentMatchedUsersUseCaseOut
 import com.manage.crm.segment.application.dto.SegmentMatchedUserDto
 import com.manage.crm.segment.service.SegmentTargetingService
 import com.manage.crm.support.out
-import com.manage.crm.user.domain.User
-import com.manage.crm.user.domain.repository.UserRepository
+import com.manage.crm.user.application.port.query.UserReadModel
+import com.manage.crm.user.application.port.query.UserReadPort
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import java.time.format.DateTimeFormatter
@@ -22,7 +22,7 @@ import java.time.format.DateTimeFormatter
 @Component
 class GetSegmentMatchedUsersUseCase(
     private val segmentTargetingService: SegmentTargetingService,
-    private val userRepository: UserRepository,
+    private val userReadPort: UserReadPort,
     private val objectMapper: ObjectMapper
 ) {
     private val log = KotlinLogging.logger {}
@@ -39,7 +39,7 @@ class GetSegmentMatchedUsersUseCase(
             }
         }
 
-        val users = userRepository.findAllByIdIn(targetUserIds)
+        val users = userReadPort.findAllByIdIn(targetUserIds)
         val matchedUsers = users
             .mapNotNull { user -> toMatchedUserDtoOrNull(user) }
             .sortedBy { it.id }
@@ -49,9 +49,8 @@ class GetSegmentMatchedUsersUseCase(
         }
     }
 
-    private fun toMatchedUserDtoOrNull(user: User): SegmentMatchedUserDto? {
-        val userId = user.id ?: return null
-        val userAttributes = runCatching { objectMapper.readTree(user.userAttributes.value) }
+    private fun toMatchedUserDtoOrNull(user: UserReadModel): SegmentMatchedUserDto? {
+        val userAttributes = runCatching { objectMapper.readTree(user.userAttributesJson) }
             .onFailure { error ->
                 log.warn(error) {
                     "Failed to parse userAttributes JSON for userId=${user.id}, externalId=${user.externalId}"
@@ -59,7 +58,7 @@ class GetSegmentMatchedUsersUseCase(
             }
             .getOrNull()
         return SegmentMatchedUserDto(
-            id = userId,
+            id = user.id,
             externalId = user.externalId,
             email = userAttributes?.get("email")?.asText(),
             name = userAttributes?.get("name")?.asText(),
