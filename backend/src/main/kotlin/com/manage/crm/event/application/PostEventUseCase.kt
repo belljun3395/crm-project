@@ -17,10 +17,10 @@ import com.manage.crm.event.event.CampaignEventPublisher
 import com.manage.crm.journey.queue.JourneyEventPayload
 import com.manage.crm.journey.queue.JourneyEventPropertyPayload
 import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
-import com.manage.crm.segment.service.SegmentTargetingService
+import com.manage.crm.segment.application.port.query.SegmentReadPort
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.out
-import com.manage.crm.user.domain.repository.UserRepository
+import com.manage.crm.user.application.port.query.UserReadPort
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
@@ -47,8 +47,8 @@ class PostEventUseCase(
     private val campaignRepository: CampaignRepository,
     private val campaignEventsRepository: CampaignEventsRepository,
     private val campaignCacheManager: CampaignCacheManager,
-    private val userRepository: UserRepository,
-    private val segmentTargetingService: SegmentTargetingService,
+    private val userReadPort: UserReadPort,
+    private val segmentReadPort: SegmentReadPort,
     private val journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher,
     private val campaignEventPublisher: CampaignEventPublisher
 ) {
@@ -146,10 +146,10 @@ class PostEventUseCase(
 
     private suspend fun resolveTargetUserIds(externalId: String, segmentId: Long?): List<Long> {
         if (segmentId != null) {
-            return segmentTargetingService.resolveUserIds(segmentId, null)
+            return segmentReadPort.findTargetUserIds(segmentId, null)
         }
 
-        val userId = userRepository.findByExternalId(externalId)?.id
+        val userId = userReadPort.findByExternalId(externalId)?.id
             ?: throw NotFoundByException("User", "externalId", externalId)
         return listOf(userId)
     }
