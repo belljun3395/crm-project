@@ -1,7 +1,7 @@
 [versions]
-java = "17"
-kotlin = "1.9.25"
-ktlint = "11.6.1"
+java = "25"
+kotlin = "2.3.20"
+ktlint = "14.2.0"
 spring-boot = "3.4.2"
 spring-dependency-management = "1.1.7"
 spring-modulith = "1.3.1"
