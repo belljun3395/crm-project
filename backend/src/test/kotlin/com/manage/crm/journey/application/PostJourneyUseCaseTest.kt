@@ -1,17 +1,21 @@
 package com.manage.crm.journey.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.manage.crm.journey.application.dto.JourneyLifecycleStatus
+import com.manage.crm.journey.application.dto.JourneyStepType
+import com.manage.crm.journey.application.dto.JourneyTriggerType
+import com.manage.crm.journey.application.dto.PostJourneyStepIn
+import com.manage.crm.journey.application.dto.PostJourneyUseCaseIn
 import com.manage.crm.journey.domain.Journey
 import com.manage.crm.journey.domain.JourneyStep
 import com.manage.crm.journey.domain.repository.JourneyRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
-import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.mockk
 
 class PostJourneyUseCaseTest :
-    BehaviorSpec({
+    JourneyUnitTestTemplate({
         lateinit var journeyRepository: JourneyRepository
         lateinit var journeyStepRepository: JourneyStepRepository
         lateinit var useCase: PostJourneyUseCase
@@ -27,7 +31,7 @@ class PostJourneyUseCaseTest :
                 )
         }
 
-        given("create journey request with inactive flag") {
+        given("UC-JOURNEY-001 create journey request with inactive flag") {
             `when`("executed") {
                 then("store lifecycle status as draft") {
                     coEvery { journeyRepository.save(any()) } answers {
@@ -39,7 +43,7 @@ class PostJourneyUseCaseTest :
 
                     val result =
                         useCase.execute(
-                            PostJourneyIn(
+                            PostJourneyUseCaseIn(
                                 name = "welcome-journey",
                                 triggerType = JourneyTriggerType.EVENT,
                                 triggerEventName = "SIGNUP",

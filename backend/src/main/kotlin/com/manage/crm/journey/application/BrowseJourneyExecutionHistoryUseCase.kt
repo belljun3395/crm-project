@@ -1,11 +1,20 @@
 package com.manage.crm.journey.application
 
+import com.manage.crm.journey.application.dto.BrowseJourneyExecutionHistoryUseCaseIn
+import com.manage.crm.journey.application.dto.JourneyExecutionHistoryDto
 import com.manage.crm.journey.domain.repository.JourneyExecutionHistoryRepository
 import kotlinx.coroutines.flow.toList
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import java.time.format.DateTimeFormatter
 
-@Service
+/**
+ * UC-JOURNEY-005
+ * Reads step-level execution histories for a journey execution.
+ *
+ * Input: journey execution id.
+ * Success: returns ordered step history records for timeline inspection.
+ */
+@Component
 class BrowseJourneyExecutionHistoryUseCase(
     private val journeyExecutionHistoryRepository: JourneyExecutionHistoryRepository,
 ) {
@@ -13,9 +22,9 @@ class BrowseJourneyExecutionHistoryUseCase(
         private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     }
 
-    suspend fun execute(journeyExecutionId: Long): List<JourneyExecutionHistoryDto> =
+    suspend fun execute(useCaseIn: BrowseJourneyExecutionHistoryUseCaseIn): List<JourneyExecutionHistoryDto> =
         journeyExecutionHistoryRepository
-            .findAllByJourneyExecutionIdOrderByCreatedAtAsc(journeyExecutionId)
+            .findAllByJourneyExecutionIdOrderByCreatedAtAsc(useCaseIn.journeyExecutionId)
             .toList()
             .map { history ->
                 JourneyExecutionHistoryDto(

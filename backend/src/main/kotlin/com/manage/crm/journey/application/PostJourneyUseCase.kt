@@ -1,22 +1,32 @@
 package com.manage.crm.journey.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.manage.crm.journey.application.dto.JourneyDto
+import com.manage.crm.journey.application.dto.JourneyLifecycleStatus
+import com.manage.crm.journey.application.dto.JourneySegmentTriggerEventType
+import com.manage.crm.journey.application.dto.JourneyStepType
+import com.manage.crm.journey.application.dto.JourneyTriggerType
+import com.manage.crm.journey.application.dto.PostJourneyUseCaseIn
 import com.manage.crm.journey.domain.Journey
 import com.manage.crm.journey.domain.JourneyStep
 import com.manage.crm.journey.domain.repository.JourneyRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 
 /**
+ * UC-JOURNEY-001
  * Creates a journey with trigger metadata and ordered execution steps.
+ *
+ * Input: journey name, trigger configuration, and ordered step definitions.
+ * Success: persists journey/steps and returns a journey DTO with normalized lifecycle metadata.
  */
-@Service
+@Component
 class PostJourneyUseCase(
     private val journeyRepository: JourneyRepository,
     private val journeyStepRepository: JourneyStepRepository,
     private val objectMapper: ObjectMapper,
 ) {
-    suspend fun execute(useCaseIn: PostJourneyIn): JourneyDto {
+    suspend fun execute(useCaseIn: PostJourneyUseCaseIn): JourneyDto {
         validate(useCaseIn)
 
         val savedJourney =
@@ -60,7 +70,7 @@ class PostJourneyUseCase(
         return assembleJourneyDto(savedJourney, savedSteps, objectMapper)
     }
 
-    private fun validate(useCaseIn: PostJourneyIn) {
+    private fun validate(useCaseIn: PostJourneyUseCaseIn) {
         if (useCaseIn.name.isBlank()) {
             throw IllegalArgumentException("Journey name is required")
         }
@@ -115,22 +125,7 @@ class PostJourneyUseCase(
                 }
             }
 
-            JourneyTriggerType.CONDITION -> {
-                val triggerExpression = useCaseIn.triggerEventName?.takeIf { it.isNotBlank() }
-                val branchExpressions =
-                    useCaseIn.steps
-                        .filter { it.stepType == JourneyStepType.BRANCH && !it.conditionExpression.isNullOrBlank() }
-                        .map { requireNotNull(it.conditionExpression).trim() }
-
-                if (triggerExpression.isNullOrBlank() && branchExpressions.isEmpty()) {
-                    throw IllegalArgumentException(
-                        "CONDITION trigger requires triggerEventName(condition expression) or BRANCH step conditionExpression",
-                    )
-                }
-
-                triggerExpression?.let { validateConditionExpression(it) }
-                branchExpressions.forEach { validateConditionExpression(it) }
-            }
+            JourneyTriggerType.CONDITION -> Unit
         }
 
         useCaseIn.steps.forEach { step ->
@@ -174,26 +169,5 @@ class PostJourneyUseCase(
             return null
         }
         return objectMapper.writeValueAsString(fields)
-    }
-
-    private fun validateConditionExpression(expression: String) {
-        val raw = expression.trim()
-        val operator =
-            when {
-                raw.contains("==") -> "=="
-                raw.contains("!=") -> "!="
-                else -> throw IllegalArgumentException("Unsupported condition expression: $expression")
-            }
-
-        val parts = raw.split(operator, limit = 2)
-        if (parts.size != 2) {
-            throw IllegalArgumentException("Invalid condition expression: $expression")
-        }
-
-        val left = parts[0].trim()
-        val right = parts[1].trim().trim('"').trim('\'')
-        if (!left.startsWith("event.") || left.removePrefix("event.").isBlank() || right.isBlank()) {
-            throw IllegalArgumentException("Invalid condition expression: $expression")
-        }
     }
 }

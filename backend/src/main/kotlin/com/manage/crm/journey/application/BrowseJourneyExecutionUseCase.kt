@@ -1,17 +1,20 @@
 package com.manage.crm.journey.application
 
+import com.manage.crm.journey.application.dto.BrowseJourneyExecutionUseCaseIn
+import com.manage.crm.journey.application.dto.JourneyExecutionDto
 import com.manage.crm.journey.domain.repository.JourneyExecutionRepository
 import kotlinx.coroutines.flow.toList
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import java.time.format.DateTimeFormatter
 
-data class BrowseJourneyExecutionIn(
-    val journeyId: Long?,
-    val eventId: Long?,
-    val userId: Long?,
-)
-
-@Service
+/**
+ * UC-JOURNEY-004
+ * Reads journey execution records with optional filters.
+ *
+ * Input: optional journeyId or (eventId + userId) filter tuple.
+ * Success: returns execution history rows ordered by creation time descending.
+ */
+@Component
 class BrowseJourneyExecutionUseCase(
     private val journeyExecutionRepository: JourneyExecutionRepository,
 ) {
@@ -19,7 +22,7 @@ class BrowseJourneyExecutionUseCase(
         private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     }
 
-    suspend fun execute(useCaseIn: BrowseJourneyExecutionIn): List<JourneyExecutionDto> {
+    suspend fun execute(useCaseIn: BrowseJourneyExecutionUseCaseIn): List<JourneyExecutionDto> {
         val executions =
             when {
                 useCaseIn.journeyId != null -> journeyExecutionRepository.findAllByJourneyIdOrderByCreatedAtDesc(useCaseIn.journeyId)

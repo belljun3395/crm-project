@@ -1,45 +1,29 @@
 package com.manage.crm.journey.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.manage.crm.journey.application.dto.JourneyDto
+import com.manage.crm.journey.application.dto.JourneyLifecycleStatus
+import com.manage.crm.journey.application.dto.JourneySegmentTriggerEventType
+import com.manage.crm.journey.application.dto.JourneyStepType
+import com.manage.crm.journey.application.dto.JourneyTriggerType
+import com.manage.crm.journey.application.dto.PutJourneyUseCaseIn
 import com.manage.crm.journey.domain.JourneyStep
 import com.manage.crm.journey.domain.repository.JourneyExecutionHistoryRepository
 import com.manage.crm.journey.domain.repository.JourneyRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
 import com.manage.crm.support.exception.NotFoundByIdException
 import kotlinx.coroutines.flow.toList
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
-data class PutJourneyStepIn(
-    val stepOrder: Int,
-    val stepType: JourneyStepType,
-    val channel: String?,
-    val destination: String?,
-    val subject: String?,
-    val body: String?,
-    val variables: Map<String, String>,
-    val delayMillis: Long?,
-    val conditionExpression: String?,
-    val retryCount: Int,
-)
-
-data class PutJourneyIn(
-    val journeyId: Long,
-    val name: String,
-    val triggerType: JourneyTriggerType,
-    val triggerEventName: String?,
-    val triggerSegmentId: Long?,
-    val triggerSegmentEvent: JourneySegmentTriggerEventType?,
-    val triggerSegmentWatchFields: List<String>,
-    val triggerSegmentCountThreshold: Long?,
-    val active: Boolean,
-    val steps: List<PutJourneyStepIn>,
-)
-
 /**
+ * UC-JOURNEY-002
  * Updates a journey and reconciles its step definitions without breaking execution history FK links.
+ *
+ * Input: target journey id and full replacement definition for trigger/steps.
+ * Success: updates journey and step set while preserving history-linked step constraints.
  */
-@Service
+@Component
 class PutJourneyUseCase(
     private val journeyRepository: JourneyRepository,
     private val journeyStepRepository: JourneyStepRepository,
@@ -47,7 +31,7 @@ class PutJourneyUseCase(
     private val objectMapper: ObjectMapper,
 ) {
     @Transactional
-    suspend fun execute(useCaseIn: PutJourneyIn): JourneyDto {
+    suspend fun execute(useCaseIn: PutJourneyUseCaseIn): JourneyDto {
         validate(useCaseIn)
 
         val journey =
@@ -134,7 +118,7 @@ class PutJourneyUseCase(
         return assembleJourneyDto(savedJourney, savedSteps, objectMapper)
     }
 
-    private fun validate(useCaseIn: PutJourneyIn) {
+    private fun validate(useCaseIn: PutJourneyUseCaseIn) {
         if (useCaseIn.name.isBlank()) {
             throw IllegalArgumentException("Journey name is required")
         }

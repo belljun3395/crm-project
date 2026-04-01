@@ -15,9 +15,9 @@ import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.event.event.CampaignDashboardEvent
 import com.manage.crm.event.event.CampaignEventPublisher
-import com.manage.crm.journey.queue.JourneyEventPayload
-import com.manage.crm.journey.queue.JourneyEventPropertyPayload
-import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
+import com.manage.crm.journey.application.port.out.JourneyTriggerEventPayload
+import com.manage.crm.journey.application.port.out.JourneyTriggerEventPropertyPayload
+import com.manage.crm.journey.application.port.out.JourneyTriggerPort
 import com.manage.crm.segment.application.port.query.SegmentReadPort
 import com.manage.crm.segment.application.port.query.SegmentTargetEventReadModel
 import com.manage.crm.segment.application.port.query.SegmentTargetUserReadModel
@@ -55,7 +55,7 @@ class PostEventUseCase(
     private val userReadPort: UserReadPort,
     private val eventReadPort: EventReadPort,
     private val segmentReadPort: SegmentReadPort,
-    private val journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher,
+    private val journeyTriggerPort: JourneyTriggerPort,
     private val campaignEventPublisher: CampaignEventPublisher,
 ) {
     val log = KotlinLogging.logger {}
@@ -131,14 +131,14 @@ class PostEventUseCase(
         savedEvents.forEach { savedEvent ->
             runCatching {
                 val savedEventId = savedEvent.id ?: return@runCatching
-                journeyTriggerQueuePublisher.publishEventTrigger(
-                    JourneyEventPayload(
+                journeyTriggerPort.triggerByEvent(
+                    JourneyTriggerEventPayload(
                         id = savedEventId,
                         name = savedEvent.name,
                         userId = savedEvent.userId,
                         properties =
                             savedEvent.properties.value.map { property ->
-                                JourneyEventPropertyPayload(
+                                JourneyTriggerEventPropertyPayload(
                                     key = property.key,
                                     value = property.value,
                                 )
@@ -151,7 +151,7 @@ class PostEventUseCase(
             }
         }
         runCatching {
-            journeyTriggerQueuePublisher.publishSegmentContextTrigger(savedEvents.map { it.userId }.distinct())
+            journeyTriggerPort.triggerBySegmentContextChange(savedEvents.map { it.userId }.distinct())
         }.onFailure {
             log.error(it) { "Failed to enqueue journey SEGMENT_CONTEXT trigger after event save" }
         }

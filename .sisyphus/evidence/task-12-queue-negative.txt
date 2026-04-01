@@ -1,0 +1,38 @@
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by net.rubygrapefruit.platform.internal.NativeLibraryLoader in an unnamed module (file:/Users/kimjongjun/.gradle/wrapper/dists/gradle-9.4.1-bin/arn2x92ynaizyzdaamcbpbhtj/gradle-9.4.1/lib/native-platform-0.22-milestone-29.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+> Task :bootBuildInfo
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :kaptGenerateStubsKotlin UP-TO-DATE
+> Task :kaptKotlin UP-TO-DATE
+> Task :compileKotlin UP-TO-DATE
+> Task :compileJava NO-SOURCE
+> Task :processResources UP-TO-DATE
+> Task :classes
+> Task :jar
+> Task :kaptGenerateStubsTestFixturesKotlin UP-TO-DATE
+> Task :kaptTestFixturesKotlin UP-TO-DATE
+> Task :compileTestFixturesKotlin UP-TO-DATE
+> Task :compileTestFixturesJava NO-SOURCE
+> Task :processTestFixturesResources NO-SOURCE
+> Task :testFixturesClasses UP-TO-DATE
+> Task :testFixturesJar UP-TO-DATE
+> Task :kaptGenerateStubsTestKotlin UP-TO-DATE
+> Task :kaptTestKotlin UP-TO-DATE
+> Task :compileTestKotlin UP-TO-DATE
+> Task :compileTestJava NO-SOURCE
+> Task :processTestResources UP-TO-DATE
+> Task :testClasses UP-TO-DATE
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::invokeCleaner has been called by nonapi.io.github.classgraph.utils.FileUtils (file:/Users/kimjongjun/.gradle/caches/modules-2/files-2.1/io.github.classgraph/classgraph/4.8.162/85bc1625bc8aac51ad32971ebb26a3e35cb97356/classgraph-4.8.162.jar)
+WARNING: Please consider reporting this to the maintainers of class nonapi.io.github.classgraph.utils.FileUtils
+WARNING: sun.misc.Unsafe::invokeCleaner will be removed in a future release
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+> Task :test
+> Task :jacocoTestReport
+
+BUILD SUCCESSFUL in 10s
+16 actionable tasks: 4 executed, 12 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.4.1/userguide/configuration_cache_enabling.html

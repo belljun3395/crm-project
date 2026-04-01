@@ -1,6 +1,6 @@
 package com.manage.crm.user.application
 
-import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
+import com.manage.crm.journey.application.port.out.JourneyTriggerPort
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
 import com.manage.crm.user.application.dto.EnrollUserUseCaseIn
 import com.manage.crm.user.application.dto.EnrollUserUseCaseOut
@@ -24,7 +24,7 @@ class EnrollUserUseCaseTest :
         lateinit var userRepositoryEventProcessor: UserRepositoryEventProcessor
         lateinit var jsonService: JsonService
         lateinit var userCacheManager: UserCacheManager
-        lateinit var journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher
+        lateinit var journeyTriggerPort: JourneyTriggerPort
         lateinit var transactionSynchronizationTemplate: TransactionSynchronizationTemplate
         lateinit var useCase: EnrollUserUseCase
 
@@ -33,7 +33,7 @@ class EnrollUserUseCaseTest :
             userRepositoryEventProcessor = mockk()
             jsonService = mockk()
             userCacheManager = mockk(relaxed = true)
-            journeyTriggerQueuePublisher = mockk(relaxed = true)
+            journeyTriggerPort = mockk(relaxed = true)
             transactionSynchronizationTemplate = mockk(relaxed = true)
             useCase =
                 EnrollUserUseCase(
@@ -41,7 +41,7 @@ class EnrollUserUseCaseTest :
                     userRepositoryEventProcessor,
                     jsonService,
                     userCacheManager,
-                    journeyTriggerQueuePublisher,
+                    journeyTriggerPort,
                     transactionSynchronizationTemplate,
                 )
         }

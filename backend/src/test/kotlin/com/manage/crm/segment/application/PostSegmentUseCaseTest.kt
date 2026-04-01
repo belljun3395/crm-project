@@ -1,7 +1,7 @@
 package com.manage.crm.segment.application
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
+import com.manage.crm.journey.application.port.out.JourneyTriggerPort
 import com.manage.crm.segment.application.dto.PostSegmentConditionIn
 import com.manage.crm.segment.application.dto.PostSegmentUseCaseIn
 import com.manage.crm.segment.domain.Segment
@@ -24,20 +24,20 @@ class PostSegmentUseCaseTest :
     BehaviorSpec({
         lateinit var segmentRepository: SegmentRepository
         lateinit var segmentConditionRepository: SegmentConditionRepository
-        lateinit var journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher
+        lateinit var journeyTriggerPort: JourneyTriggerPort
         lateinit var transactionSynchronizationTemplate: TransactionSynchronizationTemplate
         lateinit var useCase: PostSegmentUseCase
 
         beforeContainer {
             segmentRepository = mockk()
             segmentConditionRepository = mockk(relaxed = true)
-            journeyTriggerQueuePublisher = mockk(relaxed = true)
+            journeyTriggerPort = mockk(relaxed = true)
             transactionSynchronizationTemplate = mockk(relaxed = true)
             useCase =
                 PostSegmentUseCase(
                     segmentRepository = segmentRepository,
                     segmentConditionRepository = segmentConditionRepository,
-                    journeyTriggerQueuePublisher = journeyTriggerQueuePublisher,
+                    journeyTriggerPort = journeyTriggerPort,
                     transactionSynchronizationTemplate = transactionSynchronizationTemplate,
                 )
         }

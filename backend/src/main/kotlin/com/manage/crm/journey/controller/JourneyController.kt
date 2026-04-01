@@ -2,22 +2,20 @@ package com.manage.crm.journey.controller
 
 import com.manage.crm.config.SwaggerTag
 import com.manage.crm.journey.application.BrowseJourneyExecutionHistoryUseCase
-import com.manage.crm.journey.application.BrowseJourneyExecutionIn
 import com.manage.crm.journey.application.BrowseJourneyExecutionUseCase
 import com.manage.crm.journey.application.BrowseJourneyUseCase
-import com.manage.crm.journey.application.JourneyDto
-import com.manage.crm.journey.application.JourneyExecutionDto
-import com.manage.crm.journey.application.JourneyExecutionHistoryDto
-import com.manage.crm.journey.application.JourneySegmentTriggerEventType
-import com.manage.crm.journey.application.JourneyStepType
-import com.manage.crm.journey.application.JourneyTriggerType
-import com.manage.crm.journey.application.PostJourneyIn
-import com.manage.crm.journey.application.PostJourneyStepIn
 import com.manage.crm.journey.application.PostJourneyUseCase
-import com.manage.crm.journey.application.PutJourneyIn
-import com.manage.crm.journey.application.PutJourneyStepIn
 import com.manage.crm.journey.application.PutJourneyUseCase
 import com.manage.crm.journey.application.UpdateJourneyLifecycleStatusUseCase
+import com.manage.crm.journey.application.dto.BrowseJourneyExecutionHistoryUseCaseIn
+import com.manage.crm.journey.application.dto.BrowseJourneyExecutionUseCaseIn
+import com.manage.crm.journey.application.dto.BrowseJourneyUseCaseIn
+import com.manage.crm.journey.application.dto.JourneyDto
+import com.manage.crm.journey.application.dto.JourneyExecutionDto
+import com.manage.crm.journey.application.dto.JourneyExecutionHistoryDto
+import com.manage.crm.journey.application.dto.JourneyLifecycleAction
+import com.manage.crm.journey.application.dto.UpdateJourneyLifecycleStatusUseCaseIn
+import com.manage.crm.journey.controller.mapper.toUseCaseIn
 import com.manage.crm.journey.controller.request.PostJourneyRequest
 import com.manage.crm.journey.controller.request.PutJourneyRequest
 import com.manage.crm.support.web.ApiResponse
@@ -56,33 +54,8 @@ class JourneyController(
         request: PostJourneyRequest,
     ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> =
         postJourneyUseCase
-            .execute(
-                PostJourneyIn(
-                    name = request.name,
-                    triggerType = JourneyTriggerType.from(request.triggerType),
-                    triggerEventName = request.triggerEventName,
-                    triggerSegmentId = request.triggerSegmentId,
-                    triggerSegmentEvent = request.triggerSegmentEvent?.let { JourneySegmentTriggerEventType.from(it) },
-                    triggerSegmentWatchFields = request.triggerSegmentWatchFields ?: emptyList(),
-                    triggerSegmentCountThreshold = request.triggerSegmentCountThreshold,
-                    active = request.active ?: true,
-                    steps =
-                        request.steps.map { step ->
-                            PostJourneyStepIn(
-                                stepOrder = step.stepOrder,
-                                stepType = JourneyStepType.from(step.stepType),
-                                channel = step.channel,
-                                destination = step.destination,
-                                subject = step.subject,
-                                body = step.body,
-                                variables = step.variables ?: emptyMap(),
-                                delayMillis = step.delayMillis,
-                                conditionExpression = step.conditionExpression,
-                                retryCount = step.retryCount ?: 0,
-                            )
-                        },
-                ),
-            ).let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
+            .execute(request.toUseCaseIn())
+            .let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
 
     @PutMapping("/{journeyId}")
     suspend fun updateJourney(
@@ -92,63 +65,49 @@ class JourneyController(
         request: PutJourneyRequest,
     ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> =
         putJourneyUseCase
-            .execute(
-                PutJourneyIn(
-                    journeyId = journeyId,
-                    name = request.name,
-                    triggerType = JourneyTriggerType.from(request.triggerType),
-                    triggerEventName = request.triggerEventName,
-                    triggerSegmentId = request.triggerSegmentId,
-                    triggerSegmentEvent = request.triggerSegmentEvent?.let { JourneySegmentTriggerEventType.from(it) },
-                    triggerSegmentWatchFields = request.triggerSegmentWatchFields ?: emptyList(),
-                    triggerSegmentCountThreshold = request.triggerSegmentCountThreshold,
-                    active = request.active ?: throw IllegalArgumentException("active is required for updateJourney"),
-                    steps =
-                        request.steps.map { step ->
-                            PutJourneyStepIn(
-                                stepOrder = step.stepOrder,
-                                stepType = JourneyStepType.from(step.stepType),
-                                channel = step.channel,
-                                destination = step.destination,
-                                subject = step.subject,
-                                body = step.body,
-                                variables = step.variables ?: emptyMap(),
-                                delayMillis = step.delayMillis,
-                                conditionExpression = step.conditionExpression,
-                                retryCount = step.retryCount ?: 0,
-                            )
-                        },
-                ),
-            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+            .execute(request.toUseCaseIn(journeyId))
+            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
 
     @PostMapping("/{journeyId}/pause")
     suspend fun pauseJourney(
         @PathVariable journeyId: Long,
     ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> =
         updateJourneyLifecycleStatusUseCase
-            .pause(journeyId)
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+            .execute(
+                UpdateJourneyLifecycleStatusUseCaseIn(
+                    journeyId = journeyId,
+                    action = JourneyLifecycleAction.PAUSE,
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
 
     @PostMapping("/{journeyId}/resume")
     suspend fun resumeJourney(
         @PathVariable journeyId: Long,
     ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> =
         updateJourneyLifecycleStatusUseCase
-            .resume(journeyId)
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+            .execute(
+                UpdateJourneyLifecycleStatusUseCaseIn(
+                    journeyId = journeyId,
+                    action = JourneyLifecycleAction.RESUME,
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
 
     @PostMapping("/{journeyId}/archive")
     suspend fun archiveJourney(
         @PathVariable journeyId: Long,
     ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> =
         updateJourneyLifecycleStatusUseCase
-            .archive(journeyId)
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+            .execute(
+                UpdateJourneyLifecycleStatusUseCaseIn(
+                    journeyId = journeyId,
+                    action = JourneyLifecycleAction.ARCHIVE,
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
 
     @GetMapping
     suspend fun browseJourneys(): ApiResponse<ApiResponse.SuccessBody<List<JourneyDto>>> =
         browseJourneyUseCase
-            .execute()
+            .execute(BrowseJourneyUseCaseIn())
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
 
     @GetMapping("/executions")
@@ -159,7 +118,7 @@ class JourneyController(
     ): ApiResponse<ApiResponse.SuccessBody<List<JourneyExecutionDto>>> =
         browseJourneyExecutionUseCase
             .execute(
-                BrowseJourneyExecutionIn(
+                BrowseJourneyExecutionUseCaseIn(
                     journeyId = journeyId,
                     eventId = eventId,
                     userId = userId,
@@ -171,7 +130,7 @@ class JourneyController(
         @PathVariable executionId: Long,
     ): ApiResponse<ApiResponse.SuccessBody<List<JourneyExecutionHistoryDto>>> =
         browseJourneyExecutionHistoryUseCase
-            .execute(executionId)
+            .execute(BrowseJourneyExecutionHistoryUseCaseIn(executionId))
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
 
     @ExceptionHandler(IllegalArgumentException::class)

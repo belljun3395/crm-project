@@ -1,153 +1,75 @@
 package com.manage.crm.journey.application
 
-enum class JourneyTriggerType {
-    EVENT,
-    SEGMENT,
-    CONDITION,
-    ;
-
-    companion object {
-        fun from(value: String): JourneyTriggerType =
-            entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
-                ?: throw IllegalArgumentException("Unsupported triggerType: $value")
-    }
-}
-
-enum class JourneySegmentTriggerEventType {
-    ENTER,
-    EXIT,
-    UPDATE,
-    COUNT_REACHED,
-    COUNT_DROPPED,
-    ;
-
-    companion object {
-        fun from(value: String): JourneySegmentTriggerEventType =
-            entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
-                ?: throw IllegalArgumentException("Unsupported segment trigger event type: $value")
-    }
-}
-
-enum class JourneyStepType {
-    ACTION,
-    DELAY,
-    BRANCH,
-    ;
-
-    companion object {
-        fun from(value: String): JourneyStepType =
-            entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
-                ?: throw IllegalArgumentException("Unsupported stepType: $value")
-    }
-}
-
-enum class JourneyExecutionStatus {
-    RUNNING,
-    SUCCESS,
-    FAILED,
-}
-
-enum class JourneyExecutionHistoryStatus {
-    RUNNING,
-    SUCCESS,
-    FAILED,
-    RETRYING,
-    SKIPPED,
-    SKIPPED_DUPLICATE,
-}
-
-enum class JourneyLifecycleStatus {
-    DRAFT,
-    ACTIVE,
-    PAUSED,
-    ARCHIVED,
-    ;
-
-    companion object {
-        fun from(value: String): JourneyLifecycleStatus =
-            entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
-                ?: throw IllegalArgumentException("Unsupported lifecycle status: $value")
-    }
-}
-
-data class PostJourneyStepIn(
-    val stepOrder: Int,
-    val stepType: JourneyStepType,
-    val channel: String?,
-    val destination: String?,
-    val subject: String?,
-    val body: String?,
-    val variables: Map<String, String>,
-    val delayMillis: Long?,
-    val conditionExpression: String?,
-    val retryCount: Int,
+// All DTOs and enums have been moved to com.manage.crm.journey.application.dto package
+// Re-export for backward compatibility
+@Deprecated(
+    message = "Use com.manage.crm.journey.application.dto instead",
+    replaceWith = ReplaceWith("JourneyTriggerType", "com.manage.crm.journey.application.dto.JourneyTriggerType"),
 )
+typealias JourneyTriggerType = com.manage.crm.journey.application.dto.JourneyTriggerType
 
-data class PostJourneyIn(
-    val name: String,
-    val triggerType: JourneyTriggerType,
-    val triggerEventName: String?,
-    val triggerSegmentId: Long?,
-    val triggerSegmentEvent: JourneySegmentTriggerEventType?,
-    val triggerSegmentWatchFields: List<String>,
-    val triggerSegmentCountThreshold: Long?,
-    val active: Boolean,
-    val steps: List<PostJourneyStepIn>,
+@Deprecated(
+    message = "Use com.manage.crm.journey.application.dto instead",
+    replaceWith = ReplaceWith("JourneySegmentTriggerEventType", "com.manage.crm.journey.application.dto.JourneySegmentTriggerEventType"),
 )
+typealias JourneySegmentTriggerEventType = com.manage.crm.journey.application.dto.JourneySegmentTriggerEventType
 
-data class JourneyStepDto(
-    val id: Long,
-    val stepOrder: Int,
-    val stepType: String,
-    val channel: String?,
-    val destination: String?,
-    val subject: String?,
-    val body: String?,
-    val variables: Map<String, String>,
-    val delayMillis: Long?,
-    val conditionExpression: String?,
-    val retryCount: Int,
-    val createdAt: String,
+@Deprecated(
+    message = "Use com.manage.crm.journey.application.dto instead",
+    replaceWith = ReplaceWith("JourneyStepType", "com.manage.crm.journey.application.dto.JourneyStepType"),
 )
+typealias JourneyStepType = com.manage.crm.journey.application.dto.JourneyStepType
 
-data class JourneyDto(
-    val id: Long,
-    val name: String,
-    val triggerType: String,
-    val triggerEventName: String?,
-    val triggerSegmentId: Long?,
-    val triggerSegmentEvent: String?,
-    val triggerSegmentWatchFields: List<String>,
-    val triggerSegmentCountThreshold: Long?,
-    val active: Boolean,
-    val lifecycleStatus: String,
-    val version: Int,
-    val steps: List<JourneyStepDto>,
-    val createdAt: String,
+@Deprecated(
+    message = "Use com.manage.crm.journey.application.dto instead",
+    replaceWith = ReplaceWith("JourneyExecutionStatus", "com.manage.crm.journey.application.dto.JourneyExecutionStatus"),
 )
+typealias JourneyExecutionStatus = com.manage.crm.journey.application.dto.JourneyExecutionStatus
 
-data class JourneyExecutionDto(
-    val id: Long,
-    val journeyId: Long,
-    val eventId: Long,
-    val userId: Long,
-    val status: String,
-    val currentStepOrder: Int,
-    val lastError: String?,
-    val triggerKey: String,
-    val startedAt: String,
-    val completedAt: String?,
-    val createdAt: String,
-    val updatedAt: String?,
+@Deprecated(
+    message = "Use com.manage.crm.journey.application.dto instead",
+    replaceWith = ReplaceWith("JourneyExecutionHistoryStatus", "com.manage.crm.journey.application.dto.JourneyExecutionHistoryStatus"),
 )
+typealias JourneyExecutionHistoryStatus = com.manage.crm.journey.application.dto.JourneyExecutionHistoryStatus
 
-data class JourneyExecutionHistoryDto(
-    val id: Long,
-    val journeyExecutionId: Long,
-    val journeyStepId: Long,
-    val status: String,
-    val attempt: Int,
-    val message: String?,
-    val idempotencyKey: String?,
-    val createdAt: String,
+@Deprecated(
+    message = "Use com.manage.crm.journey.application.dto instead",
+    replaceWith = ReplaceWith("JourneyLifecycleStatus", "com.manage.crm.journey.application.dto.JourneyLifecycleStatus"),
 )
+typealias JourneyLifecycleStatus = com.manage.crm.journey.application.dto.JourneyLifecycleStatus
+
+@Deprecated(
+    message = "Use com.manage.crm.journey.application.dto instead",
+    replaceWith = ReplaceWith("PostJourneyStepIn", "com.manage.crm.journey.application.dto.PostJourneyStepIn"),
+)
+typealias PostJourneyStepIn = com.manage.crm.journey.application.dto.PostJourneyStepIn
+
+@Deprecated(
+    message = "Use com.manage.crm.journey.application.dto instead",
+    replaceWith = ReplaceWith("PostJourneyIn", "com.manage.crm.journey.application.dto.PostJourneyIn"),
+)
+typealias PostJourneyIn = com.manage.crm.journey.application.dto.PostJourneyIn
+
+@Deprecated(
+    message = "Use com.manage.crm.journey.application.dto instead",
+    replaceWith = ReplaceWith("JourneyStepDto", "com.manage.crm.journey.application.dto.JourneyStepDto"),
+)
+typealias JourneyStepDto = com.manage.crm.journey.application.dto.JourneyStepDto
+
+@Deprecated(
+    message = "Use com.manage.crm.journey.application.dto instead",
+    replaceWith = ReplaceWith("JourneyDto", "com.manage.crm.journey.application.dto.JourneyDto"),
+)
+typealias JourneyDto = com.manage.crm.journey.application.dto.JourneyDto
+
+@Deprecated(
+    message = "Use com.manage.crm.journey.application.dto instead",
+    replaceWith = ReplaceWith("JourneyExecutionDto", "com.manage.crm.journey.application.dto.JourneyExecutionDto"),
+)
+typealias JourneyExecutionDto = com.manage.crm.journey.application.dto.JourneyExecutionDto
+
+@Deprecated(
+    message = "Use com.manage.crm.journey.application.dto instead",
+    replaceWith = ReplaceWith("JourneyExecutionHistoryDto", "com.manage.crm.journey.application.dto.JourneyExecutionHistoryDto"),
+)
+typealias JourneyExecutionHistoryDto = com.manage.crm.journey.application.dto.JourneyExecutionHistoryDto

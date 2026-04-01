@@ -1,0 +1,8 @@
+backend/src/main/kotlin/com/manage/crm/journey/application/automation/condition/:
+package-info.kt
+
+backend/src/main/kotlin/com/manage/crm/journey/application/automation/execution/:
+package-info.kt
+
+backend/src/main/kotlin/com/manage/crm/journey/application/automation/segment/:
+package-info.kt

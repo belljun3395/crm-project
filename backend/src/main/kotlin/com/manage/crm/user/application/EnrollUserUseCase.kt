@@ -1,6 +1,6 @@
 package com.manage.crm.user.application
 
-import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
+import com.manage.crm.journey.application.port.out.JourneyTriggerPort
 import com.manage.crm.support.exception.NotFoundByIdException
 import com.manage.crm.support.out
 import com.manage.crm.support.transactional.TransactionSynchronizationTemplate
@@ -32,7 +32,7 @@ class EnrollUserUseCase(
     private val userRepositoryEventProcessor: UserRepositoryEventProcessor,
     private val jsonService: JsonService,
     private val userCacheManager: UserCacheManager,
-    private val journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher,
+    private val journeyTriggerPort: JourneyTriggerPort,
     private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -71,7 +71,7 @@ class EnrollUserUseCase(
             transactionSynchronizationTemplate.afterCommit(
                 blockDescription = "enqueue journey segment trigger after user commit",
             ) {
-                journeyTriggerQueuePublisher.publishSegmentContextTrigger(listOf(userId))
+                journeyTriggerPort.triggerBySegmentContextChange(listOf(userId))
             }
         }.onFailure { error ->
             log.error("Failed to enqueue segment-triggered journey automation for userId=$userId", error)

@@ -17,7 +17,7 @@ import com.manage.crm.event.domain.repository.EventRepository
 import com.manage.crm.event.domain.vo.CampaignProperties
 import com.manage.crm.event.domain.vo.CampaignProperty
 import com.manage.crm.event.event.CampaignEventPublisher
-import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
+import com.manage.crm.journey.application.port.out.JourneyTriggerPort
 import com.manage.crm.segment.application.port.query.SegmentReadPort
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.user.application.port.query.UserReadModel
@@ -43,7 +43,7 @@ class PostEventUseCaseTest :
         lateinit var userReadPort: UserReadPort
         lateinit var eventReadPort: EventReadPort
         lateinit var segmentReadPort: SegmentReadPort
-        lateinit var journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher
+        lateinit var journeyTriggerPort: JourneyTriggerPort
         lateinit var campaignEventPublisher: CampaignEventPublisher
         lateinit var postEventUseCase: PostEventUseCase
 
@@ -55,7 +55,7 @@ class PostEventUseCaseTest :
             userReadPort = mockk()
             eventReadPort = mockk()
             segmentReadPort = mockk()
-            journeyTriggerQueuePublisher = mockk(relaxed = true)
+            journeyTriggerPort = mockk(relaxed = true)
             campaignEventPublisher = mockk(relaxed = true)
             postEventUseCase =
                 PostEventUseCase(
@@ -66,7 +66,7 @@ class PostEventUseCaseTest :
                     userReadPort,
                     eventReadPort,
                     segmentReadPort,
-                    journeyTriggerQueuePublisher,
+                    journeyTriggerPort,
                     campaignEventPublisher,
                 )
         }
@@ -746,7 +746,7 @@ class PostEventUseCaseTest :
                 coEvery { eventRepository.save(any(Event::class)) } answers {
                     firstArg<Event>().apply { id = 401L }
                 }
-                coEvery { journeyTriggerQueuePublisher.publishEventTrigger(any()) } throws
+                coEvery { journeyTriggerPort.triggerByEvent(any()) } throws
                     RuntimeException("queue unavailable")
 
                 val result = postEventUseCase.execute(useCaseIn)
