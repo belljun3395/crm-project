@@ -11,7 +11,7 @@ import org.springframework.transaction.reactive.executeAndAwait
 @Component
 class ScheduledEventListener(
     private val cancelScheduledEventHandler: CancelScheduledEventHandler,
-    private val transactionalTemplates: TransactionTemplates
+    private val transactionalTemplates: TransactionTemplates,
 ) {
     @EventListener
     fun onCancelEvent(event: CancelScheduledEvent) {

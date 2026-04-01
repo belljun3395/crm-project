@@ -13,25 +13,17 @@ import org.springframework.context.annotation.Configuration
 class CompressionConfig {
     @Bean
     @ConfigurationProperties(prefix = "server.compression.url")
-    fun compressionUrlProperties(): CompressionUrlProperties {
-        return CompressionUrlProperties()
-    }
+    fun compressionUrlProperties(): CompressionUrlProperties = CompressionUrlProperties()
 
     @Bean
     @ConfigurationProperties(prefix = "server.decompression.request")
-    fun decompressionRequestProperties(): DecompressionRequestProperties {
-        return DecompressionRequestProperties()
-    }
+    fun decompressionRequestProperties(): DecompressionRequestProperties = DecompressionRequestProperties()
 
     @Bean
     @ConditionalOnProperty(prefix = "server.compression.url", name = ["enabled"], havingValue = "true")
-    fun gzipCompressionFilter(properties: CompressionUrlProperties): GzipCompressionFilter {
-        return GzipCompressionFilter(properties)
-    }
+    fun gzipCompressionFilter(properties: CompressionUrlProperties): GzipCompressionFilter = GzipCompressionFilter(properties)
 
     @Bean
     @ConditionalOnProperty(prefix = "server.decompression.request", name = ["enabled"], havingValue = "true")
-    fun gzipDecompressionFilter(): GzipDecompressionFilter {
-        return GzipDecompressionFilter()
-    }
+    fun gzipDecompressionFilter(): GzipDecompressionFilter = GzipDecompressionFilter()
 }

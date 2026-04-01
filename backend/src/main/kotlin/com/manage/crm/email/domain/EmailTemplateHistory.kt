@@ -24,7 +24,7 @@ class EmailTemplateHistory(
     @Column("version")
     var version: EmailTemplateVersion,
     @CreatedDate
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
@@ -32,26 +32,23 @@ class EmailTemplateHistory(
             subject: String,
             body: String,
             variables: Variables,
-            version: Float
-        ): EmailTemplateHistory {
-            return this.new(templateId, subject, body, variables, EmailTemplateVersion(version))
-        }
+            version: Float,
+        ): EmailTemplateHistory = this.new(templateId, subject, body, variables, EmailTemplateVersion(version))
 
         fun new(
             templateId: Long,
             subject: String,
             body: String,
             variables: Variables,
-            version: EmailTemplateVersion
-        ): EmailTemplateHistory {
-            return EmailTemplateHistory(
+            version: EmailTemplateVersion,
+        ): EmailTemplateHistory =
+            EmailTemplateHistory(
                 templateId = templateId,
                 subject = subject,
                 body = body,
                 variables = variables,
-                version = version
+                version = version,
             )
-        }
 
         fun new(
             id: Long,
@@ -60,18 +57,17 @@ class EmailTemplateHistory(
             body: String,
             variables: Variables,
             version: Float,
-            createdAt: LocalDateTime
-        ): EmailTemplateHistory {
-            return this.new(
+            createdAt: LocalDateTime,
+        ): EmailTemplateHistory =
+            this.new(
                 id = id,
                 templateId = templateId,
                 subject = subject,
                 body = body,
                 variables = variables,
                 version = EmailTemplateVersion(version),
-                createdAt = createdAt
+                createdAt = createdAt,
             )
-        }
 
         fun new(
             id: Long,
@@ -80,17 +76,16 @@ class EmailTemplateHistory(
             body: String,
             variables: Variables,
             version: EmailTemplateVersion,
-            createdAt: LocalDateTime
-        ): EmailTemplateHistory {
-            return EmailTemplateHistory(
+            createdAt: LocalDateTime,
+        ): EmailTemplateHistory =
+            EmailTemplateHistory(
                 id = id,
                 templateId = templateId,
                 subject = subject,
                 body = body,
                 variables = variables,
                 version = version,
-                createdAt = createdAt
+                createdAt = createdAt,
             )
-        }
     }
 }

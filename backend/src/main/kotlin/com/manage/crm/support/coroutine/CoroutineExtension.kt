@@ -11,29 +11,26 @@ import kotlin.coroutines.CoroutineContext
 
 suspend fun <T> withMDCContext(
     context: CoroutineContext = Dispatchers.IO,
-    block: suspend () -> T
-): T {
-    return withContext(context + MDCContext()) { block() }
-}
+    block: suspend () -> T,
+): T = withContext(context + MDCContext()) { block() }
 
 fun mdcCoroutineScope(
     context: CoroutineContext = Dispatchers.IO,
-    traceId: String = MDC.getCopyOfContextMap()?.get(MDC_KEY_TRACE_ID) ?: ""
+    traceId: String = MDC.getCopyOfContextMap()?.get(MDC_KEY_TRACE_ID) ?: "",
 ): CoroutineScope {
-    val contextMap = MDC.getCopyOfContextMap() ?: emptyMap<String?, String?>()
-        .toMutableMap()
-        .apply {
-            put(
-                MDC_KEY_TRACE_ID,
-                traceId
-            )
-        }
+    val contextMap =
+        MDC.getCopyOfContextMap() ?: emptyMap<String?, String?>()
+            .toMutableMap()
+            .apply {
+                put(
+                    MDC_KEY_TRACE_ID,
+                    traceId,
+                )
+            }
     return CoroutineScope(context + MDCContext(contextMap))
 }
 
 fun eventListenerCoroutineScope(
     context: CoroutineContext = Dispatchers.IO,
-    traceId: String = MDC.getCopyOfContextMap()?.get(MDC_KEY_TRACE_ID) ?: ""
-): CoroutineScope {
-    return CoroutineScope(mdcCoroutineScope(context, traceId).coroutineContext + SupervisorJob())
-}
+    traceId: String = MDC.getCopyOfContextMap()?.get(MDC_KEY_TRACE_ID) ?: "",
+): CoroutineScope = CoroutineScope(mdcCoroutineScope(context, traceId).coroutineContext + SupervisorJob())

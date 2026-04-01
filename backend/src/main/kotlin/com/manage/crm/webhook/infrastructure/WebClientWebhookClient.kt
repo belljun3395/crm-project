@@ -54,7 +54,7 @@ class WebClientWebhookClient(
     @Value("\${webhook.signing.secret:}")
     private val signingSecret: String,
     @Value("\${webhook.ssl.verify:true}")
-    private val sslVerify: Boolean
+    private val sslVerify: Boolean,
 ) : WebhookClient {
     private val log = KotlinLogging.logger {}
     private val circuitBreaker by lazy {
@@ -64,60 +64,67 @@ class WebClientWebhookClient(
         rateLimiterRegistry.rateLimiter(rateLimiterInstanceName)
     }
 
-    private val webClient = webClientBuilder
-        .clientConnector(
-            ReactorClientHttpConnector(
-                HttpClient.create()
-                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
-                    .responseTimeout(Duration.ofSeconds(10))
-                    .let { client ->
-                        if (!sslVerify) {
-                            client.secure { spec ->
-                                spec.sslContext(
-                                    SslContextBuilder.forClient()
-                                        .trustManager(InsecureTrustManagerFactory.INSTANCE)
-                                        .build()
-                                )
+    private val webClient =
+        webClientBuilder
+            .clientConnector(
+                ReactorClientHttpConnector(
+                    HttpClient
+                        .create()
+                        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
+                        .responseTimeout(Duration.ofSeconds(10))
+                        .let { client ->
+                            if (!sslVerify) {
+                                client.secure { spec ->
+                                    spec.sslContext(
+                                        SslContextBuilder
+                                            .forClient()
+                                            .trustManager(InsecureTrustManagerFactory.INSTANCE)
+                                            .build(),
+                                    )
+                                }
+                            } else {
+                                client
                             }
-                        } else {
-                            client
-                        }
-                    }
-            )
-        )
-        .build()
+                        },
+                ),
+            ).build()
 
     private class WebhookHttpStatusException(
         val statusCode: Int,
-        message: String
+        message: String,
     ) : RuntimeException(message)
 
-    override suspend fun send(webhook: Webhook, payload: WebhookEventPayload): WebhookDeliveryResult {
+    override suspend fun send(
+        webhook: Webhook,
+        payload: WebhookEventPayload,
+    ): WebhookDeliveryResult {
         if (!isUrlSafe(webhook.url)) {
             log.warn { "Blocked webhook to unsafe URL: ${webhook.url}" }
             return WebhookDeliveryResult(
                 status = WebhookDeliveryStatus.BLOCKED,
                 attemptCount = 0,
-                errorMessage = "Blocked webhook to unsafe URL"
+                errorMessage = "Blocked webhook to unsafe URL",
             )
         }
 
         val attempts = maxAttempts.coerceAtLeast(1)
-        val payloadJson = runCatching { objectMapper.writeValueAsString(payload) }
-            .getOrElse { error ->
-                log.error(error) { "Failed to serialize webhook payload: id=${webhook.id}, url=${webhook.url}" }
-                return WebhookDeliveryResult(
-                    status = WebhookDeliveryStatus.FAILED,
-                    attemptCount = 0,
-                    errorMessage = error.message
-                )
-            }
+        val payloadJson =
+            runCatching { objectMapper.writeValueAsString(payload) }
+                .getOrElse { error ->
+                    log.error(error) { "Failed to serialize webhook payload: id=${webhook.id}, url=${webhook.url}" }
+                    return WebhookDeliveryResult(
+                        status = WebhookDeliveryStatus.FAILED,
+                        attemptCount = 0,
+                        errorMessage = error.message,
+                    )
+                }
 
-        var finalResult = WebhookDeliveryResult(
-            status = WebhookDeliveryStatus.FAILED,
-            attemptCount = attempts,
-            errorMessage = "Webhook delivery failed"
-        )
+        var finalResult =
+            WebhookDeliveryResult(
+                status = WebhookDeliveryStatus.FAILED,
+                attemptCount = attempts,
+                errorMessage = "Webhook delivery failed",
+            )
 
         for (attempt in 1..attempts) {
             val result = sendOnce(webhook, payloadJson, attempt)
@@ -138,51 +145,52 @@ class WebClientWebhookClient(
     private suspend fun sendOnce(
         webhook: Webhook,
         payloadJson: String,
-        attempt: Int
-    ): WebhookDeliveryResult {
-        return runCatching {
+        attempt: Int,
+    ): WebhookDeliveryResult =
+        runCatching {
             val timestamp = OffsetDateTime.now().toString()
             val nonce = UUID.randomUUID().toString()
             val signature = createSignature(timestamp, nonce, payloadJson)
 
-            val responseStatus = webClient.post()
-                .uri(webhook.url)
-                .contentType(MediaType.APPLICATION_JSON)
-                .headers { headers ->
-                    if (signingEnabled && signature != null) {
-                        headers.add("X-Webhook-Timestamp", timestamp)
-                        headers.add("X-Webhook-Nonce", nonce)
-                        headers.add("X-Webhook-Signature", signature)
-                    }
-                }
-                .bodyValue(payloadJson)
-                .exchangeToMono { response ->
-                    response.bodyToMono(String::class.java)
-                        .defaultIfEmpty("")
-                        .flatMap {
-                            val status = response.statusCode().value()
-                            if (status in 200..299) {
-                                Mono.just(status)
-                            } else {
-                                Mono.error(
-                                    WebhookHttpStatusException(
-                                        statusCode = status,
-                                        message = "Webhook returned non-success status: $status"
-                                    )
-                                )
-                            }
+            val responseStatus =
+                webClient
+                    .post()
+                    .uri(webhook.url)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .headers { headers ->
+                        if (signingEnabled && signature != null) {
+                            headers.add("X-Webhook-Timestamp", timestamp)
+                            headers.add("X-Webhook-Nonce", nonce)
+                            headers.add("X-Webhook-Signature", signature)
                         }
-                }
-                .transformDeferred(CircuitBreakerOperator.of(circuitBreaker))
-                .transformDeferred(RateLimiterOperator.of(rateLimiter))
-                .awaitSingleOrNull()
-                ?: 0
+                    }.bodyValue(payloadJson)
+                    .exchangeToMono { response ->
+                        response
+                            .bodyToMono(String::class.java)
+                            .defaultIfEmpty("")
+                            .flatMap {
+                                val status = response.statusCode().value()
+                                if (status in 200..299) {
+                                    Mono.just(status)
+                                } else {
+                                    Mono.error(
+                                        WebhookHttpStatusException(
+                                            statusCode = status,
+                                            message = "Webhook returned non-success status: $status",
+                                        ),
+                                    )
+                                }
+                            }
+                    }.transformDeferred(CircuitBreakerOperator.of(circuitBreaker))
+                    .transformDeferred(RateLimiterOperator.of(rateLimiter))
+                    .awaitSingleOrNull()
+                    ?: 0
 
             log.info { "Webhook delivered: id=${webhook.id}, url=${webhook.url}, attempt=$attempt" }
             WebhookDeliveryResult(
                 status = WebhookDeliveryStatus.SUCCESS,
                 attemptCount = attempt,
-                responseStatus = responseStatus
+                responseStatus = responseStatus,
             )
         }.getOrElse { error ->
             when (error) {
@@ -193,7 +201,7 @@ class WebClientWebhookClient(
                     WebhookDeliveryResult(
                         status = WebhookDeliveryStatus.BLOCKED,
                         attemptCount = attempt,
-                        errorMessage = error.message
+                        errorMessage = error.message,
                     )
                 }
                 is WebhookHttpStatusException -> {
@@ -204,7 +212,7 @@ class WebClientWebhookClient(
                         status = WebhookDeliveryStatus.FAILED,
                         attemptCount = attempt,
                         responseStatus = error.statusCode,
-                        errorMessage = error.message
+                        errorMessage = error.message,
                     )
                 }
                 else -> {
@@ -212,14 +220,17 @@ class WebClientWebhookClient(
                     WebhookDeliveryResult(
                         status = WebhookDeliveryStatus.FAILED,
                         attemptCount = attempt,
-                        errorMessage = error.message
+                        errorMessage = error.message,
                     )
                 }
             }
         }
-    }
 
-    private fun createSignature(timestamp: String, nonce: String, body: String): String? {
+    private fun createSignature(
+        timestamp: String,
+        nonce: String,
+        body: String,
+    ): String? {
         if (!signingEnabled || signingSecret.isBlank()) {
             return null
         }

@@ -26,7 +26,7 @@ class CampaignDashboardMetrics(
     @CreatedDate
     var createdAt: LocalDateTime? = null,
     @LastModifiedDate
-    var updatedAt: LocalDateTime? = null
+    var updatedAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
@@ -35,17 +35,16 @@ class CampaignDashboardMetrics(
             metricValue: Long,
             timeWindowStart: LocalDateTime,
             timeWindowEnd: LocalDateTime,
-            timeWindowUnit: TimeWindowUnit
-        ): CampaignDashboardMetrics {
-            return CampaignDashboardMetrics(
+            timeWindowUnit: TimeWindowUnit,
+        ): CampaignDashboardMetrics =
+            CampaignDashboardMetrics(
                 campaignId = campaignId,
                 metricType = metricType,
                 metricValue = metricValue,
                 timeWindowStart = timeWindowStart,
                 timeWindowEnd = timeWindowEnd,
-                timeWindowUnit = timeWindowUnit
+                timeWindowUnit = timeWindowUnit,
             )
-        }
     }
 
     fun incrementValue(incrementBy: Long = 1) {
@@ -56,7 +55,7 @@ class CampaignDashboardMetrics(
 enum class MetricType {
     EVENT_COUNT,
     UNIQUE_USER_COUNT,
-    TOTAL_USER_COUNT
+    TOTAL_USER_COUNT,
 }
 
 enum class TimeWindowUnit {
@@ -64,5 +63,5 @@ enum class TimeWindowUnit {
     HOUR,
     DAY,
     WEEK,
-    MONTH
+    MONTH,
 }

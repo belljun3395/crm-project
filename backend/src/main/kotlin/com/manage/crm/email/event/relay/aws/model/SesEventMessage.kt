@@ -25,7 +25,7 @@ data class SesSnsNotification(
     @JsonProperty("Signature")
     val signature: String? = null,
     @JsonProperty("UnsubscribeURL")
-    val unsubscribeUrl: String? = null
+    val unsubscribeUrl: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -53,7 +53,7 @@ data class SesEventMessage(
     @JsonProperty("renderingFailure")
     val renderingFailure: SesRenderingFailure? = null,
     @JsonProperty("send")
-    val send: SesSend? = null
+    val send: SesSend? = null,
 ) {
     val resolvedEventType: SesEventType?
         get() = eventType ?: notificationType
@@ -68,17 +68,19 @@ enum class SesEventType {
     COMPLAINT,
     REJECT,
     DELIVERY_DELAY,
-    RENDERING_FAILURE;
+    RENDERING_FAILURE,
+    ;
 
     companion object {
         @JvmStatic
         @JsonCreator
         fun from(value: String?): SesEventType? {
-            val normalized = value
-                ?.replace("-", "", ignoreCase = true)
-                ?.replace("_", "", ignoreCase = true)
-                ?.replace(" ", "", ignoreCase = true)
-                ?.uppercase()
+            val normalized =
+                value
+                    ?.replace("-", "", ignoreCase = true)
+                    ?.replace("_", "", ignoreCase = true)
+                    ?.replace(" ", "", ignoreCase = true)
+                    ?.uppercase()
             return when (normalized) {
                 "SEND" -> SEND
                 "DELIVERY" -> DELIVERY
@@ -116,7 +118,7 @@ data class SesMail(
     @JsonProperty("commonHeaders")
     val commonHeaders: SesCommonHeaders? = null,
     @JsonProperty("tags")
-    val tags: Map<String, List<String>>? = null
+    val tags: Map<String, List<String>>? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -124,7 +126,7 @@ data class SesHeader(
     @JsonProperty("name")
     val name: String? = null,
     @JsonProperty("value")
-    val value: String? = null
+    val value: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -136,13 +138,13 @@ data class SesCommonHeaders(
     @JsonProperty("subject")
     val subject: String? = null,
     @JsonProperty("messageId")
-    val messageId: String? = null
+    val messageId: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class SesSend(
     @JsonProperty("timestamp")
-    val timestamp: String? = null
+    val timestamp: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -158,7 +160,7 @@ data class SesDelivery(
     @JsonProperty("remoteMtaIp")
     val remoteMtaIp: String? = null,
     @JsonProperty("reportingMTA")
-    val reportingMta: String? = null
+    val reportingMta: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -168,7 +170,7 @@ data class SesOpen(
     @JsonProperty("ipAddress")
     val ipAddress: String? = null,
     @JsonProperty("userAgent")
-    val userAgent: String? = null
+    val userAgent: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -182,7 +184,7 @@ data class SesClick(
     @JsonProperty("link")
     val link: String? = null,
     @JsonProperty("linkTags")
-    val linkTags: Map<String, List<String>>? = null
+    val linkTags: Map<String, List<String>>? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -202,7 +204,7 @@ data class SesBounce(
     @JsonProperty("feedbackId")
     val feedbackId: String? = null,
     @JsonProperty("smtpResponse")
-    val smtpResponse: String? = null
+    val smtpResponse: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -214,7 +216,7 @@ data class SesBouncedRecipient(
     @JsonProperty("status")
     val status: String? = null,
     @JsonProperty("diagnosticCode")
-    val diagnosticCode: String? = null
+    val diagnosticCode: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -234,19 +236,19 @@ data class SesComplaint(
     @JsonProperty("abuseReportingEnabled")
     val abuseReportingEnabled: Boolean? = null,
     @JsonProperty("complaintSubType")
-    val complaintSubType: String? = null
+    val complaintSubType: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class SesComplainedRecipient(
     @JsonProperty("emailAddress")
-    val emailAddress: String? = null
+    val emailAddress: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class SesReject(
     @JsonProperty("reason")
-    val reason: String? = null
+    val reason: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -262,7 +264,7 @@ data class SesDeliveryDelay(
     @JsonProperty("diagnosticCode")
     val diagnosticCode: String? = null,
     @JsonProperty("remoteMtaIp")
-    val remoteMtaIp: String? = null
+    val remoteMtaIp: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -272,7 +274,7 @@ data class SesRenderingFailure(
     @JsonProperty("errorMessage")
     val errorMessage: String? = null,
     @JsonProperty("failedRecipient")
-    val failedRecipient: String? = null
+    val failedRecipient: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -280,5 +282,5 @@ data class SesDelayedRecipient(
     @JsonProperty("emailAddress")
     val emailAddress: String? = null,
     @JsonProperty("delayType")
-    val delayType: String? = null
+    val delayType: String? = null,
 )

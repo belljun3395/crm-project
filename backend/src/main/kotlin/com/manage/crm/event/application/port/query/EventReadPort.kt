@@ -6,7 +6,7 @@ data class EventReadModel(
     val id: Long,
     val userId: Long,
     val name: String,
-    val createdAt: LocalDateTime?
+    val createdAt: LocalDateTime?,
 )
 
 interface EventReadPort {

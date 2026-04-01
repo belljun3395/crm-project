@@ -19,7 +19,6 @@ import java.nio.charset.Charset
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 abstract class AbstractIntegrationTest : DescribeSpec() {
-
     override fun extensions() = listOf(SpringExtension)
 
     @LocalServerPort
@@ -32,23 +31,24 @@ abstract class AbstractIntegrationTest : DescribeSpec() {
 
     init {
         beforeSpec {
-            webTestClient = WebTestClient.bindToServer()
-                .baseUrl("http://localhost:$port")
-                .entityExchangeResultConsumer {
-                    val sb = StringBuilder()
-                    sb.appendLine()
-                    sb.appendLine("================= HTTP Exchange Result ================")
-                    sb.appendLine("Request: ${it.method} ${it.url}")
-                    sb.appendLine("Request Headers: ${it.requestHeaders}")
-                    sb.appendLine("Request Body: ${it.requestBodyContent?.toString(Charset.defaultCharset())}")
-                    sb.appendLine()
-                    sb.appendLine("Response Status: ${it.status}")
-                    sb.appendLine("Response Headers: ${it.responseHeaders}")
-                    sb.appendLine("Response Body: ${it.responseBodyContent?.toString(Charset.defaultCharset())}")
-                    sb.appendLine("========================================================")
-                    logger.info(sb.toString())
-                }
-                .build()
+            webTestClient =
+                WebTestClient
+                    .bindToServer()
+                    .baseUrl("http://localhost:$port")
+                    .entityExchangeResultConsumer {
+                        val sb = StringBuilder()
+                        sb.appendLine()
+                        sb.appendLine("================= HTTP Exchange Result ================")
+                        sb.appendLine("Request: ${it.method} ${it.url}")
+                        sb.appendLine("Request Headers: ${it.requestHeaders}")
+                        sb.appendLine("Request Body: ${it.requestBodyContent?.toString(Charset.defaultCharset())}")
+                        sb.appendLine()
+                        sb.appendLine("Response Status: ${it.status}")
+                        sb.appendLine("Response Headers: ${it.responseHeaders}")
+                        sb.appendLine("Response Body: ${it.responseBodyContent?.toString(Charset.defaultCharset())}")
+                        sb.appendLine("========================================================")
+                        logger.info(sb.toString())
+                    }.build()
         }
     }
 

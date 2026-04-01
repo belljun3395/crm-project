@@ -3,7 +3,7 @@ package com.manage.crm.architecture
 enum class ControllerReturnPolicy {
     DISABLED,
     USE_CASE_OUT_ONLY,
-    USE_CASE_OUT_OR_DTO
+    USE_CASE_OUT_OR_DTO,
 }
 
 data class ModuleRuleSpec(
@@ -27,7 +27,7 @@ data class ModuleRuleSpec(
     val enforceInternalLayerNoCrossModuleDependency: Boolean = false,
     val internalLayerAllowedExternalModules: Set<String> = DEFAULT_INTERNAL_LAYER_ALLOWED_EXTERNAL_MODULES,
     val enforceUtilPureFunctions: Boolean = false,
-    val utilForbiddenImportPrefixes: List<String> = DEFAULT_UTIL_FORBIDDEN_IMPORT_PREFIXES
+    val utilForbiddenImportPrefixes: List<String> = DEFAULT_UTIL_FORBIDDEN_IMPORT_PREFIXES,
 ) {
     val moduleBasePackage: String get() = "com.manage.crm.$packageToken"
     val modulePackagePattern: String get() = "..$packageToken.."
@@ -41,37 +41,41 @@ data class ModuleRuleSpec(
     val utilPackageName: String get() = "$moduleBasePackage.util"
 }
 
-val DEFAULT_UTIL_FORBIDDEN_IMPORT_PREFIXES = listOf(
-    "java.io.",
-    "java.net.",
-    "java.nio.file.",
-    "kotlin.io.",
-    "kotlin.random.",
-    "java.util.Random",
-    "java.time.LocalDateTime",
-    "java.time.Instant",
-    "java.time.ZonedDateTime",
-    "java.time.OffsetDateTime"
-)
+val DEFAULT_UTIL_FORBIDDEN_IMPORT_PREFIXES =
+    listOf(
+        "java.io.",
+        "java.net.",
+        "java.nio.file.",
+        "kotlin.io.",
+        "kotlin.random.",
+        "java.util.Random",
+        "java.time.LocalDateTime",
+        "java.time.Instant",
+        "java.time.ZonedDateTime",
+        "java.time.OffsetDateTime",
+    )
 
-val DEFAULT_CROSS_MODULE_FORBIDDEN_LAYER_SEGMENTS = listOf(
-    ".domain.",
-    ".service.",
-    ".controller."
-)
+val DEFAULT_CROSS_MODULE_FORBIDDEN_LAYER_SEGMENTS =
+    listOf(
+        ".domain.",
+        ".service.",
+        ".controller.",
+    )
 
-val DEFAULT_CROSS_MODULE_ALLOWED_PORT_NAME_SUFFIXES = listOf(
-    "Query",
-    "Facade",
-    "Port"
-)
+val DEFAULT_CROSS_MODULE_ALLOWED_PORT_NAME_SUFFIXES =
+    listOf(
+        "Query",
+        "Facade",
+        "Port",
+    )
 
-val DEFAULT_CROSS_MODULE_READ_METHOD_PREFIXES = listOf(
-    "find",
-    "get",
-    "load",
-    "exists",
-    "count"
-)
+val DEFAULT_CROSS_MODULE_READ_METHOD_PREFIXES =
+    listOf(
+        "find",
+        "get",
+        "load",
+        "exists",
+        "count",
+    )
 
 val DEFAULT_INTERNAL_LAYER_ALLOWED_EXTERNAL_MODULES = setOf("support")

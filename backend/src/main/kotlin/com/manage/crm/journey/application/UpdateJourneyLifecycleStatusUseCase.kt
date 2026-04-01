@@ -15,29 +15,24 @@ import org.springframework.transaction.annotation.Transactional
 class UpdateJourneyLifecycleStatusUseCase(
     private val journeyRepository: JourneyRepository,
     private val journeyStepRepository: JourneyStepRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
     @Transactional
-    suspend fun pause(journeyId: Long): JourneyDto {
-        return changeStatus(journeyId, JourneyLifecycleStatus.PAUSED)
-    }
+    suspend fun pause(journeyId: Long): JourneyDto = changeStatus(journeyId, JourneyLifecycleStatus.PAUSED)
 
     @Transactional
-    suspend fun resume(journeyId: Long): JourneyDto {
-        return changeStatus(journeyId, JourneyLifecycleStatus.ACTIVE)
-    }
+    suspend fun resume(journeyId: Long): JourneyDto = changeStatus(journeyId, JourneyLifecycleStatus.ACTIVE)
 
     @Transactional
-    suspend fun archive(journeyId: Long): JourneyDto {
-        return changeStatus(journeyId, JourneyLifecycleStatus.ARCHIVED)
-    }
+    suspend fun archive(journeyId: Long): JourneyDto = changeStatus(journeyId, JourneyLifecycleStatus.ARCHIVED)
 
     private suspend fun changeStatus(
         journeyId: Long,
-        status: JourneyLifecycleStatus
+        status: JourneyLifecycleStatus,
     ): JourneyDto {
-        val journey = journeyRepository.findById(journeyId)
-            ?: throw NotFoundByIdException("Journey", journeyId)
+        val journey =
+            journeyRepository.findById(journeyId)
+                ?: throw NotFoundByIdException("Journey", journeyId)
 
         val currentStatus = JourneyLifecycleStatus.from(journey.lifecycleStatus)
         if (currentStatus == JourneyLifecycleStatus.ARCHIVED && status != JourneyLifecycleStatus.ARCHIVED) {
@@ -50,19 +45,21 @@ class UpdateJourneyLifecycleStatusUseCase(
 
         val expectedVersion = journey.version
         val newVersion = expectedVersion.coerceAtLeast(1) + 1
-        val updatedRows = journeyRepository.updateLifecycleStatusIfVersionMatches(
-            journeyId = journeyId,
-            lifecycleStatus = status.name,
-            active = status == JourneyLifecycleStatus.ACTIVE,
-            expectedVersion = expectedVersion,
-            newVersion = newVersion
-        )
+        val updatedRows =
+            journeyRepository.updateLifecycleStatusIfVersionMatches(
+                journeyId = journeyId,
+                lifecycleStatus = status.name,
+                active = status == JourneyLifecycleStatus.ACTIVE,
+                expectedVersion = expectedVersion,
+                newVersion = newVersion,
+            )
         if (updatedRows == 0) {
             throw IllegalStateException("Journey lifecycle update conflict detected. Please retry.")
         }
 
-        val savedJourney = journeyRepository.findById(journeyId)
-            ?: throw NotFoundByIdException("Journey", journeyId)
+        val savedJourney =
+            journeyRepository.findById(journeyId)
+                ?: throw NotFoundByIdException("Journey", journeyId)
         val steps = journeyStepRepository.findAllByJourneyIdOrderByStepOrderAsc(journeyId).toList()
         return assembleJourneyDto(savedJourney, steps, objectMapper)
     }

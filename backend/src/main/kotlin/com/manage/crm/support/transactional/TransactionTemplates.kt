@@ -7,10 +7,13 @@ import org.springframework.transaction.reactive.TransactionalOperator
 import org.springframework.transaction.support.DefaultTransactionDefinition
 
 @Component
-class TransactionTemplates(reactiveTransactionManager: ReactiveTransactionManager) {
+class TransactionTemplates(
+    reactiveTransactionManager: ReactiveTransactionManager,
+) {
     val writer = TransactionalOperator.create(reactiveTransactionManager)
-    val newTxWriter = TransactionalOperator.create(
-        reactiveTransactionManager,
-        DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW)
-    )
+    val newTxWriter =
+        TransactionalOperator.create(
+            reactiveTransactionManager,
+            DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW),
+        )
 }

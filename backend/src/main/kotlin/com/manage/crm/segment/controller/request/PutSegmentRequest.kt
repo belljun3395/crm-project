@@ -10,5 +10,5 @@ data class PutSegmentRequest(
     val description: String? = null,
     val active: Boolean? = null,
     @field:Size(min = 1, message = "conditions must not be empty when provided")
-    val conditions: List<@Valid SegmentConditionRequest>? = null
+    val conditions: List<@Valid SegmentConditionRequest>? = null,
 )

@@ -23,7 +23,5 @@ class UserEmailReadingConverter : Converter<Any, Email> {
 
 @WritingConverter
 class UserEmailWritingConverter : Converter<Email, String> {
-    override fun convert(source: Email): String {
-        return source.value
-    }
+    override fun convert(source: Email): String = source.value
 }

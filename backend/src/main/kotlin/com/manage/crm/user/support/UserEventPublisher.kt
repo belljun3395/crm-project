@@ -12,14 +12,14 @@ import org.springframework.stereotype.Service
 @Service
 class UserEventPublisher(
     private val applicationEventPublisher: ApplicationEventPublisher,
-    private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate
+    private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate,
 ) {
     val log = KotlinLogging.logger {}
 
     suspend fun publishEvent(event: NewUserEvent) {
         transactionSynchronizationTemplate.afterCommit(
             Dispatchers.Default + MDCContext(),
-            "publish event: $event"
+            "publish event: $event",
         ) {
             applicationEventPublisher.publishEvent(event)
         }

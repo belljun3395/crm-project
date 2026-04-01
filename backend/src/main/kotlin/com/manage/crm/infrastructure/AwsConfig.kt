@@ -36,14 +36,16 @@ class AwsConfig {
     @Bean(name = [AWS_CREDENTIALS_PROVIDER])
     fun awsCredentialsProvider(): AwsCredentialsProvider =
         StaticCredentialsProvider.create(
-            AwsBasicCredentials.create(accessKey, secretKey)
+            AwsBasicCredentials.create(accessKey, secretKey),
         )
 
     @Bean(name = [SNS_CLIENT])
     fun snsClient(awsCredentialsProvider: AwsCredentialsProvider): SnsClient {
-        val builder = SnsClient.builder()
-            .region(Region.of(region))
-            .credentialsProvider(awsCredentialsProvider)
+        val builder =
+            SnsClient
+                .builder()
+                .region(Region.of(region))
+                .credentialsProvider(awsCredentialsProvider)
 
         endpointUrl?.let { builder.endpointOverride(URI.create(it)) }
 
@@ -52,9 +54,11 @@ class AwsConfig {
 
     @Bean(name = [SQS_CLIENT])
     fun sqsClient(awsCredentialsProvider: AwsCredentialsProvider): SqsClient {
-        val builder = SqsClient.builder()
-            .region(Region.of(region))
-            .credentialsProvider(awsCredentialsProvider)
+        val builder =
+            SqsClient
+                .builder()
+                .region(Region.of(region))
+                .credentialsProvider(awsCredentialsProvider)
 
         endpointUrl?.let { builder.endpointOverride(URI.create(it)) }
 

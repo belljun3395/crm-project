@@ -9,7 +9,6 @@ import org.testcontainers.kafka.KafkaContainer
 import org.testcontainers.utility.DockerImageName
 
 object SimpleTestContainers {
-
     private const val REDIS_NODE_1_PORT = 16379
     private const val REDIS_NODE_2_PORT = 16380
     private const val REDIS_NODE_3_PORT = 16381
@@ -36,7 +35,8 @@ object SimpleTestContainers {
      * Fixed ports ensure cluster-announced addresses match external access addresses.
      */
     private val redis: GenericContainer<*> by lazy {
-        val initScript = """
+        val initScript =
+            """
             redis-server --port $REDIS_NODE_1_PORT \
               --cluster-enabled yes --cluster-config-file /tmp/n1.conf \
               --cluster-node-timeout 5000 \
@@ -60,16 +60,20 @@ object SimpleTestContainers {
               127.0.0.1:$REDIS_NODE_3_PORT \
               --cluster-replicas 0
             tail -f /dev/null
-        """.trimIndent()
+            """.trimIndent()
 
         val container = object : GenericContainer<Nothing>(DockerImageName.parse("redis:7.2-alpine")) {}
         container.withExposedPorts(REDIS_NODE_1_PORT, REDIS_NODE_2_PORT, REDIS_NODE_3_PORT)
         container.withCreateContainerCmdModifier { cmd ->
-            val portBindings = com.github.dockerjava.api.model.Ports()
+            val portBindings =
+                com.github.dockerjava.api.model
+                    .Ports()
             listOf(REDIS_NODE_1_PORT, REDIS_NODE_2_PORT, REDIS_NODE_3_PORT).forEach { port ->
                 portBindings.bind(
-                    com.github.dockerjava.api.model.ExposedPort.tcp(port),
-                    com.github.dockerjava.api.model.Ports.Binding.bindPort(port)
+                    com.github.dockerjava.api.model.ExposedPort
+                        .tcp(port),
+                    com.github.dockerjava.api.model.Ports.Binding
+                        .bindPort(port),
                 )
             }
             cmd.hostConfig?.withPortBindings(portBindings)

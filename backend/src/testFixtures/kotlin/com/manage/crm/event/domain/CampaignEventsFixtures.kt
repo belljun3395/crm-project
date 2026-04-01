@@ -10,16 +10,20 @@ class CampaignEventsFixtures private constructor() {
     private var createdAt: LocalDateTime = LocalDateTime.now()
 
     fun withId(id: Long?) = apply { this.id = id }
+
     fun withCampaignId(campaignId: Long) = apply { this.campaignId = campaignId }
+
     fun withEventId(eventId: Long) = apply { this.eventId = eventId }
+
     fun withCreatedAt(createdAt: LocalDateTime) = apply { this.createdAt = createdAt }
 
-    fun build() = CampaignEvents(
-        id = id,
-        campaignId = campaignId,
-        eventId = eventId,
-        createdAt = createdAt
-    )
+    fun build() =
+        CampaignEvents(
+            id = id,
+            campaignId = campaignId,
+            eventId = eventId,
+            createdAt = createdAt,
+        )
 
     companion object {
         fun aCampaignEvents() = CampaignEventsFixtures()

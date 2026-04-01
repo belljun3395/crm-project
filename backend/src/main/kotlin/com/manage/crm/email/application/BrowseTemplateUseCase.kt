@@ -14,25 +14,27 @@ import org.springframework.stereotype.Service
 @Service
 class BrowseTemplateUseCase(
     private val emailTemplateRepository: EmailTemplateRepository,
-    private val emailTemplateHistoryRepository: EmailTemplateHistoryRepository
+    private val emailTemplateHistoryRepository: EmailTemplateHistoryRepository,
 ) {
     suspend fun execute(useCaseIn: BrowseTemplateUseCaseIn): BrowseTemplateUseCaseOut {
         val withHistory = useCaseIn.withHistory
 
         val templates = emailTemplateRepository.findAll().toList()
-        val histories = takeIf { withHistory }
-            ?.let {
-                templates
-                    .map { it.id!! }
-                    .let { emailTemplateHistoryRepository.findAllByTemplateIdInOrderByVersionDesc(it) }
-                    .groupBy { it.templateId }
-            }
+        val histories =
+            takeIf { withHistory }
+                ?.let {
+                    templates
+                        .map { it.id!! }
+                        .let { emailTemplateHistoryRepository.findAllByTemplateIdInOrderByVersionDesc(it) }
+                        .groupBy { it.templateId }
+                }
 
-        val templateWithHistories = templates
-            .map {
-                val history = histories?.get(it.id)
-                it to history
-            }
+        val templateWithHistories =
+            templates
+                .map {
+                    val history = histories?.get(it.id)
+                    it to history
+                }
 
         return out {
             templateWithHistories
@@ -41,30 +43,29 @@ class BrowseTemplateUseCase(
                     val templateHistories = it.second
                     TemplateWithHistoryDto(
                         template =
-                        TemplateDto(
-                            id = template.id!!,
-                            templateName = template.templateName,
-                            subject = template.subject,
-                            body = template.body,
-                            variables = template.variables.getDisplayVariables(),
-                            version = template.version.value,
-                            createdAt = template.createdAt.toString()
-                        ),
+                            TemplateDto(
+                                id = template.id!!,
+                                templateName = template.templateName,
+                                subject = template.subject,
+                                body = template.body,
+                                variables = template.variables.getDisplayVariables(),
+                                version = template.version.value,
+                                createdAt = template.createdAt.toString(),
+                            ),
                         histories =
-                        templateHistories?.map { history ->
-                            TemplateHistoryDto(
-                                id = history.id!!,
-                                templateId = history.templateId,
-                                subject = history.subject,
-                                body = history.body,
-                                variables = history.variables.getDisplayVariables(),
-                                version = history.version.value,
-                                createdAt = history.createdAt.toString()
-                            )
-                        } ?: emptyList()
+                            templateHistories?.map { history ->
+                                TemplateHistoryDto(
+                                    id = history.id!!,
+                                    templateId = history.templateId,
+                                    subject = history.subject,
+                                    body = history.body,
+                                    variables = history.variables.getDisplayVariables(),
+                                    version = history.version.value,
+                                    createdAt = history.createdAt.toString(),
+                                )
+                            } ?: emptyList(),
                     )
-                }
-                .let {
+                }.let {
                     BrowseTemplateUseCaseOut(it)
                 }
         }

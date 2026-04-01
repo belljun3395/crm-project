@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 data class DueSchedule(
     val name: String,
     val scheduleTime: LocalDateTime,
-    val payload: ScheduleInfo
+    val payload: ScheduleInfo,
 )
 
 /**
@@ -22,7 +22,11 @@ interface SchedulerProvider {
      * @param input Schedule payload containing business logic information
      * @return Schedule creation result
      */
-    suspend fun createSchedule(name: String, scheduleTime: LocalDateTime, input: ScheduleInfo): ScheduleCreationResult
+    suspend fun createSchedule(
+        name: String,
+        scheduleTime: LocalDateTime,
+        input: ScheduleInfo,
+    ): ScheduleCreationResult
 
     /**
      * Lists all schedules
@@ -47,6 +51,12 @@ interface SchedulerProvider {
  * Result of schedule creation operation
  */
 sealed class ScheduleCreationResult {
-    data class Success(val scheduleId: String) : ScheduleCreationResult()
-    data class Failure(val reason: String, val cause: Throwable? = null) : ScheduleCreationResult()
+    data class Success(
+        val scheduleId: String,
+    ) : ScheduleCreationResult()
+
+    data class Failure(
+        val reason: String,
+        val cause: Throwable? = null,
+    ) : ScheduleCreationResult()
 }

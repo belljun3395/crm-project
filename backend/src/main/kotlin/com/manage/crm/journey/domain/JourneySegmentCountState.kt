@@ -18,19 +18,18 @@ class JourneySegmentCountState(
     var transitionVersion: Long = 0L,
     @LastModifiedDate
     @Column("updated_at")
-    var updatedAt: LocalDateTime? = null
+    var updatedAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
             journeyId: Long,
             lastCount: Long,
-            transitionVersion: Long
-        ): JourneySegmentCountState {
-            return JourneySegmentCountState(
+            transitionVersion: Long,
+        ): JourneySegmentCountState =
+            JourneySegmentCountState(
                 journeyId = journeyId,
                 lastCount = lastCount,
-                transitionVersion = transitionVersion
+                transitionVersion = transitionVersion,
             )
-        }
     }
 }

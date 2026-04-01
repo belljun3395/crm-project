@@ -27,22 +27,29 @@ class WebhookDispatchService(
     private val webhookDeliveryLogRepository: WebhookDeliveryLogRepository,
     private val webhookDeadLetterRepository: WebhookDeadLetterRepository,
     private val objectMapper: ObjectMapper,
-    private val webhookFailureAlertService: WebhookFailureAlertService
+    private val webhookFailureAlertService: WebhookFailureAlertService,
 ) {
     private val log = KotlinLogging.logger {}
 
-    suspend fun dispatch(eventType: WebhookEventType, payload: Map<String, Any?>) {
+    suspend fun dispatch(
+        eventType: WebhookEventType,
+        payload: Map<String, Any?>,
+    ) {
         val webhooks = webhookRepository.findActiveByEvent(eventType.value)
         if (webhooks.isEmpty()) {
             return
         }
 
-        val eventPayload = WebhookEventPayload(
-            eventId = UUID.randomUUID().toString(),
-            eventType = eventType.value,
-            occurredAt = java.time.OffsetDateTime.now().toString(),
-            data = payload
-        )
+        val eventPayload =
+            WebhookEventPayload(
+                eventId = UUID.randomUUID().toString(),
+                eventType = eventType.value,
+                occurredAt =
+                    java.time.OffsetDateTime
+                        .now()
+                        .toString(),
+                data = payload,
+            )
 
         eventListenerCoroutineScope().apply {
             webhooks.forEach { webhook ->
@@ -72,7 +79,7 @@ class WebhookDispatchService(
     private suspend fun saveDeliveryLog(
         webhookId: Long,
         eventPayload: WebhookEventPayload,
-        deliveryResult: WebhookDeliveryResult
+        deliveryResult: WebhookDeliveryResult,
     ) {
         runCatching {
             webhookDeliveryLogRepository.save(
@@ -83,8 +90,8 @@ class WebhookDispatchService(
                     deliveryStatus = deliveryResult.status.name,
                     attemptCount = deliveryResult.attemptCount,
                     responseStatus = deliveryResult.responseStatus,
-                    errorMessage = deliveryResult.errorMessage
-                )
+                    errorMessage = deliveryResult.errorMessage,
+                ),
             )
         }.onFailure { error ->
             log.error(error) { "Failed to save webhook delivery log: webhookId=$webhookId" }
@@ -95,14 +102,15 @@ class WebhookDispatchService(
         webhook: Webhook,
         webhookId: Long,
         eventPayload: WebhookEventPayload,
-        deliveryResult: WebhookDeliveryResult
+        deliveryResult: WebhookDeliveryResult,
     ) {
-        val payloadJson = runCatching {
-            objectMapper.writeValueAsString(eventPayload)
-        }.getOrElse { error ->
-            log.error(error) { "Failed to serialize webhook payload for DLQ: webhookId=$webhookId" }
-            return
-        }
+        val payloadJson =
+            runCatching {
+                objectMapper.writeValueAsString(eventPayload)
+            }.getOrElse { error ->
+                log.error(error) { "Failed to serialize webhook payload for DLQ: webhookId=$webhookId" }
+                return
+            }
 
         runCatching {
             webhookDeadLetterRepository.save(
@@ -114,8 +122,8 @@ class WebhookDispatchService(
                     deliveryStatus = deliveryResult.status.name,
                     attemptCount = deliveryResult.attemptCount,
                     responseStatus = deliveryResult.responseStatus,
-                    errorMessage = deliveryResult.errorMessage
-                )
+                    errorMessage = deliveryResult.errorMessage,
+                ),
             )
         }.onFailure { error ->
             log.error(error) { "Failed to save webhook dead letter: webhookId=$webhookId, url=${webhook.url}" }

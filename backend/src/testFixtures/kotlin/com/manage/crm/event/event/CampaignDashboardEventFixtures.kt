@@ -12,20 +12,26 @@ class CampaignDashboardEventFixtures private constructor() {
     private var streamId: String? = null
 
     fun withCampaignId(campaignId: Long) = apply { this.campaignId = campaignId }
+
     fun withEventId(eventId: Long) = apply { this.eventId = eventId }
+
     fun withUserId(userId: Long) = apply { this.userId = userId }
+
     fun withEventName(eventName: String) = apply { this.eventName = eventName }
+
     fun withTimestamp(timestamp: LocalDateTime) = apply { this.timestamp = timestamp }
+
     fun withStreamId(streamId: String?) = apply { this.streamId = streamId }
 
-    fun build() = CampaignDashboardEvent(
-        campaignId = campaignId,
-        eventId = eventId,
-        userId = userId,
-        eventName = eventName,
-        timestamp = timestamp,
-        streamId = streamId
-    )
+    fun build() =
+        CampaignDashboardEvent(
+            campaignId = campaignId,
+            eventId = eventId,
+            userId = userId,
+            eventName = eventName,
+            timestamp = timestamp,
+            streamId = streamId,
+        )
 
     companion object {
         fun aCampaignDashboardEvent() = CampaignDashboardEventFixtures()

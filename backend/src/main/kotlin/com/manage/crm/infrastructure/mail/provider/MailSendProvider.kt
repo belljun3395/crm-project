@@ -5,6 +5,6 @@ interface MailSendProvider {
         from: String,
         to: String,
         subject: String,
-        message: String
+        message: String,
     ): String
 }

@@ -9,7 +9,7 @@ import java.time.LocalDateTime
 
 @Component
 class JourneyTriggerQueueProcessor(
-    private val journeyAutomationService: JourneyAutomationService
+    private val journeyAutomationService: JourneyAutomationService,
 ) {
     suspend fun process(message: JourneyTriggerQueueMessage) {
         when (message.triggerType) {
@@ -20,16 +20,17 @@ class JourneyTriggerQueueProcessor(
                         id = eventPayload.id,
                         name = eventPayload.name,
                         userId = eventPayload.userId,
-                        properties = EventProperties(
-                            eventPayload.properties.map { property ->
-                                EventProperty(
-                                    key = property.key,
-                                    value = property.value
-                                )
-                            }
-                        ),
-                        createdAt = eventPayload.createdAt ?: LocalDateTime.now()
-                    )
+                        properties =
+                            EventProperties(
+                                eventPayload.properties.map { property ->
+                                    EventProperty(
+                                        key = property.key,
+                                        value = property.value,
+                                    )
+                                },
+                            ),
+                        createdAt = eventPayload.createdAt ?: LocalDateTime.now(),
+                    ),
                 )
             }
 

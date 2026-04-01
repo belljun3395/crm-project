@@ -12,6 +12,7 @@ import org.springframework.test.context.DynamicPropertySource
 @ActiveProfiles(value = ["test", "new"])
 abstract class UserModuleTestTemplate : BehaviorSpec() {
     override fun extensions() = listOf(SpringExtension)
+
     companion object {
         @DynamicPropertySource
         @JvmStatic

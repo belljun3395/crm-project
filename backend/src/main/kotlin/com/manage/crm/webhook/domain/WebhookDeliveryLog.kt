@@ -29,7 +29,7 @@ class WebhookDeliveryLog(
     var errorMessage: String? = null,
     @CreatedDate
     @Column("delivered_at")
-    var deliveredAt: LocalDateTime? = null
+    var deliveredAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
@@ -39,17 +39,16 @@ class WebhookDeliveryLog(
             deliveryStatus: String,
             attemptCount: Int,
             responseStatus: Int?,
-            errorMessage: String?
-        ): WebhookDeliveryLog {
-            return WebhookDeliveryLog(
+            errorMessage: String?,
+        ): WebhookDeliveryLog =
+            WebhookDeliveryLog(
                 webhookId = webhookId,
                 eventId = eventId,
                 eventType = eventType,
                 deliveryStatus = deliveryStatus,
                 attemptCount = attemptCount,
                 responseStatus = responseStatus,
-                errorMessage = errorMessage
+                errorMessage = errorMessage,
             )
-        }
     }
 }

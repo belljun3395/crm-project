@@ -7,7 +7,7 @@ data class CampaignEventData(
     val eventId: Long,
     val userId: Long,
     val eventName: String,
-    val timestamp: LocalDateTime
+    val timestamp: LocalDateTime,
 )
 
 data class CampaignSummaryResponse(
@@ -15,11 +15,11 @@ data class CampaignSummaryResponse(
     val totalEvents: Long,
     val eventsLast24Hours: Long,
     val eventsLast7Days: Long,
-    val lastUpdated: LocalDateTime
+    val lastUpdated: LocalDateTime,
 )
 
 data class StreamStatusResponse(
     val campaignId: Long,
     val streamLength: Long,
-    val checkedAt: LocalDateTime
+    val checkedAt: LocalDateTime,
 )

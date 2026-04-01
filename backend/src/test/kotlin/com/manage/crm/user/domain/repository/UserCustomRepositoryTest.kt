@@ -7,9 +7,8 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 
 class UserCustomRepositoryTest(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
 ) : UserModuleTestTemplate() {
-
     init {
         given("user repository") {
             afterEach {
@@ -22,19 +21,21 @@ class UserCustomRepositoryTest(
 
             then("findByEmail returns matching user when email exists") {
                 val email = "find-by-email-${System.currentTimeMillis()}@example.com"
-                val saved = userRepository.save(
-                    User.new(
-                        externalId = "external-${System.currentTimeMillis()}",
-                        userAttributes = UserAttributes(
-                            """
-                            {
-                              "email": "$email",
-                              "name": "Find By Email"
-                            }
-                            """.trimIndent()
-                        )
+                val saved =
+                    userRepository.save(
+                        User.new(
+                            externalId = "external-${System.currentTimeMillis()}",
+                            userAttributes =
+                                UserAttributes(
+                                    """
+                                    {
+                                      "email": "$email",
+                                      "name": "Find By Email"
+                                    }
+                                    """.trimIndent(),
+                                ),
+                        ),
                     )
-                )
 
                 val found = userRepository.findByEmail(email)
                 requireNotNull(found)

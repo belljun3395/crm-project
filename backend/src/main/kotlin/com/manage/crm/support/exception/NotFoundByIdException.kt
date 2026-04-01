@@ -9,9 +9,7 @@ class NotFoundByIdException : IllegalArgumentException {
     companion object {
         fun createMessage(
             entityName: String,
-            id: Long
-        ): String {
-            return "$entityName not found by id: $id"
-        }
+            id: Long,
+        ): String = "$entityName not found by id: $id"
     }
 }

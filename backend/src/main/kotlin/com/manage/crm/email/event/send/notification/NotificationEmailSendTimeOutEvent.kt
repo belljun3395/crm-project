@@ -10,30 +10,30 @@ open class NotificationEmailSendTimeOutEvent(
     val templateVersion: Float? = 1.0f,
     val userIds: List<Long>,
     val segmentId: Long? = null,
-    val expiredTime: LocalDateTime
+    val expiredTime: LocalDateTime,
 ) {
     companion object {
         fun new(
             templateId: Long,
             userIds: List<Long>,
-            expiredTime: LocalDateTime
+            expiredTime: LocalDateTime,
         ): NotificationEmailSendTimeOutEvent {
             if (LocalDateTime.now().isAfter(expiredTime)) {
-                throw IllegalArgumentException("Expired time must be after current time. now: ${LocalDateTime.now()}, expiredTime: $expiredTime")
+                throw IllegalArgumentException(
+                    "Expired time must be after current time. now: ${LocalDateTime.now()}, expiredTime: $expiredTime",
+                )
             }
 
             return NotificationEmailSendTimeOutEvent(
                 eventId = EventId(),
                 templateId = templateId,
                 userIds = userIds,
-                expiredTime = expiredTime
+                expiredTime = expiredTime,
             )
         }
     }
 
-    fun isExpired(time: LocalDateTime = LocalDateTime.now()): Boolean {
-        return time.isAfter(expiredTime)
-    }
+    fun isExpired(time: LocalDateTime = LocalDateTime.now()): Boolean = time.isAfter(expiredTime)
 }
 
 // ----------------- TimeOutInvokeEvent -----------------
@@ -43,5 +43,5 @@ open class NotificationEmailSendTimeOutInvokeEvent(
     val templateId: Long,
     val templateVersion: Float?,
     val userIds: List<Long>,
-    val segmentId: Long? = null
+    val segmentId: Long? = null,
 )

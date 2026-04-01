@@ -6,5 +6,5 @@ abstract class ScheduledEvent
 
 // ----------------- Scheduled Event -----------------
 class CancelScheduledEvent(
-    val scheduledEventId: EventId
+    val scheduledEventId: EventId,
 ) : ScheduledEvent()

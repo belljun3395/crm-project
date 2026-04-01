@@ -8,8 +8,9 @@ import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 /**
  * Repository for campaign aggregate lookup and uniqueness checks.
  */
-interface CampaignRepository : CoroutineCrudRepository<Campaign, Long>, CampaignCustomRepository {
-
+interface CampaignRepository :
+    CoroutineCrudRepository<Campaign, Long>,
+    CampaignCustomRepository {
     suspend fun existsCampaignsByName(name: String): Boolean
 
     suspend fun findCampaignByName(name: String): Campaign?
@@ -20,7 +21,7 @@ interface CampaignRepository : CoroutineCrudRepository<Campaign, Long>, Campaign
         FROM campaigns
         ORDER BY created_at DESC
         LIMIT :limit
-        """
+        """,
     )
     override fun findRecentCampaigns(limit: Int): Flow<Campaign>
 }

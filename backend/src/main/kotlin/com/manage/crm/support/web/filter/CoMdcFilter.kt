@@ -10,7 +10,10 @@ import org.springframework.web.server.ServerWebExchange
 
 @Component
 class CoMdcFilter : CoWebFilter() {
-    override suspend fun filter(exchange: ServerWebExchange, chain: CoWebFilterChain) {
+    override suspend fun filter(
+        exchange: ServerWebExchange,
+        chain: CoWebFilterChain,
+    ) {
         withContext(MdcContinuationInterceptor(Dispatchers.Unconfined)) {
             chain.filter(exchange)
         }

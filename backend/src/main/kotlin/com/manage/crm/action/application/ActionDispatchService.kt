@@ -15,7 +15,7 @@ import java.time.format.DateTimeFormatter
 class ActionDispatchService(
     private val actionProviderRegistry: ActionProviderRegistry,
     private val actionDispatchHistoryRepository: ActionDispatchHistoryRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
     companion object {
         private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -26,25 +26,26 @@ class ActionDispatchService(
         val renderedSubject = input.subject?.let { VariableTemplateRenderer.render(it, input.variables) }
         val renderedBody = VariableTemplateRenderer.render(input.body, input.variables)
 
-        val output = runCatching {
-            val provider = actionProviderRegistry.get(input.channel)
-            provider.dispatch(
-                ActionProviderRequest(
-                    destination = renderedDestination,
-                    subject = renderedSubject,
-                    body = renderedBody,
-                    variables = input.variables
+        val output =
+            runCatching {
+                val provider = actionProviderRegistry.get(input.channel)
+                provider.dispatch(
+                    ActionProviderRequest(
+                        destination = renderedDestination,
+                        subject = renderedSubject,
+                        body = renderedBody,
+                        variables = input.variables,
+                    ),
                 )
-            )
-        }.getOrElse { error ->
-            ActionDispatchOut(
-                status = ActionDispatchStatus.FAILED,
-                channel = input.channel,
-                destination = renderedDestination,
-                errorCode = "PROVIDER_DISPATCH_ERROR",
-                errorMessage = error.message
-            )
-        }
+            }.getOrElse { error ->
+                ActionDispatchOut(
+                    status = ActionDispatchStatus.FAILED,
+                    channel = input.channel,
+                    destination = renderedDestination,
+                    errorCode = "PROVIDER_DISPATCH_ERROR",
+                    errorMessage = error.message,
+                )
+            }
 
         actionDispatchHistoryRepository.save(
             ActionDispatchHistory.new(
@@ -58,19 +59,26 @@ class ActionDispatchService(
                 errorCode = output.errorCode,
                 errorMessage = output.errorMessage,
                 campaignId = input.campaignId,
-                journeyExecutionId = input.journeyExecutionId
-            )
+                journeyExecutionId = input.journeyExecutionId,
+            ),
         )
 
         return output
     }
 
-    suspend fun browse(campaignId: Long?, journeyExecutionId: Long?): List<ActionDispatchHistoryDto> {
-        val histories = when {
-            campaignId != null -> actionDispatchHistoryRepository.findAllByCampaignIdOrderByCreatedAtDesc(campaignId)
-            journeyExecutionId != null -> actionDispatchHistoryRepository.findAllByJourneyExecutionIdOrderByCreatedAtDesc(journeyExecutionId)
-            else -> actionDispatchHistoryRepository.findAllByOrderByCreatedAtDesc()
-        }
+    suspend fun browse(
+        campaignId: Long?,
+        journeyExecutionId: Long?,
+    ): List<ActionDispatchHistoryDto> {
+        val histories =
+            when {
+                campaignId != null -> actionDispatchHistoryRepository.findAllByCampaignIdOrderByCreatedAtDesc(campaignId)
+                journeyExecutionId != null ->
+                    actionDispatchHistoryRepository.findAllByJourneyExecutionIdOrderByCreatedAtDesc(
+                        journeyExecutionId,
+                    )
+                else -> actionDispatchHistoryRepository.findAllByOrderByCreatedAtDesc()
+            }
 
         return histories
             .let { flow ->
@@ -79,8 +87,7 @@ class ActionDispatchService(
                 } else {
                     flow
                 }
-            }
-            .toList()
+            }.toList()
             .map { history ->
                 ActionDispatchHistoryDto(
                     id = requireNotNull(history.id) { "ActionDispatchHistory id cannot be null" },
@@ -95,7 +102,7 @@ class ActionDispatchService(
                     errorMessage = history.errorMessage,
                     campaignId = history.campaignId,
                     journeyExecutionId = history.journeyExecutionId,
-                    createdAt = history.createdAt?.format(formatter) ?: ""
+                    createdAt = history.createdAt?.format(formatter) ?: "",
                 )
             }
     }

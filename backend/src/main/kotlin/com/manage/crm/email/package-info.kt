@@ -8,7 +8,7 @@ import org.springframework.modulith.ApplicationModule
         "support",
         "infrastructure",
         "user",
-        "event"
-    ]
+        "event",
+    ],
 )
 class Metadata

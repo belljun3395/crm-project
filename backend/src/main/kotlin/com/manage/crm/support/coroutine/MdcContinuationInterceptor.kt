@@ -8,16 +8,19 @@ import kotlin.coroutines.Continuation
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
 
-class MdcContinuationInterceptor(private val dispatcher: CoroutineDispatcher) : ContinuationInterceptor {
+class MdcContinuationInterceptor(
+    private val dispatcher: CoroutineDispatcher,
+) : ContinuationInterceptor {
     override val key: CoroutineContext.Key<*>
         get() = ContinuationInterceptor
 
-    override fun <T> interceptContinuation(continuation: Continuation<T>): Continuation<T> {
-        return MdcContinuation(dispatcher.interceptContinuation(continuation))
-    }
+    override fun <T> interceptContinuation(continuation: Continuation<T>): Continuation<T> =
+        MdcContinuation(dispatcher.interceptContinuation(continuation))
 }
 
-class MdcContinuation<T>(private val continuation: Continuation<T>) : Continuation<T> {
+class MdcContinuation<T>(
+    private val continuation: Continuation<T>,
+) : Continuation<T> {
     override val context: CoroutineContext
         get() = continuation.context
 

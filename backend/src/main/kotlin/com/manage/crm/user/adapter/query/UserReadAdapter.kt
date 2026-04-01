@@ -9,11 +9,9 @@ import org.springframework.stereotype.Component
 
 @Component
 class UserReadAdapter(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
 ) : UserReadPort {
-    override suspend fun findByExternalId(externalId: String): UserReadModel? {
-        return userRepository.findByExternalId(externalId)?.toQueryResult()
-    }
+    override suspend fun findByExternalId(externalId: String): UserReadModel? = userRepository.findByExternalId(externalId)?.toQueryResult()
 
     override suspend fun findAllByIdIn(ids: Collection<Long>): List<UserReadModel> {
         if (ids.isEmpty()) {
@@ -22,9 +20,7 @@ class UserReadAdapter(
         return userRepository.findAllByIdIn(ids.toList()).map { it.toQueryResult() }
     }
 
-    override suspend fun findAll(): List<UserReadModel> {
-        return userRepository.findAll().toList().map { it.toQueryResult() }
-    }
+    override suspend fun findAll(): List<UserReadModel> = userRepository.findAll().toList().map { it.toQueryResult() }
 }
 
 private fun User.toQueryResult(): UserReadModel {
@@ -33,6 +29,6 @@ private fun User.toQueryResult(): UserReadModel {
         id = userId,
         externalId = externalId,
         userAttributesJson = userAttributes.value,
-        createdAt = createdAt
+        createdAt = createdAt,
     )
 }

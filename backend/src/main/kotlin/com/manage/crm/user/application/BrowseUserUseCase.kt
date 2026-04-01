@@ -10,39 +10,43 @@ import org.springframework.stereotype.Service
 
 @Service
 class BrowseUserUseCase(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
 ) {
     suspend fun execute(input: BrowseUsersUseCaseIn): BrowseUsersUseCaseOut {
         val searchQuery = input.query?.takeIf { it.isNotBlank() }
-        val users = if (searchQuery == null) {
-            userRepository.findAllWithPagination(input.page, input.size)
-        } else {
-            userRepository.searchUsers(searchQuery, input.page, input.size)
-        }
-        val totalElements = if (searchQuery == null) {
-            userRepository.countAll()
-        } else {
-            userRepository.countSearchUsers(searchQuery)
-        }
+        val users =
+            if (searchQuery == null) {
+                userRepository.findAllWithPagination(input.page, input.size)
+            } else {
+                userRepository.searchUsers(searchQuery, input.page, input.size)
+            }
+        val totalElements =
+            if (searchQuery == null) {
+                userRepository.countAll()
+            } else {
+                userRepository.countSearchUsers(searchQuery)
+            }
 
-        val userDtos = users.map { user ->
-            UserDto(
-                id = user.id!!,
-                externalId = user.externalId,
-                userAttributes = user.userAttributes.value,
-                updatedAt = user.updatedAt ?: user.createdAt!!,
-                createdAt = user.createdAt!!
-            )
-        }
+        val userDtos =
+            users.map { user ->
+                UserDto(
+                    id = user.id!!,
+                    externalId = user.externalId,
+                    userAttributes = user.userAttributes.value,
+                    updatedAt = user.updatedAt ?: user.createdAt!!,
+                    createdAt = user.createdAt!!,
+                )
+            }
 
         return out {
             BrowseUsersUseCaseOut(
-                users = PageResponse.of(
-                    content = userDtos,
-                    page = input.page,
-                    size = input.size,
-                    totalElements = totalElements
-                )
+                users =
+                    PageResponse.of(
+                        content = userDtos,
+                        page = input.page,
+                        size = input.size,
+                        totalElements = totalElements,
+                    ),
             )
         }
     }

@@ -31,7 +31,7 @@ import java.util.*
 @Profile("!test")
 class SpringDocConfig(
     private val buildProperties: BuildProperties,
-    private val environment: Environment
+    private val environment: Environment,
 ) {
     companion object {
         const val AUTH_TOKEN_KEY = "Authorization"
@@ -42,7 +42,7 @@ class SpringDocConfig(
             .getConfig()
             .addRequestWrapperToIgnore(
                 WebSession::class.java,
-                RequestContext::class.java
+                RequestContext::class.java,
             )
     }
 
@@ -60,31 +60,33 @@ class SpringDocConfig(
                 Info()
                     .title(buildProperties.name)
                     .version(buildProperties.version)
-                    .description("${buildProperties.name.uppercase(Locale.getDefault())} API Docs")
+                    .description("${buildProperties.name.uppercase(Locale.getDefault())} API Docs"),
             )
     }
 
     @Bean
-    fun idempotencyOpenApiCustomizer(): OpenApiCustomizer {
-        return OpenApiCustomizer { openApi ->
-            val postPaths = setOf(
-                "/api/v1/users",
-                "/api/v1/events",
-                "/api/v1/events/campaign",
-                "/api/v1/campaigns",
-                "/api/v1/emails/templates",
-                "/api/v1/emails/send/notifications",
-                "/api/v1/emails/schedules/notifications/email",
-                "/api/v1/webhooks",
-                "/api/v1/actions/dispatch",
-                "/api/v1/journeys",
-                "/api/v1/segments"
-            )
-            val putPaths = setOf(
-                "/api/v1/webhooks/{id}",
-                "/api/v1/campaigns/{campaignId}",
-                "/api/v1/segments/{id}"
-            )
+    fun idempotencyOpenApiCustomizer(): OpenApiCustomizer =
+        OpenApiCustomizer { openApi ->
+            val postPaths =
+                setOf(
+                    "/api/v1/users",
+                    "/api/v1/events",
+                    "/api/v1/events/campaign",
+                    "/api/v1/campaigns",
+                    "/api/v1/emails/templates",
+                    "/api/v1/emails/send/notifications",
+                    "/api/v1/emails/schedules/notifications/email",
+                    "/api/v1/webhooks",
+                    "/api/v1/actions/dispatch",
+                    "/api/v1/journeys",
+                    "/api/v1/segments",
+                )
+            val putPaths =
+                setOf(
+                    "/api/v1/webhooks/{id}",
+                    "/api/v1/campaigns/{campaignId}",
+                    "/api/v1/segments/{id}",
+                )
 
             openApi.paths?.forEach { (path, pathItem) ->
                 if (path in postPaths) {
@@ -95,28 +97,25 @@ class SpringDocConfig(
                 }
             }
         }
-    }
 
     @Bean
-    fun jsonNodeSchemaOpenApiCustomizer(): OpenApiCustomizer {
-        return OpenApiCustomizer { openApi ->
+    fun jsonNodeSchemaOpenApiCustomizer(): OpenApiCustomizer =
+        OpenApiCustomizer { openApi ->
             openApi.components?.schemas?.get(JsonNode::class.simpleName)?.let {
                 openApi.components.schemas[JsonNode::class.simpleName] = Schema<Any>()
             }
         }
-    }
 
-    private fun authSetting(): Components {
-        return Components()
+    private fun authSetting(): Components =
+        Components()
             .addSecuritySchemes(
                 AUTH_TOKEN_KEY,
                 SecurityScheme()
                     .description("Access Token")
                     .type(SecurityScheme.Type.APIKEY)
                     .`in`(SecurityScheme.In.HEADER)
-                    .name(AUTH_TOKEN_KEY)
+                    .name(AUTH_TOKEN_KEY),
             )
-    }
 
     private fun addIdempotencyKeyParameter(operation: io.swagger.v3.oas.models.Operation?) {
         if (operation == null) {
@@ -128,15 +127,17 @@ class SpringDocConfig(
             return
         }
 
-        val parameter = Parameter()
-            .name("Idempotency-Key")
-            .`in`("header")
-            .required(true)
-            .description("Idempotency key for write request replay and duplicate prevention")
+        val parameter =
+            Parameter()
+                .name("Idempotency-Key")
+                .`in`("header")
+                .required(true)
+                .description("Idempotency key for write request replay and duplicate prevention")
 
-        operation.parameters = (operation.parameters ?: mutableListOf()).toMutableList().apply {
-            add(parameter)
-        }
+        operation.parameters =
+            (operation.parameters ?: mutableListOf()).toMutableList().apply {
+                add(parameter)
+            }
     }
 }
 

@@ -4,14 +4,14 @@ data class BrowseEmailSendHistoriesUseCaseIn(
     val userId: Long?,
     val sendStatus: String?,
     val page: Int = 0,
-    val size: Int = 20
+    val size: Int = 20,
 )
 
 data class BrowseEmailSendHistoriesUseCaseOut(
     val histories: List<EmailSendHistoryDto>,
     val totalCount: Int,
     val page: Int,
-    val size: Int
+    val size: Int,
 )
 
 data class EmailSendHistoryDto(
@@ -22,5 +22,5 @@ data class EmailSendHistoryDto(
     val emailBody: String,
     val sendStatus: String,
     val createdAt: String,
-    val updatedAt: String
+    val updatedAt: String,
 )

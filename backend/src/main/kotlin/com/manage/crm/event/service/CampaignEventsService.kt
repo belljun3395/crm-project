@@ -15,7 +15,7 @@ import java.time.LocalDateTime
 class CampaignEventsService(
     private val campaignRepository: CampaignRepository,
     private val eventRepository: EventRepository,
-    private val campaignEventsRepository: CampaignEventsRepository
+    private val campaignEventsRepository: CampaignEventsRepository,
 ) {
     /**
      * Returns all events linked to a campaign by joining through campaign-event relation ids.
@@ -28,7 +28,10 @@ class CampaignEventsService(
     /**
      * Returns campaign events for a single user by relation lookup and event hydration.
      */
-    suspend fun findAllEventsByCampaignIdAndUserId(campaignId: Long, userId: Long): List<Event> {
+    suspend fun findAllEventsByCampaignIdAndUserId(
+        campaignId: Long,
+        userId: Long,
+    ): List<Event> {
         val eventIds = campaignEventsRepository.findEventIdsByCampaignIdAndUserId(campaignId, userId)
         return eventRepository.findAllByIdIn(eventIds)
     }
@@ -44,19 +47,21 @@ class CampaignEventsService(
     suspend fun findCampaignEvents(
         campaignId: Long,
         startTime: LocalDateTime?,
-        endTime: LocalDateTime?
+        endTime: LocalDateTime?,
     ): List<Event> {
         campaignRepository.findById(campaignId) ?: throw NotFoundByIdException("Campaign", campaignId)
 
-        val eventIds = when {
-            startTime != null && endTime != null -> campaignEventsRepository.findEventIdsByCampaignIdAndCreatedAtRange(
-                campaignId,
-                startTime,
-                endTime
-            )
+        val eventIds =
+            when {
+                startTime != null && endTime != null ->
+                    campaignEventsRepository.findEventIdsByCampaignIdAndCreatedAtRange(
+                        campaignId,
+                        startTime,
+                        endTime,
+                    )
 
-            else -> campaignEventsRepository.findEventIdsByCampaignId(campaignId)
-        }
+                else -> campaignEventsRepository.findEventIdsByCampaignId(campaignId)
+            }
         if (eventIds.isEmpty()) {
             return emptyList()
         }

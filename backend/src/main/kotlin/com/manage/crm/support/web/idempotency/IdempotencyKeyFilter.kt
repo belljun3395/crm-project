@@ -27,41 +27,47 @@ import java.nio.charset.StandardCharsets
 @ConditionalOnProperty(prefix = "idempotency", name = ["enabled"], havingValue = "true", matchIfMissing = true)
 class IdempotencyKeyFilter(
     private val objectMapper: ObjectMapper,
-    private val idempotencyRecordStore: IdempotencyRecordStore
+    private val idempotencyRecordStore: IdempotencyRecordStore,
 ) : WebFilter {
     private data class IdempotencyRoute(
         val method: HttpMethod,
-        val pathRegex: Regex
+        val pathRegex: Regex,
     )
 
-    private val idempotencyRoutes: List<IdempotencyRoute> = listOf(
-        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/users$")),
-        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/events$")),
-        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/events/campaign$")),
-        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/campaigns$")),
-        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/emails/templates$")),
-        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/emails/send/notifications$")),
-        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/emails/schedules/notifications/email$")),
-        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/webhooks$")),
-        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/webhooks/\\d+/dead-letters/\\d+/retry$")),
-        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/webhooks/\\d+/dead-letters/retry$")),
-        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/actions/dispatch$")),
-        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/journeys$")),
-        IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/segments$")),
-        IdempotencyRoute(HttpMethod.PUT, Regex("^/api/v1/webhooks/\\d+$")),
-        IdempotencyRoute(HttpMethod.PUT, Regex("^/api/v1/campaigns/\\d+$")),
-        IdempotencyRoute(HttpMethod.PUT, Regex("^/api/v1/segments/\\d+$"))
-    )
+    private val idempotencyRoutes: List<IdempotencyRoute> =
+        listOf(
+            IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/users$")),
+            IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/events$")),
+            IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/events/campaign$")),
+            IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/campaigns$")),
+            IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/emails/templates$")),
+            IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/emails/send/notifications$")),
+            IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/emails/schedules/notifications/email$")),
+            IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/webhooks$")),
+            IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/webhooks/\\d+/dead-letters/\\d+/retry$")),
+            IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/webhooks/\\d+/dead-letters/retry$")),
+            IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/actions/dispatch$")),
+            IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/journeys$")),
+            IdempotencyRoute(HttpMethod.POST, Regex("^/api/v1/segments$")),
+            IdempotencyRoute(HttpMethod.PUT, Regex("^/api/v1/webhooks/\\d+$")),
+            IdempotencyRoute(HttpMethod.PUT, Regex("^/api/v1/campaigns/\\d+$")),
+            IdempotencyRoute(HttpMethod.PUT, Regex("^/api/v1/segments/\\d+$")),
+        )
 
-    override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
+    override fun filter(
+        exchange: ServerWebExchange,
+        chain: WebFilterChain,
+    ): Mono<Void> {
         val request = exchange.request
         if (!requiresIdempotencyKey(request.method, request.path.value())) {
             return chain.filter(exchange)
         }
 
-        val idempotencyKey = request.headers.getFirst(IdempotencyKeyPolicy.HEADER_NAME)
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
+        val idempotencyKey =
+            request.headers
+                .getFirst(IdempotencyKeyPolicy.HEADER_NAME)
+                ?.trim()
+                ?.takeIf { it.isNotBlank() }
 
         if (idempotencyKey == null) {
             return writeBadRequest(exchange, "Idempotency-Key header is required")
@@ -78,19 +84,22 @@ class IdempotencyKeyFilter(
             val method = request.method.name()
             val path = request.path.value()
 
-            idempotencyRecordStore.get(method, path, idempotencyKey)
+            idempotencyRecordStore
+                .get(method, path, idempotencyKey)
                 .flatMap { existing -> handleExistingRecord(exchange, existing, requestHash) }
                 .switchIfEmpty(
-                    idempotencyRecordStore.tryStart(method, path, idempotencyKey, requestHash)
+                    idempotencyRecordStore
+                        .tryStart(method, path, idempotencyKey, requestHash)
                         .flatMap { started ->
                             if (started) {
                                 proceedWithCapture(exchange, chain, idempotencyKey, requestHash, requestBodyBytes)
                             } else {
-                                idempotencyRecordStore.get(method, path, idempotencyKey)
+                                idempotencyRecordStore
+                                    .get(method, path, idempotencyKey)
                                     .flatMap { existing -> handleExistingRecord(exchange, existing, requestHash) }
                                     .switchIfEmpty(writeConflict(exchange, "Idempotency-Key is already in use"))
                             }
-                        }
+                        },
                 )
         }
     }
@@ -98,7 +107,7 @@ class IdempotencyKeyFilter(
     private fun handleExistingRecord(
         exchange: ServerWebExchange,
         existing: IdempotencyRecord,
-        requestHash: String
+        requestHash: String,
     ): Mono<Void> {
         if (existing.requestHash != requestHash) {
             return writeConflict(exchange, "Idempotency-Key is already used with a different request body")
@@ -120,81 +129,92 @@ class IdempotencyKeyFilter(
         chain: WebFilterChain,
         idempotencyKey: String,
         requestHash: String,
-        requestBodyBytes: ByteArray
+        requestBodyBytes: ByteArray,
     ): Mono<Void> {
         val method = exchange.request.method.name()
         val path = exchange.request.path.value()
         val bodyCapture = ByteArrayOutputStream()
 
-        val decoratedRequest = object : ServerHttpRequestDecorator(exchange.request) {
-            override fun getBody(): Flux<DataBuffer> {
-                return Flux.defer {
-                    val buffer = exchange.response.bufferFactory().wrap(requestBodyBytes)
-                    Mono.just(buffer)
+        val decoratedRequest =
+            object : ServerHttpRequestDecorator(exchange.request) {
+                override fun getBody(): Flux<DataBuffer> =
+                    Flux.defer {
+                        val buffer = exchange.response.bufferFactory().wrap(requestBodyBytes)
+                        Mono.just(buffer)
+                    }
+            }
+
+        val decoratedResponse =
+            object : ServerHttpResponseDecorator(exchange.response) {
+                override fun writeWith(body: Publisher<out DataBuffer>): Mono<Void> {
+                    val flux =
+                        Flux.from(body).map { dataBuffer ->
+                            val bytes = ByteArray(dataBuffer.readableByteCount())
+                            dataBuffer.read(bytes)
+                            DataBufferUtils.release(dataBuffer)
+                            bodyCapture.write(bytes)
+                            bufferFactory().wrap(bytes)
+                        }
+                    return super.writeWith(flux)
                 }
-            }
-        }
 
-        val decoratedResponse = object : ServerHttpResponseDecorator(exchange.response) {
-            override fun writeWith(body: Publisher<out DataBuffer>): Mono<Void> {
-                val flux = Flux.from(body).map { dataBuffer ->
-                    val bytes = ByteArray(dataBuffer.readableByteCount())
-                    dataBuffer.read(bytes)
-                    DataBufferUtils.release(dataBuffer)
-                    bodyCapture.write(bytes)
-                    bufferFactory().wrap(bytes)
-                }
-                return super.writeWith(flux)
+                override fun writeAndFlushWith(body: Publisher<out Publisher<out DataBuffer>>): Mono<Void> =
+                    writeWith(
+                        Flux.from(body).flatMapSequential {
+                            it
+                        },
+                    )
             }
 
-            override fun writeAndFlushWith(body: Publisher<out Publisher<out DataBuffer>>): Mono<Void> {
-                return writeWith(Flux.from(body).flatMapSequential { it })
-            }
-        }
+        val mutatedExchange =
+            exchange
+                .mutate()
+                .request(decoratedRequest)
+                .response(decoratedResponse)
+                .build()
 
-        val mutatedExchange = exchange.mutate()
-            .request(decoratedRequest)
-            .response(decoratedResponse)
-            .build()
-
-        return chain.filter(mutatedExchange)
+        return chain
+            .filter(mutatedExchange)
             .onErrorResume { e ->
-                idempotencyRecordStore.delete(method, path, idempotencyKey)
+                idempotencyRecordStore
+                    .delete(method, path, idempotencyKey)
                     .then(Mono.error(e))
-            }
-            .then(
+            }.then(
                 Mono.defer {
                     val statusCode = decoratedResponse.statusCode?.value() ?: HttpStatus.OK.value()
                     if (statusCode >= 500) {
                         idempotencyRecordStore.delete(method, path, idempotencyKey).then()
                     } else {
-                        idempotencyRecordStore.complete(
-                            method = method,
-                            path = path,
-                            key = idempotencyKey,
-                            requestHash = requestHash,
-                            statusCode = statusCode,
-                            responseBody = bodyCapture.toString(StandardCharsets.UTF_8),
-                            contentType = decoratedResponse.headers.contentType?.toString()
-                        ).then()
+                        idempotencyRecordStore
+                            .complete(
+                                method = method,
+                                path = path,
+                                key = idempotencyKey,
+                                requestHash = requestHash,
+                                statusCode = statusCode,
+                                responseBody = bodyCapture.toString(StandardCharsets.UTF_8),
+                                contentType = decoratedResponse.headers.contentType?.toString(),
+                            ).then()
                     }
-                }
+                },
             )
     }
 
-    private fun readRequestBody(request: org.springframework.http.server.reactive.ServerHttpRequest): Mono<ByteArray> {
-        return DataBufferUtils.join(request.body)
+    private fun readRequestBody(request: org.springframework.http.server.reactive.ServerHttpRequest): Mono<ByteArray> =
+        DataBufferUtils
+            .join(request.body)
             .map { dataBuffer ->
                 try {
                     ByteArray(dataBuffer.readableByteCount()).also { dataBuffer.read(it) }
                 } finally {
                     DataBufferUtils.release(dataBuffer)
                 }
-            }
-            .defaultIfEmpty(ByteArray(0))
-    }
+            }.defaultIfEmpty(ByteArray(0))
 
-    private fun requiresIdempotencyKey(method: HttpMethod?, path: String): Boolean {
+    private fun requiresIdempotencyKey(
+        method: HttpMethod?,
+        path: String,
+    ): Boolean {
         if (method == null) {
             return false
         }
@@ -203,7 +223,10 @@ class IdempotencyKeyFilter(
         }
     }
 
-    private fun writeBadRequest(exchange: ServerWebExchange, message: String): Mono<Void> {
+    private fun writeBadRequest(
+        exchange: ServerWebExchange,
+        message: String,
+    ): Mono<Void> {
         val response = exchange.response
         response.statusCode = HttpStatus.BAD_REQUEST
         response.headers.contentType = MediaType.APPLICATION_JSON
@@ -211,7 +234,10 @@ class IdempotencyKeyFilter(
         return response.writeWith(Mono.just(response.bufferFactory().wrap(payload)))
     }
 
-    private fun writeConflict(exchange: ServerWebExchange, message: String): Mono<Void> {
+    private fun writeConflict(
+        exchange: ServerWebExchange,
+        message: String,
+    ): Mono<Void> {
         val response = exchange.response
         response.statusCode = HttpStatus.CONFLICT
         response.headers.contentType = MediaType.APPLICATION_JSON
@@ -219,7 +245,10 @@ class IdempotencyKeyFilter(
         return response.writeWith(Mono.just(response.bufferFactory().wrap(payload)))
     }
 
-    private fun replay(exchange: ServerWebExchange, record: IdempotencyRecord): Mono<Void> {
+    private fun replay(
+        exchange: ServerWebExchange,
+        record: IdempotencyRecord,
+    ): Mono<Void> {
         val response = exchange.response
         response.statusCode = HttpStatus.resolve(record.statusCode ?: HttpStatus.OK.value()) ?: HttpStatus.OK
         response.headers.contentType = record.contentType?.let { MediaType.parseMediaType(it) } ?: MediaType.APPLICATION_JSON

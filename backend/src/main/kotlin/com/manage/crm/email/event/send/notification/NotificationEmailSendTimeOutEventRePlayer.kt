@@ -38,7 +38,7 @@ class NotificationEmailSendTimeOutEventRePlayer(
     private val objectMapper: ObjectMapper,
     private val transactionalTemplates: TransactionTemplates,
     @Qualifier("scheduleTaskServicePostEventProcessor")
-    private val scheduleTaskService: ScheduleTaskAllService
+    private val scheduleTaskService: ScheduleTaskAllService,
 ) : ApplicationRunner {
     val log = KotlinLogging.logger {}
 
@@ -50,10 +50,10 @@ class NotificationEmailSendTimeOutEventRePlayer(
                 replay { expiredEventsLogBuffer, replayedEventsLogBuffer ->
                     var expiredEventCount = 0L
                     var replayedEventCount = 0L
-                    eventScheduleRepository.findAllByEventClassAndCompletedFalse(
-                        NotificationEmailSendTimeOutEvent::class.simpleName.toString()
-                    )
-                        .forEach {
+                    eventScheduleRepository
+                        .findAllByEventClassAndCompletedFalse(
+                            NotificationEmailSendTimeOutEvent::class.simpleName.toString(),
+                        ).forEach {
                             objectMapper.readTree(it.eventPayload).let { payload ->
                                 val event =
                                     NotificationEmailSendTimeOutEvent(
@@ -63,12 +63,14 @@ class NotificationEmailSendTimeOutEventRePlayer(
                                         templateVersion = payload.templateVersion(),
                                         userIds = payload.userIds(),
                                         segmentId = payload.segmentId(),
-                                        expiredTime = payload.expiredTime()
+                                        expiredTime = payload.expiredTime(),
                                     )
                                 if (event.isExpired()) {
                                     expiredEventsLogBuffer.appendLine("  - eventId: ${event.eventId} expiredTime: ${event.expiredTime}")
-                                    eventScheduleRepository.findByEventId(event.eventId)
-                                        ?.notConsumed()?.complete()
+                                    eventScheduleRepository
+                                        .findByEventId(event.eventId)
+                                        ?.notConsumed()
+                                        ?.complete()
                                     expiredEventCount++
                                 } else {
                                     replayedEventsLogBuffer.appendLine("  - eventId: ${event.eventId} expiredTime: ${event.expiredTime}")
@@ -80,10 +82,10 @@ class NotificationEmailSendTimeOutEventRePlayer(
                                             userIds = event.userIds,
                                             segmentId = event.segmentId,
                                             eventId = event.eventId,
-                                            expiredTime = event.expiredTime
+                                            expiredTime = event.expiredTime,
                                         )
                                     scheduleTaskService.reSchedule(
-                                        notificationEmailSendTimeOutEventInput
+                                        notificationEmailSendTimeOutEventInput,
                                     )
                                     replayedEventCount++
                                 }
@@ -109,10 +111,11 @@ class NotificationEmailSendTimeOutEventRePlayer(
                 appendLine("Replayed events:")
             }
 
-        val (expiredEventCount, replayedEventCount) = logic(
-            expiredEventsLogBuffer,
-            replayedEventsLogBuffer
-        )
+        val (expiredEventCount, replayedEventCount) =
+            logic(
+                expiredEventsLogBuffer,
+                replayedEventsLogBuffer,
+            )
 
         logBuffer.append(expiredEventsLogBuffer)
         logBuffer.append(replayedEventsLogBuffer)

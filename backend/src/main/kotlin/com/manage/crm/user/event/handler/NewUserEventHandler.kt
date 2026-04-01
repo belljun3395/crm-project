@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class NewUserEventHandler(
-    private val userService: UserService
+    private val userService: UserService,
 ) {
     private val log = KotlinLogging.logger {}
 

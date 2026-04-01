@@ -31,7 +31,7 @@ class AuditLog(
     var detail: String? = null,
     @CreatedDate
     @Column("created_at")
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
@@ -42,9 +42,9 @@ class AuditLog(
             requestMethod: String?,
             requestPath: String?,
             statusCode: Int?,
-            detail: String?
-        ): AuditLog {
-            return AuditLog(
+            detail: String?,
+        ): AuditLog =
+            AuditLog(
                 actorId = actorId,
                 action = action,
                 resourceType = resourceType,
@@ -52,8 +52,7 @@ class AuditLog(
                 requestMethod = requestMethod,
                 requestPath = requestPath,
                 statusCode = statusCode,
-                detail = detail
+                detail = detail,
             )
-        }
     }
 }

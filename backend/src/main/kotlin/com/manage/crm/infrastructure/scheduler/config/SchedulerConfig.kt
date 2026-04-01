@@ -29,15 +29,19 @@ class SchedulerConfig {
     @Bean(name = [SCHEDULER_CLIENT])
     @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws", matchIfMissing = true)
     fun awsSchedulerClient(awsCredentialsProvider: AwsCredentialsProvider): SchedulerClient {
-        val overrideConfig = ClientOverrideConfiguration.builder()
-            .apiCallTimeout(Duration.ofMinutes(2))
-            .apiCallAttemptTimeout(Duration.ofSeconds(90))
-            .retryStrategy(RetryMode.STANDARD)
-            .build()
+        val overrideConfig =
+            ClientOverrideConfiguration
+                .builder()
+                .apiCallTimeout(Duration.ofMinutes(2))
+                .apiCallAttemptTimeout(Duration.ofSeconds(90))
+                .retryStrategy(RetryMode.STANDARD)
+                .build()
 
-        val builder = SchedulerClient.builder()
-            .overrideConfiguration(overrideConfig)
-            .credentialsProvider(awsCredentialsProvider)
+        val builder =
+            SchedulerClient
+                .builder()
+                .overrideConfiguration(overrideConfig)
+                .credentialsProvider(awsCredentialsProvider)
 
         region?.let { builder.region(Region.of(it)) }
         endpointUrl?.let { builder.endpointOverride(URI.create(it)) }

@@ -3,7 +3,7 @@ package com.manage.crm.webhook.application.dto
 class BrowseWebhookUseCaseIn
 
 data class BrowseWebhookUseCaseOut(
-    val webhooks: List<WebhookDto>
+    val webhooks: List<WebhookDto>,
 )
 
 data class WebhookDto(
@@ -12,7 +12,7 @@ data class WebhookDto(
     val url: String,
     val events: List<String>,
     val active: Boolean,
-    val createdAt: String?
+    val createdAt: String?,
 )
 
 class BrowseWebhookUseCaseDto

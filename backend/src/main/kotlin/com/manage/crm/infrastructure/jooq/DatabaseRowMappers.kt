@@ -7,17 +7,14 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
-internal fun Map<String, Any>.requireLocalDateTime(column: String): LocalDateTime {
-    return get(column).toLocalDateTimeOrNull()
+internal fun Map<String, Any>.requireLocalDateTime(column: String): LocalDateTime =
+    get(column).toLocalDateTimeOrNull()
         ?: error("Expected $column to be a date-time but was ${get(column)?.javaClass}")
-}
 
-internal fun Map<String, Any>.optionalLocalDateTime(column: String): LocalDateTime? {
-    return get(column).toLocalDateTimeOrNull()
-}
+internal fun Map<String, Any>.optionalLocalDateTime(column: String): LocalDateTime? = get(column).toLocalDateTimeOrNull()
 
-private fun Any?.toLocalDateTimeOrNull(): LocalDateTime? {
-    return when (this) {
+private fun Any?.toLocalDateTimeOrNull(): LocalDateTime? =
+    when (this) {
         null -> null
         is LocalDateTime -> this
         is OffsetDateTime -> toLocalDateTime()
@@ -26,4 +23,3 @@ private fun Any?.toLocalDateTimeOrNull(): LocalDateTime? {
         is Timestamp -> toLocalDateTime()
         else -> null
     }
-}

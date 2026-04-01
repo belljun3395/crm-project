@@ -10,29 +10,30 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 
-class CancelNotificationEmailUseCaseTest : BehaviorSpec({
-    lateinit var scheduleTaskService: ScheduleTaskAllService
-    lateinit var cancelNotificationEmailUseCase: CancelNotificationEmailUseCase
+class CancelNotificationEmailUseCaseTest :
+    BehaviorSpec({
+        lateinit var scheduleTaskService: ScheduleTaskAllService
+        lateinit var cancelNotificationEmailUseCase: CancelNotificationEmailUseCase
 
-    beforeContainer {
-        scheduleTaskService = mockk()
-        cancelNotificationEmailUseCase = CancelNotificationEmailUseCase(scheduleTaskService)
-    }
+        beforeContainer {
+            scheduleTaskService = mockk()
+            cancelNotificationEmailUseCase = CancelNotificationEmailUseCase(scheduleTaskService)
+        }
 
-    given("CancelNotificationEmailUseCase") {
-        `when`("cancel notification email") {
-            val useCaseIn = CancelNotificationEmailUseCaseIn(eventId = EventId("eventId"))
+        given("CancelNotificationEmailUseCase") {
+            `when`("cancel notification email") {
+                val useCaseIn = CancelNotificationEmailUseCaseIn(eventId = EventId("eventId"))
 
-            coEvery { scheduleTaskService.cancel(any()) } returns Unit
+                coEvery { scheduleTaskService.cancel(any()) } returns Unit
 
-            val result = cancelNotificationEmailUseCase.execute(useCaseIn)
-            then("should return CancelNotificationEmailUseCaseOut") {
-                result shouldBe CancelNotificationEmailUseCaseOut(true)
-            }
+                val result = cancelNotificationEmailUseCase.execute(useCaseIn)
+                then("should return CancelNotificationEmailUseCaseOut") {
+                    result shouldBe CancelNotificationEmailUseCaseOut(true)
+                }
 
-            then("cancel notification email scheduled task") {
-                coVerify(exactly = 1) { scheduleTaskService.cancel(useCaseIn.eventId.value) }
+                then("cancel notification email scheduled task") {
+                    coVerify(exactly = 1) { scheduleTaskService.cancel(useCaseIn.eventId.value) }
+                }
             }
         }
-    }
-})
+    })

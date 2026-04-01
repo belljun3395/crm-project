@@ -18,24 +18,32 @@ class EmailSendHistoryFixtures private constructor() {
     private var updatedAt: LocalDateTime = LocalDateTime.now()
 
     fun withId(id: Long) = apply { this.id = id }
+
     fun withUserId(userId: Long) = apply { this.userId = userId }
+
     fun withUserEmail(userEmail: Email) = apply { this.userEmail = userEmail }
+
     fun withEmailMessageId(emailMessageId: String) = apply { this.emailMessageId = emailMessageId }
+
     fun withEmailBody(emailBody: String) = apply { this.emailBody = emailBody }
+
     fun withSendStatus(sendStatus: String) = apply { this.sendStatus = sendStatus }
+
     fun withCreatedAt(createdAt: LocalDateTime) = apply { this.createdAt = createdAt }
+
     fun withUpdatedAt(updatedAt: LocalDateTime) = apply { this.updatedAt = updatedAt }
 
-    fun build() = EmailSendHistory(
-        id = id,
-        userId = userId,
-        userEmail = userEmail,
-        emailMessageId = emailMessageId,
-        emailBody = emailBody,
-        sendStatus = sendStatus,
-        createdAt = createdAt,
-        updatedAt = updatedAt
-    )
+    fun build() =
+        EmailSendHistory(
+            id = id,
+            userId = userId,
+            userEmail = userEmail,
+            emailMessageId = emailMessageId,
+            emailBody = emailBody,
+            sendStatus = sendStatus,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+        )
 
     companion object {
         fun anEmailSendHistory() = EmailSendHistoryFixtures()

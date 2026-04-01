@@ -20,23 +20,27 @@ class TransactionSynchronizationTemplate {
     suspend fun afterCompletion(
         context: CoroutineContext = Dispatchers.IO,
         blockDescription: String,
-        block: suspend () -> Unit
+        block: suspend () -> Unit,
     ) {
-        TransactionSynchronizationManager.forCurrentTransaction().map { manager ->
-            manager.registerSynchronization(object : TransactionSynchronization {
-                override fun afterCompletion(status: Int): Mono<Void> {
-                    return mono(context) {
-                        log.debug { "do after completion: $blockDescription" }
-                        runCatching {
-                            block()
-                        }.onFailure { error ->
-                            log.error(error) { "afterCompletion block failed: $blockDescription" }
+        TransactionSynchronizationManager
+            .forCurrentTransaction()
+            .map { manager ->
+                manager.registerSynchronization(
+                    object : TransactionSynchronization {
+                        override fun afterCompletion(status: Int): Mono<Void> {
+                            return mono(context) {
+                                log.debug { "do after completion: $blockDescription" }
+                                runCatching {
+                                    block()
+                                }.onFailure { error ->
+                                    log.error(error) { "afterCompletion block failed: $blockDescription" }
+                                }
+                                return@mono null
+                            }
                         }
-                        return@mono null
-                    }
-                }
-            })
-        }.awaitSingle()
+                    },
+                )
+            }.awaitSingle()
     }
 
     /**
@@ -45,22 +49,26 @@ class TransactionSynchronizationTemplate {
     suspend fun afterCommit(
         context: CoroutineContext = Dispatchers.IO,
         blockDescription: String,
-        block: suspend () -> Unit
+        block: suspend () -> Unit,
     ) {
-        TransactionSynchronizationManager.forCurrentTransaction().map { manager ->
-            manager.registerSynchronization(object : TransactionSynchronization {
-                override fun afterCommit(): Mono<Void> {
-                    return mono(context) {
-                        log.debug { "do after commit: $blockDescription" }
-                        runCatching {
-                            block()
-                        }.onFailure { error ->
-                            log.error(error) { "afterCommit block failed: $blockDescription" }
+        TransactionSynchronizationManager
+            .forCurrentTransaction()
+            .map { manager ->
+                manager.registerSynchronization(
+                    object : TransactionSynchronization {
+                        override fun afterCommit(): Mono<Void> {
+                            return mono(context) {
+                                log.debug { "do after commit: $blockDescription" }
+                                runCatching {
+                                    block()
+                                }.onFailure { error ->
+                                    log.error(error) { "afterCommit block failed: $blockDescription" }
+                                }
+                                return@mono null
+                            }
                         }
-                        return@mono null
-                    }
-                }
-            })
-        }.awaitSingle()
+                    },
+                )
+            }.awaitSingle()
     }
 }

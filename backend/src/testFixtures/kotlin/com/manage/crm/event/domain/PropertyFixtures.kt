@@ -9,17 +9,20 @@ class PropertyFixtures private constructor() {
     private var value: String = "default-value"
 
     fun withKey(key: String) = apply { this.key = key }
+
     fun withValue(value: String) = apply { this.value = value }
 
-    fun buildEvent() = EventProperty(
-        key = key,
-        value = value
-    )
+    fun buildEvent() =
+        EventProperty(
+            key = key,
+            value = value,
+        )
 
-    fun buildCampaign() = CampaignProperty(
-        key = key,
-        value = value
-    )
+    fun buildCampaign() =
+        CampaignProperty(
+            key = key,
+            value = value,
+        )
 
     companion object {
         fun anEventProperty() = PropertyFixtures()

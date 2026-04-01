@@ -34,7 +34,7 @@ class JourneyExecution(
     var createdAt: LocalDateTime? = null,
     @LastModifiedDate
     @Column("updated_at")
-    var updatedAt: LocalDateTime? = null
+    var updatedAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
@@ -44,17 +44,16 @@ class JourneyExecution(
             status: String,
             currentStepOrder: Int,
             triggerKey: String,
-            startedAt: LocalDateTime
-        ): JourneyExecution {
-            return JourneyExecution(
+            startedAt: LocalDateTime,
+        ): JourneyExecution =
+            JourneyExecution(
                 journeyId = journeyId,
                 eventId = eventId,
                 userId = userId,
                 status = status,
                 currentStepOrder = currentStepOrder,
                 triggerKey = triggerKey,
-                startedAt = startedAt
+                startedAt = startedAt,
             )
-        }
     }
 }

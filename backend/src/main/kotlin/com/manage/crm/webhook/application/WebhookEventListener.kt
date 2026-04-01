@@ -15,7 +15,7 @@ import org.springframework.transaction.reactive.executeAndAwait
 @ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
 class WebhookEventListener(
     private val webhookDispatchService: WebhookDispatchService,
-    private val transactionalTemplates: TransactionTemplates
+    private val transactionalTemplates: TransactionTemplates,
 ) {
     @EventListener
     fun onUserCreated(event: NewUserEvent) {
@@ -23,7 +23,7 @@ class WebhookEventListener(
             transactionalTemplates.newTxWriter.executeAndAwait {
                 webhookDispatchService.dispatch(
                     WebhookEventType.USER_CREATED,
-                    mapOf("userId" to event.userId)
+                    mapOf("userId" to event.userId),
                 )
             }
         }
@@ -40,8 +40,8 @@ class WebhookEventListener(
                         "messageId" to event.messageId,
                         "destination" to event.destination,
                         "timestamp" to event.timestamp.toString(),
-                        "provider" to event.provider.name
-                    )
+                        "provider" to event.provider.name,
+                    ),
                 )
             }
         }

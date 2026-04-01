@@ -7,14 +7,14 @@ import java.time.format.DateTimeFormatter
 
 @Service
 class BrowseJourneyExecutionHistoryUseCase(
-    private val journeyExecutionHistoryRepository: JourneyExecutionHistoryRepository
+    private val journeyExecutionHistoryRepository: JourneyExecutionHistoryRepository,
 ) {
     companion object {
         private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     }
 
-    suspend fun execute(journeyExecutionId: Long): List<JourneyExecutionHistoryDto> {
-        return journeyExecutionHistoryRepository
+    suspend fun execute(journeyExecutionId: Long): List<JourneyExecutionHistoryDto> =
+        journeyExecutionHistoryRepository
             .findAllByJourneyExecutionIdOrderByCreatedAtAsc(journeyExecutionId)
             .toList()
             .map { history ->
@@ -26,8 +26,7 @@ class BrowseJourneyExecutionHistoryUseCase(
                     attempt = history.attempt,
                     message = history.message,
                     idempotencyKey = history.idempotencyKey,
-                    createdAt = history.createdAt?.format(formatter) ?: ""
+                    createdAt = history.createdAt?.format(formatter) ?: "",
                 )
             }
-    }
 }

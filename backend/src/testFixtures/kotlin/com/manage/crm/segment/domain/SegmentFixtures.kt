@@ -11,18 +11,23 @@ class SegmentFixtures private constructor() {
     private var createdAt: LocalDateTime? = null
 
     fun withId(id: Long?) = apply { this.id = id }
+
     fun withName(name: String) = apply { this.name = name }
+
     fun withDescription(description: String?) = apply { this.description = description }
+
     fun withActive(active: Boolean) = apply { this.active = active }
+
     fun withCreatedAt(createdAt: LocalDateTime?) = apply { this.createdAt = createdAt }
 
-    fun build(): Segment = Segment(
-        id = id,
-        name = name,
-        description = description,
-        active = active,
-        createdAt = createdAt
-    )
+    fun build(): Segment =
+        Segment(
+            id = id,
+            name = name,
+            description = description,
+            active = active,
+            createdAt = createdAt,
+        )
 
     companion object {
         fun aSegment() = SegmentFixtures()

@@ -10,47 +10,53 @@ import org.springframework.test.web.reactive.server.expectBody
 
 @Tag("integration")
 class UserControllerIntegrationTest : AbstractIntegrationTest() {
-
     // Test Fixtures and Helper Methods
     private fun createTestUser(
         email: String = "test-${System.currentTimeMillis()}@example.com",
         name: String = "Test User",
         externalId: String = "test-user-${System.currentTimeMillis()}",
-        age: String = "25"
+        age: String = "25",
     ) {
-        val userAttributesJson = """
-        {
-            "email": "$email",
-            "name": "$name",
-            "age": "$age"
-        }
-        """.trimIndent()
+        val userAttributesJson =
+            """
+            {
+                "email": "$email",
+                "name": "$name",
+                "age": "$age"
+            }
+            """.trimIndent()
 
-        val request = EnrollUserRequest(
-            id = null,
-            externalId = externalId,
-            userAttributes = userAttributesJson
-        )
+        val request =
+            EnrollUserRequest(
+                id = null,
+                externalId = externalId,
+                userAttributes = userAttributesJson,
+            )
 
-        webTestClient.post()
+        webTestClient
+            .post()
             .uri("/api/v1/users")
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(request)
             .exchange()
-            .expectStatus().isOk
+            .expectStatus()
+            .isOk
             .expectBody<String>()
             .consumeWith { response ->
                 response.responseBody shouldNotBe null
             }
     }
+
     init {
         describe("GET /api/v1/users") {
             it("browse all users successfully") {
                 // when & then
-                webTestClient.get()
+                webTestClient
+                    .get()
                     .uri("/api/v1/users")
                     .exchange()
-                    .expectStatus().isOk
+                    .expectStatus()
+                    .isOk
                     .expectBody<String>()
                     .consumeWith { response ->
                         response.responseBody shouldNotBe null
@@ -65,133 +71,166 @@ class UserControllerIntegrationTest : AbstractIntegrationTest() {
                         email = "pagination-test$index-$timestamp@example.com",
                         name = "Pagination Test User $index",
                         externalId = "pagination-test-user$index-$timestamp",
-                        age = "${20 + index}"
+                        age = "${20 + index}",
                     )
                 }
 
                 // when & then - first page with size=2
-                webTestClient.get()
+                webTestClient
+                    .get()
                     .uri { builder ->
-                        builder.path("/api/v1/users")
+                        builder
+                            .path("/api/v1/users")
                             .queryParam("page", 0)
                             .queryParam("size", 2)
                             .build()
-                    }
-                    .exchange()
-                    .expectStatus().isOk
+                    }.exchange()
+                    .expectStatus()
+                    .isOk
                     .expectBody()
-                    .jsonPath("$.data.users.page").isEqualTo(0)
-                    .jsonPath("$.data.users.size").isEqualTo(2)
-                    .jsonPath("$.data.users.content").isArray
-                    .jsonPath("$.data.users.totalElements").isNumber
-                    .jsonPath("$.data.users.totalPages").isNumber
+                    .jsonPath("$.data.users.page")
+                    .isEqualTo(0)
+                    .jsonPath("$.data.users.size")
+                    .isEqualTo(2)
+                    .jsonPath("$.data.users.content")
+                    .isArray
+                    .jsonPath("$.data.users.totalElements")
+                    .isNumber
+                    .jsonPath("$.data.users.totalPages")
+                    .isNumber
 
                 // when & then - second page with size=2
-                webTestClient.get()
+                webTestClient
+                    .get()
                     .uri { builder ->
-                        builder.path("/api/v1/users")
+                        builder
+                            .path("/api/v1/users")
                             .queryParam("page", 1)
                             .queryParam("size", 2)
                             .build()
-                    }
-                    .exchange()
-                    .expectStatus().isOk
+                    }.exchange()
+                    .expectStatus()
+                    .isOk
                     .expectBody()
-                    .jsonPath("$.data.users.page").isEqualTo(1)
-                    .jsonPath("$.data.users.size").isEqualTo(2)
-                    .jsonPath("$.data.users.content").isArray
-                    .jsonPath("$.data.users.totalElements").isNumber
-                    .jsonPath("$.data.users.totalPages").isNumber
+                    .jsonPath("$.data.users.page")
+                    .isEqualTo(1)
+                    .jsonPath("$.data.users.size")
+                    .isEqualTo(2)
+                    .jsonPath("$.data.users.content")
+                    .isArray
+                    .jsonPath("$.data.users.totalElements")
+                    .isNumber
+                    .jsonPath("$.data.users.totalPages")
+                    .isNumber
             }
 
             it("browse users with default pagination parameters") {
                 // when & then - using default values (page=0, size=20)
-                webTestClient.get()
+                webTestClient
+                    .get()
                     .uri("/api/v1/users")
                     .exchange()
-                    .expectStatus().isOk
+                    .expectStatus()
+                    .isOk
                     .expectBody()
-                    .jsonPath("$.data.users.page").isEqualTo(0)
-                    .jsonPath("$.data.users.size").isEqualTo(20)
-                    .jsonPath("$.data.users.content").isArray
-                    .jsonPath("$.data.users.totalElements").isNumber
-                    .jsonPath("$.data.users.totalPages").isNumber
+                    .jsonPath("$.data.users.page")
+                    .isEqualTo(0)
+                    .jsonPath("$.data.users.size")
+                    .isEqualTo(20)
+                    .jsonPath("$.data.users.content")
+                    .isArray
+                    .jsonPath("$.data.users.totalElements")
+                    .isNumber
+                    .jsonPath("$.data.users.totalPages")
+                    .isNumber
             }
 
             it("should return 400 when page is negative") {
                 // when & then
-                webTestClient.get()
+                webTestClient
+                    .get()
                     .uri { builder ->
-                        builder.path("/api/v1/users")
+                        builder
+                            .path("/api/v1/users")
                             .queryParam("page", -1)
                             .queryParam("size", 10)
                             .build()
-                    }
-                    .exchange()
-                    .expectStatus().isBadRequest
+                    }.exchange()
+                    .expectStatus()
+                    .isBadRequest
             }
 
             it("should return 400 when size is zero") {
                 // when & then
-                webTestClient.get()
+                webTestClient
+                    .get()
                     .uri { builder ->
-                        builder.path("/api/v1/users")
+                        builder
+                            .path("/api/v1/users")
                             .queryParam("page", 0)
                             .queryParam("size", 0)
                             .build()
-                    }
-                    .exchange()
-                    .expectStatus().isBadRequest
+                    }.exchange()
+                    .expectStatus()
+                    .isBadRequest
             }
 
             it("should return 400 when size is negative") {
                 // when & then
-                webTestClient.get()
+                webTestClient
+                    .get()
                     .uri { builder ->
-                        builder.path("/api/v1/users")
+                        builder
+                            .path("/api/v1/users")
                             .queryParam("page", 0)
                             .queryParam("size", -5)
                             .build()
-                    }
-                    .exchange()
-                    .expectStatus().isBadRequest
+                    }.exchange()
+                    .expectStatus()
+                    .isBadRequest
             }
 
             it("should return 400 when size exceeds maximum") {
                 // when & then
-                webTestClient.get()
+                webTestClient
+                    .get()
                     .uri { builder ->
-                        builder.path("/api/v1/users")
+                        builder
+                            .path("/api/v1/users")
                             .queryParam("page", 0)
                             .queryParam("size", 101)
                             .build()
-                    }
-                    .exchange()
-                    .expectStatus().isBadRequest
+                    }.exchange()
+                    .expectStatus()
+                    .isBadRequest
             }
 
             it("should accept size at boundary values") {
                 // when & then - size = 1 (minimum valid)
-                webTestClient.get()
+                webTestClient
+                    .get()
                     .uri { builder ->
-                        builder.path("/api/v1/users")
+                        builder
+                            .path("/api/v1/users")
                             .queryParam("page", 0)
                             .queryParam("size", 1)
                             .build()
-                    }
-                    .exchange()
-                    .expectStatus().isOk
+                    }.exchange()
+                    .expectStatus()
+                    .isOk
 
                 // when & then - size = 100 (maximum valid)
-                webTestClient.get()
+                webTestClient
+                    .get()
                     .uri { builder ->
-                        builder.path("/api/v1/users")
+                        builder
+                            .path("/api/v1/users")
                             .queryParam("page", 0)
                             .queryParam("size", 100)
                             .build()
-                    }
-                    .exchange()
-                    .expectStatus().isOk
+                    }.exchange()
+                    .expectStatus()
+                    .isOk
             }
         }
 
@@ -210,20 +249,22 @@ class UserControllerIntegrationTest : AbstractIntegrationTest() {
                     email = "count-test1-$timestamp@example.com",
                     name = "Count Test User 1",
                     externalId = "count-test-user1-$timestamp",
-                    age = "30"
+                    age = "30",
                 )
                 createTestUser(
                     email = "count-test2-$timestamp@example.com",
                     name = "Count Test User 2",
                     externalId = "count-test-user2-$timestamp",
-                    age = "28"
+                    age = "28",
                 )
 
                 // when & then
-                webTestClient.get()
+                webTestClient
+                    .get()
                     .uri("/api/v1/users/count")
                     .exchange()
-                    .expectStatus().isOk
+                    .expectStatus()
+                    .isOk
                     .expectBody<String>()
                     .consumeWith { response ->
                         response.responseBody shouldNotBe null

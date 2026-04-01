@@ -11,12 +11,12 @@ data class ScheduledEventMessage(
     val templateVersion: Float?,
     val userIds: List<Long>,
     val segmentId: Long?,
-    val eventId: String
+    val eventId: String,
 )
 
 @Component
 class ScheduledEventMessageMapper(
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
     fun map(message: String): ScheduledEventMessage {
         objectMapper.readTree(message).let { jsonNode ->
@@ -33,19 +33,18 @@ class ScheduledEventMessageMapper(
                 templateVersion = templateVersion,
                 userIds = userIds,
                 segmentId = segmentId,
-                eventId = eventId
+                eventId = eventId,
             )
         }
     }
 
-    fun toEvent(message: ScheduledEventMessage): NotificationEmailSendTimeOutInvokeEvent {
-        return NotificationEmailSendTimeOutInvokeEvent(
+    fun toEvent(message: ScheduledEventMessage): NotificationEmailSendTimeOutInvokeEvent =
+        NotificationEmailSendTimeOutInvokeEvent(
             timeOutEventId = EventId(message.eventId),
             campaignId = message.campaignId,
             templateId = message.templateId,
             templateVersion = message.templateVersion,
             userIds = message.userIds,
-            segmentId = message.segmentId
+            segmentId = message.segmentId,
         )
-    }
 }

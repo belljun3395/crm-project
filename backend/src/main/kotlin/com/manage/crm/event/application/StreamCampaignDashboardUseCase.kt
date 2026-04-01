@@ -14,12 +14,12 @@ import java.time.Duration
  */
 @Component
 class StreamCampaignDashboardUseCase(
-    private val campaignDashboardStreamManager: CampaignDashboardStreamManager
+    private val campaignDashboardStreamManager: CampaignDashboardStreamManager,
 ) {
     fun execute(input: StreamCampaignDashboardUseCaseIn) =
         campaignDashboardStreamManager.streamEvents(
             campaignId = input.campaignId,
             duration = Duration.ofSeconds(input.durationSeconds),
-            lastEventId = input.lastEventId
+            lastEventId = input.lastEventId,
         )
 }

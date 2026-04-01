@@ -6,9 +6,8 @@ import org.springframework.stereotype.Component
 
 @Component
 class CampaignEventReadAdapter(
-    private val campaignEventsRepository: CampaignEventsRepository
+    private val campaignEventsRepository: CampaignEventsRepository,
 ) : CampaignEventReadPort {
-    override suspend fun findEventIdsByCampaignId(campaignId: Long): List<Long> {
-        return campaignEventsRepository.findEventIdsByCampaignId(campaignId)
-    }
+    override suspend fun findEventIdsByCampaignId(campaignId: Long): List<Long> =
+        campaignEventsRepository.findEventIdsByCampaignId(campaignId)
 }

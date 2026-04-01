@@ -21,10 +21,11 @@ import java.nio.charset.Charset
 @Configuration
 @EnableWebFlux
 class WebFluxConfig(
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) : WebFluxConfigurer {
     override fun addCorsMappings(registry: CorsRegistry) {
-        registry.addMapping("/**")
+        registry
+            .addMapping("/**")
             .allowedOriginPatterns(CorsConfiguration.ALL)
             .allowedMethods(CorsConfiguration.ALL)
             .allowedHeaders(CorsConfiguration.ALL)
@@ -33,11 +34,12 @@ class WebFluxConfig(
     }
 
     override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {
-        val mimeTypes = arrayOf(
-            MimeType("application", "json"),
-            MimeType("application", "*+json"),
-            MimeType("application", "json", Charset.forName("UTF-8"))
-        )
+        val mimeTypes =
+            arrayOf(
+                MimeType("application", "json"),
+                MimeType("application", "*+json"),
+                MimeType("application", "json", Charset.forName("UTF-8")),
+            )
 
         configurer.defaultCodecs().jackson2JsonEncoder(Jackson2JsonEncoder(objectMapper, *mimeTypes))
         configurer.defaultCodecs().jackson2JsonDecoder(Jackson2JsonDecoder(objectMapper))
@@ -53,7 +55,7 @@ class WebFluxConfig(
             // ReactiveDeviceContextResolver(registry),
             // ReactiveUserResolver(registry, authFacade),
             ReactiveSortHandlerMethodArgumentResolver(),
-            ReactivePageableHandlerMethodArgumentResolver()
+            ReactivePageableHandlerMethodArgumentResolver(),
         )
     }
 

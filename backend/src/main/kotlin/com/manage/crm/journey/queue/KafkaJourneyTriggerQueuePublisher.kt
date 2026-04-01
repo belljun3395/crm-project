@@ -9,16 +9,17 @@ import org.springframework.stereotype.Component
 @Component
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class KafkaJourneyTriggerQueuePublisher(
-    private val journeyTriggerKafkaTemplate: KafkaTemplate<String, JourneyTriggerQueueMessage>
+    private val journeyTriggerKafkaTemplate: KafkaTemplate<String, JourneyTriggerQueueMessage>,
 ) : JourneyTriggerQueuePublisher {
     private val log = KotlinLogging.logger {}
 
     override suspend fun publishEventTrigger(event: JourneyEventPayload) {
         val eventId = event.id
-        val message = JourneyTriggerQueueMessage(
-            triggerType = JourneyTriggerQueueType.EVENT,
-            event = event
-        )
+        val message =
+            JourneyTriggerQueueMessage(
+                triggerType = JourneyTriggerQueueType.EVENT,
+                event = event,
+            )
 
         val future = journeyTriggerKafkaTemplate.send(JourneyTriggerQueuePublisher.TOPIC, "event-$eventId", message)
         future.whenComplete { result: SendResult<String, JourneyTriggerQueueMessage>?, ex: Throwable? ->
@@ -33,10 +34,11 @@ class KafkaJourneyTriggerQueuePublisher(
     }
 
     override suspend fun publishSegmentContextTrigger(changedUserIds: List<Long>) {
-        val message = JourneyTriggerQueueMessage(
-            triggerType = JourneyTriggerQueueType.SEGMENT_CONTEXT,
-            changedUserIds = changedUserIds.ifEmpty { null }
-        )
+        val message =
+            JourneyTriggerQueueMessage(
+                triggerType = JourneyTriggerQueueType.SEGMENT_CONTEXT,
+                changedUserIds = changedUserIds.ifEmpty { null },
+            )
         val key = "segment-context-${changedUserIds.joinToString(",").ifEmpty { "all" }}"
         val future = journeyTriggerKafkaTemplate.send(JourneyTriggerQueuePublisher.TOPIC, key, message)
         future.whenComplete { result: SendResult<String, JourneyTriggerQueueMessage>?, ex: Throwable? ->

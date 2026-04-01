@@ -99,8 +99,10 @@ class MailConfig {
     @Bean(name = [SES_CLIENT])
     @ConditionalOnProperty(name = ["mail.provider"], havingValue = "ses")
     fun sesClient(awsCredentialsProvider: AwsCredentialsProvider): SesClient {
-        val builder = SesClient.builder()
-            .credentialsProvider(awsCredentialsProvider)
+        val builder =
+            SesClient
+                .builder()
+                .credentialsProvider(awsCredentialsProvider)
 
         region?.let { builder.region(Region.of(it)) }
         endpointUrl?.let { builder.endpointOverride(URI.create(it)) }

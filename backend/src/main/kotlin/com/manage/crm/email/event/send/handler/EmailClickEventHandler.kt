@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class EmailClickEventHandler(
-    private val emailSendHistoryRepository: EmailSendHistoryRepository
+    private val emailSendHistoryRepository: EmailSendHistoryRepository,
 ) {
     val log = KotlinLogging.logger {}
 

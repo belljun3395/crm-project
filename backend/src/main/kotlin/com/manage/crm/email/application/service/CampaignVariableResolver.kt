@@ -19,10 +19,12 @@ import org.springframework.stereotype.Component
  */
 @Component
 class CampaignVariableResolver : VariableResolver {
-
     override fun supports(source: VariableSource): Boolean = source == VariableSource.CAMPAIGN
 
-    override fun resolve(variable: Variable, context: VariableResolverContext): Map<String, String> {
+    override fun resolve(
+        variable: Variable,
+        context: VariableResolverContext,
+    ): Map<String, String> {
         val eventProperties = context.eventProperties ?: return emptyMap()
         val propertyKeys = eventProperties.getKeys()
 

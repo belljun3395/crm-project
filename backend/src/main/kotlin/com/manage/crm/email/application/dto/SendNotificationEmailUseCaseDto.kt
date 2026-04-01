@@ -5,11 +5,11 @@ data class SendNotificationEmailUseCaseIn(
     val templateId: Long,
     val templateVersion: Float?,
     val userIds: List<Long>,
-    val segmentId: Long? = null
+    val segmentId: Long? = null,
 )
 
 class SendNotificationEmailUseCaseOut(
-    val isSuccess: Boolean
+    val isSuccess: Boolean,
 )
 
 class SendNotificationEmailUseCaseDto

@@ -37,7 +37,7 @@ class PostSegmentUseCase(
     private val segmentRepository: SegmentRepository,
     private val segmentConditionRepository: SegmentConditionRepository,
     private val journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher,
-    private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate
+    private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate,
 ) {
     private val log = KotlinLogging.logger {}
 
@@ -53,28 +53,29 @@ class PostSegmentUseCase(
             throw AlreadyExistsException("Segment", "name", useCaseIn.name)
         }
 
-        val saved = try {
-            if (useCaseIn.id != null) {
-                val existing = segmentRepository.findById(useCaseIn.id) ?: throw NotFoundByIdException("Segment", useCaseIn.id)
-                existing.name = useCaseIn.name
-                existing.description = useCaseIn.description
-                existing.active = useCaseIn.active
-                segmentRepository.save(existing)
-            } else {
-                segmentRepository.save(
-                    Segment.new(
-                        name = useCaseIn.name,
-                        description = useCaseIn.description,
-                        active = useCaseIn.active
+        val saved =
+            try {
+                if (useCaseIn.id != null) {
+                    val existing = segmentRepository.findById(useCaseIn.id) ?: throw NotFoundByIdException("Segment", useCaseIn.id)
+                    existing.name = useCaseIn.name
+                    existing.description = useCaseIn.description
+                    existing.active = useCaseIn.active
+                    segmentRepository.save(existing)
+                } else {
+                    segmentRepository.save(
+                        Segment.new(
+                            name = useCaseIn.name,
+                            description = useCaseIn.description,
+                            active = useCaseIn.active,
+                        ),
                     )
-                )
+                }
+            } catch (error: DataIntegrityViolationException) {
+                if (isSegmentNameDuplicate(error)) {
+                    throw AlreadyExistsException("Segment", "name", useCaseIn.name)
+                }
+                throw error
             }
-        } catch (error: DataIntegrityViolationException) {
-            if (isSegmentNameDuplicate(error)) {
-                throw AlreadyExistsException("Segment", "name", useCaseIn.name)
-            }
-            throw error
-        }
 
         val segmentId = saved.id ?: throw IllegalStateException("Saved segment id is null")
         segmentConditionRepository.deleteBySegmentId(segmentId)
@@ -86,14 +87,14 @@ class PostSegmentUseCase(
                     operator = condition.operator.uppercase(),
                     valueType = condition.valueType.uppercase(),
                     conditionValue = condition.value.toString(),
-                    position = index + 1
-                )
+                    position = index + 1,
+                ),
             )
         }
 
         runCatching {
             transactionSynchronizationTemplate.afterCommit(
-                blockDescription = "enqueue journey segment trigger after segment commit"
+                blockDescription = "enqueue journey segment trigger after segment commit",
             ) {
                 journeyTriggerQueuePublisher.publishSegmentContextTrigger()
             }
@@ -103,12 +104,13 @@ class PostSegmentUseCase(
             }
         }
 
-        val conditionDtos = useCaseIn.conditions.mapIndexed { index, condition ->
-            condition.toSegmentConditionDto(position = index + 1)
-        }
+        val conditionDtos =
+            useCaseIn.conditions.mapIndexed { index, condition ->
+                condition.toSegmentConditionDto(position = index + 1)
+            }
         return out {
             PostSegmentUseCaseOut(
-                segment = saved.toSegmentDto(conditionDtos)
+                segment = saved.toSegmentDto(conditionDtos),
             )
         }
     }
@@ -122,7 +124,7 @@ class PostSegmentUseCase(
                 field = condition.field,
                 operator = condition.operator,
                 valueType = condition.valueType,
-                value = condition.value
+                value = condition.value,
             )
         }
     }

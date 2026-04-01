@@ -58,22 +58,21 @@ class EmailController(
     private val browseEmailNotificationSchedulesUseCase: BrowseEmailNotificationSchedulesUseCase,
     private val postEmailNotificationSchedulesUseCase: PostEmailNotificationSchedulesUseCase,
     private val cancelNotificationEmailUseCase: CancelNotificationEmailUseCase,
-    private val browseEmailSendHistoriesUseCase: BrowseEmailSendHistoriesUseCase
+    private val browseEmailSendHistoriesUseCase: BrowseEmailSendHistoriesUseCase,
 ) {
     @GetMapping(value = ["/templates"])
     suspend fun browseEmailTemplates(
-        @RequestParam(required = false) history: Boolean?
-    ): ApiResponse<ApiResponse.SuccessBody<BrowseTemplateUseCaseOut>> {
-        return browseTemplateUseCase
+        @RequestParam(required = false) history: Boolean?,
+    ): ApiResponse<ApiResponse.SuccessBody<BrowseTemplateUseCaseOut>> =
+        browseTemplateUseCase
             .execute(BrowseTemplateUseCaseIn(withHistory = history ?: true))
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
 
     @PostMapping(value = ["/templates"])
     suspend fun postEmailTemplate(
-        @RequestBody request: PostTemplateRequest
-    ): ApiResponse<ApiResponse.SuccessBody<PostTemplateUseCaseOut>> {
-        return postTemplateUseCase
+        @RequestBody request: PostTemplateRequest,
+    ): ApiResponse<ApiResponse.SuccessBody<PostTemplateUseCaseOut>> =
+        postTemplateUseCase
             .execute(
                 PostTemplateUseCaseIn(
                     id = request.id,
@@ -81,65 +80,57 @@ class EmailController(
                     subject = request.subject,
                     version = request.version,
                     body = request.body,
-                    variables = request.variables ?: emptyList()
-                )
-            )
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
+                    variables = request.variables ?: emptyList(),
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
 
     @GetMapping(value = ["/templates/variable-catalog"])
     suspend fun browseTemplateVariableCatalog(
-        @RequestParam(required = false) campaignId: Long?
-    ): ApiResponse<ApiResponse.SuccessBody<BrowseTemplateVariableCatalogUseCaseOut>> {
-        return browseTemplateVariableCatalogUseCase
+        @RequestParam(required = false) campaignId: Long?,
+    ): ApiResponse<ApiResponse.SuccessBody<BrowseTemplateVariableCatalogUseCaseOut>> =
+        browseTemplateVariableCatalogUseCase
             .execute(BrowseTemplateVariableCatalogUseCaseIn(campaignId = campaignId))
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
 
     @PostMapping(value = ["/send/notifications"])
     suspend fun sendNotificationEmail(
-        @RequestBody request: SendNotificationEmailRequest
-    ): ApiResponse<ApiResponse.SuccessBody<SendNotificationEmailUseCaseOut>> {
-        return sendNotificationEmailUseCase
+        @RequestBody request: SendNotificationEmailRequest,
+    ): ApiResponse<ApiResponse.SuccessBody<SendNotificationEmailUseCaseOut>> =
+        sendNotificationEmailUseCase
             .execute(
                 SendNotificationEmailUseCaseIn(
                     templateId = request.templateId,
                     templateVersion = request.templateVersion,
                     userIds = request.userIds ?: emptyList(),
                     campaignId = request.campaignId,
-                    segmentId = request.segmentId
-                )
-            )
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
+                    segmentId = request.segmentId,
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
 
     @DeleteMapping(value = ["/templates/{templateId}"])
     suspend fun deleteEmailTemplate(
         @PathVariable("templateId") templateId: Long,
-        @RequestParam(required = false) force: Boolean?
-    ): ApiResponse<ApiResponse.SuccessBody<DeleteTemplateUseCaseOut>> {
-        return deleteTemplateUseCase
+        @RequestParam(required = false) force: Boolean?,
+    ): ApiResponse<ApiResponse.SuccessBody<DeleteTemplateUseCaseOut>> =
+        deleteTemplateUseCase
             .execute(
                 DeleteTemplateUseCaseIn(
                     emailTemplateId = templateId,
-                    forceFlag = force ?: false
-                )
-            )
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
+                    forceFlag = force ?: false,
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
 
     @GetMapping(value = ["/schedules/notifications/email"])
-    suspend fun browseEmailNotificationSchedules(): ApiResponse<ApiResponse.SuccessBody<BrowseEmailNotificationSchedulesUseCaseOut>> {
-        return browseEmailNotificationSchedulesUseCase
+    suspend fun browseEmailNotificationSchedules(): ApiResponse<ApiResponse.SuccessBody<BrowseEmailNotificationSchedulesUseCaseOut>> =
+        browseEmailNotificationSchedulesUseCase
             .execute()
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
 
     @PostMapping(value = ["/schedules/notifications/email"])
     suspend fun postEmailNotificationSchedule(
-        @RequestBody request: PostNotificationEmailRequest
-    ): ApiResponse<ApiResponse.SuccessBody<PostEmailNotificationSchedulesUseCaseOut>> {
-        return postEmailNotificationSchedulesUseCase
+        @RequestBody request: PostNotificationEmailRequest,
+    ): ApiResponse<ApiResponse.SuccessBody<PostEmailNotificationSchedulesUseCaseOut>> =
+        postEmailNotificationSchedulesUseCase
             .execute(
                 PostEmailNotificationSchedulesUseCaseIn(
                     campaignId = request.campaignId,
@@ -147,30 +138,26 @@ class EmailController(
                     templateVersion = request.templateVersion,
                     userIds = request.userIds ?: emptyList(),
                     segmentId = request.segmentId,
-                    expiredTime = request.expiredTime
-                )
-            )
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
+                    expiredTime = request.expiredTime,
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
 
     @DeleteMapping(value = ["/schedules/notifications/email/{scheduleId}"])
     suspend fun cancelEmailNotificationSchedule(
-        @PathVariable("scheduleId") scheduleId: String
-    ): ApiResponse<ApiResponse.SuccessBody<CancelNotificationEmailUseCaseOut>> {
-        return cancelNotificationEmailUseCase
+        @PathVariable("scheduleId") scheduleId: String,
+    ): ApiResponse<ApiResponse.SuccessBody<CancelNotificationEmailUseCaseOut>> =
+        cancelNotificationEmailUseCase
             .execute(CancelNotificationEmailUseCaseIn(EventId(scheduleId)))
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
 
     @GetMapping(value = ["/histories"])
     suspend fun browseEmailSendHistories(
         @RequestParam(required = false) userId: Long?,
         @RequestParam(required = false) sendStatus: String?,
         @RequestParam(required = false, defaultValue = "0") page: Int,
-        @RequestParam(required = false, defaultValue = "20") size: Int
-    ): ApiResponse<ApiResponse.SuccessBody<BrowseEmailSendHistoriesUseCaseOut>> {
-        return browseEmailSendHistoriesUseCase
+        @RequestParam(required = false, defaultValue = "20") size: Int,
+    ): ApiResponse<ApiResponse.SuccessBody<BrowseEmailSendHistoriesUseCaseOut>> =
+        browseEmailSendHistoriesUseCase
             .execute(BrowseEmailSendHistoriesUseCaseIn(userId = userId, sendStatus = sendStatus, page = page, size = size))
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
 }

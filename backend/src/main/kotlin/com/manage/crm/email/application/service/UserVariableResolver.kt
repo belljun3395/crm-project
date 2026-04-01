@@ -22,16 +22,20 @@ import org.springframework.stereotype.Component
  */
 @Component
 class UserVariableResolver : VariableResolver {
-
     override fun supports(source: VariableSource): Boolean = source == VariableSource.USER
 
-    override fun resolve(variable: Variable, context: VariableResolverContext): Map<String, String> {
-        val userAttributes = requireNotNull(context.userAttributes) {
-            "UserAttributes is required for UserVariableResolver"
-        }
-        val objectMapper = requireNotNull(context.objectMapper) {
-            "ObjectMapper is required for UserVariableResolver"
-        }
+    override fun resolve(
+        variable: Variable,
+        context: VariableResolverContext,
+    ): Map<String, String> {
+        val userAttributes =
+            requireNotNull(context.userAttributes) {
+                "UserAttributes is required for UserVariableResolver"
+            }
+        val objectMapper =
+            requireNotNull(context.objectMapper) {
+                "ObjectMapper is required for UserVariableResolver"
+            }
 
         if (!userAttributes.isExist(variable.key, objectMapper)) {
             throw IllegalArgumentException("UserAttribute '${variable.key}' not found for variable ${variable.keyWithSource()}")

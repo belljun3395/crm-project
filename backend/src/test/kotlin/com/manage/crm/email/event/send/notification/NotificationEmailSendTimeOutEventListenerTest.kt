@@ -23,14 +23,13 @@ import java.time.LocalDateTime
 class NotificationEmailSendTimeOutEventListenerTest(
     @Qualifier("scheduleTaskServicePostEventProcessor")
     private val scheduleTaskService: ScheduleTaskAllService,
-    scheduledEventMessageMapper: ScheduledEventMessageMapper
+    scheduledEventMessageMapper: ScheduledEventMessageMapper,
 ) : MailEventInvokeSituationTest() {
-
     private val scheduledEventReverseRelayEmailEventPublisher = mock(EmailEventPublisher::class.java)
     private var scheduledEventReverseRelay =
         ScheduledEventReverseRelay(
             scheduledEventReverseRelayEmailEventPublisher,
-            scheduledEventMessageMapper
+            scheduledEventMessageMapper,
         )
 
     init {
@@ -40,28 +39,30 @@ class NotificationEmailSendTimeOutEventListenerTest(
                 val eventId = EventIdFixtures.giveMeOne().build()
                 val expiredTime = LocalDateTime.now().plusNanos(1)
                 val userIds = listOf(1L)
-                val input = NotificationEmailSendTimeOutEventInput(
-                    templateId = template.id!!,
-                    templateVersion = template.version.value,
-                    userIds = userIds,
-                    eventId = eventId,
-                    expiredTime = expiredTime
-                )
+                val input =
+                    NotificationEmailSendTimeOutEventInput(
+                        templateId = template.id!!,
+                        templateVersion = template.version.value,
+                        userIds = userIds,
+                        eventId = eventId,
+                        expiredTime = expiredTime,
+                    )
                 `when`(
                     awsSchedulerService.createSchedule(
                         name = input.eventId.value,
                         schedule = input.expiredTime,
-                        input = input
-                    )
+                        input = input,
+                    ),
                 ).thenReturn(CreateScheduleResponse.builder().scheduleArn("arn").build())
 
-                val event = NotificationEmailSendTimeOutEvent(
-                    eventId = eventId,
-                    templateId = template.id!!,
-                    templateVersion = template.version.value,
-                    userIds = userIds,
-                    expiredTime = expiredTime
-                )
+                val event =
+                    NotificationEmailSendTimeOutEvent(
+                        eventId = eventId,
+                        templateId = template.id!!,
+                        templateVersion = template.version.value,
+                        userIds = userIds,
+                        expiredTime = expiredTime,
+                    )
                 doNothing().`when`(emailEventPublisher).publishEvent(event)
 
                 scheduleTaskService.newSchedule(input)
@@ -72,33 +73,35 @@ class NotificationEmailSendTimeOutEventListenerTest(
                             templateId == event.templateId &&
                             templateVersion == event.templateVersion &&
                             userIds == event.userIds
-                    }
+                    },
                 )
             }
         }
 
         given("scheduled event reverse relay") {
             then("scheduled notification email event from aws scheduler") {
-                val message = """
-                        {
-                            "templateId": 1,
-                            "templateVersion": 1.0,
-                            "userIds": [1],
-                            "eventId": "1"
-                        }
-                """.trimIndent()
+                val message =
+                    """
+                    {
+                        "templateId": 1,
+                        "templateVersion": 1.0,
+                        "userIds": [1],
+                        "eventId": "1"
+                    }
+                    """.trimIndent()
                 val acknowledgement = mock(Acknowledgement::class.java)
                 doNothing().`when`(acknowledgement).acknowledge()
 
                 val template = EmailTemplateFixtures.giveMeOne().build()
                 val eventId = EventIdFixtures.giveMeOne().build()
                 val userIds = listOf(1L)
-                val event = NotificationEmailSendTimeOutInvokeEvent(
-                    timeOutEventId = eventId,
-                    templateId = template.id!!,
-                    templateVersion = template.version.value,
-                    userIds = userIds
-                )
+                val event =
+                    NotificationEmailSendTimeOutInvokeEvent(
+                        timeOutEventId = eventId,
+                        templateId = template.id!!,
+                        templateVersion = template.version.value,
+                        userIds = userIds,
+                    )
                 doNothing().`when`(scheduledEventReverseRelayEmailEventPublisher).publishEvent(event)
 
                 scheduledEventReverseRelay.onMessage(message, acknowledgement)

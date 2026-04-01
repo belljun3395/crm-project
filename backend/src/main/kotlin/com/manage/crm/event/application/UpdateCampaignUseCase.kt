@@ -32,12 +32,13 @@ class UpdateCampaignUseCase(
     private val campaignSegmentsRepository: CampaignSegmentsRepository,
     private val segmentReadPort: SegmentReadPort,
     private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate,
-    private val campaignCacheManager: CampaignCacheManager
+    private val campaignCacheManager: CampaignCacheManager,
 ) {
     @Transactional
     suspend fun execute(input: UpdateCampaignUseCaseIn): UpdateCampaignUseCaseOut {
-        val campaign = campaignRepository.findById(input.campaignId)
-            ?: throw NotFoundByIdException("Campaign", input.campaignId)
+        val campaign =
+            campaignRepository.findById(input.campaignId)
+                ?: throw NotFoundByIdException("Campaign", input.campaignId)
 
         val normalizedName = input.name.trim()
         ensureNameIsUnique(normalizedName, input.campaignId)
@@ -49,18 +50,20 @@ class UpdateCampaignUseCase(
 
         val previousName = campaign.name
         campaign.name = normalizedName
-        campaign.properties = CampaignProperties(
-            input.properties.map { CampaignProperty(key = it.key, value = it.value) }
-        )
+        campaign.properties =
+            CampaignProperties(
+                input.properties.map { CampaignProperty(key = it.key, value = it.value) },
+            )
 
         val updatedCampaign = campaignRepository.save(campaign)
 
-        val resultSegmentIds = if (requestedSegmentIds != null) {
-            replaceCampaignSegments(input.campaignId, requestedSegmentIds)
-            requestedSegmentIds
-        } else {
-            campaignSegmentsRepository.findAllByCampaignId(input.campaignId).map { it.segmentId }
-        }
+        val resultSegmentIds =
+            if (requestedSegmentIds != null) {
+                replaceCampaignSegments(input.campaignId, requestedSegmentIds)
+                requestedSegmentIds
+            } else {
+                campaignSegmentsRepository.findAllByCampaignId(input.campaignId).map { it.segmentId }
+            }
 
         transactionSynchronizationTemplate.afterCommit(Dispatchers.IO, "refresh campaign cache after update") {
             refreshCampaignCache(updatedCampaign.id ?: input.campaignId, previousName, updatedCampaign)
@@ -69,15 +72,19 @@ class UpdateCampaignUseCase(
         return UpdateCampaignUseCaseOut(
             id = updatedCampaign.id ?: input.campaignId,
             name = updatedCampaign.name,
-            properties = updatedCampaign.properties.value.map {
-                CampaignPropertyUseCaseDto(key = it.key, value = it.value)
-            },
+            properties =
+                updatedCampaign.properties.value.map {
+                    CampaignPropertyUseCaseDto(key = it.key, value = it.value)
+                },
             segmentIds = resultSegmentIds,
-            createdAt = updatedCampaign.createdAt
+            createdAt = updatedCampaign.createdAt,
         )
     }
 
-    private suspend fun ensureNameIsUnique(name: String, campaignId: Long) {
+    private suspend fun ensureNameIsUnique(
+        name: String,
+        campaignId: Long,
+    ) {
         val duplicated = campaignRepository.findCampaignByName(name)
         if (duplicated != null && duplicated.id != campaignId) {
             throw AlreadyExistsException("Campaign", "name", name)
@@ -92,11 +99,14 @@ class UpdateCampaignUseCase(
         }
     }
 
-    private suspend fun replaceCampaignSegments(campaignId: Long, segmentIds: List<Long>) {
+    private suspend fun replaceCampaignSegments(
+        campaignId: Long,
+        segmentIds: List<Long>,
+    ) {
         campaignSegmentsRepository.deleteAllByCampaignId(campaignId)
         segmentIds.forEach { segmentId ->
             campaignSegmentsRepository.save(
-                CampaignSegments.new(campaignId = campaignId, segmentId = segmentId)
+                CampaignSegments.new(campaignId = campaignId, segmentId = segmentId),
             )
         }
     }
@@ -104,7 +114,7 @@ class UpdateCampaignUseCase(
     private suspend fun refreshCampaignCache(
         campaignId: Long,
         previousName: String,
-        updatedCampaign: Campaign
+        updatedCampaign: Campaign,
     ) {
         campaignCacheManager.evict(campaignId, previousName)
         campaignCacheManager.save(updatedCampaign)

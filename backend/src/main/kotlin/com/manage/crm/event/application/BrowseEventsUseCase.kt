@@ -21,29 +21,34 @@ import java.time.LocalDateTime
 @Component
 class BrowseEventsUseCase(
     private val eventRepository: EventRepository,
-    private val userReadPort: UserReadPort
+    private val userReadPort: UserReadPort,
 ) {
     suspend fun execute(useCaseIn: BrowseEventsUseCaseIn): BrowseEventsUseCaseOut {
         val limit = useCaseIn.limit.coerceIn(1, 1000)
-        val events = eventRepository.findAll()
-            .toList()
-            .sortedByDescending { it.createdAt }
-            .take(limit)
+        val events =
+            eventRepository
+                .findAll()
+                .toList()
+                .sortedByDescending { it.createdAt }
+                .take(limit)
 
-        val usersById = userReadPort.findAllByIdIn(events.map { it.userId }.distinct())
-            .associateBy { it.id }
+        val usersById =
+            userReadPort
+                .findAllByIdIn(events.map { it.userId }.distinct())
+                .associateBy { it.id }
 
         return out {
             BrowseEventsUseCaseOut(
-                events = events.map { event ->
-                    EventDto(
-                        id = requireNotNull(event.id) { "Event id cannot be null" },
-                        name = event.name,
-                        externalId = usersById[event.userId]?.externalId,
-                        properties = event.properties.value.map { SearchEventPropertyDto(it.key, it.value) },
-                        createdAt = event.createdAt ?: LocalDateTime.now()
-                    )
-                }
+                events =
+                    events.map { event ->
+                        EventDto(
+                            id = requireNotNull(event.id) { "Event id cannot be null" },
+                            name = event.name,
+                            externalId = usersById[event.userId]?.externalId,
+                            properties = event.properties.value.map { SearchEventPropertyDto(it.key, it.value) },
+                            createdAt = event.createdAt ?: LocalDateTime.now(),
+                        )
+                    },
             )
         }
     }

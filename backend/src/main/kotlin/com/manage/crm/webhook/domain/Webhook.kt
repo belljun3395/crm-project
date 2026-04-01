@@ -19,17 +19,21 @@ class Webhook(
     @Column("active")
     var active: Boolean,
     @CreatedDate
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     companion object {
-        fun new(name: String, url: String, events: WebhookEvents, active: Boolean): Webhook {
-            return Webhook(
+        fun new(
+            name: String,
+            url: String,
+            events: WebhookEvents,
+            active: Boolean,
+        ): Webhook =
+            Webhook(
                 name = name,
                 url = url,
                 events = events,
-                active = active
+                active = active,
             )
-        }
 
         fun new(
             id: Long,
@@ -37,16 +41,15 @@ class Webhook(
             url: String,
             events: WebhookEvents,
             active: Boolean,
-            createdAt: LocalDateTime
-        ): Webhook {
-            return Webhook(
+            createdAt: LocalDateTime,
+        ): Webhook =
+            Webhook(
                 id = id,
                 name = name,
                 url = url,
                 events = events,
                 active = active,
-                createdAt = createdAt
+                createdAt = createdAt,
             )
-        }
     }
 }

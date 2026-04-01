@@ -75,7 +75,7 @@ class CampaignDashboardController(
     private val getCampaignSegmentComparisonUseCase: GetCampaignSegmentComparisonUseCase,
     private val getCampaignSummaryUseCase: GetCampaignSummaryUseCase,
     private val getCampaignDashboardStreamStatusUseCase: GetCampaignDashboardStreamStatusUseCase,
-    private val postCampaignUseCase: PostCampaignUseCase
+    private val postCampaignUseCase: PostCampaignUseCase,
 ) {
     companion object {
         private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -83,88 +83,92 @@ class CampaignDashboardController(
 
     @GetMapping
     suspend fun listCampaigns(
-        @RequestParam(required = false, defaultValue = "100") limit: Int
+        @RequestParam(required = false, defaultValue = "100") limit: Int,
     ): ApiResponse<ApiResponse.SuccessBody<List<CampaignListItemDto>>> {
         val result = listCampaignsUseCase.execute(ListCampaignsUseCaseIn(limit = limit))
-        val response = result.campaigns.map {
-            CampaignListItemDto(
-                id = it.id,
-                name = it.name,
-                createdAt = it.createdAt?.format(formatter)
-            )
-        }
+        val response =
+            result.campaigns.map {
+                CampaignListItemDto(
+                    id = it.id,
+                    name = it.name,
+                    createdAt = it.createdAt?.format(formatter),
+                )
+            }
         return ApiResponseGenerator.success(response, HttpStatus.OK)
     }
 
     @GetMapping("/{campaignId}")
     suspend fun getCampaign(
-        @PathVariable campaignId: Long
+        @PathVariable campaignId: Long,
     ): ApiResponse<ApiResponse.SuccessBody<CampaignDetailDto>> {
         val campaign = getCampaignUseCase.execute(GetCampaignUseCaseIn(campaignId = campaignId))
         return ApiResponseGenerator.success(
             CampaignDetailDto(
                 id = campaign.id,
                 name = campaign.name,
-                properties = campaign.properties.map {
-                    CampaignPropertyDto(key = it.key, value = it.value)
-                },
+                properties =
+                    campaign.properties.map {
+                        CampaignPropertyDto(key = it.key, value = it.value)
+                    },
                 segmentIds = campaign.segmentIds,
-                createdAt = campaign.createdAt?.format(formatter)
+                createdAt = campaign.createdAt?.format(formatter),
             ),
-            HttpStatus.OK
+            HttpStatus.OK,
         )
     }
 
     @PostMapping
     suspend fun postCampaign(
-        @RequestBody request: PostCampaignRequest
-    ): ApiResponse<ApiResponse.SuccessBody<PostCampaignUseCaseOut>> {
-        return postCampaignUseCase
+        @RequestBody request: PostCampaignRequest,
+    ): ApiResponse<ApiResponse.SuccessBody<PostCampaignUseCaseOut>> =
+        postCampaignUseCase
             .execute(
                 PostCampaignUseCaseIn(
                     name = request.name,
                     segmentIds = request.segmentIds ?: emptyList(),
-                    properties = request.properties.map {
-                        PostCampaignPropertyDto(key = it.key, value = it.value)
-                    }
-                )
-            )
-            .let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
-    }
+                    properties =
+                        request.properties.map {
+                            PostCampaignPropertyDto(key = it.key, value = it.value)
+                        },
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
 
     @PutMapping("/{campaignId}")
     suspend fun updateCampaign(
         @PathVariable campaignId: Long,
-        @RequestBody request: PutCampaignRequest
+        @RequestBody request: PutCampaignRequest,
     ): ApiResponse<ApiResponse.SuccessBody<CampaignDetailDto>> {
-        val result = updateCampaignUseCase.execute(
-            UpdateCampaignUseCaseIn(
-                campaignId = campaignId,
-                name = request.name,
-                properties = request.properties.map {
-                    CampaignPropertyUseCaseDto(key = it.key, value = it.value)
-                },
-                segmentIds = request.segmentIds
+        val result =
+            updateCampaignUseCase.execute(
+                UpdateCampaignUseCaseIn(
+                    campaignId = campaignId,
+                    name = request.name,
+                    properties =
+                        request.properties.map {
+                            CampaignPropertyUseCaseDto(key = it.key, value = it.value)
+                        },
+                    segmentIds = request.segmentIds,
+                ),
             )
-        )
 
         return ApiResponseGenerator.success(
             CampaignDetailDto(
                 id = result.id,
                 name = result.name,
-                properties = result.properties.map {
-                    CampaignPropertyDto(key = it.key, value = it.value)
-                },
+                properties =
+                    result.properties.map {
+                        CampaignPropertyDto(key = it.key, value = it.value)
+                    },
                 segmentIds = result.segmentIds,
-                createdAt = result.createdAt?.format(formatter)
+                createdAt = result.createdAt?.format(formatter),
             ),
-            HttpStatus.OK
+            HttpStatus.OK,
         )
     }
 
     @DeleteMapping("/{campaignId}")
     suspend fun deleteCampaign(
-        @PathVariable campaignId: Long
+        @PathVariable campaignId: Long,
     ): ApiResponse<ApiResponse.SuccessBody<CampaignDeleteResponseDto>> {
         val result = deleteCampaignUseCase.execute(DeleteCampaignUseCaseIn(campaignId = campaignId))
         return ApiResponseGenerator.success(CampaignDeleteResponseDto(success = result.success), HttpStatus.OK)
@@ -172,7 +176,7 @@ class CampaignDashboardController(
 
     @Operation(
         summary = "캠페인 대시보드 조회",
-        description = "특정 캠페인의 대시보드 메트릭 정보를 조회합니다. 시간 범위 또는 시간 단위를 지정할 수 있습니다."
+        description = "특정 캠페인의 대시보드 메트릭 정보를 조회합니다. 시간 범위 또는 시간 단위를 지정할 수 있습니다.",
     )
     @GetMapping("/{campaignId}/dashboard")
     suspend fun getCampaignDashboard(
@@ -187,26 +191,27 @@ class CampaignDashboardController(
         endTime: LocalDateTime? = null,
         @Parameter(description = "시간 단위: MINUTE, HOUR, DAY, WEEK, MONTH")
         @RequestParam(required = false)
-        timeWindowUnit: TimeWindowUnit? = null
+        timeWindowUnit: TimeWindowUnit? = null,
     ): ApiResponse<ApiResponse.SuccessBody<GetCampaignDashboardUseCaseOut>> {
-        val result = getCampaignDashboardUseCase.execute(
-            GetCampaignDashboardUseCaseIn(
-                campaignId = campaignId,
-                startTime = startTime,
-                endTime = endTime,
-                timeWindowUnit = timeWindowUnit
+        val result =
+            getCampaignDashboardUseCase.execute(
+                GetCampaignDashboardUseCaseIn(
+                    campaignId = campaignId,
+                    startTime = startTime,
+                    endTime = endTime,
+                    timeWindowUnit = timeWindowUnit,
+                ),
             )
-        )
         return ApiResponseGenerator.success(result, HttpStatus.OK)
     }
 
     @Operation(
         summary = "캠페인 대시보드 실시간 스트리밍",
-        description = "캠페인의 실시간 이벤트 스트림을 Server-Sent Events (SSE)로 전송합니다."
+        description = "캠페인의 실시간 이벤트 스트림을 Server-Sent Events (SSE)로 전송합니다.",
     )
     @GetMapping(
         path = ["/{campaignId}/dashboard/stream"],
-        produces = [MediaType.TEXT_EVENT_STREAM_VALUE]
+        produces = [MediaType.TEXT_EVENT_STREAM_VALUE],
     )
     fun streamCampaignDashboard(
         @PathVariable campaignId: Long,
@@ -218,25 +223,28 @@ class CampaignDashboardController(
         lastEventId: String? = null,
         @Parameter(description = "SSE 재연결용 Last-Event-ID (헤더)")
         @RequestHeader(name = "Last-Event-ID", required = false)
-        lastEventIdHeader: String? = null
+        lastEventIdHeader: String? = null,
     ): Flux<ServerSentEvent<CampaignEventData>> {
         val duration = Duration.ofSeconds(durationSeconds)
         val resolvedLastEventId = lastEventId ?: lastEventIdHeader
-        val connectedEvent = ServerSentEvent.builder<CampaignEventData>()
-            .event("connected")
-            .comment("Stream connected")
-            .build()
+        val connectedEvent =
+            ServerSentEvent
+                .builder<CampaignEventData>()
+                .event("connected")
+                .comment("Stream connected")
+                .build()
 
-        return streamCampaignDashboardUseCase.execute(
-            StreamCampaignDashboardUseCaseIn(
-                campaignId = campaignId,
-                durationSeconds = durationSeconds,
-                lastEventId = resolvedLastEventId
-            )
-        )
-            .map { event ->
+        return streamCampaignDashboardUseCase
+            .execute(
+                StreamCampaignDashboardUseCaseIn(
+                    campaignId = campaignId,
+                    durationSeconds = durationSeconds,
+                    lastEventId = resolvedLastEventId,
+                ),
+            ).map { event ->
                 val eventId = event.streamId ?: event.eventId.toString()
-                ServerSentEvent.builder<CampaignEventData>()
+                ServerSentEvent
+                    .builder<CampaignEventData>()
                     .id(eventId)
                     .event("campaign-event")
                     .data(
@@ -245,74 +253,77 @@ class CampaignDashboardController(
                             eventId = event.eventId,
                             userId = event.userId,
                             eventName = event.eventName,
-                            timestamp = event.timestamp
-                        )
-                    )
-                    .build()
-            }
-            .startWith(connectedEvent)
+                            timestamp = event.timestamp,
+                        ),
+                    ).build()
+            }.startWith(connectedEvent)
             .timeout(duration)
             .onErrorResume { error ->
                 Flux.just(
-                    ServerSentEvent.builder<CampaignEventData>()
+                    ServerSentEvent
+                        .builder<CampaignEventData>()
                         .event("error")
                         .comment(error.message ?: "Stream error occurred")
-                        .build()
+                        .build(),
                 )
-            }
-            .concatWith(
+            }.concatWith(
                 Flux.just(
-                    ServerSentEvent.builder<CampaignEventData>()
+                    ServerSentEvent
+                        .builder<CampaignEventData>()
                         .event("stream-end")
                         .comment("Stream ended")
-                        .build()
-                )
+                        .build(),
+                ),
             )
     }
 
     @Operation(
         summary = "캠페인 요약 정보 조회",
-        description = "캠페인의 요약 통계 정보를 조회합니다 (전체/24시간/7일 이벤트 수 등)."
+        description = "캠페인의 요약 통계 정보를 조회합니다 (전체/24시간/7일 이벤트 수 등).",
     )
     @GetMapping("/{campaignId}/dashboard/summary")
     suspend fun getCampaignSummary(
-        @PathVariable campaignId: Long
+        @PathVariable campaignId: Long,
     ): ApiResponse<ApiResponse.SuccessBody<CampaignSummaryResponse>> {
-        val result = getCampaignSummaryUseCase.execute(
-            GetCampaignSummaryUseCaseIn(campaignId = campaignId)
-        )
-        val response = CampaignSummaryResponse(
-            campaignId = result.campaignId,
-            totalEvents = result.totalEvents,
-            eventsLast24Hours = result.eventsLast24Hours,
-            eventsLast7Days = result.eventsLast7Days,
-            lastUpdated = result.lastUpdated
-        )
+        val result =
+            getCampaignSummaryUseCase.execute(
+                GetCampaignSummaryUseCaseIn(campaignId = campaignId),
+            )
+        val response =
+            CampaignSummaryResponse(
+                campaignId = result.campaignId,
+                totalEvents = result.totalEvents,
+                eventsLast24Hours = result.eventsLast24Hours,
+                eventsLast7Days = result.eventsLast7Days,
+                lastUpdated = result.lastUpdated,
+            )
         return ApiResponseGenerator.success(response, HttpStatus.OK)
     }
 
     @Operation(
         summary = "캠페인 스트림 상태 조회",
-        description = "Redis Stream의 현재 이벤트 개수를 조회합니다 (모니터링 및 헬스체크용)."
+        description = "Redis Stream의 현재 이벤트 개수를 조회합니다 (모니터링 및 헬스체크용).",
     )
     @GetMapping("/{campaignId}/dashboard/stream/status")
     suspend fun getStreamStatus(
-        @PathVariable campaignId: Long
+        @PathVariable campaignId: Long,
     ): ApiResponse<ApiResponse.SuccessBody<StreamStatusResponse>> {
-        val result = getCampaignDashboardStreamStatusUseCase.execute(
-            GetStreamStatusUseCaseIn(campaignId = campaignId)
-        )
-        val response = StreamStatusResponse(
-            campaignId = result.campaignId,
-            streamLength = result.streamLength,
-            checkedAt = result.checkedAt
-        )
+        val result =
+            getCampaignDashboardStreamStatusUseCase.execute(
+                GetStreamStatusUseCaseIn(campaignId = campaignId),
+            )
+        val response =
+            StreamStatusResponse(
+                campaignId = result.campaignId,
+                streamLength = result.streamLength,
+                checkedAt = result.checkedAt,
+            )
         return ApiResponseGenerator.success(response, HttpStatus.OK)
     }
 
     @Operation(
         summary = "캠페인 퍼널 분석 조회",
-        description = "이벤트 단계(step)를 기준으로 캠페인 퍼널 지표(이벤트 수, 유효 유저 수, 이전 단계 대비 전환율)를 조회합니다."
+        description = "이벤트 단계(step)를 기준으로 캠페인 퍼널 지표(이벤트 수, 유효 유저 수, 이전 단계 대비 전환율)를 조회합니다.",
     )
     @GetMapping("/{campaignId}/analytics/funnel")
     suspend fun getCampaignFunnelAnalytics(
@@ -327,23 +338,24 @@ class CampaignDashboardController(
         @Parameter(description = "조회 종료 시간 (ISO 8601 형식)")
         @RequestParam(required = false)
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-        endTime: LocalDateTime? = null
+        endTime: LocalDateTime? = null,
     ): ApiResponse<ApiResponse.SuccessBody<GetCampaignFunnelAnalyticsUseCaseOut>> {
         val parsedSteps = steps.split(",").map { it.trim() }.filter { it.isNotBlank() }
-        val result = getCampaignFunnelAnalyticsUseCase.execute(
-            GetCampaignFunnelAnalyticsUseCaseIn(
-                campaignId = campaignId,
-                steps = parsedSteps,
-                startTime = startTime,
-                endTime = endTime
+        val result =
+            getCampaignFunnelAnalyticsUseCase.execute(
+                GetCampaignFunnelAnalyticsUseCaseIn(
+                    campaignId = campaignId,
+                    steps = parsedSteps,
+                    startTime = startTime,
+                    endTime = endTime,
+                ),
             )
-        )
         return ApiResponseGenerator.success(result, HttpStatus.OK)
     }
 
     @Operation(
         summary = "캠페인 세그먼트 비교 분석 조회",
-        description = "세그먼트별 타겟 유저 대비 이벤트 전환율을 비교 조회합니다."
+        description = "세그먼트별 타겟 유저 대비 이벤트 전환율을 비교 조회합니다.",
     )
     @GetMapping("/{campaignId}/analytics/segment-comparison")
     suspend fun getCampaignSegmentComparison(
@@ -361,22 +373,24 @@ class CampaignDashboardController(
         @Parameter(description = "조회 종료 시간 (ISO 8601 형식)")
         @RequestParam(required = false)
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-        endTime: LocalDateTime? = null
+        endTime: LocalDateTime? = null,
     ): ApiResponse<ApiResponse.SuccessBody<GetCampaignSegmentComparisonUseCaseOut>> {
-        val parsedSegmentIds = segmentIds
-            .split(",")
-            .mapNotNull { it.trim().toLongOrNull() }
-            .distinct()
+        val parsedSegmentIds =
+            segmentIds
+                .split(",")
+                .mapNotNull { it.trim().toLongOrNull() }
+                .distinct()
 
-        val result = getCampaignSegmentComparisonUseCase.execute(
-            GetCampaignSegmentComparisonUseCaseIn(
-                campaignId = campaignId,
-                segmentIds = parsedSegmentIds,
-                eventName = eventName,
-                startTime = startTime,
-                endTime = endTime
+        val result =
+            getCampaignSegmentComparisonUseCase.execute(
+                GetCampaignSegmentComparisonUseCaseIn(
+                    campaignId = campaignId,
+                    segmentIds = parsedSegmentIds,
+                    eventName = eventName,
+                    startTime = startTime,
+                    endTime = endTime,
+                ),
             )
-        )
         return ApiResponseGenerator.success(result, HttpStatus.OK)
     }
 }
@@ -384,12 +398,12 @@ class CampaignDashboardController(
 data class CampaignListItemDto(
     val id: Long,
     val name: String,
-    val createdAt: String?
+    val createdAt: String?,
 )
 
 data class CampaignPropertyDto(
     val key: String,
-    val value: String
+    val value: String,
 )
 
 data class CampaignDetailDto(
@@ -397,9 +411,9 @@ data class CampaignDetailDto(
     val name: String,
     val properties: List<CampaignPropertyDto>,
     val segmentIds: List<Long>,
-    val createdAt: String?
+    val createdAt: String?,
 )
 
 data class CampaignDeleteResponseDto(
-    val success: Boolean
+    val success: Boolean,
 )

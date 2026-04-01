@@ -39,11 +39,12 @@ abstract class BaseModuleArchitectureTest {
 
     @Test
     fun `application does not use Service annotation`() {
-        val applicationServiceBeans = Konsist
-            .scopeFromProduction()
-            .classes()
-            .withAllAnnotationsOf(Service::class)
-            .filter { it.resideInPackage(spec.applicationPackagePattern) }
+        val applicationServiceBeans =
+            Konsist
+                .scopeFromProduction()
+                .classes()
+                .withAllAnnotationsOf(Service::class)
+                .filter { it.resideInPackage(spec.applicationPackagePattern) }
 
         assertTrue(applicationServiceBeans.isEmpty())
     }
@@ -54,14 +55,15 @@ abstract class BaseModuleArchitectureTest {
             return
         }
 
-        val controllers = Konsist
-            .scopeFromProduction()
-            .classes()
-            .withAllAnnotationsOf(RestController::class)
-            .filter { it.resideInPackage(spec.controllerPackagePattern) }
+        val controllers =
+            Konsist
+                .scopeFromProduction()
+                .classes()
+                .withAllAnnotationsOf(RestController::class)
+                .filter { it.resideInPackage(spec.controllerPackagePattern) }
 
         controllers.assertTrue(
-            additionalMessage = "Controller constructor dependencies must reside in ${spec.applicationPackagePattern}"
+            additionalMessage = "Controller constructor dependencies must reside in ${spec.applicationPackagePattern}",
         ) { controller ->
             constructorDependencyTypes(controller).all { dependency ->
                 dependency.residesInSourcePackage(spec.applicationPackagePattern)
@@ -75,14 +77,15 @@ abstract class BaseModuleArchitectureTest {
             return
         }
 
-        val services = Konsist
-            .scopeFromProduction()
-            .classes()
-            .withAllAnnotationsOf(Service::class)
-            .filter { it.resideInPackage(spec.servicePackagePattern) }
+        val services =
+            Konsist
+                .scopeFromProduction()
+                .classes()
+                .withAllAnnotationsOf(Service::class)
+                .filter { it.resideInPackage(spec.servicePackagePattern) }
 
         services.assertTrue(
-            additionalMessage = "Service should have at least ${spec.serviceMinCollaborators} constructor dependencies"
+            additionalMessage = "Service should have at least ${spec.serviceMinCollaborators} constructor dependencies",
         ) { service ->
             (service.primaryConstructor?.numParameters ?: 0) >= spec.serviceMinCollaborators
         }
@@ -94,38 +97,42 @@ abstract class BaseModuleArchitectureTest {
             return
         }
 
-        val applicationClasses = Konsist
-            .scopeFromProduction()
-            .classes()
-            .filter { it.resideInPackage(spec.applicationPackagePattern) }
+        val applicationClasses =
+            Konsist
+                .scopeFromProduction()
+                .classes()
+                .filter { it.resideInPackage(spec.applicationPackagePattern) }
 
-        val violations = applicationClasses.flatMap { owner ->
-            constructorDependencyTypes(owner).mapNotNull { dependencyType ->
-                val dependency = dependencyType.sourceDeclaration?.asClassOrInterfaceOrObjectDeclaration()
-                    ?: return@mapNotNull null
-                val dependencyPackageName = dependency.packagee?.name ?: return@mapNotNull null
-                val dependencyModule = dependencyPackageName.crmModuleToken() ?: return@mapNotNull null
-                if (dependencyModule == spec.packageToken) {
-                    return@mapNotNull null
-                }
-                if (!spec.crossModuleForbiddenLayerSegments.any { dependencyPackageName.contains(it) }) {
-                    return@mapNotNull null
-                }
+        val violations =
+            applicationClasses.flatMap { owner ->
+                constructorDependencyTypes(owner).mapNotNull { dependencyType ->
+                    val dependency =
+                        dependencyType.sourceDeclaration?.asClassOrInterfaceOrObjectDeclaration()
+                            ?: return@mapNotNull null
+                    val dependencyPackageName = dependency.packagee?.name ?: return@mapNotNull null
+                    val dependencyModule = dependencyPackageName.crmModuleToken() ?: return@mapNotNull null
+                    if (dependencyModule == spec.packageToken) {
+                        return@mapNotNull null
+                    }
+                    if (!spec.crossModuleForbiddenLayerSegments.any { dependencyPackageName.contains(it) }) {
+                        return@mapNotNull null
+                    }
 
-                val isAllowedPort = dependency.resideInPackage("..$dependencyModule.application..") &&
-                    spec.crossModuleAllowedPortNameSuffixes.any { suffix -> dependency.name.endsWith(suffix) }
-                if (isAllowedPort) {
-                    null
-                } else {
-                    "${owner.name} -> $dependencyPackageName.${dependency.name}"
+                    val isAllowedPort =
+                        dependency.resideInPackage("..$dependencyModule.application..") &&
+                            spec.crossModuleAllowedPortNameSuffixes.any { suffix -> dependency.name.endsWith(suffix) }
+                    if (isAllowedPort) {
+                        null
+                    } else {
+                        "${owner.name} -> $dependencyPackageName.${dependency.name}"
+                    }
                 }
             }
-        }
 
         check(violations.isEmpty()) {
             violations.joinToString(
                 prefix = "[FAIL] Cross-module dependencies must use external application Query/Facade/Port only: ",
-                separator = ", "
+                separator = ", ",
             )
         }
     }
@@ -136,46 +143,47 @@ abstract class BaseModuleArchitectureTest {
             return
         }
 
-        val applicationClasses = Konsist
-            .scopeFromProduction()
-            .classes()
-            .filter { it.resideInPackage(spec.applicationPackagePattern) }
+        val applicationClasses =
+            Konsist
+                .scopeFromProduction()
+                .classes()
+                .filter { it.resideInPackage(spec.applicationPackagePattern) }
 
-        val externalPorts = applicationClasses
-            .flatMap { owner ->
-                constructorDependencyTypes(owner)
-                    .mapNotNull { dependencyType ->
-                        dependencyType.sourceDeclaration?.asClassOrInterfaceOrObjectDeclaration()
+        val externalPorts =
+            applicationClasses
+                .flatMap { owner ->
+                    constructorDependencyTypes(owner)
+                        .mapNotNull { dependencyType ->
+                            dependencyType.sourceDeclaration?.asClassOrInterfaceOrObjectDeclaration()
+                        }
+                }.filter { dependency ->
+                    val dependencyPackageName = dependency.packagee?.name ?: return@filter false
+                    val dependencyModule = dependencyPackageName.crmModuleToken() ?: return@filter false
+                    dependencyModule != spec.packageToken &&
+                        dependency.resideInPackage("..$dependencyModule.application..") &&
+                        spec.crossModuleAllowedPortNameSuffixes.any { suffix -> dependency.name.endsWith(suffix) }
+                }.distinctBy { dependency ->
+                    "${dependency.packagee?.name}.${dependency.name}"
+                }
+
+        val violations =
+            externalPorts.flatMap { dependency ->
+                dependency
+                    .functions()
+                    .filterNot { function -> function.name in OBJECT_FUNCTION_NAMES }
+                    .filterNot { function ->
+                        spec.crossModuleReadMethodPrefixes.any { prefix ->
+                            function.name.startsWith(prefix)
+                        }
+                    }.map { function ->
+                        "${dependency.packagee?.name}.${dependency.name}.${function.name}"
                     }
             }
-            .filter { dependency ->
-                val dependencyPackageName = dependency.packagee?.name ?: return@filter false
-                val dependencyModule = dependencyPackageName.crmModuleToken() ?: return@filter false
-                dependencyModule != spec.packageToken &&
-                    dependency.resideInPackage("..$dependencyModule.application..") &&
-                    spec.crossModuleAllowedPortNameSuffixes.any { suffix -> dependency.name.endsWith(suffix) }
-            }
-            .distinctBy { dependency ->
-                "${dependency.packagee?.name}.${dependency.name}"
-            }
-
-        val violations = externalPorts.flatMap { dependency ->
-            dependency.functions()
-                .filterNot { function -> function.name in OBJECT_FUNCTION_NAMES }
-                .filterNot { function ->
-                    spec.crossModuleReadMethodPrefixes.any { prefix ->
-                        function.name.startsWith(prefix)
-                    }
-                }
-                .map { function ->
-                    "${dependency.packagee?.name}.${dependency.name}.${function.name}"
-                }
-        }
 
         check(violations.isEmpty()) {
             violations.joinToString(
                 prefix = "[FAIL] Cross-module Query/Facade methods must start with ${spec.crossModuleReadMethodPrefixes}: ",
-                separator = ", "
+                separator = ", ",
             )
         }
     }
@@ -186,31 +194,34 @@ abstract class BaseModuleArchitectureTest {
             return
         }
 
-        val internalLayerClasses = Konsist
-            .scopeFromProduction()
-            .classes()
-            .filter { declaration ->
-                declaration.resideInPackage(spec.servicePackagePattern) ||
-                    declaration.resideInPackage(spec.adapterPackagePattern)
-            }
-
-        val violations = internalLayerClasses.flatMap { owner ->
-            constructorDependencyTypes(owner).mapNotNull { dependencyType ->
-                val dependency = dependencyType.sourceDeclaration?.asClassOrInterfaceOrObjectDeclaration()
-                    ?: return@mapNotNull null
-                val dependencyPackageName = dependency.packagee?.name ?: return@mapNotNull null
-                val dependencyModule = dependencyPackageName.crmModuleToken() ?: return@mapNotNull null
-                if (dependencyModule == spec.packageToken || dependencyModule in spec.internalLayerAllowedExternalModules) {
-                    return@mapNotNull null
+        val internalLayerClasses =
+            Konsist
+                .scopeFromProduction()
+                .classes()
+                .filter { declaration ->
+                    declaration.resideInPackage(spec.servicePackagePattern) ||
+                        declaration.resideInPackage(spec.adapterPackagePattern)
                 }
-                "${owner.name} -> $dependencyPackageName.${dependency.name}"
+
+        val violations =
+            internalLayerClasses.flatMap { owner ->
+                constructorDependencyTypes(owner).mapNotNull { dependencyType ->
+                    val dependency =
+                        dependencyType.sourceDeclaration?.asClassOrInterfaceOrObjectDeclaration()
+                            ?: return@mapNotNull null
+                    val dependencyPackageName = dependency.packagee?.name ?: return@mapNotNull null
+                    val dependencyModule = dependencyPackageName.crmModuleToken() ?: return@mapNotNull null
+                    if (dependencyModule == spec.packageToken || dependencyModule in spec.internalLayerAllowedExternalModules) {
+                        return@mapNotNull null
+                    }
+                    "${owner.name} -> $dependencyPackageName.${dependency.name}"
+                }
             }
-        }
 
         check(violations.isEmpty()) {
             violations.joinToString(
                 prefix = "[FAIL] service/adapter must not depend on external crm modules. Violations: ",
-                separator = ", "
+                separator = ", ",
             )
         }
     }
@@ -221,35 +232,45 @@ abstract class BaseModuleArchitectureTest {
             return
         }
 
-        val useCases = Konsist
-            .scopeFromProduction()
-            .classes()
-            .withNameEndingWith("UseCase")
-            .filter { it.resideInPackage(spec.applicationPackagePattern) }
+        val useCases =
+            Konsist
+                .scopeFromProduction()
+                .classes()
+                .withNameEndingWith("UseCase")
+                .filter { it.resideInPackage(spec.applicationPackagePattern) }
 
-        val invalidUseCases = useCases.mapNotNull { useCase ->
-            val executeFunctions = useCase.functions().filter { it.name == "execute" }
+        val invalidUseCases =
+            useCases.mapNotNull { useCase ->
+                val executeFunctions = useCase.functions().filter { it.name == "execute" }
 
-            when {
-                executeFunctions.size != 1 -> "${useCase.name}: execute function count must be exactly 1 (actual=${executeFunctions.size})"
-                else -> {
-                    val execute = executeFunctions.single()
-                    val hasSingleUseCaseInParam = execute.numParameters == 1 &&
-                        execute.parameters.first().type.name.endsWith("UseCaseIn") &&
-                        execute.parameters.first().type.residesInSourcePackage(spec.applicationDtoPackagePattern)
-                    if (hasSingleUseCaseInParam) {
-                        null
-                    } else {
-                        "${useCase.name}: execute must take exactly one ${spec.moduleName} application dto parameter ending with UseCaseIn"
+                when {
+                    executeFunctions.size != 1 ->
+                        "${useCase.name}: execute function count must be exactly 1 (actual=${executeFunctions.size})"
+                    else -> {
+                        val execute = executeFunctions.single()
+                        val hasSingleUseCaseInParam =
+                            execute.numParameters == 1 &&
+                                execute.parameters
+                                    .first()
+                                    .type.name
+                                    .endsWith("UseCaseIn") &&
+                                execute.parameters
+                                    .first()
+                                    .type
+                                    .residesInSourcePackage(spec.applicationDtoPackagePattern)
+                        if (hasSingleUseCaseInParam) {
+                            null
+                        } else {
+                            "${useCase.name}: execute must take exactly one ${spec.moduleName} application dto parameter ending with UseCaseIn"
+                        }
                     }
                 }
             }
-        }
 
         check(invalidUseCases.isEmpty()) {
             invalidUseCases.joinToString(
                 prefix = "[FAIL] UseCase execute signature violations: ",
-                separator = " | "
+                separator = " | ",
             )
         }
     }
@@ -260,10 +281,11 @@ abstract class BaseModuleArchitectureTest {
             return
         }
 
-        val dtoClasses = Konsist
-            .scopeFromProduction()
-            .classes()
-            .filter { it.resideInPackage(spec.applicationDtoPackagePattern) }
+        val dtoClasses =
+            Konsist
+                .scopeFromProduction()
+                .classes()
+                .filter { it.resideInPackage(spec.applicationDtoPackagePattern) }
 
         dtoClasses.assertTrue(additionalMessage = "application.dto must not use Spring annotations") { dtoClass ->
             !dtoClass.hasAnySpringAnnotation()
@@ -276,14 +298,15 @@ abstract class BaseModuleArchitectureTest {
             return
         }
 
-        val repositoryImpls = Konsist
-            .scopeFromProduction()
-            .classes()
-            .withNameEndingWith("RepositoryImpl")
-            .filter { it.resideInPackage(spec.repositoryPackagePattern) }
+        val repositoryImpls =
+            Konsist
+                .scopeFromProduction()
+                .classes()
+                .withNameEndingWith("RepositoryImpl")
+                .filter { it.resideInPackage(spec.repositoryPackagePattern) }
 
         repositoryImpls.assertTrue(
-            additionalMessage = "RepositoryImpl class must implement corresponding *Repository interface"
+            additionalMessage = "RepositoryImpl class must implement corresponding *Repository interface",
         ) { impl ->
             val expectedInterfaceName = impl.name.removeSuffix("Impl")
             impl.hasParentInterfaceWithName(expectedInterfaceName)
@@ -296,24 +319,26 @@ abstract class BaseModuleArchitectureTest {
             return
         }
 
-        val controllers = Konsist
-            .scopeFromProduction()
-            .classes()
-            .withAllAnnotationsOf(RestController::class)
-            .filter { it.resideInPackage(spec.controllerPackagePattern) }
+        val controllers =
+            Konsist
+                .scopeFromProduction()
+                .classes()
+                .withAllAnnotationsOf(RestController::class)
+                .filter { it.resideInPackage(spec.controllerPackagePattern) }
 
-        val invalidEndpoints = controllers.flatMap { controller ->
-            controller
-                .functions()
-                .filter { it.hasAnnotationWithName(CONTROLLER_MAPPING_ANNOTATION_NAMES) }
-                .filterNot { endpoint -> isAllowedControllerReturn(endpoint.returnType) }
-                .map { endpoint -> "${controller.name}.${endpoint.name}" }
-        }
+        val invalidEndpoints =
+            controllers.flatMap { controller ->
+                controller
+                    .functions()
+                    .filter { it.hasAnnotationWithName(CONTROLLER_MAPPING_ANNOTATION_NAMES) }
+                    .filterNot { endpoint -> isAllowedControllerReturn(endpoint.returnType) }
+                    .map { endpoint -> "${controller.name}.${endpoint.name}" }
+            }
 
         check(invalidEndpoints.isEmpty()) {
             invalidEndpoints.joinToString(
                 prefix = "[FAIL] Controller return type policy violations: ",
-                separator = ", "
+                separator = ", ",
             )
         }
     }
@@ -324,13 +349,14 @@ abstract class BaseModuleArchitectureTest {
             return
         }
 
-        val utilFiles = Konsist
-            .scopeFromProduction()
-            .files
-            .filter { file ->
-                val packageName = file.packagee?.name ?: return@filter false
-                packageName == spec.utilPackageName || packageName.startsWith("${spec.utilPackageName}.")
-            }
+        val utilFiles =
+            Konsist
+                .scopeFromProduction()
+                .files
+                .filter { file ->
+                    val packageName = file.packagee?.name ?: return@filter false
+                    packageName == spec.utilPackageName || packageName.startsWith("${spec.utilPackageName}.")
+                }
 
         utilFiles.assertTrue(additionalMessage = "util package should contain only top-level functions") { file ->
             file.classes().isEmpty() && file.interfaces().isEmpty() && file.objects().isEmpty()
@@ -381,19 +407,21 @@ abstract class BaseModuleArchitectureTest {
     }
 }
 
-private val CONTROLLER_MAPPING_ANNOTATION_NAMES = listOf(
-    "RequestMapping",
-    "GetMapping",
-    "PostMapping",
-    "PutMapping",
-    "PatchMapping",
-    "DeleteMapping"
-)
+private val CONTROLLER_MAPPING_ANNOTATION_NAMES =
+    listOf(
+        "RequestMapping",
+        "GetMapping",
+        "PostMapping",
+        "PutMapping",
+        "PatchMapping",
+        "DeleteMapping",
+    )
 
-private fun constructorDependencyTypes(clazz: KoClassDeclaration) = clazz.primaryConstructor
-    ?.parameters
-    .orEmpty()
-    .map { it.type }
+private fun constructorDependencyTypes(clazz: KoClassDeclaration) =
+    clazz.primaryConstructor
+        ?.parameters
+        .orEmpty()
+        .map { it.type }
 
 private fun KoTypeDeclaration.residesInSourcePackage(packagePattern: String): Boolean =
     sourceDeclaration
@@ -414,20 +442,22 @@ private fun KoFunctionDeclaration.hasAnySpringAnnotation(): Boolean =
             annotation.name in SPRING_ANNOTATION_SIMPLE_NAMES
     }
 
-private val SPRING_ANNOTATION_SIMPLE_NAMES = setOf(
-    "Component",
-    "Service",
-    "Repository",
-    "Controller",
-    "RestController",
-    "Configuration"
-)
+private val SPRING_ANNOTATION_SIMPLE_NAMES =
+    setOf(
+        "Component",
+        "Service",
+        "Repository",
+        "Controller",
+        "RestController",
+        "Configuration",
+    )
 
-private val OBJECT_FUNCTION_NAMES = setOf(
-    "equals",
-    "hashCode",
-    "toString"
-)
+private val OBJECT_FUNCTION_NAMES =
+    setOf(
+        "equals",
+        "hashCode",
+        "toString",
+    )
 
 private fun String.crmModuleToken(): String? {
     val prefix = "com.manage.crm."

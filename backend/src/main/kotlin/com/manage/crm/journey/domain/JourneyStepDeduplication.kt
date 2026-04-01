@@ -14,11 +14,9 @@ class JourneyStepDeduplication(
     var idempotencyKey: String,
     @CreatedDate
     @Column("created_at")
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     companion object {
-        fun new(idempotencyKey: String): JourneyStepDeduplication {
-            return JourneyStepDeduplication(idempotencyKey = idempotencyKey)
-        }
+        fun new(idempotencyKey: String): JourneyStepDeduplication = JourneyStepDeduplication(idempotencyKey = idempotencyKey)
     }
 }

@@ -16,41 +16,50 @@ class UserControllerIdempotencyIntegrationTest : AbstractIntegrationTest() {
             it("returns 400 when Idempotency-Key is missing") {
                 val request = newEnrollUserRequest("missing-key")
 
-                webTestClient.post()
+                webTestClient
+                    .post()
                     .uri("/api/v1/users")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(request)
                     .exchange()
-                    .expectStatus().isBadRequest
+                    .expectStatus()
+                    .isBadRequest
                     .expectBody()
-                    .jsonPath("$.message").isEqualTo("Idempotency-Key header is required")
+                    .jsonPath("$.message")
+                    .isEqualTo("Idempotency-Key header is required")
             }
 
             it("replays completed response for same key and same body") {
                 val key = "idem-user-same-body-${System.currentTimeMillis()}"
                 val request = newEnrollUserRequest("same-body")
 
-                val firstResponse = webTestClient.post()
-                    .uri("/api/v1/users")
-                    .header("Idempotency-Key", key)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(request)
-                    .exchange()
-                    .expectStatus().isOk
-                    .expectBody<String>()
-                    .returnResult()
-                    .responseBody!!
+                val firstResponse =
+                    webTestClient
+                        .post()
+                        .uri("/api/v1/users")
+                        .header("Idempotency-Key", key)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(request)
+                        .exchange()
+                        .expectStatus()
+                        .isOk
+                        .expectBody<String>()
+                        .returnResult()
+                        .responseBody!!
 
-                val secondResponse = webTestClient.post()
-                    .uri("/api/v1/users")
-                    .header("Idempotency-Key", key)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(request)
-                    .exchange()
-                    .expectStatus().isOk
-                    .expectBody<String>()
-                    .returnResult()
-                    .responseBody!!
+                val secondResponse =
+                    webTestClient
+                        .post()
+                        .uri("/api/v1/users")
+                        .header("Idempotency-Key", key)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(request)
+                        .exchange()
+                        .expectStatus()
+                        .isOk
+                        .expectBody<String>()
+                        .returnResult()
+                        .responseBody!!
 
                 firstResponse shouldBe secondResponse
             }
@@ -60,23 +69,28 @@ class UserControllerIdempotencyIntegrationTest : AbstractIntegrationTest() {
                 val firstRequest = newEnrollUserRequest("diff-a")
                 val secondRequest = newEnrollUserRequest("diff-b")
 
-                webTestClient.post()
+                webTestClient
+                    .post()
                     .uri("/api/v1/users")
                     .header("Idempotency-Key", key)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(firstRequest)
                     .exchange()
-                    .expectStatus().isOk
+                    .expectStatus()
+                    .isOk
 
-                webTestClient.post()
+                webTestClient
+                    .post()
                     .uri("/api/v1/users")
                     .header("Idempotency-Key", key)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(secondRequest)
                     .exchange()
-                    .expectStatus().isEqualTo(409)
+                    .expectStatus()
+                    .isEqualTo(409)
                     .expectBody()
-                    .jsonPath("$.message").isEqualTo("Idempotency-Key is already used with a different request body")
+                    .jsonPath("$.message")
+                    .isEqualTo("Idempotency-Key is already used with a different request body")
             }
         }
     }
@@ -86,13 +100,14 @@ class UserControllerIdempotencyIntegrationTest : AbstractIntegrationTest() {
         return EnrollUserRequest(
             id = null,
             externalId = "idempotency-user-$suffix-$timestamp",
-            userAttributes = """
-            {
-                "email": "idempotency-$suffix-$timestamp@example.com",
-                "name": "Idempotency User",
-                "age": "29"
-            }
-            """.trimIndent()
+            userAttributes =
+                """
+                {
+                    "email": "idempotency-$suffix-$timestamp@example.com",
+                    "name": "Idempotency User",
+                    "age": "29"
+                }
+                """.trimIndent(),
         )
     }
 }

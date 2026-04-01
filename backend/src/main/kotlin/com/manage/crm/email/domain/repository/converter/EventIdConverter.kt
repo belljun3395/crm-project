@@ -23,7 +23,5 @@ class EventIdReadingConverter : Converter<Any, EventId> {
 
 @WritingConverter
 class EventIdWritingConverter : Converter<EventId, String> {
-    override fun convert(source: EventId): String {
-        return source.value
-    }
+    override fun convert(source: EventId): String = source.value
 }

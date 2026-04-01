@@ -14,16 +14,15 @@ import org.springframework.stereotype.Component
 class ScheduleTaskServicePostEventProcessor(
     @Qualifier("scheduleTaskServiceImpl")
     private val scheduleTaskService: ScheduleTaskAllService,
-    private val emailEventPublisher: EmailEventPublisher
+    private val emailEventPublisher: EmailEventPublisher,
 ) : ScheduleTaskAllService {
     val log = KotlinLogging.logger {}
 
     /**
      * 새로운 스케줄을 등록하고 이벤트 관련 후처리를 수행합니다.
      */
-    override suspend fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String {
-        return newScheduleEventProcess(scheduleTaskService.newSchedule(input), input)
-    }
+    override suspend fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String =
+        newScheduleEventProcess(scheduleTaskService.newSchedule(input), input)
 
     /**
      * 등록한 스케줄을 취소하고 이벤트 관련 후처리를 수행합니다.
@@ -48,7 +47,7 @@ class ScheduleTaskServicePostEventProcessor(
      */
     fun newScheduleEventProcess(
         result: String,
-        input: NotificationEmailSendTimeOutEventInput
+        input: NotificationEmailSendTimeOutEventInput,
     ): String {
         emailEventPublisher.publishEvent(
             NotificationEmailSendTimeOutEvent(
@@ -58,8 +57,8 @@ class ScheduleTaskServicePostEventProcessor(
                 templateVersion = input.templateVersion,
                 userIds = input.userIds,
                 segmentId = input.segmentId,
-                expiredTime = input.expiredTime
-            )
+                expiredTime = input.expiredTime,
+            ),
         )
         return result
     }
@@ -68,9 +67,10 @@ class ScheduleTaskServicePostEventProcessor(
      * 등록한 스케줄을 취소하는 이벤트를 발행합니다.
      */
     fun cancelEventProcess(scheduleName: String) {
-        val cancelScheduledEvent = CancelScheduledEvent(
-            scheduledEventId = EventId(scheduleName)
-        )
+        val cancelScheduledEvent =
+            CancelScheduledEvent(
+                scheduledEventId = EventId(scheduleName),
+            )
         emailEventPublisher.publishEvent(cancelScheduledEvent)
     }
 
@@ -82,7 +82,5 @@ class ScheduleTaskServicePostEventProcessor(
         newScheduleEventProcess(input.eventId.value, input)
     }
 
-    override suspend fun browseScheduledTasksView(): List<ScheduleTaskView> {
-        return scheduleTaskService.browseScheduledTasksView()
-    }
+    override suspend fun browseScheduledTasksView(): List<ScheduleTaskView> = scheduleTaskService.browseScheduledTasksView()
 }

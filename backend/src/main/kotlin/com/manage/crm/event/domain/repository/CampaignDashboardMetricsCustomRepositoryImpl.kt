@@ -17,9 +17,8 @@ import java.time.LocalDateTime
 @Repository
 class CampaignDashboardMetricsCustomRepositoryImpl(
     private val dslContext: DSLContext,
-    private val jooqExecutor: JooqR2dbcExecutor
+    private val jooqExecutor: JooqR2dbcExecutor,
 ) : CampaignDashboardMetricsCustomRepository {
-
     private val metricsTable = CrmJooqTables.CampaignDashboardMetrics.table
     private val campaignIdField = CrmJooqTables.CampaignDashboardMetrics.campaignId
     private val metricTypeField = CrmJooqTables.CampaignDashboardMetrics.metricType
@@ -36,40 +35,38 @@ class CampaignDashboardMetricsCustomRepositoryImpl(
         metricValue: Long,
         timeWindowStart: LocalDateTime,
         timeWindowEnd: LocalDateTime,
-        timeWindowUnit: TimeWindowUnit
+        timeWindowUnit: TimeWindowUnit,
     ): Int {
         val now = LocalDateTime.now()
-        val query = dslContext
-            .insertInto(metricsTable)
-            .columns(
-                campaignIdField,
-                metricTypeField,
-                metricValueField,
-                timeWindowStartField,
-                timeWindowEndField,
-                timeWindowUnitField,
-                createdAtField,
-                updatedAtField
-            )
-            .values(
-                campaignId,
-                metricType.name,
-                metricValue,
-                timeWindowStart,
-                timeWindowEnd,
-                timeWindowUnit.name,
-                now,
-                now
-            )
-            .onConflict(
-                campaignIdField,
-                metricTypeField,
-                timeWindowStartField,
-                timeWindowEndField
-            )
-            .doUpdate()
-            .set(metricValueField, metricValueField.plus(inline(metricValue)))
-            .set(updatedAtField, now)
+        val query =
+            dslContext
+                .insertInto(metricsTable)
+                .columns(
+                    campaignIdField,
+                    metricTypeField,
+                    metricValueField,
+                    timeWindowStartField,
+                    timeWindowEndField,
+                    timeWindowUnitField,
+                    createdAtField,
+                    updatedAtField,
+                ).values(
+                    campaignId,
+                    metricType.name,
+                    metricValue,
+                    timeWindowStart,
+                    timeWindowEnd,
+                    timeWindowUnit.name,
+                    now,
+                    now,
+                ).onConflict(
+                    campaignIdField,
+                    metricTypeField,
+                    timeWindowStartField,
+                    timeWindowEndField,
+                ).doUpdate()
+                .set(metricValueField, metricValueField.plus(inline(metricValue)))
+                .set(updatedAtField, now)
 
         return jooqExecutor.execute(query)
     }
@@ -80,40 +77,38 @@ class CampaignDashboardMetricsCustomRepositoryImpl(
         metricValue: Long,
         timeWindowStart: LocalDateTime,
         timeWindowEnd: LocalDateTime,
-        timeWindowUnit: TimeWindowUnit
+        timeWindowUnit: TimeWindowUnit,
     ): Int {
         val now = LocalDateTime.now()
-        val query = dslContext
-            .insertInto(metricsTable)
-            .columns(
-                campaignIdField,
-                metricTypeField,
-                metricValueField,
-                timeWindowStartField,
-                timeWindowEndField,
-                timeWindowUnitField,
-                createdAtField,
-                updatedAtField
-            )
-            .values(
-                campaignId,
-                metricType.name,
-                metricValue,
-                timeWindowStart,
-                timeWindowEnd,
-                timeWindowUnit.name,
-                now,
-                now
-            )
-            .onConflict(
-                campaignIdField,
-                metricTypeField,
-                timeWindowStartField,
-                timeWindowEndField
-            )
-            .doUpdate()
-            .set(metricValueField, greatest(metricValueField, inline(metricValue)))
-            .set(updatedAtField, now)
+        val query =
+            dslContext
+                .insertInto(metricsTable)
+                .columns(
+                    campaignIdField,
+                    metricTypeField,
+                    metricValueField,
+                    timeWindowStartField,
+                    timeWindowEndField,
+                    timeWindowUnitField,
+                    createdAtField,
+                    updatedAtField,
+                ).values(
+                    campaignId,
+                    metricType.name,
+                    metricValue,
+                    timeWindowStart,
+                    timeWindowEnd,
+                    timeWindowUnit.name,
+                    now,
+                    now,
+                ).onConflict(
+                    campaignIdField,
+                    metricTypeField,
+                    timeWindowStartField,
+                    timeWindowEndField,
+                ).doUpdate()
+                .set(metricValueField, greatest(metricValueField, inline(metricValue)))
+                .set(updatedAtField, now)
 
         return jooqExecutor.execute(query)
     }
@@ -121,38 +116,42 @@ class CampaignDashboardMetricsCustomRepositoryImpl(
     override suspend fun getCampaignSummaryMetrics(
         campaignId: Long,
         last24Hours: LocalDateTime,
-        last7Days: LocalDateTime
+        last7Days: LocalDateTime,
     ): CampaignSummaryMetricsProjection {
         val totalEventsField = coalesce(sum(metricValueField), 0L).`as`("total_events")
-        val eventsLast24HoursField = coalesce(
-            sum(
-                `when`(timeWindowStartField.gt(last24Hours), metricValueField)
-                    .otherwise(0L)
-            ),
-            0L
-        ).`as`("events_last_24_hours")
-        val eventsLast7DaysField = coalesce(
-            sum(
-                `when`(timeWindowStartField.gt(last7Days), metricValueField)
-                    .otherwise(0L)
-            ),
-            0L
-        ).`as`("events_last_7_days")
+        val eventsLast24HoursField =
+            coalesce(
+                sum(
+                    `when`(timeWindowStartField.gt(last24Hours), metricValueField)
+                        .otherwise(0L),
+                ),
+                0L,
+            ).`as`("events_last_24_hours")
+        val eventsLast7DaysField =
+            coalesce(
+                sum(
+                    `when`(timeWindowStartField.gt(last7Days), metricValueField)
+                        .otherwise(0L),
+                ),
+                0L,
+            ).`as`("events_last_7_days")
 
-        val query = dslContext
-            .select(totalEventsField, eventsLast24HoursField, eventsLast7DaysField)
-            .from(metricsTable)
-            .where(
-                campaignIdField.eq(campaignId)
-                    .and(metricTypeField.eq("EVENT_COUNT"))
-                    .and(timeWindowUnitField.eq("HOUR"))
-            )
+        val query =
+            dslContext
+                .select(totalEventsField, eventsLast24HoursField, eventsLast7DaysField)
+                .from(metricsTable)
+                .where(
+                    campaignIdField
+                        .eq(campaignId)
+                        .and(metricTypeField.eq("EVENT_COUNT"))
+                        .and(timeWindowUnitField.eq("HOUR")),
+                )
 
         return jooqExecutor.fetchOne(query) { row ->
             CampaignSummaryMetricsProjection(
                 totalEvents = (row["total_events"] as Number).toLong(),
                 eventsLast24Hours = (row["events_last_24_hours"] as Number).toLong(),
-                eventsLast7Days = (row["events_last_7_days"] as Number).toLong()
+                eventsLast7Days = (row["events_last_7_days"] as Number).toLong(),
             )
         } ?: CampaignSummaryMetricsProjection(0, 0, 0)
     }

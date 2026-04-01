@@ -6,22 +6,22 @@ import java.time.LocalDateTime
 
 data class SearchEventsUseCaseIn(
     val eventName: String,
-    val propertyAndOperations: List<PropertyAndOperationDto>
+    val propertyAndOperations: List<PropertyAndOperationDto>,
 )
 
 data class PropertyAndOperationDto(
     val properties: List<SearchEventPropertyDto>,
     val operation: Operation,
-    val joinOperation: JoinOperation
+    val joinOperation: JoinOperation,
 )
 
 data class SearchEventPropertyDto(
     val key: String,
-    val value: String
+    val value: String,
 )
 
 data class SearchEventsUseCaseOut(
-    val events: List<EventDto>
+    val events: List<EventDto>,
 )
 
 data class EventDto(
@@ -29,7 +29,7 @@ data class EventDto(
     val name: String,
     val externalId: String?,
     val properties: List<SearchEventPropertyDto>,
-    val createdAt: LocalDateTime
+    val createdAt: LocalDateTime,
 )
 
 class SearchEventsUseCaseDto

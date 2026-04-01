@@ -23,65 +23,70 @@ import org.springframework.stereotype.Component
 class GetCampaignSegmentComparisonUseCase(
     private val campaignEventsService: CampaignEventsService,
     private val segmentReadPort: SegmentReadPort,
-    private val userReadPort: UserReadPort
+    private val userReadPort: UserReadPort,
 ) {
     suspend fun execute(input: GetCampaignSegmentComparisonUseCaseIn): GetCampaignSegmentComparisonUseCaseOut {
-        val segmentIds = input.segmentIds
-            .mapNotNull { id -> id.takeIf { it > 0 } }
-            .distinct()
+        val segmentIds =
+            input.segmentIds
+                .mapNotNull { id -> id.takeIf { it > 0 } }
+                .distinct()
         if (segmentIds.isEmpty()) {
             throw IllegalArgumentException("segmentIds is required")
         }
 
-        val events = campaignEventsService.findCampaignEvents(input.campaignId, input.startTime, input.endTime)
-            .let { baseEvents ->
-                val eventName = input.eventName?.trim()?.takeIf { it.isNotBlank() }
-                if (eventName == null) {
-                    baseEvents
-                } else {
-                    baseEvents.filter { it.name == eventName }
+        val events =
+            campaignEventsService
+                .findCampaignEvents(input.campaignId, input.startTime, input.endTime)
+                .let { baseEvents ->
+                    val eventName = input.eventName?.trim()?.takeIf { it.isNotBlank() }
+                    if (eventName == null) {
+                        baseEvents
+                    } else {
+                        baseEvents.filter { it.name == eventName }
+                    }
                 }
-            }
         val campaignEvents = campaignEventsService.findAllEventsByCampaignId(input.campaignId)
         val campaignUserIds = campaignEvents.map { it.userId }.distinct()
-        val users = if (campaignUserIds.isEmpty()) {
-            emptyList()
-        } else {
-            userReadPort.findAllByIdIn(campaignUserIds).map { user ->
-                SegmentTargetUserReadModel(
-                    id = user.id,
-                    userAttributesJson = user.userAttributesJson,
-                    createdAt = user.createdAt
-                )
-            }
-        }
-        val eventsByUserId = campaignEvents
-            .groupBy { it.userId }
-            .mapValues { (_, userEvents) ->
-                userEvents.map { event ->
-                    SegmentTargetEventReadModel(
-                        userId = event.userId,
-                        name = event.name,
-                        occurredAt = event.createdAt
+        val users =
+            if (campaignUserIds.isEmpty()) {
+                emptyList()
+            } else {
+                userReadPort.findAllByIdIn(campaignUserIds).map { user ->
+                    SegmentTargetUserReadModel(
+                        id = user.id,
+                        userAttributesJson = user.userAttributesJson,
+                        createdAt = user.createdAt,
                     )
                 }
             }
+        val eventsByUserId =
+            campaignEvents
+                .groupBy { it.userId }
+                .mapValues { (_, userEvents) ->
+                    userEvents.map { event ->
+                        SegmentTargetEventReadModel(
+                            userId = event.userId,
+                            name = event.name,
+                            occurredAt = event.createdAt,
+                        )
+                    }
+                }
 
-        val metrics = segmentIds
-            .map { segmentId ->
-                getMetrics(
-                    segmentId = segmentId,
-                    filteredEvents = events,
-                    users = users,
-                    eventsByUserId = eventsByUserId
-                )
-            }
-            .sortedByDescending { it.conversionRate }
+        val metrics =
+            segmentIds
+                .map { segmentId ->
+                    getMetrics(
+                        segmentId = segmentId,
+                        filteredEvents = events,
+                        users = users,
+                        eventsByUserId = eventsByUserId,
+                    )
+                }.sortedByDescending { it.conversionRate }
 
         return GetCampaignSegmentComparisonUseCaseOut(
             campaignId = input.campaignId,
             eventName = input.eventName?.trim()?.takeIf { it.isNotBlank() },
-            segmentMetrics = metrics
+            segmentMetrics = metrics,
         )
     }
 
@@ -95,14 +100,16 @@ class GetCampaignSegmentComparisonUseCase(
         segmentId: Long,
         filteredEvents: List<Event>,
         users: List<SegmentTargetUserReadModel>,
-        eventsByUserId: Map<Long, List<SegmentTargetEventReadModel>>
+        eventsByUserId: Map<Long, List<SegmentTargetEventReadModel>>,
     ): SegmentComparisonMetricDto {
         val segmentName = segmentReadPort.findNameById(segmentId)
-        val segmentTargetUserIds = segmentReadPort.findTargetUserIds(
-            segmentId = segmentId,
-            users = users,
-            eventsByUserId = eventsByUserId
-        ).toSet()
+        val segmentTargetUserIds =
+            segmentReadPort
+                .findTargetUserIds(
+                    segmentId = segmentId,
+                    users = users,
+                    eventsByUserId = eventsByUserId,
+                ).toSet()
         val eventsFromSegmentTargets = filteredEvents.filter { event -> segmentTargetUserIds.contains(event.userId) }
         val usersWithEventCount = eventsFromSegmentTargets.map { it.userId }.toSet().size
         val segmentTargetUserCount = segmentTargetUserIds.size
@@ -113,7 +120,7 @@ class GetCampaignSegmentComparisonUseCase(
             targetUserCount = segmentTargetUserCount,
             eventUserCount = usersWithEventCount,
             eventCount = eventsFromSegmentTargets.size,
-            conversionRate = toPercentage(usersWithEventCount, segmentTargetUserCount)
+            conversionRate = toPercentage(usersWithEventCount, segmentTargetUserCount),
         )
     }
 }

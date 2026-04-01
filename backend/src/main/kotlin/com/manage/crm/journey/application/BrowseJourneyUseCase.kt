@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service
 class BrowseJourneyUseCase(
     private val journeyRepository: JourneyRepository,
     private val journeyStepRepository: JourneyStepRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
     suspend fun execute(): List<JourneyDto> {
         val journeys = journeyRepository.findAllByOrderByCreatedAtDesc().toList()

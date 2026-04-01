@@ -16,34 +16,40 @@ import org.springframework.stereotype.Repository
 class CampaignCustomRepositoryImpl(
     private val dslContext: DSLContext,
     private val jooqExecutor: JooqR2dbcExecutor,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) : CampaignCustomRepository {
-    override fun findRecentCampaigns(limit: Int) = flow {
-        val query = dslContext
-            .select()
-            .from(CrmJooqTables.Campaigns.table)
-            .orderBy(CrmJooqTables.Campaigns.createdAt.desc())
-            .limit(limit)
+    override fun findRecentCampaigns(limit: Int) =
+        flow {
+            val query =
+                dslContext
+                    .select()
+                    .from(CrmJooqTables.Campaigns.table)
+                    .orderBy(CrmJooqTables.Campaigns.createdAt.desc())
+                    .limit(limit)
 
-        val campaigns = jooqExecutor.fetchList(query) { row ->
-            val propertiesJson = when (val value = row["properties"]) {
-                is Json -> value.asString()
-                else -> value.toString()
-            }
+            val campaigns =
+                jooqExecutor.fetchList(query) { row ->
+                    val propertiesJson =
+                        when (val value = row["properties"]) {
+                            is Json -> value.asString()
+                            else -> value.toString()
+                        }
 
-            Campaign(
-                id = (row["id"] as Number).toLong(),
-                name = row["name"] as String,
-                properties = CampaignProperties(
-                    objectMapper.readValue(propertiesJson, List::class.java)
-                        .stream()
-                        .map { objectMapper.convertValue(it, Map::class.java) }
-                        .map { CampaignProperty(it["key"] as String, it["value"] as String) }
-                        .toList()
-                ),
-                createdAt = row.optionalLocalDateTime("created_at")
-            )
+                    Campaign(
+                        id = (row["id"] as Number).toLong(),
+                        name = row["name"] as String,
+                        properties =
+                            CampaignProperties(
+                                objectMapper
+                                    .readValue(propertiesJson, List::class.java)
+                                    .stream()
+                                    .map { objectMapper.convertValue(it, Map::class.java) }
+                                    .map { CampaignProperty(it["key"] as String, it["value"] as String) }
+                                    .toList(),
+                            ),
+                        createdAt = row.optionalLocalDateTime("created_at"),
+                    )
+                }
+            campaigns.forEach { emit(it) }
         }
-        campaigns.forEach { emit(it) }
-    }
 }

@@ -13,11 +13,12 @@ import com.manage.crm.email.domain.vo.Variables
  * internal representation.
  */
 fun List<String>.stringListToVariables(): Variables {
-    return this.map {
-        val (source, key, defaultValue) = VariableParser.parse(it)
-        return@map when (source) {
-            VariableSource.USER -> UserVariable(key, defaultValue)
-            VariableSource.CAMPAIGN -> CampaignVariable(key, defaultValue)
-        }
-    }.let { Variables(it) }
+    return this
+        .map {
+            val (source, key, defaultValue) = VariableParser.parse(it)
+            return@map when (source) {
+                VariableSource.USER -> UserVariable(key, defaultValue)
+                VariableSource.CAMPAIGN -> CampaignVariable(key, defaultValue)
+            }
+        }.let { Variables(it) }
 }

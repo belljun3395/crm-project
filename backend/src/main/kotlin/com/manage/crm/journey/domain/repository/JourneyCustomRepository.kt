@@ -6,6 +6,6 @@ interface JourneyCustomRepository {
         lifecycleStatus: String,
         active: Boolean,
         expectedVersion: Int,
-        newVersion: Int
+        newVersion: Int,
     ): Int
 }

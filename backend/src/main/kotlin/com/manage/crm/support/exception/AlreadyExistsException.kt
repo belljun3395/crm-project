@@ -11,9 +11,7 @@ class AlreadyExistsException : IllegalArgumentException {
         fun createMessage(
             entityName: String,
             fieldName: String,
-            fieldValue: Any
-        ): String {
-            return "$entityName already exists with $fieldName: $fieldValue"
-        }
+            fieldValue: Any,
+        ): String = "$entityName already exists with $fieldName: $fieldValue"
     }
 }

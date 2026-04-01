@@ -9,56 +9,59 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.CancellationException
 
-class AuditLogServiceTest : BehaviorSpec({
-    lateinit var auditLogRepository: AuditLogRepository
-    lateinit var auditLogService: AuditLogService
+class AuditLogServiceTest :
+    BehaviorSpec({
+        lateinit var auditLogRepository: AuditLogRepository
+        lateinit var auditLogService: AuditLogService
 
-    beforeTest {
-        auditLogRepository = mockk(relaxed = true)
-        auditLogService = AuditLogService(auditLogRepository)
-    }
-
-    given("record audit log command") {
-        `when`("record is requested") {
-            then("persist audit log entry") {
-                val command = RecordAuditLogCommand(
-                    actorId = "admin-1",
-                    action = "WEBHOOK_CREATE",
-                    resourceType = "WEBHOOK",
-                    resourceId = "101",
-                    requestMethod = "POST",
-                    requestPath = "/api/v1/webhooks",
-                    statusCode = 201,
-                    detail = "created webhook"
-                )
-
-                coEvery { auditLogRepository.save(any()) } answers { firstArg() }
-
-                auditLogService.record(command)
-
-                coVerify(exactly = 1) { auditLogRepository.save(any()) }
-            }
+        beforeTest {
+            auditLogRepository = mockk(relaxed = true)
+            auditLogService = AuditLogService(auditLogRepository)
         }
 
-        `when`("repository save throws cancellation") {
-            then("rethrow cancellation to preserve coroutine cancellation semantics") {
-                val command = RecordAuditLogCommand(
-                    actorId = "admin-1",
-                    action = "WEBHOOK_CREATE",
-                    resourceType = "WEBHOOK",
-                    resourceId = "101",
-                    requestMethod = "POST",
-                    requestPath = "/api/v1/webhooks",
-                    statusCode = 201,
-                    detail = "created webhook"
-                )
+        given("record audit log command") {
+            `when`("record is requested") {
+                then("persist audit log entry") {
+                    val command =
+                        RecordAuditLogCommand(
+                            actorId = "admin-1",
+                            action = "WEBHOOK_CREATE",
+                            resourceType = "WEBHOOK",
+                            resourceId = "101",
+                            requestMethod = "POST",
+                            requestPath = "/api/v1/webhooks",
+                            statusCode = 201,
+                            detail = "created webhook",
+                        )
 
-                coEvery { auditLogRepository.save(any()) } throws CancellationException("cancel")
+                    coEvery { auditLogRepository.save(any()) } answers { firstArg() }
 
-                shouldThrow<CancellationException> {
                     auditLogService.record(command)
+
+                    coVerify(exactly = 1) { auditLogRepository.save(any()) }
+                }
+            }
+
+            `when`("repository save throws cancellation") {
+                then("rethrow cancellation to preserve coroutine cancellation semantics") {
+                    val command =
+                        RecordAuditLogCommand(
+                            actorId = "admin-1",
+                            action = "WEBHOOK_CREATE",
+                            resourceType = "WEBHOOK",
+                            resourceId = "101",
+                            requestMethod = "POST",
+                            requestPath = "/api/v1/webhooks",
+                            statusCode = 201,
+                            detail = "created webhook",
+                        )
+
+                    coEvery { auditLogRepository.save(any()) } throws CancellationException("cancel")
+
+                    shouldThrow<CancellationException> {
+                        auditLogService.record(command)
+                    }
                 }
             }
         }
-    }
-})
+    })

@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
 class DeleteWebhookUseCase(
-    private val webhookRepository: WebhookRepository
+    private val webhookRepository: WebhookRepository,
 ) {
     @Transactional
     suspend fun execute(useCaseIn: DeleteWebhookUseCaseIn): DeleteWebhookUseCaseOut {

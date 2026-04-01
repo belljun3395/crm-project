@@ -6,30 +6,31 @@ import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.shouldBe
 import io.r2dbc.postgresql.codec.Json
 
-class WebhookEventsConverterTest : FeatureSpec({
-    feature("WebhookEvents converters") {
-        scenario("return existing WebhookEvents as-is") {
-            val source = WebhookEvents(listOf(WebhookEventType.USER_CREATED, WebhookEventType.EMAIL_SENT))
+class WebhookEventsConverterTest :
+    FeatureSpec({
+        feature("WebhookEvents converters") {
+            scenario("return existing WebhookEvents as-is") {
+                val source = WebhookEvents(listOf(WebhookEventType.USER_CREATED, WebhookEventType.EMAIL_SENT))
 
-            val result = WebhookEventsReadingConverter().convert(source)
+                val result = WebhookEventsReadingConverter().convert(source)
 
-            result shouldBe source
+                result shouldBe source
+            }
+
+            scenario("write WebhookEvents as PostgreSQL Json") {
+                val source = WebhookEvents(listOf(WebhookEventType.USER_CREATED, WebhookEventType.EMAIL_SENT))
+
+                val result = WebhookEventsWritingConverter().convert(source)
+
+                result.asString() shouldBe """["USER_CREATED","EMAIL_SENT"]"""
+            }
+
+            scenario("read WebhookEvents from PostgreSQL Json") {
+                val source = Json.of("""["USER_CREATED","EMAIL_SENT"]""")
+
+                val result = WebhookEventsReadingConverter().convert(source)
+
+                result shouldBe WebhookEvents(listOf(WebhookEventType.USER_CREATED, WebhookEventType.EMAIL_SENT))
+            }
         }
-
-        scenario("write WebhookEvents as PostgreSQL Json") {
-            val source = WebhookEvents(listOf(WebhookEventType.USER_CREATED, WebhookEventType.EMAIL_SENT))
-
-            val result = WebhookEventsWritingConverter().convert(source)
-
-            result.asString() shouldBe """["USER_CREATED","EMAIL_SENT"]"""
-        }
-
-        scenario("read WebhookEvents from PostgreSQL Json") {
-            val source = Json.of("""["USER_CREATED","EMAIL_SENT"]""")
-
-            val result = WebhookEventsReadingConverter().convert(source)
-
-            result shouldBe WebhookEvents(listOf(WebhookEventType.USER_CREATED, WebhookEventType.EMAIL_SENT))
-        }
-    }
-})
+    })

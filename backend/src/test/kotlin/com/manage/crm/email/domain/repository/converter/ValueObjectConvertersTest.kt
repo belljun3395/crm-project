@@ -9,130 +9,133 @@ import com.manage.crm.email.domain.vo.Variables
 import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.shouldBe
 
-class ValueObjectConvertersTest : FeatureSpec({
-    feature("VariablesReadingConverter") {
-        scenario("returns existing Variables as-is") {
-            val source = Variables(
-                listOf(
-                    UserVariable("email"),
-                    CampaignVariable("targetAudience")
-                )
-            )
+class ValueObjectConvertersTest :
+    FeatureSpec({
+        feature("VariablesReadingConverter") {
+            scenario("returns existing Variables as-is") {
+                val source =
+                    Variables(
+                        listOf(
+                            UserVariable("email"),
+                            CampaignVariable("targetAudience"),
+                        ),
+                    )
 
-            val result = VariablesReadingConverter().convert(source)
+                val result = VariablesReadingConverter().convert(source)
 
-            result shouldBe source
+                result shouldBe source
+            }
+
+            scenario("reads persisted variable declarations") {
+                val result = VariablesReadingConverter().convert("user.email,campaign.targetAudience")
+
+                result shouldBe
+                    Variables(
+                        listOf(
+                            UserVariable("email"),
+                            CampaignVariable("targetAudience"),
+                        ),
+                    )
+            }
+
+            scenario("returns empty Variables for empty string") {
+                val result = VariablesReadingConverter().convert("")
+
+                result shouldBe Variables()
+            }
         }
 
-        scenario("reads persisted variable declarations") {
-            val result = VariablesReadingConverter().convert("user.email,campaign.targetAudience")
+        feature("VariablesWritingConverter") {
+            scenario("writes Variables as comma-separated display values") {
+                val source = Variables(listOf(UserVariable("email"), CampaignVariable("targetAudience")))
 
-            result shouldBe Variables(
-                listOf(
-                    UserVariable("email"),
-                    CampaignVariable("targetAudience")
-                )
-            )
+                val result = VariablesWritingConverter().convert(source)
+
+                result shouldBe "user.email, campaign.targetAudience"
+            }
         }
 
-        scenario("returns empty Variables for empty string") {
-            val result = VariablesReadingConverter().convert("")
+        feature("UserEmailReadingConverter") {
+            scenario("returns existing Email as-is") {
+                val source = Email("user@example.com")
 
-            result shouldBe Variables()
-        }
-    }
+                val result = UserEmailReadingConverter().convert(source)
 
-    feature("VariablesWritingConverter") {
-        scenario("writes Variables as comma-separated display values") {
-            val source = Variables(listOf(UserVariable("email"), CampaignVariable("targetAudience")))
+                result shouldBe source
+            }
 
-            val result = VariablesWritingConverter().convert(source)
+            scenario("reads email string from database") {
+                val result = UserEmailReadingConverter().convert("user@example.com")
 
-            result shouldBe "user.email, campaign.targetAudience"
-        }
-    }
+                result shouldBe Email("user@example.com")
+            }
 
-    feature("UserEmailReadingConverter") {
-        scenario("returns existing Email as-is") {
-            val source = Email("user@example.com")
+            scenario("returns null for empty string") {
+                val result = UserEmailReadingConverter().convert("")
 
-            val result = UserEmailReadingConverter().convert(source)
-
-            result shouldBe source
+                result shouldBe null
+            }
         }
 
-        scenario("reads email string from database") {
-            val result = UserEmailReadingConverter().convert("user@example.com")
+        feature("UserEmailWritingConverter") {
+            scenario("writes Email as plain string") {
+                val result = UserEmailWritingConverter().convert(Email("user@example.com"))
 
-            result shouldBe Email("user@example.com")
+                result shouldBe "user@example.com"
+            }
         }
 
-        scenario("returns null for empty string") {
-            val result = UserEmailReadingConverter().convert("")
+        feature("EventIdReadingConverter") {
+            scenario("returns existing EventId as-is") {
+                val source = EventId("event-id-123")
 
-            result shouldBe null
-        }
-    }
+                val result = EventIdReadingConverter().convert(source)
 
-    feature("UserEmailWritingConverter") {
-        scenario("writes Email as plain string") {
-            val result = UserEmailWritingConverter().convert(Email("user@example.com"))
+                result shouldBe source
+            }
 
-            result shouldBe "user@example.com"
-        }
-    }
+            scenario("reads EventId string from database") {
+                val result = EventIdReadingConverter().convert("event-id-456")
 
-    feature("EventIdReadingConverter") {
-        scenario("returns existing EventId as-is") {
-            val source = EventId("event-id-123")
+                result shouldBe EventId("event-id-456")
+            }
 
-            val result = EventIdReadingConverter().convert(source)
+            scenario("returns null for empty string") {
+                val result = EventIdReadingConverter().convert("")
 
-            result shouldBe source
+                result shouldBe null
+            }
         }
 
-        scenario("reads EventId string from database") {
-            val result = EventIdReadingConverter().convert("event-id-456")
+        feature("EventIdWritingConverter") {
+            scenario("writes EventId as plain string") {
+                val result = EventIdWritingConverter().convert(EventId("event-id-123"))
 
-            result shouldBe EventId("event-id-456")
+                result shouldBe "event-id-123"
+            }
         }
 
-        scenario("returns null for empty string") {
-            val result = EventIdReadingConverter().convert("")
+        feature("EmailTemplateVersionReadingConverter") {
+            scenario("returns existing EmailTemplateVersion as-is") {
+                val source = EmailTemplateVersion(1.1f)
 
-            result shouldBe null
-        }
-    }
+                val result = EmailTemplateVersionReadingConverter().convert(source)
 
-    feature("EventIdWritingConverter") {
-        scenario("writes EventId as plain string") {
-            val result = EventIdWritingConverter().convert(EventId("event-id-123"))
+                result shouldBe source
+            }
 
-            result shouldBe "event-id-123"
-        }
-    }
+            scenario("reads version float from database string") {
+                val result = EmailTemplateVersionReadingConverter().convert("2.5")
 
-    feature("EmailTemplateVersionReadingConverter") {
-        scenario("returns existing EmailTemplateVersion as-is") {
-            val source = EmailTemplateVersion(1.1f)
-
-            val result = EmailTemplateVersionReadingConverter().convert(source)
-
-            result shouldBe source
+                result shouldBe EmailTemplateVersion(2.5f)
+            }
         }
 
-        scenario("reads version float from database string") {
-            val result = EmailTemplateVersionReadingConverter().convert("2.5")
+        feature("EmailTemplateVersionWritingConverter") {
+            scenario("writes EmailTemplateVersion as float") {
+                val result = EmailTemplateVersionWritingConverter().convert(EmailTemplateVersion(1.1f))
 
-            result shouldBe EmailTemplateVersion(2.5f)
+                result shouldBe 1.1f
+            }
         }
-    }
-
-    feature("EmailTemplateVersionWritingConverter") {
-        scenario("writes EmailTemplateVersion as float") {
-            val result = EmailTemplateVersionWritingConverter().convert(EmailTemplateVersion(1.1f))
-
-            result shouldBe 1.1f
-        }
-    }
-})
+    })

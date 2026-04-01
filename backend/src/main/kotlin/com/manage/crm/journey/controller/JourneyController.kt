@@ -47,15 +47,15 @@ class JourneyController(
     private val updateJourneyLifecycleStatusUseCase: UpdateJourneyLifecycleStatusUseCase,
     private val browseJourneyUseCase: BrowseJourneyUseCase,
     private val browseJourneyExecutionUseCase: BrowseJourneyExecutionUseCase,
-    private val browseJourneyExecutionHistoryUseCase: BrowseJourneyExecutionHistoryUseCase
+    private val browseJourneyExecutionHistoryUseCase: BrowseJourneyExecutionHistoryUseCase,
 ) {
     @PostMapping
     suspend fun createJourney(
         @Valid
         @RequestBody
-        request: PostJourneyRequest
-    ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> {
-        return postJourneyUseCase
+        request: PostJourneyRequest,
+    ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> =
+        postJourneyUseCase
             .execute(
                 PostJourneyIn(
                     name = request.name,
@@ -66,33 +66,32 @@ class JourneyController(
                     triggerSegmentWatchFields = request.triggerSegmentWatchFields ?: emptyList(),
                     triggerSegmentCountThreshold = request.triggerSegmentCountThreshold,
                     active = request.active ?: true,
-                    steps = request.steps.map { step ->
-                        PostJourneyStepIn(
-                            stepOrder = step.stepOrder,
-                            stepType = JourneyStepType.from(step.stepType),
-                            channel = step.channel,
-                            destination = step.destination,
-                            subject = step.subject,
-                            body = step.body,
-                            variables = step.variables ?: emptyMap(),
-                            delayMillis = step.delayMillis,
-                            conditionExpression = step.conditionExpression,
-                            retryCount = step.retryCount ?: 0
-                        )
-                    }
-                )
-            )
-            .let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
-    }
+                    steps =
+                        request.steps.map { step ->
+                            PostJourneyStepIn(
+                                stepOrder = step.stepOrder,
+                                stepType = JourneyStepType.from(step.stepType),
+                                channel = step.channel,
+                                destination = step.destination,
+                                subject = step.subject,
+                                body = step.body,
+                                variables = step.variables ?: emptyMap(),
+                                delayMillis = step.delayMillis,
+                                conditionExpression = step.conditionExpression,
+                                retryCount = step.retryCount ?: 0,
+                            )
+                        },
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
 
     @PutMapping("/{journeyId}")
     suspend fun updateJourney(
         @PathVariable journeyId: Long,
         @Valid
         @RequestBody
-        request: PutJourneyRequest
-    ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> {
-        return putJourneyUseCase
+        request: PutJourneyRequest,
+    ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> =
+        putJourneyUseCase
             .execute(
                 PutJourneyIn(
                     journeyId = journeyId,
@@ -104,83 +103,79 @@ class JourneyController(
                     triggerSegmentWatchFields = request.triggerSegmentWatchFields ?: emptyList(),
                     triggerSegmentCountThreshold = request.triggerSegmentCountThreshold,
                     active = request.active ?: throw IllegalArgumentException("active is required for updateJourney"),
-                    steps = request.steps.map { step ->
-                        PutJourneyStepIn(
-                            stepOrder = step.stepOrder,
-                            stepType = JourneyStepType.from(step.stepType),
-                            channel = step.channel,
-                            destination = step.destination,
-                            subject = step.subject,
-                            body = step.body,
-                            variables = step.variables ?: emptyMap(),
-                            delayMillis = step.delayMillis,
-                            conditionExpression = step.conditionExpression,
-                            retryCount = step.retryCount ?: 0
-                        )
-                    }
-                )
-            )
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
+                    steps =
+                        request.steps.map { step ->
+                            PutJourneyStepIn(
+                                stepOrder = step.stepOrder,
+                                stepType = JourneyStepType.from(step.stepType),
+                                channel = step.channel,
+                                destination = step.destination,
+                                subject = step.subject,
+                                body = step.body,
+                                variables = step.variables ?: emptyMap(),
+                                delayMillis = step.delayMillis,
+                                conditionExpression = step.conditionExpression,
+                                retryCount = step.retryCount ?: 0,
+                            )
+                        },
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
 
     @PostMapping("/{journeyId}/pause")
     suspend fun pauseJourney(
-        @PathVariable journeyId: Long
-    ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> {
-        return updateJourneyLifecycleStatusUseCase.pause(journeyId)
+        @PathVariable journeyId: Long,
+    ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> =
+        updateJourneyLifecycleStatusUseCase
+            .pause(journeyId)
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
 
     @PostMapping("/{journeyId}/resume")
     suspend fun resumeJourney(
-        @PathVariable journeyId: Long
-    ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> {
-        return updateJourneyLifecycleStatusUseCase.resume(journeyId)
+        @PathVariable journeyId: Long,
+    ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> =
+        updateJourneyLifecycleStatusUseCase
+            .resume(journeyId)
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
 
     @PostMapping("/{journeyId}/archive")
     suspend fun archiveJourney(
-        @PathVariable journeyId: Long
-    ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> {
-        return updateJourneyLifecycleStatusUseCase.archive(journeyId)
+        @PathVariable journeyId: Long,
+    ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> =
+        updateJourneyLifecycleStatusUseCase
+            .archive(journeyId)
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
 
     @GetMapping
-    suspend fun browseJourneys(): ApiResponse<ApiResponse.SuccessBody<List<JourneyDto>>> {
-        return browseJourneyUseCase.execute()
+    suspend fun browseJourneys(): ApiResponse<ApiResponse.SuccessBody<List<JourneyDto>>> =
+        browseJourneyUseCase
+            .execute()
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
 
     @GetMapping("/executions")
     suspend fun browseExecutions(
         @RequestParam(required = false) journeyId: Long?,
         @RequestParam(required = false) eventId: Long?,
-        @RequestParam(required = false) userId: Long?
-    ): ApiResponse<ApiResponse.SuccessBody<List<JourneyExecutionDto>>> {
-        return browseJourneyExecutionUseCase
+        @RequestParam(required = false) userId: Long?,
+    ): ApiResponse<ApiResponse.SuccessBody<List<JourneyExecutionDto>>> =
+        browseJourneyExecutionUseCase
             .execute(
                 BrowseJourneyExecutionIn(
                     journeyId = journeyId,
                     eventId = eventId,
-                    userId = userId
-                )
-            )
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
+                    userId = userId,
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
 
     @GetMapping("/executions/{executionId}/histories")
     suspend fun browseExecutionHistories(
-        @PathVariable executionId: Long
-    ): ApiResponse<ApiResponse.SuccessBody<List<JourneyExecutionHistoryDto>>> {
-        return browseJourneyExecutionHistoryUseCase.execute(executionId)
+        @PathVariable executionId: Long,
+    ): ApiResponse<ApiResponse.SuccessBody<List<JourneyExecutionHistoryDto>>> =
+        browseJourneyExecutionHistoryUseCase
+            .execute(executionId)
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
 
     @ExceptionHandler(IllegalArgumentException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    fun handleIllegalArgumentException(e: IllegalArgumentException): ApiResponse<ApiResponse.FailureBody> {
-        return ApiResponseGenerator.fail(e.message ?: "invalid journey request", HttpStatus.BAD_REQUEST)
-    }
+    fun handleIllegalArgumentException(e: IllegalArgumentException): ApiResponse<ApiResponse.FailureBody> =
+        ApiResponseGenerator.fail(e.message ?: "invalid journey request", HttpStatus.BAD_REQUEST)
 }

@@ -6,4 +6,6 @@ import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 /**
  * Repository for querying campaign-linked events and aggregate counts.
  */
-interface CampaignEventsRepository : CoroutineCrudRepository<CampaignEvents, Long>, CampaignEventsCustomRepository
+interface CampaignEventsRepository :
+    CoroutineCrudRepository<CampaignEvents, Long>,
+    CampaignEventsCustomRepository

@@ -33,7 +33,7 @@ class EnrollUserUseCase(
     private val jsonService: JsonService,
     private val userCacheManager: UserCacheManager,
     private val journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher,
-    private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate
+    private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -41,33 +41,35 @@ class EnrollUserUseCase(
     suspend fun execute(useCaseIn: EnrollUserUseCaseIn): EnrollUserUseCaseOut {
         val id: Long? = useCaseIn.id
         val externalId: String = useCaseIn.externalId
-        val userAttributes: UserAttributes = useCaseIn.userAttributes
-            .let { jsonService.execute(it, RequiredUserAttributeKey.EMAIL) }
-            .let { UserAttributes(it) }
+        val userAttributes: UserAttributes =
+            useCaseIn.userAttributes
+                .let { jsonService.execute(it, RequiredUserAttributeKey.EMAIL) }
+                .let { UserAttributes(it) }
 
-        val updateOrSaveUser = run {
-            if (id != null) {
-                userRepository
-                    .findById(id)
-                    ?.apply { updateAttributes(userAttributes) }
-                    ?.apply { userRepository.save(this) }
-                    ?: throw NotFoundByIdException("User", id)
-            } else {
-                userRepositoryEventProcessor.save(
-                    User.new(
-                        externalId = externalId,
-                        userAttributes = userAttributes
+        val updateOrSaveUser =
+            run {
+                if (id != null) {
+                    userRepository
+                        .findById(id)
+                        ?.apply { updateAttributes(userAttributes) }
+                        ?.apply { userRepository.save(this) }
+                        ?: throw NotFoundByIdException("User", id)
+                } else {
+                    userRepositoryEventProcessor.save(
+                        User.new(
+                            externalId = externalId,
+                            userAttributes = userAttributes,
+                        ),
                     )
-                )
+                }
             }
-        }
 
         // Update user cache count
         val userId = updateOrSaveUser.id!!
         userCacheManager.updateTotalUserCountUpdateAt()
         runCatching {
             transactionSynchronizationTemplate.afterCommit(
-                blockDescription = "enqueue journey segment trigger after user commit"
+                blockDescription = "enqueue journey segment trigger after user commit",
             ) {
                 journeyTriggerQueuePublisher.publishSegmentContextTrigger(listOf(userId))
             }
@@ -79,7 +81,7 @@ class EnrollUserUseCase(
             EnrollUserUseCaseOut(
                 id = userId,
                 externalId = updateOrSaveUser.externalId,
-                userAttributes = updateOrSaveUser.userAttributes.value
+                userAttributes = updateOrSaveUser.userAttributes.value,
             )
         }
     }

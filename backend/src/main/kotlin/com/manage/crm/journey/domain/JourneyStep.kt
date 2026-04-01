@@ -34,7 +34,7 @@ class JourneyStep(
     var retryCount: Int = 0,
     @CreatedDate
     @Column("created_at")
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
@@ -48,9 +48,9 @@ class JourneyStep(
             variablesJson: String?,
             delayMillis: Long?,
             conditionExpression: String?,
-            retryCount: Int
-        ): JourneyStep {
-            return JourneyStep(
+            retryCount: Int,
+        ): JourneyStep =
+            JourneyStep(
                 journeyId = journeyId,
                 stepOrder = stepOrder,
                 stepType = stepType,
@@ -61,8 +61,7 @@ class JourneyStep(
                 variablesJson = variablesJson,
                 delayMillis = delayMillis,
                 conditionExpression = conditionExpression,
-                retryCount = retryCount
+                retryCount = retryCount,
             )
-        }
     }
 }

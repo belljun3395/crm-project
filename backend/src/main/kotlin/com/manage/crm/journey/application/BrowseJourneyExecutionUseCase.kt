@@ -8,30 +8,31 @@ import java.time.format.DateTimeFormatter
 data class BrowseJourneyExecutionIn(
     val journeyId: Long?,
     val eventId: Long?,
-    val userId: Long?
+    val userId: Long?,
 )
 
 @Service
 class BrowseJourneyExecutionUseCase(
-    private val journeyExecutionRepository: JourneyExecutionRepository
+    private val journeyExecutionRepository: JourneyExecutionRepository,
 ) {
     companion object {
         private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     }
 
     suspend fun execute(useCaseIn: BrowseJourneyExecutionIn): List<JourneyExecutionDto> {
-        val executions = when {
-            useCaseIn.journeyId != null -> journeyExecutionRepository.findAllByJourneyIdOrderByCreatedAtDesc(useCaseIn.journeyId)
-            useCaseIn.eventId != null && useCaseIn.userId != null -> {
-                journeyExecutionRepository.findAllByEventIdAndUserIdOrderByCreatedAtDesc(useCaseIn.eventId, useCaseIn.userId)
-            }
+        val executions =
+            when {
+                useCaseIn.journeyId != null -> journeyExecutionRepository.findAllByJourneyIdOrderByCreatedAtDesc(useCaseIn.journeyId)
+                useCaseIn.eventId != null && useCaseIn.userId != null -> {
+                    journeyExecutionRepository.findAllByEventIdAndUserIdOrderByCreatedAtDesc(useCaseIn.eventId, useCaseIn.userId)
+                }
 
-            useCaseIn.eventId != null || useCaseIn.userId != null -> {
-                throw IllegalArgumentException("eventId and userId must be provided together")
-            }
+                useCaseIn.eventId != null || useCaseIn.userId != null -> {
+                    throw IllegalArgumentException("eventId and userId must be provided together")
+                }
 
-            else -> journeyExecutionRepository.findAllByOrderByCreatedAtDesc()
-        }
+                else -> journeyExecutionRepository.findAllByOrderByCreatedAtDesc()
+            }
 
         return executions.toList().map { execution ->
             JourneyExecutionDto(
@@ -46,7 +47,7 @@ class BrowseJourneyExecutionUseCase(
                 startedAt = execution.startedAt.format(formatter),
                 completedAt = execution.completedAt?.format(formatter),
                 createdAt = execution.createdAt?.format(formatter) ?: "",
-                updatedAt = execution.updatedAt?.format(formatter)
+                updatedAt = execution.updatedAt?.format(formatter),
             )
         }
     }

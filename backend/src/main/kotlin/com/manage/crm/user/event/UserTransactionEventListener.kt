@@ -11,7 +11,7 @@ import org.springframework.transaction.reactive.executeAndAwait
 @Component
 class UserTransactionEventListener(
     private val newUserEventHandler: NewUserEventHandler,
-    private val transactionalTemplates: TransactionTemplates
+    private val transactionalTemplates: TransactionTemplates,
 ) {
     /**
      * `@EventListener`를 사용한 이유:
@@ -22,11 +22,12 @@ class UserTransactionEventListener(
     fun handleAfterCompletionEvent(event: UserTransactionAfterCompletionEvent) {
         eventListenerCoroutineScope().apply {
             when (event) {
-                is NewUserEvent -> launch {
-                    transactionalTemplates.newTxWriter.executeAndAwait {
-                        newUserEventHandler.handle(event)
+                is NewUserEvent ->
+                    launch {
+                        transactionalTemplates.newTxWriter.executeAndAwait {
+                            newUserEventHandler.handle(event)
+                        }
                     }
-                }
             }
         }
     }

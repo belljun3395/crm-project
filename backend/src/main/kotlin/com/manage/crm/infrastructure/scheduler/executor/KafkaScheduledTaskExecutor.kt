@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component
 @Component
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class KafkaScheduledTaskExecutor(
-    private val kafkaTemplate: KafkaTemplate<String, ScheduledTaskEvent>
+    private val kafkaTemplate: KafkaTemplate<String, ScheduledTaskEvent>,
 ) {
     private val log = KotlinLogging.logger {}
 
@@ -28,13 +28,14 @@ class KafkaScheduledTaskExecutor(
      * @param scheduleData Schedule data from Redis
      * @return true if successfully published, false otherwise
      */
-    suspend fun execute(scheduleData: DueSchedule): Boolean {
-        return try {
-            val event = ScheduledTaskEvent(
-                scheduleName = scheduleData.name,
-                scheduleTime = scheduleData.scheduleTime,
-                payload = scheduleData.payload
-            )
+    suspend fun execute(scheduleData: DueSchedule): Boolean =
+        try {
+            val event =
+                ScheduledTaskEvent(
+                    scheduleName = scheduleData.name,
+                    scheduleTime = scheduleData.scheduleTime,
+                    payload = scheduleData.payload,
+                )
 
             val future = kafkaTemplate.send(SCHEDULED_TASKS_TOPIC, scheduleData.name, event)
 
@@ -55,7 +56,6 @@ class KafkaScheduledTaskExecutor(
             log.error(ex) { "Exception while publishing scheduled task to Kafka: ${scheduleData.name}" }
             false
         }
-    }
 
     /**
      * Publishes multiple scheduled tasks in batch

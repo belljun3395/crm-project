@@ -17,15 +17,15 @@ class AwsResourceValidator(
     private val snsClient: SnsClient,
     private val sqsClient: SqsClient,
     @Value("\${spring.aws.sns.cache-invalidation-topic-arn:#{null}}")
-    private val snsTopicArn: String?
+    private val snsTopicArn: String?,
 ) : ApplicationRunner {
-
     private val log = KotlinLogging.logger {}
 
     // SQS Queue names from CacheInvalidationListener
-    private val sqsQueueNames = listOf(
-        "crm-dr-cache-invalidation-queue-aws"
-    )
+    private val sqsQueueNames =
+        listOf(
+            "crm-dr-cache-invalidation-queue-aws",
+        )
 
     override fun run(args: ApplicationArguments?) {
         log.info { "Starting AWS resource validation..." }
@@ -56,11 +56,13 @@ class AwsResourceValidator(
         }
     }
 
-    private fun validateSnsTopic(topicArn: String): Boolean {
-        return try {
-            val request = GetTopicAttributesRequest.builder()
-                .topicArn(topicArn)
-                .build()
+    private fun validateSnsTopic(topicArn: String): Boolean =
+        try {
+            val request =
+                GetTopicAttributesRequest
+                    .builder()
+                    .topicArn(topicArn)
+                    .build()
             snsClient.getTopicAttributes(request)
             log.info { "✓ SNS Topic validated: $topicArn" }
             true
@@ -68,13 +70,14 @@ class AwsResourceValidator(
             log.error(e) { "✗ SNS Topic validation failed: $topicArn" }
             false
         }
-    }
 
-    private fun validateSqsQueue(queueName: String): Boolean {
-        return try {
-            val request = GetQueueUrlRequest.builder()
-                .queueName(queueName)
-                .build()
+    private fun validateSqsQueue(queueName: String): Boolean =
+        try {
+            val request =
+                GetQueueUrlRequest
+                    .builder()
+                    .queueName(queueName)
+                    .build()
             val response = sqsClient.getQueueUrl(request)
             log.info { "✓ SQS Queue validated: $queueName (URL: ${response.queueUrl()})" }
             true
@@ -82,5 +85,4 @@ class AwsResourceValidator(
             log.error(e) { "✗ SQS Queue validation failed: $queueName" }
             false
         }
-    }
 }

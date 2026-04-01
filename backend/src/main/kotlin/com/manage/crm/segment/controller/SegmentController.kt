@@ -47,93 +47,98 @@ class SegmentController(
     private val deleteSegmentUseCase: DeleteSegmentUseCase,
     private val browseSegmentUseCase: BrowseSegmentUseCase,
     private val getSegmentUseCase: GetSegmentUseCase,
-    private val getSegmentMatchedUsersUseCase: GetSegmentMatchedUsersUseCase
+    private val getSegmentMatchedUsersUseCase: GetSegmentMatchedUsersUseCase,
 ) {
     @PostMapping
     suspend fun create(
         @Valid
         @RequestBody
-        request: PostSegmentRequest
-    ): ApiResponse<ApiResponse.SuccessBody<PostSegmentUseCaseOut>> {
-        return postSegmentUseCase.execute(
-            PostSegmentUseCaseIn(
-                name = request.name,
-                description = request.description,
-                active = request.active ?: true,
-                conditions = request.conditions.map { condition -> condition.toConditionIn() }
-            )
-        ).let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
-    }
+        request: PostSegmentRequest,
+    ): ApiResponse<ApiResponse.SuccessBody<PostSegmentUseCaseOut>> =
+        postSegmentUseCase
+            .execute(
+                PostSegmentUseCaseIn(
+                    name = request.name,
+                    description = request.description,
+                    active = request.active ?: true,
+                    conditions = request.conditions.map { condition -> condition.toConditionIn() },
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
 
     @PutMapping("/{id}")
     suspend fun update(
         @PathVariable id: Long,
         @Valid
         @RequestBody
-        request: PutSegmentRequest
+        request: PutSegmentRequest,
     ): ApiResponse<ApiResponse.SuccessBody<PostSegmentUseCaseOut>> {
         val existing = getSegmentUseCase.execute(GetSegmentUseCaseIn(id)).segment
-        val conditions = request.conditions?.map { condition ->
-            condition.toConditionIn()
-        } ?: existing.conditions.map { condition ->
-            condition.toPostSegmentConditionIn()
-        }
+        val conditions =
+            request.conditions?.map { condition ->
+                condition.toConditionIn()
+            } ?: existing.conditions.map { condition ->
+                condition.toPostSegmentConditionIn()
+            }
 
-        return postSegmentUseCase.execute(
-            PostSegmentUseCaseIn(
-                id = id,
-                name = request.name ?: existing.name,
-                description = request.description ?: existing.description,
-                active = request.active ?: existing.active,
-                conditions = conditions
-            )
-        ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+        return postSegmentUseCase
+            .execute(
+                PostSegmentUseCaseIn(
+                    id = id,
+                    name = request.name ?: existing.name,
+                    description = request.description ?: existing.description,
+                    active = request.active ?: existing.active,
+                    conditions = conditions,
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
     }
 
     @DeleteMapping("/{id}")
-    suspend fun delete(@PathVariable id: Long): ApiResponse<Void> {
+    suspend fun delete(
+        @PathVariable id: Long,
+    ): ApiResponse<Void> {
         deleteSegmentUseCase.execute(DeleteSegmentUseCaseIn(id = id))
         return ApiResponseGenerator.fail(HttpStatus.NO_CONTENT)
     }
 
     @GetMapping
     suspend fun list(
-        @RequestParam(required = false, defaultValue = "50") limit: Int
-    ): ApiResponse<ApiResponse.SuccessBody<List<SegmentDto>>> {
-        return browseSegmentUseCase.execute(
-            BrowseSegmentUseCaseIn(limit = limit)
-        ).let { ApiResponseGenerator.success(it.segments, HttpStatus.OK) }
-    }
+        @RequestParam(required = false, defaultValue = "50") limit: Int,
+    ): ApiResponse<ApiResponse.SuccessBody<List<SegmentDto>>> =
+        browseSegmentUseCase
+            .execute(
+                BrowseSegmentUseCaseIn(limit = limit),
+            ).let { ApiResponseGenerator.success(it.segments, HttpStatus.OK) }
 
     @GetMapping("/{id}")
-    suspend fun get(@PathVariable id: Long): ApiResponse<ApiResponse.SuccessBody<SegmentDto>> {
-        return getSegmentUseCase.execute(GetSegmentUseCaseIn(id))
+    suspend fun get(
+        @PathVariable id: Long,
+    ): ApiResponse<ApiResponse.SuccessBody<SegmentDto>> =
+        getSegmentUseCase
+            .execute(GetSegmentUseCaseIn(id))
             .let { ApiResponseGenerator.success(it.segment, HttpStatus.OK) }
-    }
 
     @GetMapping("/{id}/users")
     suspend fun getMatchedUsers(
         @PathVariable id: Long,
-        @RequestParam(required = false) campaignId: Long?
+        @RequestParam(required = false) campaignId: Long?,
     ): ApiResponse<ApiResponse.SuccessBody<List<SegmentMatchedUserDto>>> {
-        val result = getSegmentMatchedUsersUseCase.execute(
-            GetSegmentMatchedUsersUseCaseIn(segmentId = id, campaignId = campaignId)
-        )
+        val result =
+            getSegmentMatchedUsersUseCase.execute(
+                GetSegmentMatchedUsersUseCaseIn(segmentId = id, campaignId = campaignId),
+            )
         return ApiResponseGenerator.success(result.users, HttpStatus.OK)
     }
 
     @ExceptionHandler(InvalidSegmentConditionException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    fun handleInvalidSegmentConditionException(e: InvalidSegmentConditionException): ApiResponse<ApiResponse.FailureBody> {
-        return ApiResponseGenerator.fail(e.message ?: "invalid segment condition", HttpStatus.BAD_REQUEST)
-    }
+    fun handleInvalidSegmentConditionException(e: InvalidSegmentConditionException): ApiResponse<ApiResponse.FailureBody> =
+        ApiResponseGenerator.fail(e.message ?: "invalid segment condition", HttpStatus.BAD_REQUEST)
 
-    private fun SegmentConditionRequest.toConditionIn(): PostSegmentConditionIn {
-        return PostSegmentConditionIn(
+    private fun SegmentConditionRequest.toConditionIn(): PostSegmentConditionIn =
+        PostSegmentConditionIn(
             field = this.field,
             operator = this.operator,
             valueType = this.valueType,
-            value = this.value
+            value = this.value,
         )
-    }
 }

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component
 class CampaignDashboardStreamConsumer(
     private val campaignStreamRegistryManager: CampaignStreamRegistryManager,
     private val campaignDashboardStreamManager: CampaignDashboardStreamManager,
-    private val campaignDashboardMetricsService: CampaignDashboardMetricsService
+    private val campaignDashboardMetricsService: CampaignDashboardMetricsService,
 ) {
     companion object {
         private const val MAX_STREAM_LENGTH = 10_000L
@@ -21,18 +21,19 @@ class CampaignDashboardStreamConsumer(
     private val log = KotlinLogging.logger { }
 
     @Scheduled(fixedDelay = 60_000)
-    fun processStreamEvents() = runBlocking {
-        val activeCampaigns = campaignStreamRegistryManager.getActiveCampaigns()
-        if (activeCampaigns.isEmpty()) return@runBlocking
+    fun processStreamEvents() =
+        runBlocking {
+            val activeCampaigns = campaignStreamRegistryManager.getActiveCampaigns()
+            if (activeCampaigns.isEmpty()) return@runBlocking
 
-        activeCampaigns.forEach { campaignId ->
-            try {
-                processEventsForCampaign(campaignId)
-            } catch (e: Exception) {
-                log.error(e) { "Failed to process stream events for campaign: $campaignId" }
+            activeCampaigns.forEach { campaignId ->
+                try {
+                    processEventsForCampaign(campaignId)
+                } catch (e: Exception) {
+                    log.error(e) { "Failed to process stream events for campaign: $campaignId" }
+                }
             }
         }
-    }
 
     private suspend fun processEventsForCampaign(campaignId: Long) {
         val lastProcessedId = campaignStreamRegistryManager.getLastProcessedId(campaignId)

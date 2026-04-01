@@ -23,23 +23,24 @@ class GzipCompressionUtils {
         val log = KotlinLogging.logger {}
         const val GZIP = "gzip"
 
-        fun isGzipRequest(serverHttpRequest: ServerHttpRequest): Boolean {
-            return containsGzip(serverHttpRequest, CONTENT_ENCODING).also {
+        fun isGzipRequest(serverHttpRequest: ServerHttpRequest): Boolean =
+            containsGzip(serverHttpRequest, CONTENT_ENCODING).also {
                 if (it) {
                     log.debug { "Gzip decompression enabled for request" }
                 }
             }
-        }
 
-        fun isGzipResponseRequired(serverHttpRequest: ServerHttpRequest): Boolean {
-            return containsGzip(serverHttpRequest, ACCEPT_ENCODING).also {
+        fun isGzipResponseRequired(serverHttpRequest: ServerHttpRequest): Boolean =
+            containsGzip(serverHttpRequest, ACCEPT_ENCODING).also {
                 if (it) {
                     log.debug { "Gzip compression enabled for response" }
                 }
             }
-        }
 
-        private fun containsGzip(serverHttpRequest: ServerHttpRequest, headerName: String): Boolean {
+        private fun containsGzip(
+            serverHttpRequest: ServerHttpRequest,
+            headerName: String,
+        ): Boolean {
             val headers: HttpHeaders = serverHttpRequest.headers
             if (!isEmpty(headers)) {
                 val header = headers.getFirst(headerName)
@@ -61,17 +62,18 @@ class GzipCompressionUtils {
             }
         }
 
-        private fun decompress(inputStream: InputStream?): ByteArray {
-            return inputStream?.let { IOUtils.toByteArray(it) } ?: ByteArray(0)
-        }
+        private fun decompress(inputStream: InputStream?): ByteArray = inputStream?.let { IOUtils.toByteArray(it) } ?: ByteArray(0)
 
-        fun compress(dataBufferFactory: DataBufferFactory, bytes: ByteArray): DataBuffer {
+        fun compress(
+            dataBufferFactory: DataBufferFactory,
+            bytes: ByteArray,
+        ): DataBuffer {
             log.debug { "Gzip compression enabled for response" }
             return dataBufferFactory.wrap(compress(bytes))
         }
 
-        private fun compress(bytes: ByteArray): ByteArray {
-            return try {
+        private fun compress(bytes: ByteArray): ByteArray =
+            try {
                 ByteArrayOutputStream().use { outputStream ->
                     GZIPOutputStream(outputStream).use { gzipOutputStream ->
                         gzipOutputStream.write(bytes)
@@ -81,6 +83,5 @@ class GzipCompressionUtils {
             } catch (e: IOException) {
                 throw IllegalCompressionResponseException("Failed to compress data: ${e.message}", e)
             }
-        }
     }
 }

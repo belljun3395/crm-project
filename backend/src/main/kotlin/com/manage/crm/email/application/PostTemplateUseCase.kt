@@ -27,9 +27,8 @@ import org.springframework.transaction.annotation.Transactional
 class PostTemplateUseCase(
     private val emailTemplateRepository: EmailTemplateRepository,
     private val emailTemplateSaveRepository: EmailTemplateRepositoryEventProcessor,
-    private val htmlService: HtmlService
+    private val htmlService: HtmlService,
 ) {
-
     @Transactional
     suspend fun execute(useCaseIn: PostTemplateUseCaseIn): PostTemplateUseCaseOut {
         val id: Long? = useCaseIn.id
@@ -37,20 +36,26 @@ class PostTemplateUseCase(
         val subject: String? = useCaseIn.subject
         val version: Float? = useCaseIn.version
         val body = htmlService.prettyPrintHtml(useCaseIn.body)
-        val variables = run {
-            val bodyVariables = htmlService.extractVariables(body)
-                .sorted().stringListToVariables()
+        val variables =
+            run {
+                val bodyVariables =
+                    htmlService
+                        .extractVariables(body)
+                        .sorted()
+                        .stringListToVariables()
 
-            val variables = useCaseIn.variables
-                .filterNot { it.isBlank() }
-                .filterNot { it.isEmpty() }
-                .sorted().stringListToVariables()
+                val variables =
+                    useCaseIn.variables
+                        .filterNot { it.isBlank() }
+                        .filterNot { it.isEmpty() }
+                        .sorted()
+                        .stringListToVariables()
 
-            if (bodyVariables.getVariables() != variables.getVariables()) {
-                throw VariablesNotMatchException(bodyVariables.getDisplayVariables(), variables.getDisplayVariables())
+                if (bodyVariables.getVariables() != variables.getVariables()) {
+                    throw VariablesNotMatchException(bodyVariables.getDisplayVariables(), variables.getDisplayVariables())
+                }
+                return@run variables
             }
-            return@run variables
-        }
 
         val persistedTemplate: EmailTemplate? = getEmailTemplate(id, templateName)
         var modifiedOrNewTemplate =
@@ -65,7 +70,7 @@ class PostTemplateUseCase(
                         templateName = templateName,
                         subject = subject!!,
                         body = body,
-                        variables = variables
+                        variables = variables,
                     )
                 }
 
@@ -75,13 +80,16 @@ class PostTemplateUseCase(
             PostTemplateUseCaseOut(
                 id = modifiedOrNewTemplate.id!!,
                 templateName = modifiedOrNewTemplate.templateName,
-                version = modifiedOrNewTemplate.version.value
+                version = modifiedOrNewTemplate.version.value,
             )
         }
     }
 
-    private suspend fun getEmailTemplate(id: Long?, templateName: String): EmailTemplate? {
-        return when {
+    private suspend fun getEmailTemplate(
+        id: Long?,
+        templateName: String,
+    ): EmailTemplate? =
+        when {
             id != null -> {
                 emailTemplateRepository.findById(id) ?: throw NotFoundByIdException("EmailTemplate", id)
             }
@@ -92,5 +100,4 @@ class PostTemplateUseCase(
 
             else -> null
         }
-    }
 }

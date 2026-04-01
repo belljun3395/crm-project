@@ -11,7 +11,7 @@ import org.springframework.transaction.reactive.executeAndAwait
 @Component
 class EventTemplateListener(
     private val postEmailTemplateEventHandler: PostEmailTemplateEventHandler,
-    private val transactionalTemplates: TransactionTemplates
+    private val transactionalTemplates: TransactionTemplates,
 ) {
     /**
      * `@EventListener`를 사용한 이유:

@@ -2,7 +2,10 @@ package com.manage.crm.event.util
 
 import kotlin.math.roundToInt
 
-fun toPercentage(numerator: Int, denominator: Int): Double {
+fun toPercentage(
+    numerator: Int,
+    denominator: Int,
+): Double {
     if (denominator <= 0) {
         return 0.0
     }

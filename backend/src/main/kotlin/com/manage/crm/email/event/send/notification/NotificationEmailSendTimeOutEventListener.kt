@@ -13,7 +13,7 @@ import org.springframework.transaction.reactive.executeAndAwait
 class NotificationEmailSendTimeOutEventListener(
     private val notificationEmailSendTimeOutEventHandler: NotificationEmailSendTimeOutEventHandler,
     private val notificationEmailSendTimeOutInvokeEventHandler: NotificationEmailSendTimeOutInvokeEventHandler,
-    private val transactionalTemplates: TransactionTemplates
+    private val transactionalTemplates: TransactionTemplates,
 ) {
     @EventListener
     fun onEvent(event: NotificationEmailSendTimeOutEvent) {

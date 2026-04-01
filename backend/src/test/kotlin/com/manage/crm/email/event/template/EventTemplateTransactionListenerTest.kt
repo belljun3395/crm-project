@@ -8,9 +8,8 @@ import java.util.UUID
 import kotlin.test.assertEquals
 
 class EventTemplateTransactionListenerTest(
-    val emailTemplateRepository: EmailTemplateRepository
+    val emailTemplateRepository: EmailTemplateRepository,
 ) : MailEventInvokeSituationTest() {
-
     init {
         given("email template repository") {
             afterEach {
@@ -19,15 +18,17 @@ class EventTemplateTransactionListenerTest(
 
             then("email template is modified") {
                 val uniqueName = "templateName-${UUID.randomUUID()}"
-                val emailTemplate = EmailTemplate.new(
-                    templateName = uniqueName,
-                    subject = "subject",
-                    body = "body",
-                    variables = Variables(emptyList())
-                )
+                val emailTemplate =
+                    EmailTemplate.new(
+                        templateName = uniqueName,
+                        subject = "subject",
+                        body = "body",
+                        variables = Variables(emptyList()),
+                    )
                 emailTemplateRepository.save(emailTemplate)
 
-                emailTemplate.modify()
+                emailTemplate
+                    .modify()
                     .modifySubject("newSubject")
                     .modifyBody("newBody", Variables(emptyList()))
                     .done()

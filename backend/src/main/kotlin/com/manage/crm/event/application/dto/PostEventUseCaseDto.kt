@@ -5,16 +5,17 @@ data class PostEventUseCaseIn(
     val campaignName: String?,
     val externalId: String,
     val segmentId: Long? = null,
-    val properties: List<PostEventPropertyDto>
+    val properties: List<PostEventPropertyDto>,
 )
 
 data class PostEventPropertyDto(
     val key: String,
-    val value: String
+    val value: String,
 )
 
 data class PostEventUseCaseOut(
     val id: Long,
-    val message: String
+    val message: String,
 )
+
 class PostEventUseCaseDto

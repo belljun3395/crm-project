@@ -10,10 +10,10 @@ data class IdempotencyRecord(
     val responseBody: String? = null,
     val contentType: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
 )
 
 enum class IdempotencyRecordStatus {
     IN_PROGRESS,
-    COMPLETED
+    COMPLETED,
 }

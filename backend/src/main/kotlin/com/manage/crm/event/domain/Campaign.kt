@@ -19,47 +19,46 @@ class Campaign(
     @Column("properties")
     var properties: CampaignProperties,
     @CreatedDate
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
-    @JsonCreator private constructor(
+    @JsonCreator
+    private constructor(
         @JsonProperty("id") id: Long,
         @JsonProperty("name") name: String,
-        @JsonProperty("createdAt") createdAt: LocalDateTime
+        @JsonProperty("createdAt") createdAt: LocalDateTime,
     ) : this(
         id = id,
         name = name,
         properties = CampaignProperties(emptyList()),
-        createdAt = createdAt
+        createdAt = createdAt,
     )
 
-    object UNIQUE_FIELDS {
+    object UniqueFields {
         const val NAME = "name"
     }
 
     companion object {
         fun new(
             name: String,
-            properties: CampaignProperties
-        ): Campaign {
-            return Campaign(
+            properties: CampaignProperties,
+        ): Campaign =
+            Campaign(
                 name = name,
-                properties = properties
+                properties = properties,
             )
-        }
 
         fun new(
             id: Long,
             name: String,
             properties: CampaignProperties,
-            createdAt: LocalDateTime
-        ): Campaign {
-            return Campaign(
+            createdAt: LocalDateTime,
+        ): Campaign =
+            Campaign(
                 id = id,
                 name = name,
                 properties = properties,
-                createdAt = createdAt
+                createdAt = createdAt,
             )
-        }
     }
 
     /**

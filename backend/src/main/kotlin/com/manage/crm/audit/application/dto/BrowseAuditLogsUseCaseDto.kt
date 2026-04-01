@@ -4,11 +4,11 @@ data class BrowseAuditLogsUseCaseIn(
     val limit: Int = 50,
     val action: String? = null,
     val resourceType: String? = null,
-    val actorId: String? = null
+    val actorId: String? = null,
 )
 
 data class BrowseAuditLogsUseCaseOut(
-    val logs: List<AuditLogDto>
+    val logs: List<AuditLogDto>,
 )
 
 data class AuditLogDto(
@@ -21,5 +21,5 @@ data class AuditLogDto(
     val requestPath: String?,
     val statusCode: Int?,
     val detail: String?,
-    val createdAt: String?
+    val createdAt: String?,
 )

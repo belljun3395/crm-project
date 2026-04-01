@@ -25,51 +25,50 @@ fun getMessage(
     status: SentEmailStatus,
     email: String,
     timeStamp: ZonedDateTime,
-    messageId: String
-): String {
-    return """
-                    {
-                        "Type" : "Notification",
-                        "MessageId" : "$messageId",
-                        "TopicArn" : "arn:aws:sns:us-west-2:123456789012:MyTopic",
-                        "Subject" : "test",
-                        "Message" : "{ \"eventType\": \"${status.name}\", \"mail\": { \"messageId\": \"$messageId\", \"destination\": [\"$email\"], \"timestamp\": \"$timeStamp\" } }",
-                        "Timestamp" : "$timeStamp",
-                        "SignatureVersion" : "1",
-                        "Signature" : "EXAMPLE",
-                        "SigningCertURL" : "EXAMPLE",
-                        "UnsubscribeURL" : "EXAMPLE"
-                    }
+    messageId: String,
+): String =
+    """
+    {
+        "Type" : "Notification",
+        "MessageId" : "$messageId",
+        "TopicArn" : "arn:aws:sns:us-west-2:123456789012:MyTopic",
+        "Subject" : "test",
+        "Message" : "{ \"eventType\": \"${status.name}\", \"mail\": { \"messageId\": \"$messageId\", \"destination\": [\"$email\"], \"timestamp\": \"$timeStamp\" } }",
+        "Timestamp" : "$timeStamp",
+        "SignatureVersion" : "1",
+        "Signature" : "EXAMPLE",
+        "SigningCertURL" : "EXAMPLE",
+        "UnsubscribeURL" : "EXAMPLE"
+    }
     """.trimIndent()
-}
 
 class EmailSendEventListenerTest(
     @Qualifier("mailServicePostEventProcessor")
     val mailService: MailService,
-    eventMessageMapper: SesMessageMapper
+    eventMessageMapper: SesMessageMapper,
 ) : MailEventInvokeSituationTest() {
-
     private val sesMessageReverseRelayEmailEventPublisher = mock(EmailEventPublisher::class.java)
     private val sesEmailEventFactory = SesEmailEventFactory()
     private var sesMessageReverseRelay: SesMessageReverseRelay =
         SesMessageReverseRelay(
             sesMessageReverseRelayEmailEventPublisher,
             eventMessageMapper,
-            sesEmailEventFactory
+            sesEmailEventFactory,
         )
 
     init {
         given("mail service") {
             then("after mail service is called") {
-                val sendEmailInDto = SendEmailInDto(
-                    to = "example@example.com",
-                    subject = "subject",
-                    template = "template",
-                    content = NonContent(),
-                    emailBody = "body",
-                    destination = "example@example.com",
-                    eventType = SentEmailStatus.SEND
-                )
+                val sendEmailInDto =
+                    SendEmailInDto(
+                        to = "example@example.com",
+                        subject = "subject",
+                        template = "template",
+                        content = NonContent(),
+                        emailBody = "body",
+                        destination = "example@example.com",
+                        eventType = SentEmailStatus.SEND,
+                    )
                 `when`(mailServiceImpl.send(sendEmailInDto.emailArgs)).thenReturn("messageId")
 
                 `when`(mailServiceImpl.send(sendEmailInDto)).thenReturn(
@@ -78,17 +77,18 @@ class EmailSendEventListenerTest(
                         emailBody = "body",
                         messageId = "messageId",
                         destination = "example@example.com",
-                        provider = EmailProviderType.AWS
-                    )
+                        provider = EmailProviderType.AWS,
+                    ),
                 )
 
-                val event = EmailSentEvent(
-                    userId = 1,
-                    emailBody = "body",
-                    messageId = "messageId",
-                    destination = "example@example.com",
-                    provider = EmailProviderType.AWS
-                )
+                val event =
+                    EmailSentEvent(
+                        userId = 1,
+                        emailBody = "body",
+                        messageId = "messageId",
+                        destination = "example@example.com",
+                        provider = EmailProviderType.AWS,
+                    )
                 doNothing().`when`(emailEventPublisher).publishEvent(event)
 
                 mailService.send(sendEmailInDto)
@@ -107,12 +107,13 @@ class EmailSendEventListenerTest(
                 val acknowledgement = mock(Acknowledgement::class.java)
                 doNothing().`when`(acknowledgement).acknowledge()
 
-                val event = EmailOpenEvent(
-                    messageId = messageId,
-                    destination = email,
-                    timestamp = timeStamp,
-                    provider = EmailProviderType.AWS
-                )
+                val event =
+                    EmailOpenEvent(
+                        messageId = messageId,
+                        destination = email,
+                        timestamp = timeStamp,
+                        provider = EmailProviderType.AWS,
+                    )
                 doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
 
                 sesMessageReverseRelay.onMessage(message, acknowledgement)
@@ -129,12 +130,13 @@ class EmailSendEventListenerTest(
                 val acknowledgement = mock(Acknowledgement::class.java)
                 doNothing().`when`(acknowledgement).acknowledge()
 
-                val event = EmailDeliveryEvent(
-                    messageId = messageId,
-                    destination = email,
-                    timestamp = timeStamp,
-                    provider = EmailProviderType.AWS
-                )
+                val event =
+                    EmailDeliveryEvent(
+                        messageId = messageId,
+                        destination = email,
+                        timestamp = timeStamp,
+                        provider = EmailProviderType.AWS,
+                    )
                 doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
 
                 sesMessageReverseRelay.onMessage(message, acknowledgement)
@@ -151,12 +153,13 @@ class EmailSendEventListenerTest(
                 val acknowledgement = mock(Acknowledgement::class.java)
                 doNothing().`when`(acknowledgement).acknowledge()
 
-                val event = EmailDeliveryDelayEvent(
-                    messageId = messageId,
-                    destination = email,
-                    timestamp = timeStamp,
-                    provider = EmailProviderType.AWS
-                )
+                val event =
+                    EmailDeliveryDelayEvent(
+                        messageId = messageId,
+                        destination = email,
+                        timestamp = timeStamp,
+                        provider = EmailProviderType.AWS,
+                    )
                 doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
 
                 sesMessageReverseRelay.onMessage(message, acknowledgement)
@@ -173,12 +176,13 @@ class EmailSendEventListenerTest(
                 val acknowledgement = mock(Acknowledgement::class.java)
                 doNothing().`when`(acknowledgement).acknowledge()
 
-                val event = EmailClickEvent(
-                    messageId = messageId,
-                    destination = email,
-                    timestamp = timeStamp,
-                    provider = EmailProviderType.AWS
-                )
+                val event =
+                    EmailClickEvent(
+                        messageId = messageId,
+                        destination = email,
+                        timestamp = timeStamp,
+                        provider = EmailProviderType.AWS,
+                    )
                 doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
 
                 sesMessageReverseRelay.onMessage(message, acknowledgement)

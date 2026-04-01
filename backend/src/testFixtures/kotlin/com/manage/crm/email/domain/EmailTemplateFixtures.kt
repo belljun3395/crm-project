@@ -17,22 +17,29 @@ class EmailTemplateFixtures private constructor() {
     private var createdAt: LocalDateTime = LocalDateTime.now()
 
     fun withId(id: Long) = apply { this.id = id }
+
     fun withTemplateName(templateName: String) = apply { this.templateName = templateName }
+
     fun withSubject(subject: String) = apply { this.subject = subject }
+
     fun withBody(body: String) = apply { this.body = body }
+
     fun withVariables(variables: Variables) = apply { this.variables = variables }
+
     fun withVersion(version: EmailTemplateVersion) = apply { this.version = version }
+
     fun withCreatedAt(createdAt: LocalDateTime) = apply { this.createdAt = createdAt }
 
-    fun build(): EmailTemplate = EmailTemplate(
-        id = id,
-        templateName = templateName,
-        subject = subject,
-        body = body,
-        variables = variables,
-        version = version,
-        createdAt = createdAt
-    )
+    fun build(): EmailTemplate =
+        EmailTemplate(
+            id = id,
+            templateName = templateName,
+            subject = subject,
+            body = body,
+            variables = variables,
+            version = version,
+            createdAt = createdAt,
+        )
 
     companion object {
         fun anEmailTemplate() = EmailTemplateFixtures()

@@ -12,7 +12,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
 @Component
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "mock")
 class MockJourneyTriggerQueuePublisher : JourneyTriggerQueuePublisher {
-
     private val log = KotlinLogging.logger {}
     private val eventMessages = ConcurrentLinkedQueue<JourneyEventPayload>()
     private val segmentMessages = ConcurrentLinkedQueue<List<Long>>()

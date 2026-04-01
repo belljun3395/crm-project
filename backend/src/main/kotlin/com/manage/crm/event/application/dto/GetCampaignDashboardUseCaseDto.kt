@@ -9,13 +9,13 @@ data class GetCampaignDashboardUseCaseIn(
     val campaignId: Long,
     val startTime: LocalDateTime? = null,
     val endTime: LocalDateTime? = null,
-    val timeWindowUnit: TimeWindowUnit? = null
+    val timeWindowUnit: TimeWindowUnit? = null,
 )
 
 data class GetCampaignDashboardUseCaseOut(
     val campaignId: Long,
     val metrics: List<MetricDto>,
-    val summary: DashboardSummaryDto
+    val summary: DashboardSummaryDto,
 )
 
 data class MetricDto(
@@ -27,7 +27,7 @@ data class MetricDto(
     val timeWindowEnd: LocalDateTime,
     val timeWindowUnit: String,
     val createdAt: LocalDateTime?,
-    val updatedAt: LocalDateTime?
+    val updatedAt: LocalDateTime?,
 )
 
 data class DashboardSummaryDto(
@@ -35,28 +35,29 @@ data class DashboardSummaryDto(
     val totalEvents: Long,
     val eventsLast24Hours: Long,
     val eventsLast7Days: Long,
-    val lastUpdated: LocalDateTime
+    val lastUpdated: LocalDateTime,
 )
 
-fun CampaignDashboardMetrics.toDto() = MetricDto(
-    id = this.id,
-    campaignId = this.campaignId,
-    metricType = this.metricType.name,
-    metricValue = this.metricValue,
-    timeWindowStart = this.timeWindowStart,
-    timeWindowEnd = this.timeWindowEnd,
-    timeWindowUnit = this.timeWindowUnit.name,
-    createdAt = this.createdAt,
-    updatedAt = this.updatedAt
-)
+fun CampaignDashboardMetrics.toDto() =
+    MetricDto(
+        id = this.id,
+        campaignId = this.campaignId,
+        metricType = this.metricType.name,
+        metricValue = this.metricValue,
+        timeWindowStart = this.timeWindowStart,
+        timeWindowEnd = this.timeWindowEnd,
+        timeWindowUnit = this.timeWindowUnit.name,
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt,
+    )
 
 fun CampaignSummaryMetricsProjection.toDashboardSummaryDto(
     campaignId: Long,
-    lastUpdated: LocalDateTime
+    lastUpdated: LocalDateTime,
 ) = DashboardSummaryDto(
     campaignId = campaignId,
     totalEvents = this.totalEvents,
     eventsLast24Hours = this.eventsLast24Hours,
     eventsLast7Days = this.eventsLast7Days,
-    lastUpdated = lastUpdated
+    lastUpdated = lastUpdated,
 )

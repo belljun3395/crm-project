@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component
 @Component
 class NotificationEmailSendTimeOutEventHandler(
     private val scheduledEventRepository: ScheduledEventRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
     /**
      * - Save Scheduled Event
@@ -24,8 +24,8 @@ class NotificationEmailSendTimeOutEventHandler(
                 eventClass = event.javaClass.simpleName,
                 eventPayload = objectMapper.writeValueAsString(event),
                 completed = false,
-                scheduledAt = scheduledAt
-            )
+                scheduledAt = scheduledAt,
+            ),
         )
     }
 }

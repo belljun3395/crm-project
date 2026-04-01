@@ -7,14 +7,14 @@ import org.springframework.stereotype.Service
 
 @Service
 class GetTotalUserCountUseCase(
-    private val userService: UserService
+    private val userService: UserService,
 ) {
     suspend fun execute(): GetTotalUserCountUseCaseOut {
         val totalCount = userService.getTotalUserCount()
 
         return out {
             GetTotalUserCountUseCaseOut(
-                totalCount = totalCount
+                totalCount = totalCount,
             )
         }
     }

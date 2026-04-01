@@ -13,12 +13,11 @@ import reactor.core.publisher.Mono
 
 enum class DataSourceType {
     MASTER,
-    REPLICA
+    REPLICA,
 }
 
 @Configuration
 class R2dbcRoutingConfig {
-
     @Value("\${spring.r2dbc.routing.master-url}")
     val masterDatabaseUrl: String? = null
 
@@ -33,15 +32,17 @@ class R2dbcRoutingConfig {
 
     @Bean
     fun masterConnectionFactory(): ConnectionFactory {
-        val url = masterDatabaseUrl
-            ?: throw IllegalStateException("spring.r2dbc.routing.master-url property not set")
+        val url =
+            masterDatabaseUrl
+                ?: throw IllegalStateException("spring.r2dbc.routing.master-url property not set")
         return ConnectionFactoryFactory.create(url, username, password)
     }
 
     @Bean
     fun replicaConnectionFactory(): ConnectionFactory {
-        val url = replicaDatabaseUrl
-            ?: throw IllegalStateException("spring.r2dbc.routing.replica-url property not set")
+        val url =
+            replicaDatabaseUrl
+                ?: throw IllegalStateException("spring.r2dbc.routing.replica-url property not set")
         return ConnectionFactoryFactory.create(url, username, password)
     }
 
@@ -49,26 +50,25 @@ class R2dbcRoutingConfig {
     @Primary
     fun routingConnectionFactory(
         masterConnectionFactory: ConnectionFactory,
-        replicaConnectionFactory: ConnectionFactory
+        replicaConnectionFactory: ConnectionFactory,
     ): ConnectionFactory {
-        val routingConnectionFactory = object : AbstractRoutingConnectionFactory() {
-            override fun determineCurrentLookupKey(): Mono<Any> {
-                return TransactionSynchronizationManager
-                    .forCurrentTransaction()
-                    .map { m: TransactionSynchronizationManager ->
-                        if (m.isCurrentTransactionReadOnly) DataSourceType.REPLICA else DataSourceType.MASTER
-                    }
-                    .onErrorResume { Mono.just(DataSourceType.MASTER) }
-                    .defaultIfEmpty(DataSourceType.MASTER)
-                    .cast(Any::class.java)
+        val routingConnectionFactory =
+            object : AbstractRoutingConnectionFactory() {
+                override fun determineCurrentLookupKey(): Mono<Any> =
+                    TransactionSynchronizationManager
+                        .forCurrentTransaction()
+                        .map { m: TransactionSynchronizationManager ->
+                            if (m.isCurrentTransactionReadOnly) DataSourceType.REPLICA else DataSourceType.MASTER
+                        }.onErrorResume { Mono.just(DataSourceType.MASTER) }
+                        .defaultIfEmpty(DataSourceType.MASTER)
+                        .cast(Any::class.java)
             }
-        }
 
         routingConnectionFactory.setTargetConnectionFactories(
             mapOf(
                 DataSourceType.MASTER to masterConnectionFactory,
-                DataSourceType.REPLICA to replicaConnectionFactory
-            )
+                DataSourceType.REPLICA to replicaConnectionFactory,
+            ),
         )
         routingConnectionFactory.setDefaultTargetConnectionFactory(masterConnectionFactory)
         return routingConnectionFactory
@@ -76,7 +76,11 @@ class R2dbcRoutingConfig {
 
     // Helper to create ConnectionFactory from URL with separate credentials
     private object ConnectionFactoryFactory {
-        fun create(url: String, username: String?, password: String?): ConnectionFactory {
+        fun create(
+            url: String,
+            username: String?,
+            password: String?,
+        ): ConnectionFactory {
             // Parse the base URL options
             val baseOptions = ConnectionFactoryOptions.parse(url)
 

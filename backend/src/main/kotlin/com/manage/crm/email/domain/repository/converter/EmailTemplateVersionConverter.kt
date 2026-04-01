@@ -18,7 +18,5 @@ class EmailTemplateVersionReadingConverter : Converter<Any, EmailTemplateVersion
 
 @WritingConverter
 class EmailTemplateVersionWritingConverter : Converter<EmailTemplateVersion, Float> {
-    override fun convert(source: EmailTemplateVersion): Float {
-        return source.value
-    }
+    override fun convert(source: EmailTemplateVersion): Float = source.value
 }

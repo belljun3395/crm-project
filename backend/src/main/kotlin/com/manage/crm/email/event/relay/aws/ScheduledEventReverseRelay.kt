@@ -15,16 +15,17 @@ import org.springframework.stereotype.Component
 @ConditionalOnProperty(name = ["cloud.provider"], havingValue = "aws", matchIfMissing = true)
 class ScheduledEventReverseRelay(
     private val emailEventPublisher: EmailEventPublisher,
-    private val scheduledEventMessageMapper: ScheduledEventMessageMapper
+    private val scheduledEventMessageMapper: ScheduledEventMessageMapper,
 ) {
     val log = KotlinLogging.logger { }
 
     @SqsListener(queueNames = ["crm_schedule_event_sqs"])
     fun onMessage(
         message: String,
-        acknowledgement: Acknowledgement
+        acknowledgement: Acknowledgement,
     ) {
-        scheduledEventMessageMapper.map(message)
+        scheduledEventMessageMapper
+            .map(message)
             .let { scheduledEventMessageMapper.toEvent(it) }
             .let { publish(it) }
         acknowledgement.acknowledge()

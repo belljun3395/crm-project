@@ -10,22 +10,25 @@ class PropertiesFixtures private constructor() {
 
     fun withValue(value: List<EventProperty>) = apply { this.value = value }
 
-    fun buildEvent() = EventProperties(
-        value = value
-    )
+    fun buildEvent() =
+        EventProperties(
+            value = value,
+        )
 
-    fun buildCampaign() = CampaignProperties(
-        value = value.map { CampaignProperty(it.key, it.value) }
-    )
+    fun buildCampaign() =
+        CampaignProperties(
+            value = value.map { CampaignProperty(it.key, it.value) },
+        )
 
     companion object {
         fun aProperties() = PropertiesFixtures()
 
         fun giveMeOne(): PropertiesFixtures {
-            val properties = listOf(
-                PropertyFixtures.giveMeOne().buildEvent(),
-                PropertyFixtures.giveMeOne().buildEvent()
-            )
+            val properties =
+                listOf(
+                    PropertyFixtures.giveMeOne().buildEvent(),
+                    PropertyFixtures.giveMeOne().buildEvent(),
+                )
             return aProperties()
                 .withValue(properties)
         }

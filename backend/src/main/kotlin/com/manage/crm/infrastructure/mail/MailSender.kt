@@ -5,9 +5,12 @@ import org.springframework.boot.autoconfigure.mail.MailProperties
 
 abstract class MailSender<T : SendMailArgs<*, *>>(
     private val mailProperties: MailProperties,
-    private val defaultMailSendProvider: MailSendProvider
+    private val defaultMailSendProvider: MailSendProvider,
 ) {
-    fun send(args: T, mailSendProvider: MailSendProvider? = null): String {
+    fun send(
+        args: T,
+        mailSendProvider: MailSendProvider? = null,
+    ): String {
         val from = mailProperties.username
         val to = args.to
         val subject = args.subject

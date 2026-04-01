@@ -11,12 +11,12 @@ import org.springframework.stereotype.Service
 class CacheUserServiceImpl(
     private val userCacheManager: UserCacheManager,
     private val userEventPublisher: UserEventPublisher,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
 ) : UserService {
     private val log = KotlinLogging.logger {}
 
-    override suspend fun getTotalUserCount(): Long {
-        return runCatching {
+    override suspend fun getTotalUserCount(): Long =
+        runCatching {
             val totalUserCount = userCacheManager.totalUserCount()
             val totalUserCountUpdatedAt = userCacheManager.totalUserCountUpdatedAt()
             if (UserCacheManager.isTotalUserCountNeedUpdate(totalUserCountUpdatedAt)) {
@@ -34,11 +34,9 @@ class CacheUserServiceImpl(
                 }
             }
         }
-    }
 
-    override suspend fun incrementTotalUserCount(): Long {
-        return userCacheManager.incrTotalUserCount().apply {
+    override suspend fun incrementTotalUserCount(): Long =
+        userCacheManager.incrTotalUserCount().apply {
             userCacheManager.updateTotalUserCountUpdateAt()
         }
-    }
 }

@@ -6,11 +6,11 @@ import java.time.LocalDateTime
 data class BrowseUsersUseCaseIn(
     val page: Int = 0,
     val size: Int = 20,
-    val query: String? = null
+    val query: String? = null,
 )
 
 data class BrowseUsersUseCaseOut(
-    val users: PageResponse<UserDto>
+    val users: PageResponse<UserDto>,
 )
 
 data class UserDto(
@@ -18,5 +18,5 @@ data class UserDto(
     val externalId: String,
     val userAttributes: String,
     val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime
+    val updatedAt: LocalDateTime,
 )

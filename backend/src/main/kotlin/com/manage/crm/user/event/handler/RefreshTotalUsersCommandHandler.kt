@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component
 @Component
 class RefreshTotalUsersCommandHandler(
     private val userRepository: UserRepository,
-    private val userCacheManager: UserCacheManager
+    private val userCacheManager: UserCacheManager,
 ) {
     val log = KotlinLogging.logger { }
 

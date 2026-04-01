@@ -5,5 +5,6 @@ import com.manage.crm.event.domain.repository.query.SearchByPropertyQuery
 
 interface EventCustomRepository {
     suspend fun searchByProperty(query: SearchByPropertyQuery): List<Event>
+
     suspend fun searchByProperties(queries: List<SearchByPropertyQuery>): List<Event>
 }

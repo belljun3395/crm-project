@@ -5,9 +5,11 @@ import kotlin.random.Random
 class UserAttributesFixtures private constructor() {
     private var value: String = "{}"
 
-    fun withValue(value: String): UserAttributesFixtures = apply {
-        this.value = value
-    }
+    fun withValue(value: String): UserAttributesFixtures =
+        apply {
+            this.value = value
+        }
+
     fun build(): UserAttributes = UserAttributes(value)
 
     companion object {

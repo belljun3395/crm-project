@@ -5,5 +5,5 @@ abstract class EmailTemplateTransactionEvent
 abstract class EmailTemplateTransactionAfterCompletionEvent : EmailTemplateTransactionEvent()
 
 class PostEmailTemplateEvent(
-    val templateId: Long
+    val templateId: Long,
 ) : EmailTemplateTransactionAfterCompletionEvent()

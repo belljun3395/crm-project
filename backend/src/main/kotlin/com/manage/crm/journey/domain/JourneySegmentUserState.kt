@@ -22,7 +22,7 @@ class JourneySegmentUserState(
     var transitionVersion: Long = 0L,
     @LastModifiedDate
     @Column("updated_at")
-    var updatedAt: LocalDateTime? = null
+    var updatedAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
@@ -30,15 +30,14 @@ class JourneySegmentUserState(
             userId: Long,
             inSegment: Boolean,
             attributesHash: String?,
-            transitionVersion: Long
-        ): JourneySegmentUserState {
-            return JourneySegmentUserState(
+            transitionVersion: Long,
+        ): JourneySegmentUserState =
+            JourneySegmentUserState(
                 journeyId = journeyId,
                 userId = userId,
                 inSegment = inSegment,
                 attributesHash = attributesHash,
-                transitionVersion = transitionVersion
+                transitionVersion = transitionVersion,
             )
-        }
     }
 }

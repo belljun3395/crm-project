@@ -2,11 +2,11 @@ package com.manage.crm.webhook.application.dto
 
 data class BrowseWebhookDeliveryLogsUseCaseIn(
     val webhookId: Long,
-    val limit: Int = 50
+    val limit: Int = 50,
 )
 
 data class BrowseWebhookDeliveryLogsUseCaseOut(
-    val deliveries: List<WebhookDeliveryLogDto>
+    val deliveries: List<WebhookDeliveryLogDto>,
 )
 
 data class WebhookDeliveryLogDto(
@@ -18,5 +18,5 @@ data class WebhookDeliveryLogDto(
     val attemptCount: Int,
     val responseStatus: Int?,
     val errorMessage: String?,
-    val deliveredAt: String?
+    val deliveredAt: String?,
 )

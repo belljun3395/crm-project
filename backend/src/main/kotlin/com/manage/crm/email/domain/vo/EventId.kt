@@ -5,5 +5,5 @@ import java.util.UUID
 
 data class EventId(
     @JsonValue
-    val value: String = UUID.randomUUID().toString()
+    val value: String = UUID.randomUUID().toString(),
 )

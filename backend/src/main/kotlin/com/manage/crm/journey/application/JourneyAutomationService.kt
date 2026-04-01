@@ -41,7 +41,7 @@ import java.time.LocalDateTime
 
 private enum class JourneyStepExecutionDecision {
     CONTINUE,
-    STOP
+    STOP,
 }
 
 @Service
@@ -57,17 +57,17 @@ class JourneyAutomationService(
     private val eventReadPort: EventReadPort,
     private val actionDispatchService: ActionDispatchService,
     private val userRepository: UserRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
     private val log = KotlinLogging.logger {}
 
     suspend fun onEvent(event: Event) {
-        val eventJourneys = journeyRepository
-            .findAllByTriggerTypeAndTriggerEventNameAndActiveTrue(
-                triggerType = JourneyTriggerType.EVENT.name,
-                triggerEventName = event.name
-            )
-            .toList()
+        val eventJourneys =
+            journeyRepository
+                .findAllByTriggerTypeAndTriggerEventNameAndActiveTrue(
+                    triggerType = JourneyTriggerType.EVENT.name,
+                    triggerEventName = event.name,
+                ).toList()
 
         val eventId = requireNotNull(event.id) { "Event id cannot be null" }
         eventJourneys.forEach { journey ->
@@ -80,9 +80,10 @@ class JourneyAutomationService(
     }
 
     private suspend fun processConditionTriggeredJourneys(event: Event) {
-        val conditionJourneys = journeyRepository
-            .findAllByTriggerTypeAndActiveTrue(JourneyTriggerType.CONDITION.name)
-            .toList()
+        val conditionJourneys =
+            journeyRepository
+                .findAllByTriggerTypeAndActiveTrue(JourneyTriggerType.CONDITION.name)
+                .toList()
         if (conditionJourneys.isEmpty()) {
             return
         }
@@ -91,12 +92,13 @@ class JourneyAutomationService(
         conditionJourneys.forEach { journey ->
             runCatching {
                 val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }
-                val conditionExpression = if (!journey.triggerEventName.isNullOrBlank()) {
-                    journey.triggerEventName
-                } else {
-                    val steps = journeyStepRepository.findAllByJourneyIdOrderByStepOrderAsc(journeyId).toList()
-                    resolveConditionExpression(journey, steps)
-                }
+                val conditionExpression =
+                    if (!journey.triggerEventName.isNullOrBlank()) {
+                        journey.triggerEventName
+                    } else {
+                        val steps = journeyStepRepository.findAllByJourneyIdOrderByStepOrderAsc(journeyId).toList()
+                        resolveConditionExpression(journey, steps)
+                    }
 
                 if (conditionExpression.isNullOrBlank()) {
                     log.warn { "Skip CONDITION journey without condition expression: journeyId=$journeyId" }
@@ -116,15 +118,19 @@ class JourneyAutomationService(
         }
     }
 
-    private fun resolveConditionExpression(journey: Journey, steps: List<JourneyStep>): String? {
+    private fun resolveConditionExpression(
+        journey: Journey,
+        steps: List<JourneyStep>,
+    ): String? {
         if (!journey.triggerEventName.isNullOrBlank()) {
             return journey.triggerEventName
         }
 
-        return steps.firstOrNull { step ->
-            runCatching { JourneyStepType.from(step.stepType) }.getOrNull() == JourneyStepType.BRANCH &&
-                !step.conditionExpression.isNullOrBlank()
-        }?.conditionExpression
+        return steps
+            .firstOrNull { step ->
+                runCatching { JourneyStepType.from(step.stepType) }.getOrNull() == JourneyStepType.BRANCH &&
+                    !step.conditionExpression.isNullOrBlank()
+            }?.conditionExpression
     }
 
     suspend fun onSegmentContextChanged(changedUserIds: List<Long>? = null) {
@@ -143,28 +149,36 @@ class JourneyAutomationService(
         }
     }
 
-    private suspend fun processSegmentJourney(journey: Journey, changedUserIds: List<Long>?) {
+    private suspend fun processSegmentJourney(
+        journey: Journey,
+        changedUserIds: List<Long>?,
+    ) {
         val segmentId = journey.triggerSegmentId ?: return
-        val segmentTriggerEventType = JourneySegmentTriggerEventType.from(
-            journey.triggerSegmentEvent ?: JourneySegmentTriggerEventType.ENTER.name
-        )
+        val segmentTriggerEventType =
+            JourneySegmentTriggerEventType.from(
+                journey.triggerSegmentEvent ?: JourneySegmentTriggerEventType.ENTER.name,
+            )
 
         when (segmentTriggerEventType) {
             JourneySegmentTriggerEventType.ENTER,
             JourneySegmentTriggerEventType.EXIT,
-            JourneySegmentTriggerEventType.UPDATE -> processSegmentUserTriggerJourney(
-                journey = journey,
-                segmentId = segmentId,
-                segmentTriggerEventType = segmentTriggerEventType,
-                changedUserIds = changedUserIds
-            )
+            JourneySegmentTriggerEventType.UPDATE,
+            ->
+                processSegmentUserTriggerJourney(
+                    journey = journey,
+                    segmentId = segmentId,
+                    segmentTriggerEventType = segmentTriggerEventType,
+                    changedUserIds = changedUserIds,
+                )
 
             JourneySegmentTriggerEventType.COUNT_REACHED,
-            JourneySegmentTriggerEventType.COUNT_DROPPED -> processSegmentCountTriggerJourney(
-                journey = journey,
-                segmentId = segmentId,
-                segmentTriggerEventType = segmentTriggerEventType
-            )
+            JourneySegmentTriggerEventType.COUNT_DROPPED,
+            ->
+                processSegmentCountTriggerJourney(
+                    journey = journey,
+                    segmentId = segmentId,
+                    segmentTriggerEventType = segmentTriggerEventType,
+                )
         }
     }
 
@@ -172,70 +186,77 @@ class JourneyAutomationService(
         journey: Journey,
         segmentId: Long,
         segmentTriggerEventType: JourneySegmentTriggerEventType,
-        changedUserIds: List<Long>?
+        changedUserIds: List<Long>?,
     ) {
         val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }
         val currentMatchedUserIds = resolveSegmentTargetUserIds(segmentId).toSet()
         val existingStates = journeySegmentUserStateRepository.findAllByJourneyId(journeyId)
         val existingStateByUserId = existingStates.associateBy { it.userId }
 
-        val candidateUserIds = (existingStateByUserId.keys + currentMatchedUserIds).toMutableSet().apply {
-            if (!changedUserIds.isNullOrEmpty()) {
-                addAll(changedUserIds)
+        val candidateUserIds =
+            (existingStateByUserId.keys + currentMatchedUserIds).toMutableSet().apply {
+                if (!changedUserIds.isNullOrEmpty()) {
+                    addAll(changedUserIds)
+                }
             }
-        }
         if (candidateUserIds.isEmpty()) {
             return
         }
 
         val watchFields = parseTriggerWatchFields(journey.triggerSegmentWatchFields)
-        val usersById = if (segmentTriggerEventType == JourneySegmentTriggerEventType.UPDATE) {
-            val inSegmentCandidates = candidateUserIds.filter { currentMatchedUserIds.contains(it) }
-            if (inSegmentCandidates.isEmpty()) {
-                emptyMap()
+        val usersById =
+            if (segmentTriggerEventType == JourneySegmentTriggerEventType.UPDATE) {
+                val inSegmentCandidates = candidateUserIds.filter { currentMatchedUserIds.contains(it) }
+                if (inSegmentCandidates.isEmpty()) {
+                    emptyMap()
+                } else {
+                    userRepository
+                        .findAllByIdIn(inSegmentCandidates)
+                        .mapNotNull { user -> user.id?.let { it to user } }
+                        .toMap()
+                }
             } else {
-                userRepository.findAllByIdIn(inSegmentCandidates)
-                    .mapNotNull { user -> user.id?.let { it to user } }
-                    .toMap()
+                emptyMap()
             }
-        } else {
-            emptyMap()
-        }
 
         candidateUserIds.sorted().forEach { userId ->
             val previousState = existingStateByUserId[userId]
             val wasInSegment = previousState?.inSegment ?: false
             val isInSegment = currentMatchedUserIds.contains(userId)
 
-            val currentWatchHash = if (segmentTriggerEventType == JourneySegmentTriggerEventType.UPDATE && isInSegment) {
-                usersById[userId]?.let { user -> calculateWatchFieldHash(user, watchFields) }
-            } else {
-                null
-            }
+            val currentWatchHash =
+                if (segmentTriggerEventType == JourneySegmentTriggerEventType.UPDATE && isInSegment) {
+                    usersById[userId]?.let { user -> calculateWatchFieldHash(user, watchFields) }
+                } else {
+                    null
+                }
             val previousWatchHash = previousState?.attributesHash
 
             var transitionVersion = previousState?.transitionVersion ?: 0L
-            val shouldTrigger = when (segmentTriggerEventType) {
-                JourneySegmentTriggerEventType.ENTER -> !wasInSegment && isInSegment
-                JourneySegmentTriggerEventType.EXIT -> wasInSegment && !isInSegment
-                JourneySegmentTriggerEventType.UPDATE -> {
-                    wasInSegment && isInSegment &&
-                        previousWatchHash != null &&
-                        currentWatchHash != null &&
-                        previousWatchHash != currentWatchHash
+            val shouldTrigger =
+                when (segmentTriggerEventType) {
+                    JourneySegmentTriggerEventType.ENTER -> !wasInSegment && isInSegment
+                    JourneySegmentTriggerEventType.EXIT -> wasInSegment && !isInSegment
+                    JourneySegmentTriggerEventType.UPDATE -> {
+                        wasInSegment &&
+                            isInSegment &&
+                            previousWatchHash != null &&
+                            currentWatchHash != null &&
+                            previousWatchHash != currentWatchHash
+                    }
+                    else -> false
                 }
-                else -> false
-            }
 
             if (shouldTrigger) {
                 transitionVersion += 1L
             }
 
-            val nextWatchHash = if (segmentTriggerEventType == JourneySegmentTriggerEventType.UPDATE && isInSegment) {
-                currentWatchHash
-            } else {
-                null
-            }
+            val nextWatchHash =
+                if (segmentTriggerEventType == JourneySegmentTriggerEventType.UPDATE && isInSegment) {
+                    currentWatchHash
+                } else {
+                    null
+                }
 
             saveJourneySegmentUserState(
                 previousState = previousState,
@@ -243,7 +264,7 @@ class JourneyAutomationService(
                 userId = userId,
                 isInSegment = isInSegment,
                 attributesHash = nextWatchHash,
-                transitionVersion = transitionVersion
+                transitionVersion = transitionVersion,
             )
 
             if (!shouldTrigger) {
@@ -251,14 +272,15 @@ class JourneyAutomationService(
             }
 
             val triggerKey = "$journeyId:SEGMENT:${segmentTriggerEventType.name}:$userId:$transitionVersion"
-            val syntheticEvent = buildSegmentSyntheticEvent(
-                userId = userId,
-                segmentId = segmentId,
-                segmentTriggerEventType = segmentTriggerEventType,
-                segmentCount = currentMatchedUserIds.size.toLong(),
-                transitionVersion = transitionVersion,
-                threshold = journey.triggerSegmentCountThreshold
-            )
+            val syntheticEvent =
+                buildSegmentSyntheticEvent(
+                    userId = userId,
+                    segmentId = segmentId,
+                    segmentTriggerEventType = segmentTriggerEventType,
+                    segmentCount = currentMatchedUserIds.size.toLong(),
+                    transitionVersion = transitionVersion,
+                    threshold = journey.triggerSegmentCountThreshold,
+                )
             executeJourney(journey, syntheticEvent, triggerKey)
         }
     }
@@ -266,7 +288,7 @@ class JourneyAutomationService(
     private suspend fun processSegmentCountTriggerJourney(
         journey: Journey,
         segmentId: Long,
-        segmentTriggerEventType: JourneySegmentTriggerEventType
+        segmentTriggerEventType: JourneySegmentTriggerEventType,
     ) {
         val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }
         val threshold = journey.triggerSegmentCountThreshold ?: return
@@ -279,11 +301,12 @@ class JourneyAutomationService(
         val previousCount = previousState?.lastCount ?: 0L
         val previousVersion = previousState?.transitionVersion ?: 0L
 
-        val crossed = when (segmentTriggerEventType) {
-            JourneySegmentTriggerEventType.COUNT_REACHED -> previousCount < threshold && currentCount >= threshold
-            JourneySegmentTriggerEventType.COUNT_DROPPED -> previousCount >= threshold && currentCount < threshold
-            else -> false
-        }
+        val crossed =
+            when (segmentTriggerEventType) {
+                JourneySegmentTriggerEventType.COUNT_REACHED -> previousCount < threshold && currentCount >= threshold
+                JourneySegmentTriggerEventType.COUNT_DROPPED -> previousCount >= threshold && currentCount < threshold
+                else -> false
+            }
 
         val transitionVersion = if (crossed) previousVersion + 1L else previousVersion
         saveJourneySegmentCountState(previousState, journeyId, currentCount, transitionVersion)
@@ -293,18 +316,23 @@ class JourneyAutomationService(
         }
 
         val triggerKey = "$journeyId:SEGMENT:${segmentTriggerEventType.name}:$threshold:$transitionVersion"
-        val syntheticEvent = buildSegmentSyntheticEvent(
-            userId = 0L,
-            segmentId = segmentId,
-            segmentTriggerEventType = segmentTriggerEventType,
-            segmentCount = currentCount,
-            transitionVersion = transitionVersion,
-            threshold = threshold
-        )
+        val syntheticEvent =
+            buildSegmentSyntheticEvent(
+                userId = 0L,
+                segmentId = segmentId,
+                segmentTriggerEventType = segmentTriggerEventType,
+                segmentCount = currentCount,
+                transitionVersion = transitionVersion,
+                threshold = threshold,
+            )
         executeJourney(journey, syntheticEvent, triggerKey)
     }
 
-    private suspend fun executeJourney(journey: Journey, event: Event, triggerKey: String) {
+    private suspend fun executeJourney(
+        journey: Journey,
+        event: Event,
+        triggerKey: String,
+    ) {
         val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }
         val eventId = requireNotNull(event.id) { "Event id cannot be null" }
 
@@ -313,17 +341,18 @@ class JourneyAutomationService(
             return
         }
 
-        val execution = journeyExecutionRepository.save(
-            JourneyExecution.new(
-                journeyId = journeyId,
-                eventId = eventId,
-                userId = event.userId,
-                status = JourneyExecutionStatus.RUNNING.name,
-                currentStepOrder = 0,
-                triggerKey = triggerKey,
-                startedAt = LocalDateTime.now()
+        val execution =
+            journeyExecutionRepository.save(
+                JourneyExecution.new(
+                    journeyId = journeyId,
+                    eventId = eventId,
+                    userId = event.userId,
+                    status = JourneyExecutionStatus.RUNNING.name,
+                    currentStepOrder = 0,
+                    triggerKey = triggerKey,
+                    startedAt = LocalDateTime.now(),
+                ),
             )
-        )
 
         runCatching {
             executeJourneySteps(execution, event)
@@ -342,38 +371,44 @@ class JourneyAutomationService(
     }
 
     private suspend fun resolveSegmentTargetUserIds(segmentId: Long): List<Long> {
-        val users = userRepository.findAll().toList().mapNotNull { user ->
-            val userId = user.id ?: return@mapNotNull null
-            SegmentTargetUserReadModel(
-                id = userId,
-                userAttributesJson = user.userAttributes.value,
-                createdAt = user.createdAt
-            )
-        }
+        val users =
+            userRepository.findAll().toList().mapNotNull { user ->
+                val userId = user.id ?: return@mapNotNull null
+                SegmentTargetUserReadModel(
+                    id = userId,
+                    userAttributesJson = user.userAttributes.value,
+                    createdAt = user.createdAt,
+                )
+            }
         if (users.isEmpty()) {
             return emptyList()
         }
 
-        val eventsByUserId = eventReadPort.findAllByUserIdIn(users.map { it.id })
-            .groupBy { event -> event.userId }
-            .mapValues { (_, events) ->
-                events.map { event ->
-                    SegmentTargetEventReadModel(
-                        userId = event.userId,
-                        name = event.name,
-                        occurredAt = event.createdAt
-                    )
+        val eventsByUserId =
+            eventReadPort
+                .findAllByUserIdIn(users.map { it.id })
+                .groupBy { event -> event.userId }
+                .mapValues { (_, events) ->
+                    events.map { event ->
+                        SegmentTargetEventReadModel(
+                            userId = event.userId,
+                            name = event.name,
+                            occurredAt = event.createdAt,
+                        )
+                    }
                 }
-            }
 
         return segmentReadPort.findTargetUserIds(
             segmentId = segmentId,
             users = users,
-            eventsByUserId = eventsByUserId
+            eventsByUserId = eventsByUserId,
         )
     }
 
-    private suspend fun executeJourneySteps(execution: JourneyExecution, event: Event) {
+    private suspend fun executeJourneySteps(
+        execution: JourneyExecution,
+        event: Event,
+    ) {
         val journeyId = execution.journeyId
         val executionId = requireNotNull(execution.id) { "JourneyExecution id cannot be null" }
 
@@ -383,11 +418,12 @@ class JourneyAutomationService(
             execution.currentStepOrder = step.stepOrder
             journeyExecutionRepository.save(execution)
 
-            val decision = when (JourneyStepType.from(step.stepType)) {
-                JourneyStepType.BRANCH -> executeBranchStep(executionId, step, event)
-                JourneyStepType.DELAY -> executeDelayStep(executionId, step, event)
-                JourneyStepType.ACTION -> executeActionStep(executionId, step, event)
-            }
+            val decision =
+                when (JourneyStepType.from(step.stepType)) {
+                    JourneyStepType.BRANCH -> executeBranchStep(executionId, step, event)
+                    JourneyStepType.DELAY -> executeDelayStep(executionId, step, event)
+                    JourneyStepType.ACTION -> executeActionStep(executionId, step, event)
+                }
 
             if (decision == JourneyStepExecutionDecision.STOP) {
                 break
@@ -398,7 +434,7 @@ class JourneyAutomationService(
     private suspend fun executeBranchStep(
         executionId: Long,
         step: JourneyStep,
-        event: Event
+        event: Event,
     ): JourneyStepExecutionDecision {
         val stepId = requireNotNull(step.id) { "JourneyStep id cannot be null" }
         val conditionMatched = evaluateCondition(step.conditionExpression, event)
@@ -410,7 +446,7 @@ class JourneyAutomationService(
                 status = JourneyExecutionHistoryStatus.SKIPPED,
                 attempt = 0,
                 message = "Branch condition is not matched",
-                idempotencyKey = null
+                idempotencyKey = null,
             )
             return JourneyStepExecutionDecision.STOP
         }
@@ -421,7 +457,7 @@ class JourneyAutomationService(
             status = JourneyExecutionHistoryStatus.SUCCESS,
             attempt = 1,
             message = "Branch condition matched",
-            idempotencyKey = null
+            idempotencyKey = null,
         )
         return JourneyStepExecutionDecision.CONTINUE
     }
@@ -429,7 +465,7 @@ class JourneyAutomationService(
     private suspend fun executeDelayStep(
         executionId: Long,
         step: JourneyStep,
-        event: Event
+        event: Event,
     ): JourneyStepExecutionDecision {
         val stepId = requireNotNull(step.id) { "JourneyStep id cannot be null" }
         val conditionMatched = evaluateCondition(step.conditionExpression, event)
@@ -440,7 +476,7 @@ class JourneyAutomationService(
                 status = JourneyExecutionHistoryStatus.SKIPPED,
                 attempt = 0,
                 message = "Delay condition is not matched",
-                idempotencyKey = null
+                idempotencyKey = null,
             )
             return JourneyStepExecutionDecision.CONTINUE
         }
@@ -456,7 +492,7 @@ class JourneyAutomationService(
             status = JourneyExecutionHistoryStatus.SUCCESS,
             attempt = 1,
             message = "Delay completed: ${boundedDelayMillis}ms",
-            idempotencyKey = null
+            idempotencyKey = null,
         )
         return JourneyStepExecutionDecision.CONTINUE
     }
@@ -464,7 +500,7 @@ class JourneyAutomationService(
     private suspend fun executeActionStep(
         executionId: Long,
         step: JourneyStep,
-        event: Event
+        event: Event,
     ): JourneyStepExecutionDecision {
         val stepId = requireNotNull(step.id) { "JourneyStep id cannot be null" }
 
@@ -475,7 +511,7 @@ class JourneyAutomationService(
                 status = JourneyExecutionHistoryStatus.SKIPPED,
                 attempt = 0,
                 message = "Action condition is not matched",
-                idempotencyKey = null
+                idempotencyKey = null,
             )
             return JourneyStepExecutionDecision.CONTINUE
         }
@@ -488,17 +524,20 @@ class JourneyAutomationService(
                 status = JourneyExecutionHistoryStatus.SKIPPED_DUPLICATE,
                 attempt = 0,
                 message = "Step execution is deduplicated by idempotency key",
-                idempotencyKey = dedupeKey
+                idempotencyKey = dedupeKey,
             )
             return JourneyStepExecutionDecision.CONTINUE
         }
 
-        val channel = step.channel?.let { ActionChannel.from(it) }
-            ?: throw IllegalArgumentException("channel is required for ACTION step")
-        val destination = step.destination
-            ?: throw IllegalArgumentException("destination is required for ACTION step")
-        val body = step.body
-            ?: throw IllegalArgumentException("body is required for ACTION step")
+        val channel =
+            step.channel?.let { ActionChannel.from(it) }
+                ?: throw IllegalArgumentException("channel is required for ACTION step")
+        val destination =
+            step.destination
+                ?: throw IllegalArgumentException("destination is required for ACTION step")
+        val body =
+            step.body
+                ?: throw IllegalArgumentException("body is required for ACTION step")
 
         val retryCount = step.retryCount.coerceAtLeast(0)
         val variables = resolveStepVariables(step.variablesJson, event)
@@ -511,20 +550,21 @@ class JourneyAutomationService(
                 status = JourneyExecutionHistoryStatus.RUNNING,
                 attempt = attempt,
                 message = "Action dispatch attempt started",
-                idempotencyKey = dedupeKey
+                idempotencyKey = dedupeKey,
             )
 
-            val dispatchResult = actionDispatchService.dispatch(
-                ActionDispatchIn(
-                    channel = channel,
-                    destination = destination,
-                    subject = step.subject,
-                    body = body,
-                    variables = variables,
-                    campaignId = null,
-                    journeyExecutionId = executionId
+            val dispatchResult =
+                actionDispatchService.dispatch(
+                    ActionDispatchIn(
+                        channel = channel,
+                        destination = destination,
+                        subject = step.subject,
+                        body = body,
+                        variables = variables,
+                        campaignId = null,
+                        journeyExecutionId = executionId,
+                    ),
                 )
-            )
 
             if (dispatchResult.status == ActionDispatchStatus.SUCCESS) {
                 saveHistory(
@@ -533,7 +573,7 @@ class JourneyAutomationService(
                     status = JourneyExecutionHistoryStatus.SUCCESS,
                     attempt = attempt,
                     message = "Action dispatch succeeded",
-                    idempotencyKey = dedupeKey
+                    idempotencyKey = dedupeKey,
                 )
                 return JourneyStepExecutionDecision.CONTINUE
             }
@@ -545,7 +585,7 @@ class JourneyAutomationService(
                     status = JourneyExecutionHistoryStatus.RETRYING,
                     attempt = attempt,
                     message = dispatchResult.errorMessage ?: "Action dispatch failed and will retry",
-                    idempotencyKey = dedupeKey
+                    idempotencyKey = dedupeKey,
                 )
                 delay(200)
             } else {
@@ -555,7 +595,7 @@ class JourneyAutomationService(
                     status = JourneyExecutionHistoryStatus.FAILED,
                     attempt = attempt,
                     message = dispatchResult.errorMessage ?: "Action dispatch failed",
-                    idempotencyKey = dedupeKey
+                    idempotencyKey = dedupeKey,
                 )
                 throw IllegalStateException(dispatchResult.errorMessage ?: "Action dispatch failed")
             }
@@ -570,7 +610,7 @@ class JourneyAutomationService(
         status: JourneyExecutionHistoryStatus,
         attempt: Int,
         message: String?,
-        idempotencyKey: String?
+        idempotencyKey: String?,
     ) {
         journeyExecutionHistoryRepository.save(
             JourneyExecutionHistory.new(
@@ -579,13 +619,13 @@ class JourneyAutomationService(
                 status = status.name,
                 attempt = attempt,
                 message = message,
-                idempotencyKey = idempotencyKey
-            )
+                idempotencyKey = idempotencyKey,
+            ),
         )
     }
 
-    private suspend fun acquireStepDeduplicationKey(idempotencyKey: String): Boolean {
-        return runCatching {
+    private suspend fun acquireStepDeduplicationKey(idempotencyKey: String): Boolean =
+        runCatching {
             journeyStepDeduplicationRepository.save(JourneyStepDeduplication.new(idempotencyKey))
             true
         }.getOrElse { error ->
@@ -595,19 +635,22 @@ class JourneyAutomationService(
                 throw error
             }
         }
-    }
 
-    private fun evaluateCondition(conditionExpression: String?, event: Event): Boolean {
+    private fun evaluateCondition(
+        conditionExpression: String?,
+        event: Event,
+    ): Boolean {
         if (conditionExpression.isNullOrBlank()) {
             return true
         }
 
         val expression = conditionExpression.trim()
-        val operator = when {
-            expression.contains("==") -> "=="
-            expression.contains("!=") -> "!="
-            else -> throw IllegalArgumentException("Unsupported condition expression: $conditionExpression")
-        }
+        val operator =
+            when {
+                expression.contains("==") -> "=="
+                expression.contains("!=") -> "!="
+                else -> throw IllegalArgumentException("Unsupported condition expression: $conditionExpression")
+            }
 
         val parts = expression.split(operator, limit = 2)
         if (parts.size != 2) {
@@ -622,7 +665,10 @@ class JourneyAutomationService(
         }
 
         val key = left.removePrefix("event.")
-        val actual = event.properties.value.firstOrNull { it.key == key }?.value
+        val actual =
+            event.properties.value
+                .firstOrNull { it.key == key }
+                ?.value
 
         return when (operator) {
             "==" -> actual == right
@@ -631,40 +677,47 @@ class JourneyAutomationService(
         }
     }
 
-    private suspend fun resolveStepVariables(variablesJson: String?, event: Event): Map<String, String> {
+    private suspend fun resolveStepVariables(
+        variablesJson: String?,
+        event: Event,
+    ): Map<String, String> {
         val eventId = requireNotNull(event.id) { "Event id cannot be null" }
-        val eventVariables = buildMap {
-            put("eventId", eventId.toString())
-            put("userId", event.userId.toString())
-            put("eventName", event.name)
-            event.properties.value.forEach {
-                put("event.${it.key}", it.value)
-            }
-        }
-        val userVariables = userRepository.findById(event.userId)
-            ?.let { user ->
-                buildMap {
-                    put("user.id", event.userId.toString())
-                    put("user.externalId", user.externalId)
-                    runCatching {
-                        user.userAttributes.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)
-                    }.getOrNull()?.let { put("user.email", it) }
-                    runCatching {
-                        user.userAttributes.getValue(RequiredUserAttributeKey.NAME, objectMapper)
-                    }.getOrNull()?.let { put("user.name", it) }
+        val eventVariables =
+            buildMap {
+                put("eventId", eventId.toString())
+                put("userId", event.userId.toString())
+                put("eventName", event.name)
+                event.properties.value.forEach {
+                    put("event.${it.key}", it.value)
                 }
             }
-            ?: mapOf("user.id" to event.userId.toString())
+        val userVariables =
+            userRepository
+                .findById(event.userId)
+                ?.let { user ->
+                    buildMap {
+                        put("user.id", event.userId.toString())
+                        put("user.externalId", user.externalId)
+                        runCatching {
+                            user.userAttributes.getValue(RequiredUserAttributeKey.EMAIL, objectMapper)
+                        }.getOrNull()?.let { put("user.email", it) }
+                        runCatching {
+                            user.userAttributes.getValue(RequiredUserAttributeKey.NAME, objectMapper)
+                        }.getOrNull()?.let { put("user.name", it) }
+                    }
+                }
+                ?: mapOf("user.id" to event.userId.toString())
 
-        val stepVariables = if (variablesJson.isNullOrBlank()) {
-            emptyMap()
-        } else {
-            runCatching {
-                objectMapper.readValue(variablesJson, object : TypeReference<Map<String, String>>() {})
-            }.getOrElse {
+        val stepVariables =
+            if (variablesJson.isNullOrBlank()) {
                 emptyMap()
+            } else {
+                runCatching {
+                    objectMapper.readValue(variablesJson, object : TypeReference<Map<String, String>>() {})
+                }.getOrElse {
+                    emptyMap()
+                }
             }
-        }
 
         return eventVariables + userVariables + stepVariables
     }
@@ -675,7 +728,7 @@ class JourneyAutomationService(
         userId: Long,
         isInSegment: Boolean,
         attributesHash: String?,
-        transitionVersion: Long
+        transitionVersion: Long,
     ) {
         if (previousState == null) {
             if (!isInSegment && attributesHash == null && transitionVersion == 0L) {
@@ -687,8 +740,8 @@ class JourneyAutomationService(
                     userId = userId,
                     inSegment = isInSegment,
                     attributesHash = attributesHash,
-                    transitionVersion = transitionVersion
-                )
+                    transitionVersion = transitionVersion,
+                ),
             )
             return
         }
@@ -703,15 +756,15 @@ class JourneyAutomationService(
         previousState: JourneySegmentCountState?,
         journeyId: Long,
         currentCount: Long,
-        transitionVersion: Long
+        transitionVersion: Long,
     ) {
         if (previousState == null) {
             journeySegmentCountStateRepository.save(
                 JourneySegmentCountState.new(
                     journeyId = journeyId,
                     lastCount = currentCount,
-                    transitionVersion = transitionVersion
-                )
+                    transitionVersion = transitionVersion,
+                ),
             )
             return
         }
@@ -732,21 +785,29 @@ class JourneyAutomationService(
         }
     }
 
-    private fun calculateWatchFieldHash(user: User, watchFields: List<String>): String {
+    private fun calculateWatchFieldHash(
+        user: User,
+        watchFields: List<String>,
+    ): String {
         if (watchFields.isEmpty()) {
             return ""
         }
 
         val userAttributes = runCatching { objectMapper.readTree(user.userAttributes.value) }.getOrNull()
-        val serialized = watchFields.joinToString("|") { field ->
-            val value = resolveWatchFieldValue(field, user, userAttributes)
-            "$field=${value ?: ""}"
-        }
+        val serialized =
+            watchFields.joinToString("|") { field ->
+                val value = resolveWatchFieldValue(field, user, userAttributes)
+                "$field=${value ?: ""}"
+            }
         return sha256(serialized)
     }
 
-    private fun resolveWatchFieldValue(field: String, user: User, userAttributes: JsonNode?): String? {
-        return when (field) {
+    private fun resolveWatchFieldValue(
+        field: String,
+        user: User,
+        userAttributes: JsonNode?,
+    ): String? =
+        when (field) {
             "user.id" -> user.id?.toString()
             "user.externalId" -> user.externalId
             "user.createdAt" -> user.createdAt?.toString()
@@ -760,15 +821,18 @@ class JourneyAutomationService(
                 }
             }
         }
-    }
 
-    private fun resolveJsonPathValue(root: JsonNode?, keyPath: String): String? {
+    private fun resolveJsonPathValue(
+        root: JsonNode?,
+        keyPath: String,
+    ): String? {
         if (root == null || keyPath.isBlank()) {
             return null
         }
-        val finalNode = keyPath.split(".").fold(root as JsonNode?) { node, key ->
-            node?.get(key)
-        } ?: return null
+        val finalNode =
+            keyPath.split(".").fold(root as JsonNode?) { node, key ->
+                node?.get(key)
+            } ?: return null
 
         return if (finalNode.isValueNode) finalNode.asText() else finalNode.toString()
     }
@@ -784,14 +848,15 @@ class JourneyAutomationService(
         segmentTriggerEventType: JourneySegmentTriggerEventType,
         segmentCount: Long,
         transitionVersion: Long,
-        threshold: Long?
+        threshold: Long?,
     ): Event {
-        val properties = mutableListOf(
-            EventProperty("segmentId", segmentId.toString()),
-            EventProperty("segmentTriggerEvent", segmentTriggerEventType.name),
-            EventProperty("segmentCount", segmentCount.toString()),
-            EventProperty("transitionVersion", transitionVersion.toString())
-        )
+        val properties =
+            mutableListOf(
+                EventProperty("segmentId", segmentId.toString()),
+                EventProperty("segmentTriggerEvent", segmentTriggerEventType.name),
+                EventProperty("segmentCount", segmentCount.toString()),
+                EventProperty("transitionVersion", transitionVersion.toString()),
+            )
         if (threshold != null) {
             properties.add(EventProperty("segmentThreshold", threshold.toString()))
         }
@@ -802,7 +867,7 @@ class JourneyAutomationService(
             name = "SEGMENT_${segmentTriggerEventType.name}",
             userId = userId,
             properties = EventProperties(properties),
-            createdAt = LocalDateTime.now()
+            createdAt = LocalDateTime.now(),
         )
     }
 }

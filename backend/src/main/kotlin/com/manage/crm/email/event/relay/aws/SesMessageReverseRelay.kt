@@ -16,16 +16,17 @@ import org.springframework.stereotype.Component
 class SesMessageReverseRelay(
     private val emailEventPublisher: EmailEventPublisher,
     private val eventMessageMapper: SesMessageMapper,
-    private val sesEmailEventFactory: SesEmailEventFactory
+    private val sesEmailEventFactory: SesEmailEventFactory,
 ) {
     val log = KotlinLogging.logger { }
 
     @SqsListener(queueNames = ["crm_ses_sqs"])
     fun onMessage(
         message: String,
-        acknowledgement: Acknowledgement
+        acknowledgement: Acknowledgement,
     ) {
-        eventMessageMapper.map(message)
+        eventMessageMapper
+            .map(message)
             .let { sesEmailEventFactory.toEmailSendEvent(it) }
             .ifPresent { publish(it) }
 

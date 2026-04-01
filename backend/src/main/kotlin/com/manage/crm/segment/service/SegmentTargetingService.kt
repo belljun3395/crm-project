@@ -18,27 +18,26 @@ import java.time.format.DateTimeFormatter
 data class SegmentTargetUser(
     val id: Long,
     val userAttributesJson: String,
-    val createdAt: LocalDateTime?
+    val createdAt: LocalDateTime?,
 )
 
 data class SegmentTargetEvent(
     val userId: Long,
     val name: String,
-    val occurredAt: LocalDateTime?
+    val occurredAt: LocalDateTime?,
 )
 
 data class SegmentTargetRuleSet(
     val conditions: List<SegmentCondition>,
-    val requiresEventCondition: Boolean
+    val requiresEventCondition: Boolean,
 )
 
 @Service
 class SegmentTargetingService(
     private val segmentRepository: SegmentRepository,
     private val segmentConditionRepository: SegmentConditionRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
-
     /**
      * Loads and validates a segment rule set.
      */
@@ -55,7 +54,7 @@ class SegmentTargetingService(
 
         return SegmentTargetRuleSet(
             conditions = conditions,
-            requiresEventCondition = conditions.any { it.fieldName.startsWith("event.") }
+            requiresEventCondition = conditions.any { it.fieldName.startsWith("event.") },
         )
     }
 
@@ -65,7 +64,7 @@ class SegmentTargetingService(
     fun resolveUserIds(
         ruleSet: SegmentTargetRuleSet,
         users: List<SegmentTargetUser>,
-        eventsByUserId: Map<Long, List<SegmentTargetEvent>>
+        eventsByUserId: Map<Long, List<SegmentTargetEvent>>,
     ): List<Long> {
         if (users.isEmpty()) {
             return emptyList()
@@ -85,19 +84,17 @@ class SegmentTargetingService(
                         user = user,
                         userAttributes = userAttributes,
                         userEvents = userEvents,
-                        condition = condition
+                        condition = condition,
                     )
                 }
-            }
-            .map { it.id }
+            }.map { it.id }
     }
 
     /**
      * Parses user attribute json into a tree for dynamic field lookup.
      */
-    private fun parseUserAttributes(user: SegmentTargetUser): JsonNode? {
-        return runCatching { objectMapper.readTree(user.userAttributesJson) }.getOrNull()
-    }
+    private fun parseUserAttributes(user: SegmentTargetUser): JsonNode? =
+        runCatching { objectMapper.readTree(user.userAttributesJson) }.getOrNull()
 
     /**
      * Dispatches one condition evaluation by field name.
@@ -106,7 +103,7 @@ class SegmentTargetingService(
         user: SegmentTargetUser,
         userAttributes: JsonNode?,
         userEvents: List<SegmentTargetEvent>,
-        condition: SegmentCondition
+        condition: SegmentCondition,
     ): Boolean {
         val valueNode = runCatching { objectMapper.readTree(condition.conditionValue) }.getOrNull() ?: return false
         return when (condition.fieldName) {
@@ -128,7 +125,7 @@ class SegmentTargetingService(
     private fun matchMany(
         actualValues: List<Any>,
         condition: SegmentCondition,
-        expectedValue: JsonNode
+        expectedValue: JsonNode,
     ): Boolean {
         if (actualValues.isEmpty()) {
             return false
@@ -146,7 +143,7 @@ class SegmentTargetingService(
     private fun matchSingle(
         actualValue: Any?,
         condition: SegmentCondition,
-        expectedValue: JsonNode
+        expectedValue: JsonNode,
     ): Boolean {
         if (actualValue == null) {
             return false
@@ -166,20 +163,27 @@ class SegmentTargetingService(
     /**
      * Matches string values for string-compatible operators.
      */
-    private fun matchString(actual: String, operator: SegmentOperator, expectedValue: JsonNode): Boolean {
-        return when (operator) {
+    private fun matchString(
+        actual: String,
+        operator: SegmentOperator,
+        expectedValue: JsonNode,
+    ): Boolean =
+        when (operator) {
             SegmentOperator.EQ -> actual == expectedValue.asText()
             SegmentOperator.NEQ -> actual != expectedValue.asText()
             SegmentOperator.CONTAINS -> actual.contains(expectedValue.asText())
             SegmentOperator.IN -> expectedValue.any { actual == it.asText() }
             else -> false
         }
-    }
 
     /**
      * Matches numeric values for number operators including `IN` and `BETWEEN`.
      */
-    private fun matchNumber(actual: BigDecimal, operator: SegmentOperator, expectedValue: JsonNode): Boolean {
+    private fun matchNumber(
+        actual: BigDecimal,
+        operator: SegmentOperator,
+        expectedValue: JsonNode,
+    ): Boolean {
         return when (operator) {
             SegmentOperator.EQ -> actual.compareTo(expectedValue.decimalValue()) == 0
             SegmentOperator.NEQ -> actual.compareTo(expectedValue.decimalValue()) != 0
@@ -200,14 +204,17 @@ class SegmentTargetingService(
     /**
      * Matches date-time values using ISO-8601 parsing with offset/local fallback.
      */
-    private fun matchDateTime(actual: LocalDateTime, operator: SegmentOperator, expectedValue: JsonNode): Boolean {
-        fun parseOrNull(value: String): LocalDateTime? {
-            return runCatching {
+    private fun matchDateTime(
+        actual: LocalDateTime,
+        operator: SegmentOperator,
+        expectedValue: JsonNode,
+    ): Boolean {
+        fun parseOrNull(value: String): LocalDateTime? =
+            runCatching {
                 OffsetDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME).toLocalDateTime()
             }.recoverCatching {
                 LocalDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME)
             }.getOrNull()
-        }
 
         return when (operator) {
             SegmentOperator.EQ -> parseOrNull(expectedValue.asText())?.let { actual == it } ?: false
@@ -227,7 +234,11 @@ class SegmentTargetingService(
     /**
      * Matches boolean values for EQ/NEQ operators.
      */
-    private fun matchBoolean(actual: Boolean, operator: SegmentOperator, expectedValue: JsonNode): Boolean {
+    private fun matchBoolean(
+        actual: Boolean,
+        operator: SegmentOperator,
+        expectedValue: JsonNode,
+    ): Boolean {
         val expected = expectedValue.asBoolean()
         return when (operator) {
             SegmentOperator.EQ -> actual == expected
@@ -239,36 +250,34 @@ class SegmentTargetingService(
     /**
      * Converts runtime value to [BigDecimal] for number evaluation.
      */
-    private fun toBigDecimal(value: Any): BigDecimal? {
-        return when (value) {
+    private fun toBigDecimal(value: Any): BigDecimal? =
+        when (value) {
             is BigDecimal -> value
             is Number -> value.toString().toBigDecimalOrNull()
             is String -> value.toBigDecimalOrNull()
             else -> null
         }
-    }
 
     /**
      * Converts runtime value to [LocalDateTime] using ISO-8601 offset/local parsing.
      */
-    private fun toLocalDateTime(value: Any): LocalDateTime? {
-        return when (value) {
+    private fun toLocalDateTime(value: Any): LocalDateTime? =
+        when (value) {
             is LocalDateTime -> value
-            is String -> runCatching { OffsetDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME).toLocalDateTime() }
-                .recoverCatching { LocalDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME) }
-                .getOrNull()
+            is String ->
+                runCatching { OffsetDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME).toLocalDateTime() }
+                    .recoverCatching { LocalDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME) }
+                    .getOrNull()
             else -> null
         }
-    }
 
     /**
      * Converts runtime value to strict boolean.
      */
-    private fun toBoolean(value: Any): Boolean? {
-        return when (value) {
+    private fun toBoolean(value: Any): Boolean? =
+        when (value) {
             is Boolean -> value
             is String -> value.toBooleanStrictOrNull()
             else -> null
         }
-    }
 }

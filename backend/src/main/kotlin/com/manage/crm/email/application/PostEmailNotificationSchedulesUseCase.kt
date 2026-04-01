@@ -13,9 +13,8 @@ import org.springframework.stereotype.Service
 @Service
 class PostEmailNotificationSchedulesUseCase(
     @Qualifier("scheduleTaskServicePostEventProcessor") private val scheduleTaskService: ScheduleTaskAllService,
-    private val campaignSegmentsRepository: CampaignSegmentsRepository
+    private val campaignSegmentsRepository: CampaignSegmentsRepository,
 ) {
-
     suspend fun execute(useCaseIn: PostEmailNotificationSchedulesUseCaseIn): PostEmailNotificationSchedulesUseCaseOut {
         val campaignId = useCaseIn.campaignId
         val templateId = useCaseIn.templateId
@@ -27,24 +26,28 @@ class PostEmailNotificationSchedulesUseCase(
         validateCampaignSegmentLink(campaignId = campaignId, segmentId = segmentId)
 
         val eventId = EventId()
-        val newSchedule = scheduleTaskService.newSchedule(
-            NotificationEmailSendTimeOutEventInput(
-                campaignId = campaignId,
-                templateId = templateId,
-                templateVersion = templateVersion,
-                userIds = userIds,
-                segmentId = segmentId,
-                eventId = eventId,
-                expiredTime = expiredTime
+        val newSchedule =
+            scheduleTaskService.newSchedule(
+                NotificationEmailSendTimeOutEventInput(
+                    campaignId = campaignId,
+                    templateId = templateId,
+                    templateVersion = templateVersion,
+                    userIds = userIds,
+                    segmentId = segmentId,
+                    eventId = eventId,
+                    expiredTime = expiredTime,
+                ),
             )
-        )
 
         return out {
             PostEmailNotificationSchedulesUseCaseOut(newSchedule)
         }
     }
 
-    private suspend fun validateCampaignSegmentLink(campaignId: Long?, segmentId: Long?) {
+    private suspend fun validateCampaignSegmentLink(
+        campaignId: Long?,
+        segmentId: Long?,
+    ) {
         if (campaignId == null || segmentId == null) {
             return
         }

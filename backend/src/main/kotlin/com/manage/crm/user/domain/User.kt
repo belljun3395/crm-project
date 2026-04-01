@@ -19,34 +19,32 @@ class User(
     @CreatedDate
     var createdAt: LocalDateTime? = null,
     @LastModifiedDate
-    var updatedAt: LocalDateTime? = null
+    var updatedAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
             externalId: String,
-            userAttributes: UserAttributes
-        ): User {
-            return User(
+            userAttributes: UserAttributes,
+        ): User =
+            User(
                 externalId = externalId,
-                userAttributes = userAttributes
+                userAttributes = userAttributes,
             )
-        }
 
         fun new(
             id: Long,
             externalId: String,
             userAttributes: UserAttributes,
             createdAt: LocalDateTime,
-            updatedAt: LocalDateTime
-        ): User {
-            return User(
+            updatedAt: LocalDateTime,
+        ): User =
+            User(
                 id = id,
                 externalId = externalId,
                 userAttributes = userAttributes,
                 createdAt = createdAt,
-                updatedAt = updatedAt
+                updatedAt = updatedAt,
             )
-        }
     }
 
     /**
@@ -59,7 +57,5 @@ class User(
     /**
      * Check if the user is new
      */
-    fun isNewUser(): Boolean {
-        return id == null
-    }
+    fun isNewUser(): Boolean = id == null
 }

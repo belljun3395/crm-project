@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class AuditLogService(
-    private val auditLogRepository: AuditLogRepository
+    private val auditLogRepository: AuditLogRepository,
 ) {
     private val log = KotlinLogging.logger {}
 
@@ -24,8 +24,8 @@ class AuditLogService(
                     requestMethod = command.requestMethod,
                     requestPath = command.requestPath,
                     statusCode = command.statusCode,
-                    detail = command.detail
-                )
+                    detail = command.detail,
+                ),
             )
         }.onFailure { error ->
             if (error is CancellationException) {

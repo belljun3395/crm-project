@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class CancelScheduledEventHandler(
-    private val scheduledEventRepository: ScheduledEventRepository
+    private val scheduledEventRepository: ScheduledEventRepository,
 ) {
     /**
      *  - Cancel the scheduled event
@@ -17,7 +17,7 @@ class CancelScheduledEventHandler(
                 .findByEventId(event.scheduledEventId)
                 ?.cancel()
                 ?: throw IllegalStateException("Scheduled event not found by event id: ${event.scheduledEventId}")
-            )
+        )
 
         scheduledEventRepository.save(scheduledEvent)
     }

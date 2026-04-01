@@ -25,12 +25,13 @@ class DeleteCampaignUseCase(
     private val campaignSegmentsRepository: CampaignSegmentsRepository,
     private val campaignCacheManager: CampaignCacheManager,
     private val campaignDashboardStreamManager: CampaignDashboardStreamManager,
-    private val campaignStreamRegistryManager: CampaignStreamRegistryManager
+    private val campaignStreamRegistryManager: CampaignStreamRegistryManager,
 ) {
     @Transactional
     suspend fun execute(input: DeleteCampaignUseCaseIn): DeleteCampaignUseCaseOut {
-        val campaign = campaignRepository.findById(input.campaignId)
-            ?: throw NotFoundByIdException("Campaign", input.campaignId)
+        val campaign =
+            campaignRepository.findById(input.campaignId)
+                ?: throw NotFoundByIdException("Campaign", input.campaignId)
 
         campaignSegmentsRepository.deleteAllByCampaignId(input.campaignId)
         campaignRepository.deleteById(input.campaignId)

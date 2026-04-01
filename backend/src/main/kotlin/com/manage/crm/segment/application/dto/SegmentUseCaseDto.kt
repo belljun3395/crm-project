@@ -14,47 +14,47 @@ data class PostSegmentUseCaseIn(
     val name: String,
     val description: String? = null,
     val active: Boolean = true,
-    val conditions: List<PostSegmentConditionIn>
+    val conditions: List<PostSegmentConditionIn>,
 )
 
 data class PostSegmentConditionIn(
     val field: String,
     val operator: String,
     val valueType: String,
-    val value: JsonNode
+    val value: JsonNode,
 )
 
 data class PostSegmentUseCaseOut(
-    val segment: SegmentDto
+    val segment: SegmentDto,
 )
 
 data class BrowseSegmentUseCaseIn(
-    val limit: Int = 50
+    val limit: Int = 50,
 )
 
 data class BrowseSegmentUseCaseOut(
-    val segments: List<SegmentDto>
+    val segments: List<SegmentDto>,
 )
 
 data class GetSegmentUseCaseIn(
-    val id: Long
+    val id: Long,
 )
 
 data class GetSegmentUseCaseOut(
-    val segment: SegmentDto
+    val segment: SegmentDto,
 )
 
 data class DeleteSegmentUseCaseIn(
-    val id: Long
+    val id: Long,
 )
 
 data class GetSegmentMatchedUsersUseCaseIn(
     val segmentId: Long,
-    val campaignId: Long? = null
+    val campaignId: Long? = null,
 )
 
 data class GetSegmentMatchedUsersUseCaseOut(
-    val users: List<SegmentMatchedUserDto>
+    val users: List<SegmentMatchedUserDto>,
 )
 
 data class SegmentDto(
@@ -63,7 +63,7 @@ data class SegmentDto(
     val description: String?,
     val active: Boolean,
     val conditions: List<SegmentConditionDto>,
-    val createdAt: String?
+    val createdAt: String?,
 )
 
 data class SegmentConditionDto(
@@ -71,7 +71,7 @@ data class SegmentConditionDto(
     val operator: String,
     val valueType: String,
     val value: JsonNode,
-    val position: Int
+    val position: Int,
 )
 
 data class SegmentMatchedUserDto(
@@ -79,12 +79,10 @@ data class SegmentMatchedUserDto(
     val externalId: String,
     val email: String?,
     val name: String?,
-    val createdAt: String?
+    val createdAt: String?,
 )
 
-fun Segment.toSegmentDto(
-    conditions: List<SegmentConditionDto>
-): SegmentDto {
+fun Segment.toSegmentDto(conditions: List<SegmentConditionDto>): SegmentDto {
     val segmentId = this.id ?: throw IllegalStateException("Segment id is null")
     return SegmentDto(
         id = segmentId,
@@ -92,35 +90,32 @@ fun Segment.toSegmentDto(
         description = this.description,
         active = this.active,
         conditions = conditions,
-        createdAt = this.createdAt?.format(SEGMENT_DATE_TIME_FORMATTER)
+        createdAt = this.createdAt?.format(SEGMENT_DATE_TIME_FORMATTER),
     )
 }
 
-fun SegmentCondition.toSegmentConditionDto(objectMapper: ObjectMapper): SegmentConditionDto {
-    return SegmentConditionDto(
+fun SegmentCondition.toSegmentConditionDto(objectMapper: ObjectMapper): SegmentConditionDto =
+    SegmentConditionDto(
         field = this.fieldName,
         operator = this.operator,
         valueType = this.valueType,
         value = runCatching { objectMapper.readTree(this.conditionValue) }.getOrElse { NullNode.instance },
-        position = this.position
+        position = this.position,
     )
-}
 
-fun PostSegmentConditionIn.toSegmentConditionDto(position: Int): SegmentConditionDto {
-    return SegmentConditionDto(
+fun PostSegmentConditionIn.toSegmentConditionDto(position: Int): SegmentConditionDto =
+    SegmentConditionDto(
         field = this.field,
         operator = this.operator.uppercase(),
         valueType = this.valueType.uppercase(),
         value = this.value,
-        position = position
+        position = position,
     )
-}
 
-fun SegmentConditionDto.toPostSegmentConditionIn(): PostSegmentConditionIn {
-    return PostSegmentConditionIn(
+fun SegmentConditionDto.toPostSegmentConditionIn(): PostSegmentConditionIn =
+    PostSegmentConditionIn(
         field = this.field,
         operator = this.operator,
         valueType = this.valueType,
-        value = this.value
+        value = this.value,
     )
-}

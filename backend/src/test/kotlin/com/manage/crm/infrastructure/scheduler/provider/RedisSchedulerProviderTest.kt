@@ -24,7 +24,6 @@ import reactor.core.publisher.Mono
 import java.time.LocalDateTime
 
 class RedisSchedulerProviderTest {
-
     private lateinit var redisTemplate: ReactiveRedisTemplate<String, String>
     private lateinit var objectMapper: ObjectMapper
     private lateinit var redisSchedulerProvider: RedisSchedulerProvider
@@ -36,9 +35,10 @@ class RedisSchedulerProviderTest {
         redisTemplate = mock()
         zSetOps = mock()
         valueOps = mock()
-        objectMapper = ObjectMapper()
-            .registerModule(KotlinModule.Builder().build())
-            .registerModule(JavaTimeModule())
+        objectMapper =
+            ObjectMapper()
+                .registerModule(KotlinModule.Builder().build())
+                .registerModule(JavaTimeModule())
 
         `when`(redisTemplate.opsForZSet()).thenReturn(zSetOps)
         `when`(redisTemplate.opsForValue()).thenReturn(valueOps)
@@ -47,132 +47,146 @@ class RedisSchedulerProviderTest {
     }
 
     @Test
-    fun `createSchedule should add schedule to Redis sorted set`() = runTest {
-        // given
-        val name = "test-schedule-123"
-        val scheduleTime = LocalDateTime.of(2024, 6, 1, 12, 0, 0)
-        val input = NotificationEmailSendTimeOutEventInput(
-            templateId = 1L,
-            templateVersion = 1.0f,
-            userIds = listOf(1L, 2L),
-            eventId = EventId(name),
-            expiredTime = scheduleTime
-        )
+    fun `createSchedule should add schedule to Redis sorted set`() =
+        runTest {
+            // given
+            val name = "test-schedule-123"
+            val scheduleTime = LocalDateTime.of(2024, 6, 1, 12, 0, 0)
+            val input =
+                NotificationEmailSendTimeOutEventInput(
+                    templateId = 1L,
+                    templateVersion = 1.0f,
+                    userIds = listOf(1L, 2L),
+                    eventId = EventId(name),
+                    expiredTime = scheduleTime,
+                )
 
-        `when`(zSetOps.add(eq("crm:schedules"), any(), any())).thenReturn(Mono.just(true))
-        `when`(valueOps.set(any(), any())).thenReturn(Mono.just(true))
+            `when`(zSetOps.add(eq("crm:schedules"), any(), any())).thenReturn(Mono.just(true))
+            `when`(valueOps.set(any(), any())).thenReturn(Mono.just(true))
 
-        // when
-        val result = redisSchedulerProvider.createSchedule(name, scheduleTime, input)
+            // when
+            val result = redisSchedulerProvider.createSchedule(name, scheduleTime, input)
 
-        // then
-        assertTrue(result is ScheduleCreationResult.Success)
-        assertEquals(name, (result as ScheduleCreationResult.Success).scheduleId)
-    }
-
-    @Test
-    fun `createSchedule should return failure when schedule already exists`() = runTest {
-        // given
-        val name = "existing-schedule"
-        val scheduleTime = LocalDateTime.of(2024, 6, 1, 12, 0, 0)
-        val input = NotificationEmailSendTimeOutEventInput(
-            templateId = 1L,
-            templateVersion = 1.0f,
-            userIds = listOf(1L),
-            eventId = EventId(name),
-            expiredTime = scheduleTime
-        )
-
-        `when`(zSetOps.add(eq("crm:schedules"), any(), any())).thenReturn(Mono.just(false))
-
-        // when
-        val result = redisSchedulerProvider.createSchedule(name, scheduleTime, input)
-
-        // then
-        assertTrue(result is ScheduleCreationResult.Failure)
-        assertTrue((result as ScheduleCreationResult.Failure).reason.contains("already exists"))
-    }
+            // then
+            assertTrue(result is ScheduleCreationResult.Success)
+            assertEquals(name, (result as ScheduleCreationResult.Success).scheduleId)
+        }
 
     @Test
-    fun `browseSchedules should return list of schedule names`() = runTest {
-        // given
-        val scheduleData1 = DueSchedule(
-            name = "schedule-1",
-            scheduleTime = LocalDateTime.now(),
-            payload = NotificationEmailSendTimeOutEventInput(
-                templateId = 1L,
-                templateVersion = 1.0f,
-                userIds = listOf(1L),
-                eventId = EventId("schedule-1"),
-                expiredTime = LocalDateTime.now()
-            )
-        )
-        val scheduleData2 = DueSchedule(
-            name = "schedule-2",
-            scheduleTime = LocalDateTime.now(),
-            payload = NotificationEmailSendTimeOutEventInput(
-                templateId = 2L,
-                templateVersion = 1.0f,
-                userIds = listOf(2L),
-                eventId = EventId("schedule-2"),
-                expiredTime = LocalDateTime.now()
-            )
-        )
+    fun `createSchedule should return failure when schedule already exists`() =
+        runTest {
+            // given
+            val name = "existing-schedule"
+            val scheduleTime = LocalDateTime.of(2024, 6, 1, 12, 0, 0)
+            val input =
+                NotificationEmailSendTimeOutEventInput(
+                    templateId = 1L,
+                    templateVersion = 1.0f,
+                    userIds = listOf(1L),
+                    eventId = EventId(name),
+                    expiredTime = scheduleTime,
+                )
 
-        val jsonList = listOf(
-            objectMapper.writeValueAsString(scheduleData1),
-            objectMapper.writeValueAsString(scheduleData2)
-        )
+            `when`(zSetOps.add(eq("crm:schedules"), any(), any())).thenReturn(Mono.just(false))
 
-        `when`(zSetOps.range(eq("crm:schedules"), any<Range<Long>>())).thenReturn(Flux.fromIterable(jsonList))
+            // when
+            val result = redisSchedulerProvider.createSchedule(name, scheduleTime, input)
 
-        // when
-        val result = redisSchedulerProvider.browseSchedules()
-
-        // then
-        assertEquals(2, result.size)
-        assertEquals("schedule-1", result[0].value)
-        assertEquals("schedule-2", result[1].value)
-    }
+            // then
+            assertTrue(result is ScheduleCreationResult.Failure)
+            assertTrue((result as ScheduleCreationResult.Failure).reason.contains("already exists"))
+        }
 
     @Test
-    fun `deleteSchedule should remove schedule from Redis`() = runTest {
-        // given
-        val scheduleName = ScheduleName("test-schedule")
-        val metadata = """{"name":"test-schedule","scheduleTime":"2024-06-01T12:00:00","payload":{}}"""
+    fun `browseSchedules should return list of schedule names`() =
+        runTest {
+            // given
+            val scheduleData1 =
+                DueSchedule(
+                    name = "schedule-1",
+                    scheduleTime = LocalDateTime.now(),
+                    payload =
+                        NotificationEmailSendTimeOutEventInput(
+                            templateId = 1L,
+                            templateVersion = 1.0f,
+                            userIds = listOf(1L),
+                            eventId = EventId("schedule-1"),
+                            expiredTime = LocalDateTime.now(),
+                        ),
+                )
+            val scheduleData2 =
+                DueSchedule(
+                    name = "schedule-2",
+                    scheduleTime = LocalDateTime.now(),
+                    payload =
+                        NotificationEmailSendTimeOutEventInput(
+                            templateId = 2L,
+                            templateVersion = 1.0f,
+                            userIds = listOf(2L),
+                            eventId = EventId("schedule-2"),
+                            expiredTime = LocalDateTime.now(),
+                        ),
+                )
 
-        `when`(valueOps.get(eq("crm:schedule:meta:test-schedule"))).thenReturn(Mono.just(metadata))
-        `when`(zSetOps.remove(eq("crm:schedules"), eq(metadata))).thenReturn(Mono.just(1L))
-        `when`(valueOps.delete(eq("crm:schedule:meta:test-schedule"))).thenReturn(Mono.just(true))
+            val jsonList =
+                listOf(
+                    objectMapper.writeValueAsString(scheduleData1),
+                    objectMapper.writeValueAsString(scheduleData2),
+                )
 
-        // when & then (no exception means success)
-        redisSchedulerProvider.deleteSchedule(scheduleName)
-    }
+            `when`(zSetOps.range(eq("crm:schedules"), any<Range<Long>>())).thenReturn(Flux.fromIterable(jsonList))
+
+            // when
+            val result = redisSchedulerProvider.browseSchedules()
+
+            // then
+            assertEquals(2, result.size)
+            assertEquals("schedule-1", result[0].value)
+            assertEquals("schedule-2", result[1].value)
+        }
 
     @Test
-    fun `fetchDueSchedules should return schedules with score less than current time`() = runTest {
-        // given
-        val pastTime = LocalDateTime.now().minusMinutes(5)
-        val scheduleData = DueSchedule(
-            name = "due-schedule",
-            scheduleTime = pastTime,
-            payload = NotificationEmailSendTimeOutEventInput(
-                templateId = 1L,
-                templateVersion = 1.0f,
-                userIds = listOf(1L),
-                eventId = EventId("due-schedule"),
-                expiredTime = pastTime
-            )
-        )
-        val json = objectMapper.writeValueAsString(scheduleData)
+    fun `deleteSchedule should remove schedule from Redis`() =
+        runTest {
+            // given
+            val scheduleName = ScheduleName("test-schedule")
+            val metadata = """{"name":"test-schedule","scheduleTime":"2024-06-01T12:00:00","payload":{}}"""
 
-        `when`(zSetOps.rangeByScore(eq("crm:schedules"), any<Range<Double>>())).thenReturn(Flux.just(json))
+            `when`(valueOps.get(eq("crm:schedule:meta:test-schedule"))).thenReturn(Mono.just(metadata))
+            `when`(zSetOps.remove(eq("crm:schedules"), eq(metadata))).thenReturn(Mono.just(1L))
+            `when`(valueOps.delete(eq("crm:schedule:meta:test-schedule"))).thenReturn(Mono.just(true))
 
-        // when
-        val result = redisSchedulerProvider.fetchDueSchedules()
+            // when & then (no exception means success)
+            redisSchedulerProvider.deleteSchedule(scheduleName)
+        }
 
-        // then
-        assertEquals(1, result.size)
-        assertEquals("due-schedule", result[0].name)
-    }
+    @Test
+    fun `fetchDueSchedules should return schedules with score less than current time`() =
+        runTest {
+            // given
+            val pastTime = LocalDateTime.now().minusMinutes(5)
+            val scheduleData =
+                DueSchedule(
+                    name = "due-schedule",
+                    scheduleTime = pastTime,
+                    payload =
+                        NotificationEmailSendTimeOutEventInput(
+                            templateId = 1L,
+                            templateVersion = 1.0f,
+                            userIds = listOf(1L),
+                            eventId = EventId("due-schedule"),
+                            expiredTime = pastTime,
+                        ),
+                )
+            val json = objectMapper.writeValueAsString(scheduleData)
+
+            `when`(zSetOps.rangeByScore(eq("crm:schedules"), any<Range<Double>>())).thenReturn(Flux.just(json))
+
+            // when
+            val result = redisSchedulerProvider.fetchDueSchedules()
+
+            // then
+            assertEquals(1, result.size)
+            assertEquals("due-schedule", result[0].name)
+        }
 }

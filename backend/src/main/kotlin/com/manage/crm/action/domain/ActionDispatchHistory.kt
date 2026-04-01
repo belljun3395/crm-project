@@ -34,7 +34,7 @@ class ActionDispatchHistory(
     var journeyExecutionId: Long? = null,
     @CreatedDate
     @Column("created_at")
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
@@ -48,9 +48,9 @@ class ActionDispatchHistory(
             errorCode: String?,
             errorMessage: String?,
             campaignId: Long?,
-            journeyExecutionId: Long?
-        ): ActionDispatchHistory {
-            return ActionDispatchHistory(
+            journeyExecutionId: Long?,
+        ): ActionDispatchHistory =
+            ActionDispatchHistory(
                 channel = channel,
                 status = status,
                 destination = destination,
@@ -61,8 +61,7 @@ class ActionDispatchHistory(
                 errorCode = errorCode,
                 errorMessage = errorMessage,
                 campaignId = campaignId,
-                journeyExecutionId = journeyExecutionId
+                journeyExecutionId = journeyExecutionId,
             )
-        }
     }
 }

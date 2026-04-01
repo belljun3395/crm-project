@@ -28,7 +28,7 @@ import kotlin.time.Duration.Companion.seconds
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class RedisScheduleMonitoringService(
     private val redisSchedulerProvider: SchedulerProvider,
-    private val kafkaExecutor: KafkaScheduledTaskExecutor
+    private val kafkaExecutor: KafkaScheduledTaskExecutor,
 ) {
     private val log = KotlinLogging.logger {}
     private val monitoringScope = CoroutineScope(Dispatchers.Default)

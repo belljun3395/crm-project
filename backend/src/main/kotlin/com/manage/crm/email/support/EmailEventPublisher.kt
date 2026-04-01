@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component
 @Component
 class EmailEventPublisher(
     private val applicationEventPublisher: ApplicationEventPublisher,
-    private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate
+    private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate,
 ) {
     val log = KotlinLogging.logger {}
 
@@ -45,7 +45,7 @@ class EmailEventPublisher(
         events.parMap { event ->
             transactionSynchronizationTemplate.afterCommit(
                 Dispatchers.IO + MDCContext(),
-                blockDescription = "publish event: $event"
+                blockDescription = "publish event: $event",
             ) {
                 applicationEventPublisher.publishEvent(event)
                 log.info { "published event: $event" }

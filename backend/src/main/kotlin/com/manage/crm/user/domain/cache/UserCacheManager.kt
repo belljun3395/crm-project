@@ -8,7 +8,7 @@ import java.time.Duration
 
 @Service
 class UserCacheManager(
-    private val redisTemplate: ReactiveRedisTemplate<String, Any>
+    private val redisTemplate: ReactiveRedisTemplate<String, Any>,
 ) {
     companion object {
         val log = KotlinLogging.logger { }
@@ -31,10 +31,12 @@ class UserCacheManager(
         }
     }
 
-    suspend fun totalUserCount(): Long {
-        return redisTemplate.opsForValue()
+    suspend fun totalUserCount(): Long =
+        redisTemplate
+            .opsForValue()
             .get(TOTAL_USER_COUNT_KEY)
-            .awaitSingleOrNull()?.let { value ->
+            .awaitSingleOrNull()
+            ?.let { value ->
                 when (value) {
                     is Long -> value
                     is Int -> value.toLong()
@@ -49,12 +51,13 @@ class UserCacheManager(
             log.warn { "Failed to get total user count" }
             0L
         }
-    }
 
-    suspend fun totalUserCountUpdatedAt(): Long {
-        return redisTemplate.opsForValue()
+    suspend fun totalUserCountUpdatedAt(): Long =
+        redisTemplate
+            .opsForValue()
             .get(TOTAL_USER_COUNT_UPDATED_AT_KEY)
-            .awaitSingleOrNull()?.let { value ->
+            .awaitSingleOrNull()
+            ?.let { value ->
                 when (value) {
                     is Long -> value
                     is Int -> value.toLong()
@@ -69,28 +72,29 @@ class UserCacheManager(
             log.warn { "Failed to get total user count updated at" }
             0L
         }
-    }
 
-    suspend fun incrTotalUserCount(): Long {
-        return incr(TOTAL_USER_COUNT_KEY)
-    }
+    suspend fun incrTotalUserCount(): Long = incr(TOTAL_USER_COUNT_KEY)
 
     suspend fun incr(key: String): Long {
-        val newCount = redisTemplate.opsForValue()
-            .increment(key)
-            .awaitSingleOrNull() ?: run {
-            log.warn { "Failed to get total user count" }
-            return 0L
-        }
+        val newCount =
+            redisTemplate
+                .opsForValue()
+                .increment(key)
+                .awaitSingleOrNull() ?: run {
+                log.warn { "Failed to get total user count" }
+                return 0L
+            }
 
-        redisTemplate.opsForValue()
+        redisTemplate
+            .opsForValue()
             .set(TOTAL_USER_COUNT_UPDATED_AT_KEY, System.currentTimeMillis())
             .awaitSingleOrNull() ?: log.warn { "Failed to update total user count updated at" }
         return newCount
     }
 
     suspend fun saveTotalUserCount(count: Long): Long {
-        redisTemplate.opsForValue()
+        redisTemplate
+            .opsForValue()
             .set(TOTAL_USER_COUNT_KEY, count)
             .awaitSingleOrNull() ?: run {
             log.warn { "Failed to save total user count" }
@@ -100,7 +104,8 @@ class UserCacheManager(
 
     suspend fun updateTotalUserCountUpdateAt(): Long {
         val currentTime = System.currentTimeMillis()
-        redisTemplate.opsForValue()
+        redisTemplate
+            .opsForValue()
             .set(TOTAL_USER_COUNT_UPDATED_AT_KEY, currentTime)
             .awaitSingleOrNull() ?: run {
             log.warn { "Failed to update total user count updated at" }
@@ -108,12 +113,18 @@ class UserCacheManager(
         return currentTime
     }
 
-    suspend fun executeWithLock(key: String, ttlSeconds: Long = 10, block: suspend () -> Unit) {
+    suspend fun executeWithLock(
+        key: String,
+        ttlSeconds: Long = 10,
+        block: suspend () -> Unit,
+    ) {
         val lockKey = "$key::lock"
         val lockValue = System.currentTimeMillis().toString()
-        val lock = redisTemplate.opsForValue()
-            .setIfAbsent(lockKey, lockValue, Duration.ofSeconds(ttlSeconds))
-            .awaitSingleOrNull()
+        val lock =
+            redisTemplate
+                .opsForValue()
+                .setIfAbsent(lockKey, lockValue, Duration.ofSeconds(ttlSeconds))
+                .awaitSingleOrNull()
         if (lock == true) {
             try {
                 block()

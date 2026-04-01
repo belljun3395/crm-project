@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component
 @Component
 class EmailTemplateRepositoryEventProcessor(
     private val emailTemplateRepository: EmailTemplateRepository,
-    private val emailEventPublisher: EmailEventPublisher
+    private val emailEventPublisher: EmailEventPublisher,
 ) {
     /**
      * 이메일 템플릿을 저장하고 이벤트 관련 후처리를 수행합니다.
@@ -17,12 +17,14 @@ class EmailTemplateRepositoryEventProcessor(
      */
     suspend fun save(emailTemplate: EmailTemplate): EmailTemplate {
         val domainEvents = emailTemplate.domainEvents
-        val template = if (emailTemplate.isNewTemplate()) {
-            emailTemplateRepository.save(emailTemplate)
-                .apply { domainEvents.add(PostEmailTemplateEvent(templateId = this.id!!)) }
-        } else {
-            emailTemplateRepository.save(emailTemplate)
-        }
+        val template =
+            if (emailTemplate.isNewTemplate()) {
+                emailTemplateRepository
+                    .save(emailTemplate)
+                    .apply { domainEvents.add(PostEmailTemplateEvent(templateId = this.id!!)) }
+            } else {
+                emailTemplateRepository.save(emailTemplate)
+            }
 
         emailEventPublisher.publishEvent(domainEvents)
 

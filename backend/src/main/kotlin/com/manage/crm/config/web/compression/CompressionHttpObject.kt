@@ -9,20 +9,17 @@ import org.springframework.http.server.reactive.ServerHttpResponseDecorator
 abstract class CompressionHttpResponse(
     delegate: ServerHttpResponse,
     private val properties: CompressionUrlProperties,
-    private val minResponseSize: Int = properties.minResponseSize
+    private val minResponseSize: Int = properties.minResponseSize,
 ) : ServerHttpResponseDecorator(delegate) {
-    fun isMimeTypeMatches(): Boolean {
-        return delegate.headers.contentType?.let { type ->
+    fun isMimeTypeMatches(): Boolean =
+        delegate.headers.contentType?.let { type ->
             properties.mimeTypes.any { mt ->
                 val mimeType = type.toString()
                 mimeType == mt || mimeType.startsWith("$mt;") || mt.endsWith("/*") && mimeType.startsWith(mt.dropLast(1))
             }
         } ?: false
-    }
 
-    fun isResponseSizeValid(size: Long): Boolean {
-        return size >= minResponseSize
-    }
+    fun isResponseSizeValid(size: Long): Boolean = size >= minResponseSize
 
     fun setCompressionHeaders(encoding: String) {
         delegate.headers.vary.add(HttpHeaders.ACCEPT_ENCODING)

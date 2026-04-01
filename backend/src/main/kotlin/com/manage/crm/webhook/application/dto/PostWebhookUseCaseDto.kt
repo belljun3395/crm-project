@@ -5,7 +5,7 @@ data class PostWebhookUseCaseIn(
     val name: String,
     val url: String,
     val events: List<String>,
-    val active: Boolean? = true
+    val active: Boolean? = true,
 )
 
 data class PostWebhookUseCaseOut(
@@ -14,5 +14,5 @@ data class PostWebhookUseCaseOut(
     val url: String,
     val events: List<String>,
     val active: Boolean,
-    val createdAt: String?
+    val createdAt: String?,
 )

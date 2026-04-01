@@ -28,7 +28,7 @@ class WebhookDeadLetter(
     var errorMessage: String? = null,
     @CreatedDate
     @Column("created_at")
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
@@ -39,9 +39,9 @@ class WebhookDeadLetter(
             deliveryStatus: String,
             attemptCount: Int,
             responseStatus: Int?,
-            errorMessage: String?
-        ): WebhookDeadLetter {
-            return WebhookDeadLetter(
+            errorMessage: String?,
+        ): WebhookDeadLetter =
+            WebhookDeadLetter(
                 webhookId = webhookId,
                 eventId = eventId,
                 eventType = eventType,
@@ -49,8 +49,7 @@ class WebhookDeadLetter(
                 deliveryStatus = deliveryStatus,
                 attemptCount = attemptCount,
                 responseStatus = responseStatus,
-                errorMessage = errorMessage
+                errorMessage = errorMessage,
             )
-        }
     }
 }

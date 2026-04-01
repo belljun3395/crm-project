@@ -46,44 +46,41 @@ class EventController(
     private val browseEventsUseCase: BrowseEventsUseCase,
     private val postEventUseCase: PostEventUseCase,
     private val searchEventsUseCase: SearchEventsUseCase,
-    private val postCampaignUseCase: PostCampaignUseCase
+    private val postCampaignUseCase: PostCampaignUseCase,
 ) {
-
     @GetMapping("/all")
     suspend fun browseEvents(
-        @RequestParam(required = false, defaultValue = "200") limit: Int
-    ): ApiResponse<ApiResponse.SuccessBody<BrowseEventsUseCaseOut>> {
-        return browseEventsUseCase
+        @RequestParam(required = false, defaultValue = "200") limit: Int,
+    ): ApiResponse<ApiResponse.SuccessBody<BrowseEventsUseCaseOut>> =
+        browseEventsUseCase
             .execute(BrowseEventsUseCaseIn(limit = limit))
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
 
     @PostMapping
     suspend fun postEvent(
-        @RequestBody request: PostEventRequest
-    ): ApiResponse<ApiResponse.SuccessBody<PostEventUseCaseOut>> {
-        return postEventUseCase
+        @RequestBody request: PostEventRequest,
+    ): ApiResponse<ApiResponse.SuccessBody<PostEventUseCaseOut>> =
+        postEventUseCase
             .execute(
                 PostEventUseCaseIn(
                     name = request.name,
                     campaignName = request.campaignName,
                     externalId = request.externalId,
                     segmentId = request.segmentId,
-                    properties = request.properties.map {
-                        PostEventPropertyDto(
-                            key = it.key,
-                            value = it.value
-                        )
-                    }
-                )
-            )
-            .let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
-    }
+                    properties =
+                        request.properties.map {
+                            PostEventPropertyDto(
+                                key = it.key,
+                                value = it.value,
+                            )
+                        },
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
 
     @Parameters(
         Parameter(
             name = "eventName",
-            description = "검색할 이벤트 이름 (선택). eventName 또는 where 중 하나 이상 필요"
+            description = "검색할 이벤트 이름 (선택). eventName 또는 where 중 하나 이상 필요",
         ),
         Parameter(
             name = "where",
@@ -96,13 +93,13 @@ class EventController(
     - between: 동일한 key로 두 개의 value를 입력
 - joinOperation(필수): and, or, end(마지막)
 ex) key1&value1&operation&joinOperation,key2&value2&operation&joinOperation...
-            """
-        )
+            """,
+        ),
     )
     @GetMapping
     suspend fun searchEvents(
         @RequestParam(required = false, defaultValue = "") eventName: String,
-        @RequestParam(required = false, defaultValue = "") where: String
+        @RequestParam(required = false, defaultValue = "") where: String,
     ): ApiResponse<ApiResponse.SuccessBody<SearchEventsUseCaseOut>> {
         if (eventName.isBlank() && where.isBlank()) {
             throw InvalidSearchConditionException("eventName 또는 where 조건이 필요합니다.")
@@ -111,35 +108,34 @@ ex) key1&value1&operation&joinOperation,key2&value2&operation&joinOperation...
             .execute(
                 SearchEventsUseCaseIn(
                     eventName = eventName,
-                    propertyAndOperations = if (where.isBlank()) emptyList() else parseWhereClause(where)
-                )
-            )
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+                    propertyAndOperations = if (where.isBlank()) emptyList() else parseWhereClause(where),
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
     }
 
     @ExceptionHandler(InvalidSearchConditionException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    fun handleInvalidSearchConditionException(e: InvalidSearchConditionException): ApiResponse<ApiResponse.FailureBody> {
-        return ApiResponseGenerator.fail(e.message ?: "invalid search condition", HttpStatus.BAD_REQUEST)
-    }
+    fun handleInvalidSearchConditionException(e: InvalidSearchConditionException): ApiResponse<ApiResponse.FailureBody> =
+        ApiResponseGenerator.fail(e.message ?: "invalid search condition", HttpStatus.BAD_REQUEST)
 
     @PostMapping("/campaign")
-    suspend fun postCampaign(@RequestBody request: PostCampaignRequest): ApiResponse<ApiResponse.SuccessBody<PostCampaignUseCaseOut>> {
-        return postCampaignUseCase
+    suspend fun postCampaign(
+        @RequestBody request: PostCampaignRequest,
+    ): ApiResponse<ApiResponse.SuccessBody<PostCampaignUseCaseOut>> =
+        postCampaignUseCase
             .execute(
                 PostCampaignUseCaseIn(
                     name = request.name,
                     segmentIds = request.segmentIds ?: emptyList(),
-                    properties = request.properties.map {
-                        PostCampaignPropertyDto(
-                            key = it.key,
-                            value = it.value
-                        )
-                    }
-                )
-            )
-            .let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
-    }
+                    properties =
+                        request.properties.map {
+                            PostCampaignPropertyDto(
+                                key = it.key,
+                                value = it.value,
+                            )
+                        },
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
 
     private fun parseWhereClause(where: String): List<PropertyAndOperationDto> {
         if (where.isBlank()) {
@@ -152,29 +148,32 @@ ex) key1&value1&operation&joinOperation,key2&value2&operation&joinOperation...
                 throw InvalidSearchConditionException("Invalid where format at index $index")
             }
 
-            val operation = runCatching { Operation.fromValue(tokens[tokens.lastIndex - 1]) }
-                .getOrElse {
-                    throw InvalidSearchConditionException("Invalid operation at index $index: ${tokens[tokens.lastIndex - 1]}")
-                }
-
-            val joinOperation = runCatching { JoinOperation.fromValue(tokens.last()) }
-                .getOrElse {
-                    throw InvalidSearchConditionException("Invalid join operation at index $index: ${tokens.last()}")
-                }
-
-            val properties = tokens
-                .dropLast(2)
-                .chunked(2)
-                .map { (key, value) ->
-                    if (key.isBlank() || value.isBlank()) {
-                        throw InvalidSearchConditionException("Empty key/value is not allowed at index $index")
+            val operation =
+                runCatching { Operation.fromValue(tokens[tokens.lastIndex - 1]) }
+                    .getOrElse {
+                        throw InvalidSearchConditionException("Invalid operation at index $index: ${tokens[tokens.lastIndex - 1]}")
                     }
-                    SearchEventPropertyDto(key = key, value = value)
-                }
+
+            val joinOperation =
+                runCatching { JoinOperation.fromValue(tokens.last()) }
+                    .getOrElse {
+                        throw InvalidSearchConditionException("Invalid join operation at index $index: ${tokens.last()}")
+                    }
+
+            val properties =
+                tokens
+                    .dropLast(2)
+                    .chunked(2)
+                    .map { (key, value) ->
+                        if (key.isBlank() || value.isBlank()) {
+                            throw InvalidSearchConditionException("Empty key/value is not allowed at index $index")
+                        }
+                        SearchEventPropertyDto(key = key, value = value)
+                    }
 
             if (properties.size != operation.paramsCnt) {
                 throw InvalidSearchConditionException(
-                    "Operation ${operation.name} requires ${operation.paramsCnt} value(s) at index $index"
+                    "Operation ${operation.name} requires ${operation.paramsCnt} value(s) at index $index",
                 )
             }
 
@@ -185,7 +184,7 @@ ex) key1&value1&operation&joinOperation,key2&value2&operation&joinOperation...
             PropertyAndOperationDto(
                 properties = properties,
                 operation = operation,
-                joinOperation = joinOperation
+                joinOperation = joinOperation,
             )
         }
     }

@@ -26,7 +26,7 @@ import java.time.format.DateTimeFormatter
 @Service
 @ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
 class PostWebhookUseCase(
-    private val webhookRepository: WebhookRepository
+    private val webhookRepository: WebhookRepository,
 ) {
     companion object {
         private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -40,35 +40,37 @@ class PostWebhookUseCase(
         val events = WebhookEvents.fromValues(useCaseIn.events)
         val active = useCaseIn.active ?: true
 
-        val existing = if (id != null) {
-            webhookRepository.findById(id) ?: throw NotFoundByIdException("Webhook", id)
-        } else {
-            if (webhookRepository.findByName(name) != null) {
+        val existing =
+            if (id != null) {
+                webhookRepository.findById(id) ?: throw NotFoundByIdException("Webhook", id)
+            } else {
+                if (webhookRepository.findByName(name) != null) {
+                    throw AlreadyExistsException("Webhook", "name", name)
+                }
+                null
+            }
+
+        val saved =
+            try {
+                if (existing != null) {
+                    existing.name = name
+                    existing.url = url
+                    existing.events = events
+                    existing.active = active
+                    webhookRepository.save(existing)
+                } else {
+                    webhookRepository.save(
+                        Webhook.new(
+                            name = name,
+                            url = url,
+                            events = events,
+                            active = active,
+                        ),
+                    )
+                }
+            } catch (e: DataIntegrityViolationException) {
                 throw AlreadyExistsException("Webhook", "name", name)
             }
-            null
-        }
-
-        val saved = try {
-            if (existing != null) {
-                existing.name = name
-                existing.url = url
-                existing.events = events
-                existing.active = active
-                webhookRepository.save(existing)
-            } else {
-                webhookRepository.save(
-                    Webhook.new(
-                        name = name,
-                        url = url,
-                        events = events,
-                        active = active
-                    )
-                )
-            }
-        } catch (e: DataIntegrityViolationException) {
-            throw AlreadyExistsException("Webhook", "name", name)
-        }
 
         return out {
             PostWebhookUseCaseOut(
@@ -77,7 +79,7 @@ class PostWebhookUseCase(
                 url = saved.url,
                 events = saved.events.toValues(),
                 active = saved.active,
-                createdAt = saved.createdAt?.format(formatter)
+                createdAt = saved.createdAt?.format(formatter),
             )
         }
     }

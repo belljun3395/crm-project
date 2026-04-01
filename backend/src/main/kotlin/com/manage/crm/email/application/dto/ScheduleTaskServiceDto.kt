@@ -11,7 +11,7 @@ data class ScheduleTaskView(
     val templateId: Long,
     val userIds: List<Long>,
     val segmentId: Long?,
-    val expiredTime: LocalDateTime
+    val expiredTime: LocalDateTime,
 )
 
 @JsonTypeName("notification-email-timeout")
@@ -22,7 +22,7 @@ data class NotificationEmailSendTimeOutEventInput(
     val userIds: List<Long>,
     val segmentId: Long? = null,
     val eventId: EventId,
-    val expiredTime: LocalDateTime
+    val expiredTime: LocalDateTime,
 ) : ScheduleInfo()
 
 class ScheduleTaskServiceDto

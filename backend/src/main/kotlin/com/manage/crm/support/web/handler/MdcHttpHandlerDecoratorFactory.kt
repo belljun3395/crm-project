@@ -10,17 +10,21 @@ import java.util.*
 
 @Component
 class MdcHttpHandlerDecoratorFactory : HttpHandlerDecoratorFactory {
-    override fun apply(httpHandler: HttpHandler): HttpHandler {
-        return HttpHandler { request, response ->
+    override fun apply(httpHandler: HttpHandler): HttpHandler =
+        HttpHandler { request, response ->
             val uuid = UUID.randomUUID().toString()
             try {
                 MDC.put(MDC_KEY_TRACE_ID, uuid)
-                httpHandler.handle(request, response)
+                httpHandler
+                    .handle(request, response)
                     .contextWrite {
-                        val originContext = it.stream()
-                            .map { ctx -> ctx.key to ctx.value }
-                            .toList()
-                            .toMap().toMutableMap()
+                        val originContext =
+                            it
+                                .stream()
+                                .map { ctx -> ctx.key to ctx.value }
+                                .toList()
+                                .toMap()
+                                .toMutableMap()
                         val newContext = addContext(originContext, MDC_KEY_TRACE_ID, uuid)
                         Context.of(newContext)
                     }
@@ -28,9 +32,12 @@ class MdcHttpHandlerDecoratorFactory : HttpHandlerDecoratorFactory {
                 MDC.clear()
             }
         }
-    }
 
-    private fun addContext(originContext: MutableMap<Any, Any>, key: String, value: String): Map<Any, Any> {
+    private fun addContext(
+        originContext: MutableMap<Any, Any>,
+        key: String,
+        value: String,
+    ): Map<Any, Any> {
         originContext[key] = value
         return originContext
     }

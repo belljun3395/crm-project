@@ -12,18 +12,23 @@ class EventFixtures private constructor() {
     private var createdAt: LocalDateTime = LocalDateTime.now()
 
     fun withId(id: Long) = apply { this.id = id }
+
     fun withName(name: String) = apply { this.name = name }
+
     fun withUserId(userId: Long) = apply { this.userId = userId }
+
     fun withProperties(properties: EventProperties) = apply { this.properties = properties }
+
     fun withCreatedAt(createdAt: LocalDateTime) = apply { this.createdAt = createdAt }
 
-    fun build(): Event = Event(
-        id = id,
-        name = name,
-        userId = userId,
-        properties = properties,
-        createdAt = createdAt
-    )
+    fun build(): Event =
+        Event(
+            id = id,
+            name = name,
+            userId = userId,
+            properties = properties,
+            createdAt = createdAt,
+        )
 
     companion object {
         fun anEvent() = EventFixtures()

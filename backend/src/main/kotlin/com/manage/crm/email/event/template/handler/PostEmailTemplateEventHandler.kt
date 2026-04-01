@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component
 @Component
 class PostEmailTemplateEventHandler(
     private val emailTemplateRepository: EmailTemplateRepository,
-    private val emailTemplateHistoryRepository: EmailTemplateHistoryRepository
+    private val emailTemplateHistoryRepository: EmailTemplateHistoryRepository,
 ) {
     /**
      * - Save Email Template History
@@ -27,8 +27,8 @@ class PostEmailTemplateEventHandler(
                 subject = template.subject,
                 body = template.body,
                 variables = template.variables,
-                version = template.version
-            )
+                version = template.version,
+            ),
         )
     }
 }

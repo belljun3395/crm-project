@@ -14,7 +14,7 @@ class DeleteTemplateUseCase(
     private val emailTemplateRepository: EmailTemplateRepository,
     private val scheduledEventRepository: ScheduledEventRepository,
     @Qualifier("scheduleTaskServicePostEventProcessor")
-    private val scheduleTaskService: ScheduleTaskAllService
+    private val scheduleTaskService: ScheduleTaskAllService,
 ) {
     @Transactional
     suspend fun execute(useCaseIn: DeleteTemplateUseCaseIn): DeleteTemplateUseCaseOut {

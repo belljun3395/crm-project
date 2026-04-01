@@ -20,7 +20,7 @@ data class PutJourneyStepIn(
     val variables: Map<String, String>,
     val delayMillis: Long?,
     val conditionExpression: String?,
-    val retryCount: Int
+    val retryCount: Int,
 )
 
 data class PutJourneyIn(
@@ -33,7 +33,7 @@ data class PutJourneyIn(
     val triggerSegmentWatchFields: List<String>,
     val triggerSegmentCountThreshold: Long?,
     val active: Boolean,
-    val steps: List<PutJourneyStepIn>
+    val steps: List<PutJourneyStepIn>,
 )
 
 /**
@@ -44,14 +44,15 @@ class PutJourneyUseCase(
     private val journeyRepository: JourneyRepository,
     private val journeyStepRepository: JourneyStepRepository,
     private val journeyExecutionHistoryRepository: JourneyExecutionHistoryRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
     @Transactional
     suspend fun execute(useCaseIn: PutJourneyIn): JourneyDto {
         validate(useCaseIn)
 
-        val journey = journeyRepository.findById(useCaseIn.journeyId)
-            ?: throw NotFoundByIdException("Journey", useCaseIn.journeyId)
+        val journey =
+            journeyRepository.findById(useCaseIn.journeyId)
+                ?: throw NotFoundByIdException("Journey", useCaseIn.journeyId)
 
         if (journey.lifecycleStatus == JourneyLifecycleStatus.ARCHIVED.name) {
             throw IllegalArgumentException("Archived journey cannot be updated")
@@ -65,11 +66,12 @@ class PutJourneyUseCase(
         journey.triggerSegmentWatchFields = toTriggerSegmentWatchFieldsJson(useCaseIn.triggerSegmentWatchFields)
         journey.triggerSegmentCountThreshold = useCaseIn.triggerSegmentCountThreshold
         journey.active = useCaseIn.active
-        journey.lifecycleStatus = when {
-            useCaseIn.active -> JourneyLifecycleStatus.ACTIVE.name
-            journey.lifecycleStatus == JourneyLifecycleStatus.DRAFT.name -> JourneyLifecycleStatus.DRAFT.name
-            else -> JourneyLifecycleStatus.PAUSED.name
-        }
+        journey.lifecycleStatus =
+            when {
+                useCaseIn.active -> JourneyLifecycleStatus.ACTIVE.name
+                journey.lifecycleStatus == JourneyLifecycleStatus.DRAFT.name -> JourneyLifecycleStatus.DRAFT.name
+                else -> JourneyLifecycleStatus.PAUSED.name
+            }
         journey.version = journey.version.coerceAtLeast(1) + 1
 
         val savedJourney = journeyRepository.save(journey)
@@ -79,49 +81,51 @@ class PutJourneyUseCase(
         val existingStepByOrder = existingSteps.associateBy { it.stepOrder }.toMutableMap()
         val incomingStepOrders = mutableSetOf<Int>()
 
-        val savedSteps = useCaseIn.steps
-            .sortedBy { it.stepOrder }
-            .map { step ->
-                incomingStepOrders += step.stepOrder
-                val existingStep = existingStepByOrder.remove(step.stepOrder)
+        val savedSteps =
+            useCaseIn.steps
+                .sortedBy { it.stepOrder }
+                .map { step ->
+                    incomingStepOrders += step.stepOrder
+                    val existingStep = existingStepByOrder.remove(step.stepOrder)
 
-                if (existingStep != null) {
-                    existingStep.stepType = step.stepType.name
-                    existingStep.channel = step.channel
-                    existingStep.destination = step.destination
-                    existingStep.subject = step.subject
-                    existingStep.body = step.body
-                    existingStep.variablesJson = toVariablesJson(step.variables)
-                    existingStep.delayMillis = step.delayMillis
-                    existingStep.conditionExpression = step.conditionExpression
-                    existingStep.retryCount = step.retryCount.coerceAtLeast(0)
-                    return@map journeyStepRepository.save(existingStep)
+                    if (existingStep != null) {
+                        existingStep.stepType = step.stepType.name
+                        existingStep.channel = step.channel
+                        existingStep.destination = step.destination
+                        existingStep.subject = step.subject
+                        existingStep.body = step.body
+                        existingStep.variablesJson = toVariablesJson(step.variables)
+                        existingStep.delayMillis = step.delayMillis
+                        existingStep.conditionExpression = step.conditionExpression
+                        existingStep.retryCount = step.retryCount.coerceAtLeast(0)
+                        return@map journeyStepRepository.save(existingStep)
+                    }
+
+                    journeyStepRepository.save(
+                        JourneyStep.new(
+                            journeyId = journeyId,
+                            stepOrder = step.stepOrder,
+                            stepType = step.stepType.name,
+                            channel = step.channel,
+                            destination = step.destination,
+                            subject = step.subject,
+                            body = step.body,
+                            variablesJson = toVariablesJson(step.variables),
+                            delayMillis = step.delayMillis,
+                            conditionExpression = step.conditionExpression,
+                            retryCount = step.retryCount.coerceAtLeast(0),
+                        ),
+                    )
                 }
 
-                journeyStepRepository.save(
-                    JourneyStep.new(
-                        journeyId = journeyId,
-                        stepOrder = step.stepOrder,
-                        stepType = step.stepType.name,
-                        channel = step.channel,
-                        destination = step.destination,
-                        subject = step.subject,
-                        body = step.body,
-                        variablesJson = toVariablesJson(step.variables),
-                        delayMillis = step.delayMillis,
-                        conditionExpression = step.conditionExpression,
-                        retryCount = step.retryCount.coerceAtLeast(0)
-                    )
-                )
-            }
-
-        val removableSteps = existingStepByOrder.values
-            .filter { !incomingStepOrders.contains(it.stepOrder) }
+        val removableSteps =
+            existingStepByOrder.values
+                .filter { !incomingStepOrders.contains(it.stepOrder) }
         removableSteps.forEach { step ->
             val stepId = step.id
             if (stepId != null && journeyExecutionHistoryRepository.existsByJourneyStepId(stepId)) {
                 throw IllegalArgumentException(
-                    "Cannot remove stepOrder=${step.stepOrder} because execution history already exists"
+                    "Cannot remove stepOrder=${step.stepOrder} because execution history already exists",
                 )
             }
             journeyStepRepository.delete(step)
@@ -141,7 +145,11 @@ class PutJourneyUseCase(
         if (useCaseIn.steps.any { it.stepOrder <= 0 }) {
             throw IllegalArgumentException("stepOrder must be greater than 0")
         }
-        if (useCaseIn.steps.groupingBy { it.stepOrder }.eachCount().any { it.value > 1 }) {
+        if (useCaseIn.steps
+                .groupingBy { it.stepOrder }
+                .eachCount()
+                .any { it.value > 1 }
+        ) {
             throw IllegalArgumentException("stepOrder must be unique")
         }
 
@@ -156,18 +164,21 @@ class PutJourneyUseCase(
                 if (useCaseIn.triggerSegmentId == null) {
                     throw IllegalArgumentException("triggerSegmentId is required for SEGMENT trigger")
                 }
-                val segmentEvent = useCaseIn.triggerSegmentEvent
-                    ?: throw IllegalArgumentException("triggerSegmentEvent is required for SEGMENT trigger")
+                val segmentEvent =
+                    useCaseIn.triggerSegmentEvent
+                        ?: throw IllegalArgumentException("triggerSegmentEvent is required for SEGMENT trigger")
                 when (segmentEvent) {
                     JourneySegmentTriggerEventType.ENTER,
-                    JourneySegmentTriggerEventType.EXIT -> Unit
+                    JourneySegmentTriggerEventType.EXIT,
+                    -> Unit
                     JourneySegmentTriggerEventType.UPDATE -> {
                         if (useCaseIn.triggerSegmentWatchFields.isEmpty()) {
                             throw IllegalArgumentException("triggerSegmentWatchFields is required for SEGMENT UPDATE trigger")
                         }
                     }
                     JourneySegmentTriggerEventType.COUNT_REACHED,
-                    JourneySegmentTriggerEventType.COUNT_DROPPED -> {
+                    JourneySegmentTriggerEventType.COUNT_DROPPED,
+                    -> {
                         val threshold = useCaseIn.triggerSegmentCountThreshold
                         if (threshold == null || threshold <= 0L) {
                             throw IllegalArgumentException("triggerSegmentCountThreshold must be greater than 0 for SEGMENT COUNT trigger")

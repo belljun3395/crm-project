@@ -9,13 +9,10 @@ data class PostWebhookRequest(
     @field:NotBlank(message = "Name is required")
     @field:Size(max = 255, message = "Name must be at most 255 characters")
     val name: String,
-
     @field:NotBlank(message = "URL is required")
     @field:URL(message = "Invalid URL format")
     val url: String,
-
     @field:NotEmpty(message = "At least one event is required")
     val events: List<String>,
-
-    val active: Boolean? = true
+    val active: Boolean? = true,
 )

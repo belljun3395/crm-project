@@ -35,7 +35,7 @@ class Journey(
     var version: Int = 1,
     @CreatedDate
     @Column("created_at")
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
@@ -48,9 +48,9 @@ class Journey(
             triggerSegmentCountThreshold: Long?,
             active: Boolean,
             lifecycleStatus: String = "ACTIVE",
-            version: Int = 1
-        ): Journey {
-            return Journey(
+            version: Int = 1,
+        ): Journey =
+            Journey(
                 name = name,
                 triggerType = triggerType,
                 triggerEventName = triggerEventName,
@@ -60,8 +60,7 @@ class Journey(
                 triggerSegmentCountThreshold = triggerSegmentCountThreshold,
                 active = active,
                 lifecycleStatus = lifecycleStatus,
-                version = version
+                version = version,
             )
-        }
     }
 }

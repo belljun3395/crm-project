@@ -23,7 +23,9 @@ class VariablesReadingConverter : Converter<Any, Variables> {
 
 @WritingConverter
 class VariablesWritingConverter : Converter<Variables, String> {
-    override fun convert(source: Variables): String {
-        return source.value.map { it.displayValue() }.toString().let { it.substring(1, it.length - 1) }
-    }
+    override fun convert(source: Variables): String =
+        source.value
+            .map { it.displayValue() }
+            .toString()
+            .let { it.substring(1, it.length - 1) }
 }

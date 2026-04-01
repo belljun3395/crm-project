@@ -17,31 +17,34 @@ class VariablesFixtures private constructor() {
         }
 
         fun withUserVariables(): VariablesFixtures {
-            val value = listOf(
-                UserVariable("name"),
-                UserVariable("email"),
-                UserVariable("phone", "010-0000-0000")
-            )
+            val value =
+                listOf(
+                    UserVariable("name"),
+                    UserVariable("email"),
+                    UserVariable("phone", "010-0000-0000"),
+                )
             return aVariables()
                 .withValue(value)
         }
 
         fun withCampaignVariables(): VariablesFixtures {
-            val value = listOf(
-                CampaignVariable("title"),
-                CampaignVariable("description", "Default campaign description")
-            )
+            val value =
+                listOf(
+                    CampaignVariable("title"),
+                    CampaignVariable("description", "Default campaign description"),
+                )
             return aVariables()
                 .withValue(value)
         }
 
         fun withMixedVariables(): VariablesFixtures {
-            val value = listOf(
-                UserVariable("name"),
-                UserVariable("email"),
-                CampaignVariable("title"),
-                CampaignVariable("description", "Default description")
-            )
+            val value =
+                listOf(
+                    UserVariable("name"),
+                    UserVariable("email"),
+                    CampaignVariable("title"),
+                    CampaignVariable("description", "Default description"),
+                )
             return aVariables()
                 .withValue(value)
         }

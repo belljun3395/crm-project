@@ -27,7 +27,7 @@ fun LocalDateTime.toScheduleExpression(): String =
         this.dayOfMonth,
         this.hour,
         this.minute,
-        this.second
+        this.second,
     )
 
 @Service
@@ -38,11 +38,15 @@ class AwsSchedulerService(
     private val objectMapper: ObjectMapper,
     @Value("\${spring.aws.schedule.role-arn}") private val roleArn: String,
     @Value("\${spring.aws.schedule.sqs-arn}") private val targetArn: String,
-    @Value("\${spring.aws.schedule.group-name}") private val groupName: String
+    @Value("\${spring.aws.schedule.group-name}") private val groupName: String,
 ) {
     val log = KotlinLogging.logger {}
 
-    fun createSchedule(name: String, schedule: LocalDateTime, input: ScheduleInfo): CreateScheduleResponse {
+    fun createSchedule(
+        name: String,
+        schedule: LocalDateTime,
+        input: ScheduleInfo,
+    ): CreateScheduleResponse {
         val json = objectMapper.writeValueAsString(input)
         val target =
             Target
@@ -66,7 +70,7 @@ class AwsSchedulerService(
                     FlexibleTimeWindow
                         .builder()
                         .mode(FlexibleTimeWindowMode.OFF)
-                        .build()
+                        .build(),
                 ).build()
 
         try {
@@ -82,13 +86,12 @@ class AwsSchedulerService(
         }
     }
 
-    fun browseSchedule(): List<ScheduleName> {
-        return awsSchedulerClient
+    fun browseSchedule(): List<ScheduleName> =
+        awsSchedulerClient
             .listSchedules(ListSchedulesRequest.builder().build())
             .schedules()
             .map { ScheduleName(it.name()) }
             .toList()
-    }
 
     fun deleteSchedule(scheduleName: ScheduleName) {
         try {
@@ -97,7 +100,7 @@ class AwsSchedulerService(
                     .builder()
                     .name(scheduleName.value)
                     .groupName(groupName)
-                    .build()
+                    .build(),
             )
             log.info { "Successfully deleted schedule $scheduleName" }
         } catch (ex: Exception) {

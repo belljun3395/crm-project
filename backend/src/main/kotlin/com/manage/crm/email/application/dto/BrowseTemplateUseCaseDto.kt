@@ -1,16 +1,16 @@
 package com.manage.crm.email.application.dto
 
 data class BrowseTemplateUseCaseIn(
-    val withHistory: Boolean
+    val withHistory: Boolean,
 )
 
 data class BrowseTemplateUseCaseOut(
-    val templates: List<TemplateWithHistoryDto>
+    val templates: List<TemplateWithHistoryDto>,
 )
 
 data class TemplateWithHistoryDto(
     val template: TemplateDto,
-    val histories: List<TemplateHistoryDto>
+    val histories: List<TemplateHistoryDto>,
 )
 
 data class TemplateDto(
@@ -20,7 +20,7 @@ data class TemplateDto(
     val body: String,
     val variables: List<String>,
     val version: Float,
-    val createdAt: String
+    val createdAt: String,
 )
 
 data class TemplateHistoryDto(
@@ -30,5 +30,5 @@ data class TemplateHistoryDto(
     val body: String,
     val variables: List<String>,
     val version: Float,
-    val createdAt: String
+    val createdAt: String,
 )

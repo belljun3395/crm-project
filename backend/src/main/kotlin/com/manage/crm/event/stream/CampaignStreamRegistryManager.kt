@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service
  */
 @Service
 class CampaignStreamRegistryManager(
-    private val reactiveStringRedisTemplate: ReactiveRedisTemplate<String, String>
+    private val reactiveStringRedisTemplate: ReactiveRedisTemplate<String, String>,
 ) {
     private val log = KotlinLogging.logger { }
 
@@ -34,7 +34,8 @@ class CampaignStreamRegistryManager(
      */
     suspend fun registerCampaign(campaignId: Long) {
         try {
-            reactiveStringRedisTemplate.opsForSet()
+            reactiveStringRedisTemplate
+                .opsForSet()
                 .add(ACTIVE_CAMPAIGNS_KEY, campaignId.toString())
                 .awaitSingle()
         } catch (e: Exception) {
@@ -47,7 +48,8 @@ class CampaignStreamRegistryManager(
      */
     suspend fun unregisterCampaign(campaignId: Long) {
         try {
-            reactiveStringRedisTemplate.opsForSet()
+            reactiveStringRedisTemplate
+                .opsForSet()
                 .remove(ACTIVE_CAMPAIGNS_KEY, campaignId.toString())
                 .awaitSingle()
             reactiveStringRedisTemplate.delete(getLastProcessedKey(campaignId)).awaitFirstOrNull()
@@ -59,9 +61,10 @@ class CampaignStreamRegistryManager(
     /**
      * Returns all active campaign ids currently tracked in Redis.
      */
-    suspend fun getActiveCampaigns(): Set<Long> {
-        return try {
-            reactiveStringRedisTemplate.opsForSet()
+    suspend fun getActiveCampaigns(): Set<Long> =
+        try {
+            reactiveStringRedisTemplate
+                .opsForSet()
                 .members(ACTIVE_CAMPAIGNS_KEY)
                 .collectList()
                 .awaitSingle()
@@ -71,28 +74,31 @@ class CampaignStreamRegistryManager(
             log.error(e) { "Failed to get active campaigns" }
             emptySet()
         }
-    }
 
     /**
      * Returns last processed stream id for a campaign, if present.
      */
-    suspend fun getLastProcessedId(campaignId: Long): String? {
-        return try {
-            reactiveStringRedisTemplate.opsForValue()
+    suspend fun getLastProcessedId(campaignId: Long): String? =
+        try {
+            reactiveStringRedisTemplate
+                .opsForValue()
                 .get(getLastProcessedKey(campaignId))
                 .awaitFirstOrNull()
         } catch (e: Exception) {
             log.error(e) { "Failed to get last processed ID for campaign: $campaignId" }
             null
         }
-    }
 
     /**
      * Persists latest processed stream id for consumer resume.
      */
-    suspend fun updateLastProcessedId(campaignId: Long, streamId: String) {
+    suspend fun updateLastProcessedId(
+        campaignId: Long,
+        streamId: String,
+    ) {
         try {
-            reactiveStringRedisTemplate.opsForValue()
+            reactiveStringRedisTemplate
+                .opsForValue()
                 .set(getLastProcessedKey(campaignId), streamId)
                 .awaitSingle()
         } catch (e: Exception) {

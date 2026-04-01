@@ -24,7 +24,7 @@ class JourneyExecutionHistory(
     var idempotencyKey: String? = null,
     @CreatedDate
     @Column("created_at")
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
@@ -33,16 +33,15 @@ class JourneyExecutionHistory(
             status: String,
             attempt: Int,
             message: String?,
-            idempotencyKey: String?
-        ): JourneyExecutionHistory {
-            return JourneyExecutionHistory(
+            idempotencyKey: String?,
+        ): JourneyExecutionHistory =
+            JourneyExecutionHistory(
                 journeyExecutionId = journeyExecutionId,
                 journeyStepId = journeyStepId,
                 status = status,
                 attempt = attempt,
                 message = message,
-                idempotencyKey = idempotencyKey
+                idempotencyKey = idempotencyKey,
             )
-        }
     }
 }

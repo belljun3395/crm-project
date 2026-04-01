@@ -5,13 +5,13 @@ import java.time.LocalDateTime
 data class SegmentTargetUserReadModel(
     val id: Long,
     val userAttributesJson: String,
-    val createdAt: LocalDateTime?
+    val createdAt: LocalDateTime?,
 )
 
 data class SegmentTargetEventReadModel(
     val userId: Long,
     val name: String,
-    val occurredAt: LocalDateTime?
+    val occurredAt: LocalDateTime?,
 )
 
 interface SegmentReadPort {
@@ -22,6 +22,6 @@ interface SegmentReadPort {
     suspend fun findTargetUserIds(
         segmentId: Long,
         users: List<SegmentTargetUserReadModel>,
-        eventsByUserId: Map<Long, List<SegmentTargetEventReadModel>> = emptyMap()
+        eventsByUserId: Map<Long, List<SegmentTargetEventReadModel>> = emptyMap(),
     ): List<Long>
 }

@@ -57,23 +57,24 @@ class WebhookController(
     private val browseWebhookDeliveryLogsUseCase: BrowseWebhookDeliveryLogsUseCase,
     private val browseWebhookDeadLettersUseCase: BrowseWebhookDeadLettersUseCase,
     private val retryWebhookDeadLettersUseCase: RetryWebhookDeadLettersUseCase,
-    private val auditLogService: AuditLogService
+    private val auditLogService: AuditLogService,
 ) {
     @PostMapping
     suspend fun create(
         @Valid
         @RequestBody
         request: PostWebhookRequest,
-        httpRequest: ServerHttpRequest
+        httpRequest: ServerHttpRequest,
     ): ApiResponse<ApiResponse.SuccessBody<PostWebhookUseCaseOut>> {
-        val result = postWebhookUseCase.execute(
-            PostWebhookUseCaseIn(
-                name = request.name,
-                url = request.url,
-                events = request.events,
-                active = request.active
+        val result =
+            postWebhookUseCase.execute(
+                PostWebhookUseCaseIn(
+                    name = request.name,
+                    url = request.url,
+                    events = request.events,
+                    active = request.active,
+                ),
             )
-        )
         auditLogService.record(
             RecordAuditLogCommand(
                 actorId = extractActorId(httpRequest),
@@ -83,8 +84,8 @@ class WebhookController(
                 requestMethod = httpRequest.method.name(),
                 requestPath = httpRequest.path.value(),
                 statusCode = HttpStatus.CREATED.value(),
-                detail = "created webhook name=${result.name}"
-            )
+                detail = "created webhook name=${result.name}",
+            ),
         )
         return ApiResponseGenerator.success(result, HttpStatus.CREATED)
     }
@@ -95,18 +96,19 @@ class WebhookController(
         @Valid
         @RequestBody
         request: PutWebhookRequest,
-        httpRequest: ServerHttpRequest
+        httpRequest: ServerHttpRequest,
     ): ApiResponse<ApiResponse.SuccessBody<PostWebhookUseCaseOut>> {
         val existing = getWebhookUseCase.execute(GetWebhookUseCaseIn(id)).webhook
-        val result = postWebhookUseCase.execute(
-            PostWebhookUseCaseIn(
-                id = id,
-                name = request.name ?: existing.name,
-                url = request.url ?: existing.url,
-                events = request.events ?: existing.events,
-                active = request.active ?: existing.active
+        val result =
+            postWebhookUseCase.execute(
+                PostWebhookUseCaseIn(
+                    id = id,
+                    name = request.name ?: existing.name,
+                    url = request.url ?: existing.url,
+                    events = request.events ?: existing.events,
+                    active = request.active ?: existing.active,
+                ),
             )
-        )
         auditLogService.record(
             RecordAuditLogCommand(
                 actorId = extractActorId(httpRequest),
@@ -116,8 +118,8 @@ class WebhookController(
                 requestMethod = httpRequest.method.name(),
                 requestPath = httpRequest.path.value(),
                 statusCode = HttpStatus.OK.value(),
-                detail = "updated webhook name=${result.name}"
-            )
+                detail = "updated webhook name=${result.name}",
+            ),
         )
         return ApiResponseGenerator.success(result, HttpStatus.OK)
     }
@@ -125,7 +127,7 @@ class WebhookController(
     @DeleteMapping("/{id}")
     suspend fun delete(
         @PathVariable id: Long,
-        httpRequest: ServerHttpRequest
+        httpRequest: ServerHttpRequest,
     ): ApiResponse<ApiResponse.Success> {
         deleteWebhookUseCase.execute(DeleteWebhookUseCaseIn(id))
         auditLogService.record(
@@ -137,55 +139,57 @@ class WebhookController(
                 requestMethod = httpRequest.method.name(),
                 requestPath = httpRequest.path.value(),
                 statusCode = HttpStatus.NO_CONTENT.value(),
-                detail = "deleted webhook"
-            )
+                detail = "deleted webhook",
+            ),
         )
         return ApiResponseGenerator.success(HttpStatus.NO_CONTENT)
     }
 
     @GetMapping
-    suspend fun list(): ApiResponse<ApiResponse.SuccessBody<List<WebhookDto>>> {
-        return browseWebhookUseCase.execute(BrowseWebhookUseCaseIn())
+    suspend fun list(): ApiResponse<ApiResponse.SuccessBody<List<WebhookDto>>> =
+        browseWebhookUseCase
+            .execute(BrowseWebhookUseCaseIn())
             .let { ApiResponseGenerator.success(it.webhooks, HttpStatus.OK) }
-    }
 
     @GetMapping("/{id}")
-    suspend fun get(@PathVariable id: Long): ApiResponse<ApiResponse.SuccessBody<WebhookDto>> {
-        return getWebhookUseCase.execute(GetWebhookUseCaseIn(id))
+    suspend fun get(
+        @PathVariable id: Long,
+    ): ApiResponse<ApiResponse.SuccessBody<WebhookDto>> =
+        getWebhookUseCase
+            .execute(GetWebhookUseCaseIn(id))
             .let { ApiResponseGenerator.success(it.webhook, HttpStatus.OK) }
-    }
 
     @GetMapping("/{id}/deliveries")
     suspend fun listDeliveries(
         @PathVariable id: Long,
-        @RequestParam(required = false, defaultValue = "50") limit: Int
-    ): ApiResponse<ApiResponse.SuccessBody<List<WebhookDeliveryLogDto>>> {
-        return browseWebhookDeliveryLogsUseCase.execute(
-            BrowseWebhookDeliveryLogsUseCaseIn(
-                webhookId = id,
-                limit = limit
-            )
-        ).let { ApiResponseGenerator.success(it.deliveries, HttpStatus.OK) }
-    }
+        @RequestParam(required = false, defaultValue = "50") limit: Int,
+    ): ApiResponse<ApiResponse.SuccessBody<List<WebhookDeliveryLogDto>>> =
+        browseWebhookDeliveryLogsUseCase
+            .execute(
+                BrowseWebhookDeliveryLogsUseCaseIn(
+                    webhookId = id,
+                    limit = limit,
+                ),
+            ).let { ApiResponseGenerator.success(it.deliveries, HttpStatus.OK) }
 
     @GetMapping("/{id}/dead-letters")
     suspend fun listDeadLetters(
         @PathVariable id: Long,
-        @RequestParam(required = false, defaultValue = "50") limit: Int
-    ): ApiResponse<ApiResponse.SuccessBody<List<WebhookDeadLetterDto>>> {
-        return browseWebhookDeadLettersUseCase.execute(
-            BrowseWebhookDeadLettersUseCaseIn(
-                webhookId = id,
-                limit = limit
-            )
-        ).let { ApiResponseGenerator.success(it.deadLetters, HttpStatus.OK) }
-    }
+        @RequestParam(required = false, defaultValue = "50") limit: Int,
+    ): ApiResponse<ApiResponse.SuccessBody<List<WebhookDeadLetterDto>>> =
+        browseWebhookDeadLettersUseCase
+            .execute(
+                BrowseWebhookDeadLettersUseCaseIn(
+                    webhookId = id,
+                    limit = limit,
+                ),
+            ).let { ApiResponseGenerator.success(it.deadLetters, HttpStatus.OK) }
 
     @PostMapping("/{id}/dead-letters/{deadLetterId}/retry")
     suspend fun retryDeadLetter(
         @PathVariable id: Long,
         @PathVariable deadLetterId: Long,
-        httpRequest: ServerHttpRequest
+        httpRequest: ServerHttpRequest,
     ): ApiResponse<ApiResponse.SuccessBody<WebhookDeadLetterRetryResultDto>> {
         val result = retryWebhookDeadLettersUseCase.retrySingle(id, deadLetterId)
         auditLogService.record(
@@ -197,8 +201,8 @@ class WebhookController(
                 requestMethod = httpRequest.method.name(),
                 requestPath = httpRequest.path.value(),
                 statusCode = HttpStatus.OK.value(),
-                detail = "retried deadLetterId=$deadLetterId status=${result.status}"
-            )
+                detail = "retried deadLetterId=$deadLetterId status=${result.status}",
+            ),
         )
         return ApiResponseGenerator.success(result, HttpStatus.OK)
     }
@@ -209,15 +213,16 @@ class WebhookController(
         @Valid
         @RequestBody(required = false)
         request: PostWebhookDeadLetterRetryRequest?,
-        httpRequest: ServerHttpRequest
+        httpRequest: ServerHttpRequest,
     ): ApiResponse<ApiResponse.SuccessBody<RetryWebhookDeadLettersUseCaseOut>> {
-        val result = retryWebhookDeadLettersUseCase.retryBatch(
-            RetryWebhookDeadLettersUseCaseIn(
-                webhookId = id,
-                deadLetterIds = request?.deadLetterIds ?: emptyList(),
-                limit = request?.limit ?: 50
+        val result =
+            retryWebhookDeadLettersUseCase.retryBatch(
+                RetryWebhookDeadLettersUseCaseIn(
+                    webhookId = id,
+                    deadLetterIds = request?.deadLetterIds ?: emptyList(),
+                    limit = request?.limit ?: 50,
+                ),
             )
-        )
         auditLogService.record(
             RecordAuditLogCommand(
                 actorId = extractActorId(httpRequest),
@@ -227,13 +232,11 @@ class WebhookController(
                 requestMethod = httpRequest.method.name(),
                 requestPath = httpRequest.path.value(),
                 statusCode = HttpStatus.OK.value(),
-                detail = "retried deadLetters count=${result.results.size}"
-            )
+                detail = "retried deadLetters count=${result.results.size}",
+            ),
         )
         return ApiResponseGenerator.success(result, HttpStatus.OK)
     }
 
-    private fun extractActorId(httpRequest: ServerHttpRequest): String? {
-        return httpRequest.headers.getFirst("X-Actor-Id")
-    }
+    private fun extractActorId(httpRequest: ServerHttpRequest): String? = httpRequest.headers.getFirst("X-Actor-Id")
 }

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class EventReadAdapter(
-    private val eventRepository: EventRepository
+    private val eventRepository: EventRepository,
 ) : EventReadPort {
     override suspend fun findAllByIdIn(ids: Collection<Long>): List<EventReadModel> {
         if (ids.isEmpty()) {
@@ -31,6 +31,6 @@ private fun Event.toReadModel(): EventReadModel {
         id = eventId,
         userId = userId,
         name = name,
-        createdAt = createdAt
+        createdAt = createdAt,
     )
 }

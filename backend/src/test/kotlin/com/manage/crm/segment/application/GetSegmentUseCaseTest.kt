@@ -16,60 +16,68 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import java.time.LocalDateTime
 
-class GetSegmentUseCaseTest : BehaviorSpec({
-    lateinit var segmentRepository: SegmentRepository
-    lateinit var segmentConditionRepository: SegmentConditionRepository
-    lateinit var useCase: GetSegmentUseCase
+class GetSegmentUseCaseTest :
+    BehaviorSpec({
+        lateinit var segmentRepository: SegmentRepository
+        lateinit var segmentConditionRepository: SegmentConditionRepository
+        lateinit var useCase: GetSegmentUseCase
 
-    beforeContainer {
-        segmentRepository = mockk()
-        segmentConditionRepository = mockk()
-        useCase = GetSegmentUseCase(
-            segmentRepository = segmentRepository,
-            segmentConditionRepository = segmentConditionRepository,
-            objectMapper = jacksonObjectMapper()
-        )
-    }
+        beforeContainer {
+            segmentRepository = mockk()
+            segmentConditionRepository = mockk()
+            useCase =
+                GetSegmentUseCase(
+                    segmentRepository = segmentRepository,
+                    segmentConditionRepository = segmentConditionRepository,
+                    objectMapper = jacksonObjectMapper(),
+                )
+        }
 
-    given("UC-SEGMENT-003 GetSegmentUseCase") {
-        `when`("segment does not exist") {
-            then("throw not found") {
-                val segmentId = 999L
-                coEvery { segmentRepository.findById(segmentId) } returns null
+        given("UC-SEGMENT-003 GetSegmentUseCase") {
+            `when`("segment does not exist") {
+                then("throw not found") {
+                    val segmentId = 999L
+                    coEvery { segmentRepository.findById(segmentId) } returns null
 
-                shouldThrow<NotFoundByIdException> {
-                    useCase.execute(GetSegmentUseCaseIn(segmentId))
+                    shouldThrow<NotFoundByIdException> {
+                        useCase.execute(GetSegmentUseCaseIn(segmentId))
+                    }
+                }
+            }
+
+            `when`("segment exists") {
+                then("return segment with conditions") {
+                    val segmentId = 1L
+                    val segment =
+                        SegmentFixtures
+                            .aSegment()
+                            .withId(segmentId)
+                            .withName("power-users")
+                            .withDescription("Power users")
+                            .withActive(true)
+                            .withCreatedAt(LocalDateTime.of(2024, 1, 1, 0, 0))
+                            .build()
+
+                    val condition =
+                        SegmentConditionFixtures
+                            .aUserIdCondition()
+                            .withSegmentId(segmentId)
+                            .withConditionValue("100")
+                            .withPosition(1)
+                            .build()
+
+                    coEvery { segmentRepository.findById(segmentId) } returns segment
+                    every { segmentConditionRepository.findBySegmentIdOrderByPositionAsc(segmentId) } returns flowOf(condition)
+
+                    val result = useCase.execute(GetSegmentUseCaseIn(segmentId))
+
+                    result.segment.id shouldBe segmentId
+                    result.segment.conditions.size shouldBe 1
+                    result.segment.conditions[0].field shouldBe "user.id"
+                    result.segment.conditions[0]
+                        .value
+                        .asInt() shouldBe 100
                 }
             }
         }
-
-        `when`("segment exists") {
-            then("return segment with conditions") {
-                val segmentId = 1L
-                val segment = SegmentFixtures.aSegment()
-                    .withId(segmentId)
-                    .withName("power-users")
-                    .withDescription("Power users")
-                    .withActive(true)
-                    .withCreatedAt(LocalDateTime.of(2024, 1, 1, 0, 0))
-                    .build()
-
-                val condition = SegmentConditionFixtures.aUserIdCondition()
-                    .withSegmentId(segmentId)
-                    .withConditionValue("100")
-                    .withPosition(1)
-                    .build()
-
-                coEvery { segmentRepository.findById(segmentId) } returns segment
-                every { segmentConditionRepository.findBySegmentIdOrderByPositionAsc(segmentId) } returns flowOf(condition)
-
-                val result = useCase.execute(GetSegmentUseCaseIn(segmentId))
-
-                result.segment.id shouldBe segmentId
-                result.segment.conditions.size shouldBe 1
-                result.segment.conditions[0].field shouldBe "user.id"
-                result.segment.conditions[0].value.asInt() shouldBe 100
-            }
-        }
-    }
-})
+    })

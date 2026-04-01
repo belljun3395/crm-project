@@ -14,7 +14,6 @@ import com.manage.crm.email.domain.vo.VariableSource
  * Both formats normalize to the same internal representation: (VariableSource, key, defaultValue?).
  */
 object VariableParser {
-
     fun parse(value: String): Triple<VariableSource, String, String?> {
         val namePart = value.substringBefore(DELIMITER)
         val defaultValue = if (value.contains(DELIMITER)) value.substringAfter(DELIMITER) else null
@@ -37,13 +36,19 @@ object VariableParser {
         return VariableSource.entries.any { it.value == potentialSource }
     }
 
-    private fun parseNewFormat(namePart: String, defaultValue: String?): Triple<VariableSource, String, String?> {
+    private fun parseNewFormat(
+        namePart: String,
+        defaultValue: String?,
+    ): Triple<VariableSource, String, String?> {
         val source = VariableSource.fromValue(namePart.substringBefore(SOURCE_DELIMITER))
         val key = namePart.substringAfter(SOURCE_DELIMITER)
         return Triple(source, key, defaultValue)
     }
 
-    private fun parseLegacyFormat(namePart: String, defaultValue: String?): Triple<VariableSource, String, String?> {
+    private fun parseLegacyFormat(
+        namePart: String,
+        defaultValue: String?,
+    ): Triple<VariableSource, String, String?> {
         val source = VariableSource.fromValue(namePart.substringBefore(LEGACY_TYPE_DELIMITER))
         val key = namePart.substringAfter(LEGACY_TYPE_DELIMITER)
         return Triple(source, key, defaultValue)

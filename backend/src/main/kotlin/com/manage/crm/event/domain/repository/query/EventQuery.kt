@@ -8,7 +8,7 @@ data class SearchByPropertyQuery(
     val eventName: String,
     val properties: EventProperties,
     val operation: Operation,
-    val joinOperation: JoinOperation = JoinOperation.END
+    val joinOperation: JoinOperation = JoinOperation.END,
 )
 
 class EventQuery

@@ -18,36 +18,34 @@ class Event(
     @Column("properties")
     var properties: EventProperties,
     @CreatedDate
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
             name: String,
             userId: Long,
-            properties: EventProperties
-        ): Event {
-            return Event(
+            properties: EventProperties,
+        ): Event =
+            Event(
                 name = name,
                 userId = userId,
-                properties = properties
+                properties = properties,
             )
-        }
 
         fun new(
             id: Long,
             name: String,
             userId: Long,
             properties: EventProperties,
-            createdAt: LocalDateTime
-        ): Event {
-            return Event(
+            createdAt: LocalDateTime,
+        ): Event =
+            Event(
                 id = id,
                 name = name,
                 userId = userId,
                 properties = properties,
-                createdAt = createdAt
+                createdAt = createdAt,
             )
-        }
     }
 
     override fun equals(other: Any?): Boolean {

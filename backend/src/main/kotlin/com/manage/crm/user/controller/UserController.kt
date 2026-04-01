@@ -35,9 +35,8 @@ import org.springframework.web.bind.annotation.RestController
 class UserController(
     private val browseUsersUseCase: BrowseUserUseCase,
     private val enrollUserUseCase: EnrollUserUseCase,
-    private val getTotalUserCountUseCase: GetTotalUserCountUseCase
+    private val getTotalUserCountUseCase: GetTotalUserCountUseCase,
 ) {
-
     @GetMapping
     suspend fun browseUsers(
         @RequestParam(defaultValue = "0")
@@ -49,38 +48,33 @@ class UserController(
         size: Int,
         @RequestParam(required = false)
         @Size(max = 255)
-        query: String?
-    ): ApiResponse<ApiResponse.SuccessBody<BrowseUsersUseCaseOut>> {
-        return browseUsersUseCase
+        query: String?,
+    ): ApiResponse<ApiResponse.SuccessBody<BrowseUsersUseCaseOut>> =
+        browseUsersUseCase
             .execute(BrowseUsersUseCaseIn(page = page, size = size, query = query))
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
 
     @PostMapping
     suspend fun enrollUser(
-        @RequestBody request: EnrollUserRequest
-    ): ApiResponse<ApiResponse.SuccessBody<EnrollUserUseCaseOut>> {
-        return enrollUserUseCase
+        @RequestBody request: EnrollUserRequest,
+    ): ApiResponse<ApiResponse.SuccessBody<EnrollUserUseCaseOut>> =
+        enrollUserUseCase
             .execute(
                 EnrollUserUseCaseIn(
                     id = request.id,
                     externalId = request.externalId,
-                    userAttributes = request.userAttributes
-                )
-            )
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
+                    userAttributes = request.userAttributes,
+                ),
+            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
 
     @GetMapping("/count")
-    suspend fun getTotalUserCount(): ApiResponse<ApiResponse.SuccessBody<GetTotalUserCountUseCaseOut>> {
-        return getTotalUserCountUseCase
+    suspend fun getTotalUserCount(): ApiResponse<ApiResponse.SuccessBody<GetTotalUserCountUseCaseOut>> =
+        getTotalUserCountUseCase
             .execute()
             .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
-    }
 
     @ExceptionHandler(ConstraintViolationException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    fun handleConstraintViolationException(e: ConstraintViolationException): ApiResponse<ApiResponse.FailureBody> {
-        return ApiResponseGenerator.fail(e.message ?: "validation failed", HttpStatus.BAD_REQUEST)
-    }
+    fun handleConstraintViolationException(e: ConstraintViolationException): ApiResponse<ApiResponse.FailureBody> =
+        ApiResponseGenerator.fail(e.message ?: "validation failed", HttpStatus.BAD_REQUEST)
 }

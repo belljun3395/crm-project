@@ -7,7 +7,7 @@ const val DELIMITER = ":"
 abstract class Variable(
     val source: VariableSource,
     val key: String,
-    val defaultValue: String? = null
+    val defaultValue: String? = null,
 ) {
     fun hasDefault(): Boolean = defaultValue != null
 
@@ -21,8 +21,7 @@ abstract class Variable(
      * Display value in the new standard format.
      * Used for storage and API representation: `user.email` or `user.email:default`
      */
-    fun displayValue(): String =
-        if (hasDefault()) "${keyWithSource()}$DELIMITER$defaultValue" else keyWithSource()
+    fun displayValue(): String = if (hasDefault()) "${keyWithSource()}$DELIMITER$defaultValue" else keyWithSource()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

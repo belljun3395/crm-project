@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service
  */
 @Service
 class VariableResolverRegistry(
-    resolvers: List<VariableResolver>
+    resolvers: List<VariableResolver>,
 ) {
     private val resolverMap: Map<VariableSource, VariableResolver> =
         resolvers.associateBy { resolver ->
@@ -27,14 +27,18 @@ class VariableResolverRegistry(
     /**
      * Resolves all variables in [variables] and merges the results into a single map.
      */
-    fun resolveAll(variables: Variables, context: VariableResolverContext): Map<String, String> {
-        return variables.value.flatMap { variable ->
-            val resolver = resolverMap[variable.source]
-                ?: throw IllegalArgumentException(
-                    "No VariableResolver found for source '${variable.source}'. " +
-                        "Register a VariableResolver @Component that supports this source."
-                )
-            resolver.resolve(variable, context).entries
-        }.associate { it.key to it.value }
-    }
+    fun resolveAll(
+        variables: Variables,
+        context: VariableResolverContext,
+    ): Map<String, String> =
+        variables.value
+            .flatMap { variable ->
+                val resolver =
+                    resolverMap[variable.source]
+                        ?: throw IllegalArgumentException(
+                            "No VariableResolver found for source '${variable.source}'. " +
+                                "Register a VariableResolver @Component that supports this source.",
+                        )
+                resolver.resolve(variable, context).entries
+            }.associate { it.key to it.value }
 }

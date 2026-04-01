@@ -8,18 +8,15 @@ import org.springframework.data.convert.WritingConverter
 
 @ReadingConverter
 class UserAttributeReadingConverter : Converter<Any, UserAttributes> {
-    override fun convert(source: Any): UserAttributes {
-        return when (source) {
+    override fun convert(source: Any): UserAttributes =
+        when (source) {
             is UserAttributes -> source
             is Json -> UserAttributes(source.asString())
             else -> UserAttributes(source.toString())
         }
-    }
 }
 
 @WritingConverter
 class UserAttributeWritingConverter : Converter<UserAttributes, Json> {
-    override fun convert(source: UserAttributes): Json {
-        return Json.of(source.value)
-    }
+    override fun convert(source: UserAttributes): Json = Json.of(source.value)
 }

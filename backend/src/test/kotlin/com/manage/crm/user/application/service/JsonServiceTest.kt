@@ -7,57 +7,62 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.shouldBe
 
-class JsonServiceTest : FeatureSpec({
+class JsonServiceTest :
+    FeatureSpec({
 
-    val objectMapper = ObjectMapper()
-    val jsonService = JsonService(objectMapper)
-    feature("JsonService#execute") {
-        scenario("attribute is JSON format and contains required key") {
-            // given
-            val attribute = """
-            {
-                "email": "example@example.com"
+        val objectMapper = ObjectMapper()
+        val jsonService = JsonService(objectMapper)
+        feature("JsonService#execute") {
+            scenario("attribute is JSON format and contains required key") {
+                // given
+                val attribute =
+                    """
+                    {
+                        "email": "example@example.com"
+                    }
+                    """.trimIndent()
+                val keys = arrayOf(RequiredUserAttributeKey.EMAIL)
+
+                // when
+                val result = jsonService.execute(attribute, *keys)
+
+                // then
+                result shouldBe attribute
             }
-            """.trimIndent()
-            val keys = arrayOf(RequiredUserAttributeKey.EMAIL)
 
-            // when
-            val result = jsonService.execute(attribute, *keys)
+            scenario("attribute is not JSON format") {
+                // given
+                val attribute = "email: example@example.com"
+                val keys = arrayOf(RequiredUserAttributeKey.EMAIL)
 
-            // then
-            result shouldBe attribute
+                // when
+                val exception =
+                    shouldThrow<IllegalArgumentException> {
+                        jsonService.execute(attribute, *keys)
+                    }
+
+                // then
+                exception.message shouldBe "Attribute is not JSON format: $attribute"
+            }
+
+            scenario("attribute is not contain required key") {
+                // given
+                val attribute =
+                    """
+                    {
+                        "name": "example"
+                    }
+                    """.trimIndent()
+                val keys = arrayOf(RequiredUserAttributeKey.EMAIL)
+
+                // when
+                val exception =
+                    shouldThrow<JsonException> {
+                        jsonService.execute(attribute, *keys)
+                    }
+
+                // then
+                exception.message shouldBe "Attribute does not contain key: ${RequiredUserAttributeKey.EMAIL.value}"
+            }
         }
-
-        scenario("attribute is not JSON format") {
-            // given
-            val attribute = "email: example@example.com"
-            val keys = arrayOf(RequiredUserAttributeKey.EMAIL)
-
-            // when
-            val exception = shouldThrow<IllegalArgumentException> {
-                jsonService.execute(attribute, *keys)
-            }
-
-            // then
-            exception.message shouldBe "Attribute is not JSON format: $attribute"
-        }
-
-        scenario("attribute is not contain required key") {
-            // given
-            val attribute = """
-            {
-                "name": "example"
-            }
-            """.trimIndent()
-            val keys = arrayOf(RequiredUserAttributeKey.EMAIL)
-
-            // when
-            val exception = shouldThrow<JsonException> {
-                jsonService.execute(attribute, *keys)
-            }
-
-            // then
-            exception.message shouldBe "Attribute does not contain key: ${RequiredUserAttributeKey.EMAIL.value}"
-        }
-    }
-})
+    })

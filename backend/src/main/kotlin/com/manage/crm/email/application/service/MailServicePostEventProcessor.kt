@@ -11,14 +11,12 @@ import org.springframework.stereotype.Component
 class MailServicePostEventProcessor(
     @Qualifier("mailServiceImpl")
     private val mailService: MailService,
-    private val emailEventPublisher: EmailEventPublisher
+    private val emailEventPublisher: EmailEventPublisher,
 ) : MailService {
     /**
      * 이메일을 전송하고 이벤트 관련 후처리를 수행합니다.
      */
-    override suspend fun send(args: SendEmailInDto): SendEmailOutDto {
-        return sendPostEventProcess(mailService.send(args))
-    }
+    override suspend fun send(args: SendEmailInDto): SendEmailOutDto = sendPostEventProcess(mailService.send(args))
 
     /**
      * `EmailSentEvent`를 발행합니다.
@@ -31,8 +29,8 @@ class MailServicePostEventProcessor(
                     emailBody = outDto.emailBody,
                     messageId = outDto.messageId,
                     destination = outDto.destination,
-                    provider = outDto.provider
-                )
+                    provider = outDto.provider,
+                ),
             )
         }
         return outDto

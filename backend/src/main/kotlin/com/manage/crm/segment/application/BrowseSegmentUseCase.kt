@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component
 class BrowseSegmentUseCase(
     private val segmentRepository: SegmentRepository,
     private val segmentConditionRepository: SegmentConditionRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
     companion object {
         private const val MIN_LIMIT = 1
@@ -32,25 +32,32 @@ class BrowseSegmentUseCase(
 
     suspend fun execute(useCaseIn: BrowseSegmentUseCaseIn): BrowseSegmentUseCaseOut {
         val normalizedLimit = useCaseIn.limit.coerceIn(MIN_LIMIT, MAX_LIMIT)
-        val segments = segmentRepository.findAllByOrderByCreatedAtDesc()
-            .take(normalizedLimit)
-            .toList()
-        val segmentIds = segments.mapNotNull { it.id }
-        val conditionsBySegmentId = if (segmentIds.isEmpty()) {
-            emptyMap()
-        } else {
-            segmentConditionRepository.findBySegmentIdInOrderBySegmentIdAscPositionAsc(segmentIds)
+        val segments =
+            segmentRepository
+                .findAllByOrderByCreatedAtDesc()
+                .take(normalizedLimit)
                 .toList()
-                .groupBy { it.segmentId }
-        }
-
-        val segmentDtos = segments
-            .map { segment ->
-                val segmentId = segment.id ?: throw IllegalStateException("Segment id is null")
-                val conditions = conditionsBySegmentId[segmentId].orEmpty()
-                    .map { condition -> condition.toSegmentConditionDto(objectMapper) }
-                segment.toSegmentDto(conditions)
+        val segmentIds = segments.mapNotNull { it.id }
+        val conditionsBySegmentId =
+            if (segmentIds.isEmpty()) {
+                emptyMap()
+            } else {
+                segmentConditionRepository
+                    .findBySegmentIdInOrderBySegmentIdAscPositionAsc(segmentIds)
+                    .toList()
+                    .groupBy { it.segmentId }
             }
+
+        val segmentDtos =
+            segments
+                .map { segment ->
+                    val segmentId = segment.id ?: throw IllegalStateException("Segment id is null")
+                    val conditions =
+                        conditionsBySegmentId[segmentId]
+                            .orEmpty()
+                            .map { condition -> condition.toSegmentConditionDto(objectMapper) }
+                    segment.toSegmentDto(conditions)
+                }
 
         return out {
             BrowseSegmentUseCaseOut(segments = segmentDtos)

@@ -4,5 +4,5 @@ data class WebhookEventPayload(
     val eventId: String,
     val eventType: String,
     val occurredAt: String,
-    val data: Map<String, Any?>
+    val data: Map<String, Any?>,
 )

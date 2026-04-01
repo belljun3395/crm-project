@@ -9,5 +9,5 @@ data class PostTemplateRequest(
     val version: Float? = null,
     val body: String,
     @Schema(description = "변수 리스트", example = "[\"name:default\", \"email\"]")
-    val variables: List<String>? = emptyList()
+    val variables: List<String>? = emptyList(),
 )

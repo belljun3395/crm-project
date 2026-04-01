@@ -9,5 +9,6 @@ import org.springframework.data.repository.kotlin.CoroutineCrudRepository
  */
 interface JourneyExecutionHistoryRepository : CoroutineCrudRepository<JourneyExecutionHistory, Long> {
     fun findAllByJourneyExecutionIdOrderByCreatedAtAsc(journeyExecutionId: Long): Flow<JourneyExecutionHistory>
+
     suspend fun existsByJourneyStepId(journeyStepId: Long): Boolean
 }

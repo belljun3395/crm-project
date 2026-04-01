@@ -54,14 +54,15 @@ abstract class BaseModuleGovernanceTest {
 
     @Test
     fun `use case UC codes are unique`() {
-        val duplicatedCodes = loadUseCaseUcCodes()
-            .groupBy { it.code }
-            .filterValues { it.size > 1 }
+        val duplicatedCodes =
+            loadUseCaseUcCodes()
+                .groupBy { it.code }
+                .filterValues { it.size > 1 }
 
         check(duplicatedCodes.isEmpty()) {
             duplicatedCodes.entries.joinToString(
                 prefix = "[FAIL] Duplicate UC codes found: ",
-                separator = ", "
+                separator = ", ",
             ) { (code, entries) ->
                 "$code -> ${entries.joinToString("/") { it.useCaseName }}"
             }
@@ -73,10 +74,11 @@ abstract class BaseModuleGovernanceTest {
         val ucCodesByDomain = loadUseCaseUcCodes().groupBy { it.domain }
 
         ucCodesByDomain.forEach { (domain, ucCodes) ->
-            val numbers = ucCodes
-                .map { it.sequence }
-                .distinct()
-                .sorted()
+            val numbers =
+                ucCodes
+                    .map { it.sequence }
+                    .distinct()
+                    .sorted()
 
             if (numbers.isEmpty()) {
                 return@forEach
@@ -88,21 +90,23 @@ abstract class BaseModuleGovernanceTest {
 
             val expected = (1..numbers.last()).toList()
             check(numbers == expected) {
-                val missing = expected
-                    .toSet()
-                    .minus(numbers.toSet())
-                    .sorted()
-                    .joinToString(", ") { it.toThreeDigits() }
+                val missing =
+                    expected
+                        .toSet()
+                        .minus(numbers.toSet())
+                        .sorted()
+                        .joinToString(", ") { it.toThreeDigits() }
                 "[FAIL] UC-$domain numbering has gaps. Missing: $missing"
             }
         }
     }
 
-    private fun useCaseClasses() = Konsist
-        .scopeFromProduction()
-        .classes()
-        .withNameEndingWith("UseCase")
-        .filter { it.resideInPackage(spec.applicationPackagePattern) }
+    private fun useCaseClasses() =
+        Konsist
+            .scopeFromProduction()
+            .classes()
+            .withNameEndingWith("UseCase")
+            .filter { it.resideInPackage(spec.applicationPackagePattern) }
 
     private fun loadUseCaseUcCodes(): List<UseCaseUcCode> {
         return useCaseClasses().mapNotNull { clazz ->
@@ -120,7 +124,7 @@ abstract class BaseModuleGovernanceTest {
                 useCaseName = clazz.name,
                 domain = match.groupValues[1],
                 sequence = sequence,
-                code = match.value
+                code = match.value,
             )
         }
     }
@@ -130,7 +134,7 @@ private data class UseCaseUcCode(
     val useCaseName: String,
     val domain: String,
     val sequence: Int,
-    val code: String
+    val code: String,
 )
 
 private fun Int.toThreeDigits(): String = toString().padStart(3, '0')

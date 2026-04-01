@@ -2,11 +2,11 @@ package com.manage.crm.webhook.application.dto
 
 data class BrowseWebhookDeadLettersUseCaseIn(
     val webhookId: Long,
-    val limit: Int = 50
+    val limit: Int = 50,
 )
 
 data class BrowseWebhookDeadLettersUseCaseOut(
-    val deadLetters: List<WebhookDeadLetterDto>
+    val deadLetters: List<WebhookDeadLetterDto>,
 )
 
 data class WebhookDeadLetterDto(
@@ -19,5 +19,5 @@ data class WebhookDeadLetterDto(
     val attemptCount: Int,
     val responseStatus: Int?,
     val errorMessage: String?,
-    val createdAt: String?
+    val createdAt: String?,
 )

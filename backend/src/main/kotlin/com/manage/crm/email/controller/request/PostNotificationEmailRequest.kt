@@ -8,5 +8,5 @@ data class PostNotificationEmailRequest(
     val templateVersion: Float?,
     val userIds: List<Long>? = null,
     val segmentId: Long? = null,
-    val expiredTime: LocalDateTime
+    val expiredTime: LocalDateTime,
 )

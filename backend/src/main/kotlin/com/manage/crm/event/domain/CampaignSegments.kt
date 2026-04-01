@@ -15,17 +15,16 @@ class CampaignSegments(
     @Column("segment_id")
     var segmentId: Long,
     @CreatedDate
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
             campaignId: Long,
-            segmentId: Long
-        ): CampaignSegments {
-            return CampaignSegments(
+            segmentId: Long,
+        ): CampaignSegments =
+            CampaignSegments(
                 campaignId = campaignId,
-                segmentId = segmentId
+                segmentId = segmentId,
             )
-        }
     }
 }

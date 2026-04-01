@@ -5,12 +5,11 @@ import org.springframework.stereotype.Component
 
 @Component
 class ActionProviderRegistry(
-    providers: List<ActionProvider>
+    providers: List<ActionProvider>,
 ) {
     private val providerByChannel = providers.associateBy { it.channel }
 
-    fun get(channel: ActionChannel): ActionProvider {
-        return providerByChannel[channel]
+    fun get(channel: ActionChannel): ActionProvider =
+        providerByChannel[channel]
             ?: throw IllegalArgumentException("No action provider registered for channel: $channel")
-    }
 }

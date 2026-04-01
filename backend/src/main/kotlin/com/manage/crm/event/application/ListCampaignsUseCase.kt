@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 class ListCampaignsUseCase(
-    private val campaignRepository: CampaignRepository
+    private val campaignRepository: CampaignRepository,
 ) {
     suspend fun execute(input: ListCampaignsUseCaseIn): ListCampaignsUseCaseOut {
         val campaigns = loadRecentCampaigns(input.limit)
@@ -25,14 +25,15 @@ class ListCampaignsUseCase(
 
     private suspend fun loadRecentCampaigns(limit: Int): List<CampaignListItemUseCaseDto> {
         val normalizedLimit = limit.coerceIn(1, 1000)
-        return campaignRepository.findRecentCampaigns(normalizedLimit)
+        return campaignRepository
+            .findRecentCampaigns(normalizedLimit)
             .toList()
             .mapNotNull { campaign ->
                 val campaignId = campaign.id ?: return@mapNotNull null
                 CampaignListItemUseCaseDto(
                     id = campaignId,
                     name = campaign.name,
-                    createdAt = campaign.createdAt
+                    createdAt = campaign.createdAt,
                 )
             }
     }

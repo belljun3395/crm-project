@@ -10,47 +10,52 @@ import org.springframework.stereotype.Component
 
 @Component
 class JooqR2dbcExecutor(
-    private val databaseClient: DatabaseClient
+    private val databaseClient: DatabaseClient,
 ) {
-    suspend fun <T> fetchList(query: Query, mapper: (Map<String, Any>) -> T): List<T> {
-        return bind(query)
+    suspend fun <T> fetchList(
+        query: Query,
+        mapper: (Map<String, Any>) -> T,
+    ): List<T> =
+        bind(query)
             .fetch()
             .all()
             .map(mapper)
             .collectList()
             .awaitFirst()
-    }
 
-    suspend fun <T> fetchOne(query: Query, mapper: (Map<String, Any>) -> T): T? {
-        return bind(query)
+    suspend fun <T> fetchOne(
+        query: Query,
+        mapper: (Map<String, Any>) -> T,
+    ): T? =
+        bind(query)
             .fetch()
             .one()
             .map(mapper)
             .awaitFirstOrNull()
-    }
 
-    suspend fun execute(query: Query): Int {
-        return bind(query)
+    suspend fun execute(query: Query): Int =
+        bind(query)
             .fetch()
             .rowsUpdated()
             .awaitFirst()
             .toInt()
-    }
 
     private fun bind(query: Query): DatabaseClient.GenericExecuteSpec {
         val sql = toPostgresBindMarkers(query.getSQL(ParamType.INDEXED))
-        val bindParams = query.params.values
-            .filterNot(Param<*>::isInline)
-            .take(sql.bindMarkerCount())
+        val bindParams =
+            query.params.values
+                .filterNot(Param<*>::isInline)
+                .take(sql.bindMarkerCount())
 
         var spec = databaseClient.sql(sql)
         bindParams.forEachIndexed { index, param ->
             val value = param.value
-            spec = if (value == null) {
-                spec.bindNull(index, param.dataType.type)
-            } else {
-                spec.bind(index, value)
-            }
+            spec =
+                if (value == null) {
+                    spec.bindNull(index, param.dataType.type)
+                } else {
+                    spec.bind(index, value)
+                }
         }
         return spec
     }
@@ -100,11 +105,10 @@ class JooqR2dbcExecutor(
         return rendered.toString()
     }
 
-    private fun String.bindMarkerCount(): Int {
-        return Regex("""\$(\d+)""")
+    private fun String.bindMarkerCount(): Int =
+        Regex("""\$(\d+)""")
             .findAll(this)
             .map { it.groupValues[1].toInt() }
             .maxOrNull()
             ?: 0
-    }
 }

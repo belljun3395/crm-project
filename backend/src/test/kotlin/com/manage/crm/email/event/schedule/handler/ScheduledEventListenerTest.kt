@@ -11,7 +11,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 class ScheduledEventListenerTest(
-    private val scheduleTaskService: ScheduleTaskServicePostEventProcessor
+    private val scheduleTaskService: ScheduleTaskServicePostEventProcessor,
 ) : MailEventInvokeSituationTest() {
     init {
         given("schedule task service") {
@@ -25,7 +25,7 @@ class ScheduledEventListenerTest(
                 scheduleTaskService.cancel(scheduleName.value)
 
                 verify(emailEventPublisher, times(1)).publishEvent(
-                    argThat<CancelScheduledEvent> { scheduledEventId == event.scheduledEventId }
+                    argThat<CancelScheduledEvent> { scheduledEventId == event.scheduledEventId },
                 )
             }
         }

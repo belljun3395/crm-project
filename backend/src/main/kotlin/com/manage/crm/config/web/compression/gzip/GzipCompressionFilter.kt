@@ -15,12 +15,15 @@ import reactor.core.publisher.Mono
 
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 class GzipCompressionFilter(
-    private val properties: CompressionUrlProperties
+    private val properties: CompressionUrlProperties,
 ) : WebFilter {
     private val log = KotlinLogging.logger {}
     private val pathMatcher = AntPathMatcher()
 
-    override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
+    override fun filter(
+        exchange: ServerWebExchange,
+        chain: WebFilterChain,
+    ): Mono<Void> {
         // Skip if URL-based compression is disabled
         if (!properties.enabled) {
             return chain.filter(exchange)
@@ -30,9 +33,10 @@ class GzipCompressionFilter(
         val path = request.uri.path
 
         // Check if the request path matches any of the configured patterns
-        val shouldCompress = properties.patterns.any { pattern ->
-            pathMatcher.match(pattern, path)
-        }
+        val shouldCompress =
+            properties.patterns.any { pattern ->
+                pathMatcher.match(pattern, path)
+            }
 
         // Skip if the path doesn't match any pattern or client doesn't accept gzip
         if (!shouldCompress || !isGzipResponseRequired(request)) {
@@ -41,11 +45,14 @@ class GzipCompressionFilter(
 
         // Create a decorated response that will compress the body
         val gzipServerHttpResponse = GzipServerHttpResponse(exchange.response, properties)
-        val gzipExchange = exchange.mutate()
-            .response(gzipServerHttpResponse)
-            .build()
+        val gzipExchange =
+            exchange
+                .mutate()
+                .response(gzipServerHttpResponse)
+                .build()
 
-        return chain.filter(gzipExchange)
+        return chain
+            .filter(gzipExchange)
             .onErrorResume { ex: Throwable ->
                 when (ex) {
                     is IllegalCompressionResponseException -> {
@@ -53,8 +60,8 @@ class GzipCompressionFilter(
                         exchange.response.statusCode = HttpStatus.INTERNAL_SERVER_ERROR
                         exchange.response.writeWith(
                             Mono.just(
-                                exchange.response.bufferFactory().wrap("Gzip Compression failed ${ex.message}".toByteArray())
-                            )
+                                exchange.response.bufferFactory().wrap("Gzip Compression failed ${ex.message}".toByteArray()),
+                            ),
                         )
                     }
                     else -> {

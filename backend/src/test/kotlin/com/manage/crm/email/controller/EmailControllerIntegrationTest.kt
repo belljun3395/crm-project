@@ -19,29 +19,32 @@ import org.springframework.test.web.reactive.server.expectBody
  */
 @Tag("integration")
 class EmailControllerIntegrationTest : AbstractIntegrationTest() {
-
     // Test Fixtures and Helper Methods
     private fun createTestTemplate(
         name: String = "test-template-${System.currentTimeMillis()}",
         subject: String = "Test Email",
         body: String = "<h1>Test Content</h1>",
-        variables: List<String> = emptyList()
+        variables: List<String> = emptyList(),
     ): Long {
-        val templateRequest = PostTemplateRequest(
-            templateName = name,
-            subject = subject,
-            body = body,
-            variables = variables
-        )
+        val templateRequest =
+            PostTemplateRequest(
+                templateName = name,
+                subject = subject,
+                body = body,
+                variables = variables,
+            )
 
-        val responseBody = webTestClient.post()
-            .uri("/api/v1/emails/templates")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(templateRequest)
-            .exchange()
-            .expectStatus().isOk
-            .expectBody<String>()
-            .returnResult()
+        val responseBody =
+            webTestClient
+                .post()
+                .uri("/api/v1/emails/templates")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(templateRequest)
+                .exchange()
+                .expectStatus()
+                .isOk
+                .expectBody<String>()
+                .returnResult()
 
         return extractIdFromResponse(responseBody.responseBody)
     }
@@ -49,52 +52,62 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
     private fun createTestUser(
         email: String = "test-user-${System.currentTimeMillis()}@example.com",
         name: String = "Test User",
-        externalId: String = "test-user-${System.currentTimeMillis()}"
+        externalId: String = "test-user-${System.currentTimeMillis()}",
     ): Long {
-        val userAttributes = """
-        {
-            "email": "$email",
-            "name": "$name"
-        }
-        """.trimIndent()
+        val userAttributes =
+            """
+            {
+                "email": "$email",
+                "name": "$name"
+            }
+            """.trimIndent()
 
-        val userRequest = mapOf(
-            "externalId" to externalId,
-            "userAttributes" to userAttributes
-        )
+        val userRequest =
+            mapOf(
+                "externalId" to externalId,
+                "userAttributes" to userAttributes,
+            )
 
-        val responseBody = webTestClient.post()
-            .uri("/api/v1/users")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(userRequest)
-            .exchange()
-            .expectStatus().isOk
-            .expectBody<String>()
-            .returnResult()
+        val responseBody =
+            webTestClient
+                .post()
+                .uri("/api/v1/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(userRequest)
+                .exchange()
+                .expectStatus()
+                .isOk
+                .expectBody<String>()
+                .returnResult()
 
         return extractIdFromResponse(responseBody.responseBody)
     }
 
     private fun createTestCampaign(
         name: String = "test-campaign-${System.currentTimeMillis()}",
-        properties: List<PostCampaignPropertyDto> = listOf(
-            PostCampaignPropertyDto(key = "targetProduct", value = "premium_product"),
-            PostCampaignPropertyDto(key = "targetAudience", value = "premium_users")
-        )
+        properties: List<PostCampaignPropertyDto> =
+            listOf(
+                PostCampaignPropertyDto(key = "targetProduct", value = "premium_product"),
+                PostCampaignPropertyDto(key = "targetAudience", value = "premium_users"),
+            ),
     ): Long {
-        val campaignRequest = PostCampaignRequest(
-            name = name,
-            properties = properties
-        )
+        val campaignRequest =
+            PostCampaignRequest(
+                name = name,
+                properties = properties,
+            )
 
-        val responseBody = webTestClient.post()
-            .uri("/api/v1/events/campaign")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(campaignRequest)
-            .exchange()
-            .expectStatus().isCreated
-            .expectBody<String>()
-            .returnResult()
+        val responseBody =
+            webTestClient
+                .post()
+                .uri("/api/v1/events/campaign")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(campaignRequest)
+                .exchange()
+                .expectStatus()
+                .isCreated
+                .expectBody<String>()
+                .returnResult()
 
         return extractIdFromResponse(responseBody.responseBody)
     }
@@ -125,26 +138,31 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
         campaignName: String,
         userExternalId: String,
         eventName: String = "premium_signup",
-        properties: List<PostEventPropertyDto> = listOf(
-            PostEventPropertyDto(key = "targetProduct", value = "premium_product"),
-            PostEventPropertyDto(key = "targetAudience", value = "premium_users")
-        )
+        properties: List<PostEventPropertyDto> =
+            listOf(
+                PostEventPropertyDto(key = "targetProduct", value = "premium_product"),
+                PostEventPropertyDto(key = "targetAudience", value = "premium_users"),
+            ),
     ): Long {
-        val eventRequest = PostEventRequest(
-            name = eventName,
-            campaignName = campaignName,
-            externalId = userExternalId,
-            properties = properties
-        )
+        val eventRequest =
+            PostEventRequest(
+                name = eventName,
+                campaignName = campaignName,
+                externalId = userExternalId,
+                properties = properties,
+            )
 
-        val responseBody = webTestClient.post()
-            .uri("/api/v1/events")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(eventRequest)
-            .exchange()
-            .expectStatus().isCreated
-            .expectBody<String>()
-            .returnResult()
+        val responseBody =
+            webTestClient
+                .post()
+                .uri("/api/v1/events")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(eventRequest)
+                .exchange()
+                .expectStatus()
+                .isCreated
+                .expectBody<String>()
+                .returnResult()
 
         return extractIdFromResponse(responseBody.responseBody)
     }
@@ -153,17 +171,18 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
         describe("POST /api/v1/emails/templates") {
             it("create simple email template successfully") {
                 // given - 간단한 템플릿 (변수 없이)
-                val templateBody = """
+                val templateBody =
+                    """
                     <h1>Welcome!</h1>
                     <p>Thank you for joining us.</p>
-                """.trimIndent()
+                    """.trimIndent()
 
                 // when & then
                 createTestTemplate(
                     name = "simple-template-${System.currentTimeMillis()}",
                     subject = "Welcome Email",
                     body = templateBody,
-                    variables = emptyList()
+                    variables = emptyList(),
                 )
             }
 
@@ -172,7 +191,7 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
                 createTestTemplate(
                     name = "user-template-${System.currentTimeMillis()}",
                     body = "<h1>Welcome! \${user_email}</h1> <p>Thank you for joining us.</p>",
-                    variables = listOf("user_email")
+                    variables = listOf("user_email"),
                 )
             }
 
@@ -181,7 +200,7 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
                 createTestTemplate(
                     name = "campaign-template-${System.currentTimeMillis()}",
                     body = "<h1>Welcome! \${campaign_title}</h1> <p>Thank you for joining us.</p>",
-                    variables = listOf("campaign_title")
+                    variables = listOf("campaign_title"),
                 )
             }
 
@@ -190,7 +209,7 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
                 createTestTemplate(
                     name = "mixed-template-${System.currentTimeMillis()}",
                     body = "<h1>Welcome! \${campaign_title} \${user_email}</h1> <p>Thank you for joining us.</p>",
-                    variables = listOf("campaign_title", "user_email")
+                    variables = listOf("campaign_title", "user_email"),
                 )
             }
         }
@@ -201,14 +220,16 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
                 createTestTemplate(
                     name = "browse-template-${System.currentTimeMillis()}",
                     body = "<h1>Welcome! \${campaign_title} \${user_email}</h1> <p>Thank you for joining us.</p>",
-                    variables = listOf("campaign_title", "user_email")
+                    variables = listOf("campaign_title", "user_email"),
                 )
 
                 // when & then
-                webTestClient.get()
+                webTestClient
+                    .get()
                     .uri("/api/v1/emails/templates")
                     .exchange()
-                    .expectStatus().isOk
+                    .expectStatus()
+                    .isOk
                     .expectBody<String>()
                     .consumeWith { response ->
                         response.responseBody shouldNotBe null
@@ -219,17 +240,20 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
         describe("DELETE /api/v1/emails/templates/{templateId}") {
             it("delete email template successfully") {
                 // given - create template first
-                val templateId = createTestTemplate(
-                    name = "delete-template-${System.currentTimeMillis()}",
-                    subject = "Template to Delete",
-                    body = "<h1>This will be deleted</h1>"
-                )
+                val templateId =
+                    createTestTemplate(
+                        name = "delete-template-${System.currentTimeMillis()}",
+                        subject = "Template to Delete",
+                        body = "<h1>This will be deleted</h1>",
+                    )
 
                 // when & then - delete template
-                webTestClient.delete()
+                webTestClient
+                    .delete()
                     .uri("/api/v1/emails/templates/$templateId")
                     .exchange()
-                    .expectStatus().isOk
+                    .expectStatus()
+                    .isOk
                     .expectBody<String>()
                     .consumeWith { response ->
                         response.responseBody shouldNotBe null
@@ -238,17 +262,20 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
 
             it("delete email template with force flag") {
                 // given - create template first
-                val templateId = createTestTemplate(
-                    name = "force-delete-template-${System.currentTimeMillis()}",
-                    subject = "Template to Force Delete",
-                    body = "<h1>This will be force deleted</h1>"
-                )
+                val templateId =
+                    createTestTemplate(
+                        name = "force-delete-template-${System.currentTimeMillis()}",
+                        subject = "Template to Force Delete",
+                        body = "<h1>This will be force deleted</h1>",
+                    )
 
                 // when & then - delete template with force flag
-                webTestClient.delete()
+                webTestClient
+                    .delete()
                     .uri("/api/v1/emails/templates/$templateId?force=true")
                     .exchange()
-                    .expectStatus().isOk
+                    .expectStatus()
+                    .isOk
                     .expectBody<String>()
                     .consumeWith { response ->
                         response.responseBody shouldNotBe null
@@ -260,32 +287,39 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
         describe("POST /api/v1/emails/send/notifications") {
             it("send notification email to specific users") {
                 // given - create user and template
-                val userId = createTestUser(
-                    email = "notification-user1-${System.currentTimeMillis()}@example.com",
-                    name = "Notification User 1"
-                )
+                val userId =
+                    createTestUser(
+                        email = "notification-user1-${System.currentTimeMillis()}@example.com",
+                        name = "Notification User 1",
+                    )
 
-                val templateId = createTestTemplate(
-                    name = "notification-template-${System.currentTimeMillis()}",
-                    subject = "Welcome Notification",
-                    body = "<h1>Hello <span th:text=\"\${user_name}\"></span>!</h1><p>Email: <span th:text=\"\${user_email}\"></span></p>",
-                    variables = listOf("user_name", "user_email")
-                )
+                val templateId =
+                    createTestTemplate(
+                        name = "notification-template-${System.currentTimeMillis()}",
+                        subject = "Welcome Notification",
+                        body =
+                            "<h1>Hello <span th:text=\"\${user_name}\"></span>!</h1>" +
+                                "<p>Email: <span th:text=\"\${user_email}\"></span></p>",
+                        variables = listOf("user_name", "user_email"),
+                    )
 
                 // when & then - send notification request
-                val sendRequest = SendNotificationEmailRequest(
-                    campaignId = null,
-                    templateId = templateId,
-                    templateVersion = null,
-                    userIds = listOf(userId)
-                )
+                val sendRequest =
+                    SendNotificationEmailRequest(
+                        campaignId = null,
+                        templateId = templateId,
+                        templateVersion = null,
+                        userIds = listOf(userId),
+                    )
 
-                webTestClient.post()
+                webTestClient
+                    .post()
                     .uri("/api/v1/emails/send/notifications")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(sendRequest)
                     .exchange()
-                    .expectStatus().isOk
+                    .expectStatus()
+                    .isOk
                     .expectBody<String>()
                     .consumeWith { response ->
                         response.responseBody shouldNotBe null
@@ -302,36 +336,43 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
                 val campaignId = createTestCampaign(name = campaignName)
 
                 val userExternalId = "campaign-user-${System.currentTimeMillis()}"
-                val userId = createTestUser(
-                    email = "campaign-notification-${System.currentTimeMillis()}@example.com",
-                    name = "Campaign User",
-                    externalId = userExternalId
-                )
+                val userId =
+                    createTestUser(
+                        email = "campaign-notification-${System.currentTimeMillis()}@example.com",
+                        name = "Campaign User",
+                        externalId = userExternalId,
+                    )
 
                 // Create event linking user to campaign
                 createTestEvent(campaignName = campaignName, userExternalId = userExternalId)
 
-                val templateId = createTestTemplate(
-                    name = "campaign-template-${System.currentTimeMillis()}",
-                    subject = "Campaign Notification",
-                    body = "<h1>Welcome to <span th:text=\"\${campaign_targetAudience}\"></span>!</h1><p>Events: <span th:text=\"\${campaign_targetProduct}\"></span></p>",
-                    variables = listOf("campaign_targetAudience", "campaign_targetProduct")
-                )
+                val templateId =
+                    createTestTemplate(
+                        name = "campaign-template-${System.currentTimeMillis()}",
+                        subject = "Campaign Notification",
+                        body =
+                            "<h1>Welcome to <span th:text=\"\${campaign_targetAudience}\"></span>!</h1>" +
+                                "<p>Events: <span th:text=\"\${campaign_targetProduct}\"></span></p>",
+                        variables = listOf("campaign_targetAudience", "campaign_targetProduct"),
+                    )
 
                 // when & then - send campaign notification
-                val sendRequest = SendNotificationEmailRequest(
-                    campaignId = campaignId,
-                    templateId = templateId,
-                    templateVersion = 1.0f,
-                    userIds = listOf(userId)
-                )
+                val sendRequest =
+                    SendNotificationEmailRequest(
+                        campaignId = campaignId,
+                        templateId = templateId,
+                        templateVersion = 1.0f,
+                        userIds = listOf(userId),
+                    )
 
-                webTestClient.post()
+                webTestClient
+                    .post()
                     .uri("/api/v1/emails/send/notifications")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(sendRequest)
                     .exchange()
-                    .expectStatus().isOk
+                    .expectStatus()
+                    .isOk
                     .expectBody<String>()
                     .consumeWith { response ->
                         response.responseBody shouldNotBe null
@@ -342,30 +383,35 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
         describe("POST /api/v1/emails/schedules/notifications/email") {
             it("create email notification schedule successfully") {
                 // given - create template and user
-                val templateId = createTestTemplate(
-                    name = "schedule-template-${System.currentTimeMillis()}",
-                    subject = "Scheduled Email",
-                    body = "<h1>This is a scheduled email</h1>"
-                )
+                val templateId =
+                    createTestTemplate(
+                        name = "schedule-template-${System.currentTimeMillis()}",
+                        subject = "Scheduled Email",
+                        body = "<h1>This is a scheduled email</h1>",
+                    )
 
-                val userId = createTestUser(
-                    email = "schedule-user-${System.currentTimeMillis()}@example.com",
-                    name = "Schedule User"
-                )
+                val userId =
+                    createTestUser(
+                        email = "schedule-user-${System.currentTimeMillis()}@example.com",
+                        name = "Schedule User",
+                    )
 
                 // when & then - create email notification schedule
-                val scheduleRequest = mapOf(
-                    "templateId" to templateId,
-                    "templateVersion" to 1.0f,
-                    "userIds" to listOf(userId),
-                    "expiredTime" to "2025-12-31T23:59:59"
-                )
+                val scheduleRequest =
+                    mapOf(
+                        "templateId" to templateId,
+                        "templateVersion" to 1.0f,
+                        "userIds" to listOf(userId),
+                        "expiredTime" to "2025-12-31T23:59:59",
+                    )
 
-                val response = webTestClient.post()
-                    .uri("/api/v1/emails/schedules/notifications/email")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(scheduleRequest)
-                    .exchange()
+                val response =
+                    webTestClient
+                        .post()
+                        .uri("/api/v1/emails/schedules/notifications/email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(scheduleRequest)
+                        .exchange()
 
                 assertSchedulerResponse(response)
             }
@@ -373,10 +419,12 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
 
         describe("GET /api/v1/emails/schedules/notifications/email") {
             it("browse email notification schedules") {
-                webTestClient.get()
+                webTestClient
+                    .get()
                     .uri("/api/v1/emails/schedules/notifications/email")
                     .exchange()
-                    .expectStatus().isOk
+                    .expectStatus()
+                    .isOk
                     .expectBody<String>()
                     .consumeWith { response ->
                         response.responseBody shouldNotBe null
@@ -387,9 +435,11 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
         describe("DELETE /api/v1/emails/schedules/notifications/email/{scheduleId}") {
             it("cancel email notification schedule") {
                 // Note: This test uses a fake ID since we're testing the API structure
-                val response = webTestClient.delete()
-                    .uri("/api/v1/emails/schedules/notifications/email/test-schedule-id")
-                    .exchange()
+                val response =
+                    webTestClient
+                        .delete()
+                        .uri("/api/v1/emails/schedules/notifications/email/test-schedule-id")
+                        .exchange()
 
                 assertSchedulerDeleteResponse(response)
             }

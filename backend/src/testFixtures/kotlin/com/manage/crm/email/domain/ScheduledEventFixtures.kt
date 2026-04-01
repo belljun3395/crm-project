@@ -19,26 +19,35 @@ class ScheduledEventFixtures private constructor() {
     private var createdAt: LocalDateTime = LocalDateTime.now()
 
     fun withId(id: Long) = apply { this.id = id }
+
     fun withEventId(eventId: EventId) = apply { this.eventId = eventId }
+
     fun withEventClass(eventClass: String) = apply { this.eventClass = eventClass }
+
     fun withEventPayload(eventPayload: String) = apply { this.eventPayload = eventPayload }
+
     fun withCompleted(completed: Boolean) = apply { this.completed = completed }
+
     fun withIsNotConsumed(isNotConsumed: Boolean) = apply { this.isNotConsumed = isNotConsumed }
+
     fun withCanceled(canceled: Boolean) = apply { this.canceled = canceled }
+
     fun withScheduledAt(scheduledAt: String) = apply { this.scheduledAt = scheduledAt }
+
     fun withCreatedAt(createdAt: LocalDateTime) = apply { this.createdAt = createdAt }
 
-    fun build(): ScheduledEvent = ScheduledEvent(
-        id = id,
-        eventId = eventId,
-        eventClass = eventClass,
-        eventPayload = eventPayload,
-        completed = completed,
-        isNotConsumed = isNotConsumed,
-        canceled = canceled,
-        scheduledAt = scheduledAt,
-        createdAt = createdAt
-    )
+    fun build(): ScheduledEvent =
+        ScheduledEvent(
+            id = id,
+            eventId = eventId,
+            eventClass = eventClass,
+            eventPayload = eventPayload,
+            completed = completed,
+            isNotConsumed = isNotConsumed,
+            canceled = canceled,
+            scheduledAt = scheduledAt,
+            createdAt = createdAt,
+        )
 
     companion object {
         fun aScheduledEvent() = ScheduledEventFixtures()

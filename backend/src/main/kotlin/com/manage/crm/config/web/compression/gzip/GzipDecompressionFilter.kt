@@ -13,7 +13,10 @@ import reactor.core.publisher.Mono
 class GzipDecompressionFilter : WebFilter {
     private val log = KotlinLogging.logger {}
 
-    override fun filter(serverWebExchange: ServerWebExchange, webFilterChain: WebFilterChain): Mono<Void> {
+    override fun filter(
+        serverWebExchange: ServerWebExchange,
+        webFilterChain: WebFilterChain,
+    ): Mono<Void> {
         if (!isGzipRequest(serverWebExchange.request)) return webFilterChain.filter(serverWebExchange)
         log.debug { "Detected gzip encoded request, applying decompression" }
 

@@ -10,44 +10,47 @@ import org.springframework.stereotype.Service
 
 @Service
 class BrowseTemplateVariableCatalogUseCase(
-    private val campaignRepository: CampaignRepository
+    private val campaignRepository: CampaignRepository,
 ) {
-
     suspend fun execute(useCaseIn: BrowseTemplateVariableCatalogUseCaseIn): BrowseTemplateVariableCatalogUseCaseOut {
-        val campaigns = when (val campaignId = useCaseIn.campaignId) {
-            null -> campaignRepository.findAll().toList()
-            else -> listOfNotNull(campaignRepository.findById(campaignId))
-        }
+        val campaigns =
+            when (val campaignId = useCaseIn.campaignId) {
+                null -> campaignRepository.findAll().toList()
+                else -> listOfNotNull(campaignRepository.findById(campaignId))
+            }
 
-        val campaignKeys = campaigns
-            .flatMap { it.properties.getKeys() }
-            .distinct()
-            .sorted()
+        val campaignKeys =
+            campaigns
+                .flatMap { it.properties.getKeys() }
+                .distinct()
+                .sorted()
 
         return out {
             BrowseTemplateVariableCatalogUseCaseOut(
-                userVariables = listOf(
-                    TemplateVariableCatalogItemDto(
-                        key = "user.email",
-                        source = "USER",
-                        description = "사용자 이메일 (필수)",
-                        required = true
+                userVariables =
+                    listOf(
+                        TemplateVariableCatalogItemDto(
+                            key = "user.email",
+                            source = "USER",
+                            description = "사용자 이메일 (필수)",
+                            required = true,
+                        ),
+                        TemplateVariableCatalogItemDto(
+                            key = "user.name",
+                            source = "USER",
+                            description = "사용자 이름 (개인화 권장)",
+                            required = false,
+                        ),
                     ),
-                    TemplateVariableCatalogItemDto(
-                        key = "user.name",
-                        source = "USER",
-                        description = "사용자 이름 (개인화 권장)",
-                        required = false
-                    )
-                ),
-                campaignVariables = campaignKeys.map { key ->
-                    TemplateVariableCatalogItemDto(
-                        key = "campaign.$key",
-                        source = "CAMPAIGN",
-                        description = "캠페인 이벤트 속성 키: $key",
-                        required = false
-                    )
-                }
+                campaignVariables =
+                    campaignKeys.map { key ->
+                        TemplateVariableCatalogItemDto(
+                            key = "campaign.$key",
+                            source = "CAMPAIGN",
+                            description = "캠페인 이벤트 속성 키: $key",
+                            required = false,
+                        )
+                    },
             )
         }
     }

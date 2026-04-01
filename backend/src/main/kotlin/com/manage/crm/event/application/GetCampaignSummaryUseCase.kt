@@ -16,7 +16,7 @@ import java.time.LocalDateTime
  */
 @Component
 class GetCampaignSummaryUseCase(
-    private val campaignDashboardMetricsRepository: CampaignDashboardMetricsRepository
+    private val campaignDashboardMetricsRepository: CampaignDashboardMetricsRepository,
 ) {
     suspend fun execute(input: GetCampaignSummaryUseCaseIn): GetCampaignSummaryUseCaseOut {
         val now = LocalDateTime.now()
@@ -27,15 +27,18 @@ class GetCampaignSummaryUseCase(
             totalEvents = summary.totalEvents,
             eventsLast24Hours = summary.eventsLast24Hours,
             eventsLast7Days = summary.eventsLast7Days,
-            lastUpdated = now
+            lastUpdated = now,
         )
     }
 
-    private suspend fun getSummary(campaignId: Long, now: LocalDateTime): CampaignSummaryMetricsProjection =
+    private suspend fun getSummary(
+        campaignId: Long,
+        now: LocalDateTime,
+    ): CampaignSummaryMetricsProjection =
         campaignDashboardMetricsRepository
             .getCampaignSummaryMetrics(
                 campaignId = campaignId,
                 last24Hours = now.minusHours(24),
-                last7Days = now.minusDays(7)
+                last7Days = now.minusDays(7),
             )
 }

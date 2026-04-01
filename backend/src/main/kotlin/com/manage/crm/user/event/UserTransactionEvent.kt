@@ -5,5 +5,5 @@ abstract class UserTransactionEvent
 abstract class UserTransactionAfterCompletionEvent : UserTransactionEvent()
 
 class NewUserEvent(
-    val userId: Long
+    val userId: Long,
 ) : UserTransactionAfterCompletionEvent()

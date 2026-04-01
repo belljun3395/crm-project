@@ -27,8 +27,10 @@ class MessageConfig {
 
     @Bean(SQS_ASYNC_CLIENT)
     fun sqsAsyncClient(awsCredentialsProvider: AwsCredentialsProvider): SqsAsyncClient {
-        val builder = SqsAsyncClient.builder()
-            .credentialsProvider(awsCredentialsProvider)
+        val builder =
+            SqsAsyncClient
+                .builder()
+                .credentialsProvider(awsCredentialsProvider)
 
         region?.let { builder.region(Region.of(it)) }
         endpointUrl?.let { builder.endpointOverride(URI.create(it)) }
@@ -45,6 +47,5 @@ class MessageConfig {
             .build()
 
     @Bean(SQS_TEMPLATE)
-    fun sqsTemplate(sqsAsyncClient: SqsAsyncClient): SqsTemplate =
-        SqsTemplate.newTemplate(sqsAsyncClient)
+    fun sqsTemplate(sqsAsyncClient: SqsAsyncClient): SqsTemplate = SqsTemplate.newTemplate(sqsAsyncClient)
 }

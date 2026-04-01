@@ -4,8 +4,9 @@ import com.manage.crm.architecture.BaseModuleGovernanceTest
 import com.manage.crm.architecture.ModuleRuleSpec
 
 class SegmentGovernanceTest : BaseModuleGovernanceTest() {
-    override val spec = ModuleRuleSpec(
-        moduleName = "segment",
-        packageToken = "segment"
-    )
+    override val spec =
+        ModuleRuleSpec(
+            moduleName = "segment",
+            packageToken = "segment",
+        )
 }

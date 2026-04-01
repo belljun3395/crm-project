@@ -24,18 +24,20 @@ import org.springframework.stereotype.Component
 class GetSegmentUseCase(
     private val segmentRepository: SegmentRepository,
     private val segmentConditionRepository: SegmentConditionRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
     suspend fun execute(useCaseIn: GetSegmentUseCaseIn): GetSegmentUseCaseOut {
         val segment = segmentRepository.findById(useCaseIn.id) ?: throw NotFoundByIdException("Segment", useCaseIn.id)
         val segmentId = segment.id ?: throw IllegalStateException("Segment id is null")
-        val conditions = segmentConditionRepository.findBySegmentIdOrderByPositionAsc(segmentId)
-            .toList()
-            .map { condition -> condition.toSegmentConditionDto(objectMapper) }
+        val conditions =
+            segmentConditionRepository
+                .findBySegmentIdOrderByPositionAsc(segmentId)
+                .toList()
+                .map { condition -> condition.toSegmentConditionDto(objectMapper) }
 
         return out {
             GetSegmentUseCaseOut(
-                segment = segment.toSegmentDto(conditions)
+                segment = segment.toSegmentDto(conditions),
             )
         }
     }

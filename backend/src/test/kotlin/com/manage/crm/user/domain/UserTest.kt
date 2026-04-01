@@ -5,40 +5,44 @@ import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
 
-class UserTest : FeatureSpec({
-    val id = 1L
-    val externalId = "1"
-    val attributes = UserAttributes(
-        """
-        {
-            "email": "example@example.com"
-        }
-        """.trimIndent()
-    )
-    val user = User.new(
-        id = id,
-        externalId = externalId,
-        userAttributes = attributes,
-        createdAt = LocalDateTime.now(),
-        updatedAt = LocalDateTime.now()
-    )
-
-    feature("User#updateAttributes") {
-        scenario("update user attributes") {
-            // given
-            val newAttributes = UserAttributes(
+class UserTest :
+    FeatureSpec({
+        val id = 1L
+        val externalId = "1"
+        val attributes =
+            UserAttributes(
                 """
                 {
-                    "email": "new@example.com"
-               }
-                """.trimIndent()
+                    "email": "example@example.com"
+                }
+                """.trimIndent(),
+            )
+        val user =
+            User.new(
+                id = id,
+                externalId = externalId,
+                userAttributes = attributes,
+                createdAt = LocalDateTime.now(),
+                updatedAt = LocalDateTime.now(),
             )
 
-            // when
-            user.updateAttributes(newAttributes)
+        feature("User#updateAttributes") {
+            scenario("update user attributes") {
+                // given
+                val newAttributes =
+                    UserAttributes(
+                        """
+                         {
+                             "email": "new@example.com"
+                        }
+                        """.trimIndent(),
+                    )
 
-            // then
-            user.userAttributes shouldBe newAttributes
+                // when
+                user.updateAttributes(newAttributes)
+
+                // then
+                user.userAttributes shouldBe newAttributes
+            }
         }
-    }
-})
+    })

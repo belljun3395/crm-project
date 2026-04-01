@@ -27,7 +27,7 @@ class ScheduledEvent(
     @Column("scheduled_at")
     val scheduledAt: String,
     @CreatedDate
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
@@ -35,7 +35,7 @@ class ScheduledEvent(
             eventClass: String,
             eventPayload: String,
             completed: Boolean,
-            scheduledAt: String
+            scheduledAt: String,
         ): ScheduledEvent {
             validateScheduledAt(scheduledAt)
             return ScheduledEvent(
@@ -43,7 +43,7 @@ class ScheduledEvent(
                 eventClass = eventClass,
                 eventPayload = eventPayload,
                 completed = completed,
-                scheduledAt = scheduledAt
+                scheduledAt = scheduledAt,
             )
         }
 
@@ -56,7 +56,7 @@ class ScheduledEvent(
             isNotConsumed: Boolean,
             canceled: Boolean,
             scheduledAt: String,
-            createdAt: LocalDateTime
+            createdAt: LocalDateTime,
         ): ScheduledEvent {
             validateScheduledAt(scheduledAt)
             return ScheduledEvent(
@@ -68,15 +68,14 @@ class ScheduledEvent(
                 isNotConsumed = isNotConsumed,
                 canceled = canceled,
                 scheduledAt = scheduledAt,
-                createdAt = createdAt
+                createdAt = createdAt,
             )
         }
 
-        private fun validateScheduledAt(scheduledAt: String) {
-            return require(ScheduleType.contains(scheduledAt)) {
+        private fun validateScheduledAt(scheduledAt: String) =
+            require(ScheduleType.contains(scheduledAt)) {
                 "Invalid scheduledAt: $scheduledAt"
             }
-        }
     }
 
     /**

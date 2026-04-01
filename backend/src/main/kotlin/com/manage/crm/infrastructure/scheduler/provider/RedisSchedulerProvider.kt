@@ -25,7 +25,7 @@ import java.time.ZoneOffset
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class RedisSchedulerProvider(
     private val redisTemplate: ReactiveRedisTemplate<String, String>,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) : SchedulerProvider {
     private val log = KotlinLogging.logger {}
 
@@ -38,25 +38,29 @@ class RedisSchedulerProvider(
     override suspend fun createSchedule(
         name: String,
         scheduleTime: LocalDateTime,
-        input: ScheduleInfo
-    ): ScheduleCreationResult {
-        return try {
+        input: ScheduleInfo,
+    ): ScheduleCreationResult =
+        try {
             val score = scheduleTime.atZone(ZoneId.of(ASIA_SEOUL_ZONE)).toEpochSecond().toDouble()
-            val scheduleData = DueSchedule(
-                name = name,
-                scheduleTime = scheduleTime,
-                payload = input
-            )
+            val scheduleData =
+                DueSchedule(
+                    name = name,
+                    scheduleTime = scheduleTime,
+                    payload = input,
+                )
             val jsonValue = objectMapper.writeValueAsString(scheduleData)
 
             // Store in sorted set with timestamp as score
-            val added = redisTemplate.opsForZSet()
-                .add(SCHEDULE_KEY, jsonValue, score)
-                .awaitFirst()
+            val added =
+                redisTemplate
+                    .opsForZSet()
+                    .add(SCHEDULE_KEY, jsonValue, score)
+                    .awaitFirst()
 
             if (added) {
                 // Store metadata for quick lookup
-                redisTemplate.opsForValue()
+                redisTemplate
+                    .opsForValue()
                     .set("$SCHEDULE_METADATA_KEY_PREFIX$name", jsonValue)
                     .awaitFirstOrNull()
 
@@ -70,14 +74,18 @@ class RedisSchedulerProvider(
             log.error(ex) { "Failed to create Redis schedule: $name" }
             ScheduleCreationResult.Failure("Failed to create schedule: ${ex.message}", ex)
         }
-    }
 
-    override suspend fun browseSchedules(): List<ScheduleName> {
-        return try {
-            val schedules = redisTemplate.opsForZSet()
-                .range(SCHEDULE_KEY, org.springframework.data.domain.Range.unbounded())
-                .collectList()
-                .awaitFirst()
+    override suspend fun browseSchedules(): List<ScheduleName> =
+        try {
+            val schedules =
+                redisTemplate
+                    .opsForZSet()
+                    .range(
+                        SCHEDULE_KEY,
+                        org.springframework.data.domain.Range
+                            .unbounded(),
+                    ).collectList()
+                    .awaitFirst()
 
             schedules.mapNotNull { json ->
                 try {
@@ -92,23 +100,26 @@ class RedisSchedulerProvider(
             log.error(ex) { "Failed to browse Redis schedules" }
             emptyList()
         }
-    }
 
     override suspend fun deleteSchedule(scheduleName: ScheduleName) {
         try {
             // Get metadata to find the exact value
-            val metadata = redisTemplate.opsForValue()
-                .get("$SCHEDULE_METADATA_KEY_PREFIX${scheduleName.value}")
-                .awaitFirstOrNull()
+            val metadata =
+                redisTemplate
+                    .opsForValue()
+                    .get("$SCHEDULE_METADATA_KEY_PREFIX${scheduleName.value}")
+                    .awaitFirstOrNull()
 
             if (metadata != null) {
                 // Remove from sorted set
-                redisTemplate.opsForZSet()
+                redisTemplate
+                    .opsForZSet()
                     .remove(SCHEDULE_KEY, metadata)
                     .awaitFirstOrNull()
 
                 // Remove metadata
-                redisTemplate.opsForValue()
+                redisTemplate
+                    .opsForValue()
                     .delete("$SCHEDULE_METADATA_KEY_PREFIX${scheduleName.value}")
                     .awaitFirstOrNull()
 
@@ -126,16 +137,23 @@ class RedisSchedulerProvider(
      * Fetches schedules that should be executed (score <= current timestamp)
      * This is called by the monitoring service
      */
-    override suspend fun fetchDueSchedules(): List<DueSchedule> {
-        return try {
-            val now = LocalDateTime.now(ZoneId.of(ASIA_SEOUL_ZONE))
-                .toEpochSecond(ZoneOffset.of("+09:00"))
-                .toDouble()
+    override suspend fun fetchDueSchedules(): List<DueSchedule> =
+        try {
+            val now =
+                LocalDateTime
+                    .now(ZoneId.of(ASIA_SEOUL_ZONE))
+                    .toEpochSecond(ZoneOffset.of("+09:00"))
+                    .toDouble()
 
-            val dueSchedules = redisTemplate.opsForZSet()
-                .rangeByScore(SCHEDULE_KEY, org.springframework.data.domain.Range.closed(0.0, now))
-                .collectList()
-                .awaitFirst()
+            val dueSchedules =
+                redisTemplate
+                    .opsForZSet()
+                    .rangeByScore(
+                        SCHEDULE_KEY,
+                        org.springframework.data.domain.Range
+                            .closed(0.0, now),
+                    ).collectList()
+                    .awaitFirst()
 
             dueSchedules.mapNotNull { json ->
                 try {
@@ -149,5 +167,4 @@ class RedisSchedulerProvider(
             log.error(ex) { "Failed to fetch due schedules from Redis" }
             emptyList()
         }
-    }
 }

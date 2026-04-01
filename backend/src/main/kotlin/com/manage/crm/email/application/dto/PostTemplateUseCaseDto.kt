@@ -6,13 +6,13 @@ data class PostTemplateUseCaseIn(
     val subject: String? = null,
     val version: Float? = null,
     val body: String,
-    val variables: List<String>
+    val variables: List<String>,
 )
 
 data class PostTemplateUseCaseOut(
     val id: Long,
     val templateName: String,
-    val version: Float?
+    val version: Float?,
 )
 
 class PostTemplateUseCaseDto

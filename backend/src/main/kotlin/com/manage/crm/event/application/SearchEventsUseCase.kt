@@ -25,16 +25,17 @@ import org.springframework.stereotype.Component
 @Component
 class SearchEventsUseCase(
     private val eventRepository: EventRepository,
-    private val userReadPort: UserReadPort
+    private val userReadPort: UserReadPort,
 ) {
     suspend fun execute(useCaseIn: SearchEventsUseCaseIn): SearchEventsUseCaseOut {
         val eventName = useCaseIn.eventName
-        val propertyOperations = useCaseIn.propertyAndOperations.map { it ->
-            val properties = EventProperties(it.properties.map { EventProperty(it.key, it.value) })
-            val operation = it.operation
-            val joinOperation = it.joinOperation
-            Triple(properties, operation, joinOperation)
-        }
+        val propertyOperations =
+            useCaseIn.propertyAndOperations.map { it ->
+                val properties = EventProperties(it.properties.map { EventProperty(it.key, it.value) })
+                val operation = it.operation
+                val joinOperation = it.joinOperation
+                Triple(properties, operation, joinOperation)
+            }
 
         val events = searchEvents(eventName, propertyOperations)
 
@@ -42,22 +43,29 @@ class SearchEventsUseCase(
         val users = userReadPort.findAllByIdIn(userIds).associateBy { it.id }
 
         return out {
-            events.map { it ->
-                EventDto(
-                    it.id!!,
-                    it.name,
-                    it.userId.let { users[it]?.externalId },
-                    it.properties.value.map { SearchEventPropertyDto(it.key, it.value) }.toList(),
-                    it.createdAt!!
-                )
-            }.toList().let {
-                SearchEventsUseCaseOut(it)
-            }
+            events
+                .map { it ->
+                    EventDto(
+                        it.id!!,
+                        it.name,
+                        it.userId.let { users[it]?.externalId },
+                        it.properties.value
+                            .map { SearchEventPropertyDto(it.key, it.value) }
+                            .toList(),
+                        it.createdAt!!,
+                    )
+                }.toList()
+                .let {
+                    SearchEventsUseCaseOut(it)
+                }
         }
     }
 
-    private suspend fun searchEvents(eventName: String, propertyOperations: List<Triple<EventProperties, Operation, JoinOperation>>): List<Event> {
-        return when {
+    private suspend fun searchEvents(
+        eventName: String,
+        propertyOperations: List<Triple<EventProperties, Operation, JoinOperation>>,
+    ): List<Event> =
+        when {
             propertyOperations.size == 1 -> {
                 val (properties, operation) = propertyOperations.first()
                 eventRepository.searchByProperty(SearchByPropertyQuery(eventName, properties, operation))
@@ -68,11 +76,10 @@ class SearchEventsUseCase(
                     propertyOperations.map {
                         val (properties, operation, joinOperation) = it
                         SearchByPropertyQuery(eventName, properties, operation, joinOperation)
-                    }
+                    },
                 )
             }
 
             else -> if (eventName.isNotBlank()) eventRepository.findAllByName(eventName) else emptyList()
         }
-    }
 }

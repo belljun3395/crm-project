@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional
  */
 @Component
 class DeleteSegmentUseCase(
-    private val segmentRepository: SegmentRepository
+    private val segmentRepository: SegmentRepository,
 ) {
     @Transactional
     suspend fun execute(input: DeleteSegmentUseCaseIn) {

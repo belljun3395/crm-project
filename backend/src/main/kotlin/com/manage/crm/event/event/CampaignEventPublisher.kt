@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class CampaignEventPublisher(
     private val campaignDashboardStreamManager: CampaignDashboardStreamManager,
-    private val campaignStreamRegistryManager: CampaignStreamRegistryManager
+    private val campaignStreamRegistryManager: CampaignStreamRegistryManager,
 ) {
     /**
      * Publishes campaign dashboard event and marks campaign as active for consumer polling.

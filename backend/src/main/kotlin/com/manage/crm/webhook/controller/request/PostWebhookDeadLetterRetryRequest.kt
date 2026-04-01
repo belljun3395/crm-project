@@ -7,5 +7,5 @@ data class PostWebhookDeadLetterRetryRequest(
     val deadLetterIds: List<Long> = emptyList(),
     @field:Min(1)
     @field:Max(200)
-    val limit: Int = 50
+    val limit: Int = 50,
 )

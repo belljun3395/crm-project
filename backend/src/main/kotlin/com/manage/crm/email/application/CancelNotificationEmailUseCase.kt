@@ -9,9 +9,8 @@ import org.springframework.stereotype.Service
 @Service
 class CancelNotificationEmailUseCase(
     @Qualifier("scheduleTaskServicePostEventProcessor")
-    private val scheduleTaskService: ScheduleTaskAllService
+    private val scheduleTaskService: ScheduleTaskAllService,
 ) {
-
     suspend fun execute(useCaseIn: CancelNotificationEmailUseCaseIn): CancelNotificationEmailUseCaseOut {
         val eventId = useCaseIn.eventId
 

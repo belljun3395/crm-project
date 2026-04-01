@@ -6,19 +6,19 @@ data class GetCampaignFunnelAnalyticsUseCaseIn(
     val campaignId: Long,
     val steps: List<String>,
     val startTime: LocalDateTime?,
-    val endTime: LocalDateTime?
+    val endTime: LocalDateTime?,
 )
 
 data class GetCampaignFunnelAnalyticsUseCaseOut(
     val campaignId: Long,
-    val stepMetrics: List<FunnelStepMetricDto>
+    val stepMetrics: List<FunnelStepMetricDto>,
 )
 
 data class FunnelStepMetricDto(
     val step: String,
     val eventCount: Int,
     val qualifiedUserCount: Int,
-    val conversionFromPrevious: Double
+    val conversionFromPrevious: Double,
 )
 
 data class GetCampaignSegmentComparisonUseCaseIn(
@@ -26,13 +26,13 @@ data class GetCampaignSegmentComparisonUseCaseIn(
     val segmentIds: List<Long>,
     val eventName: String?,
     val startTime: LocalDateTime?,
-    val endTime: LocalDateTime?
+    val endTime: LocalDateTime?,
 )
 
 data class GetCampaignSegmentComparisonUseCaseOut(
     val campaignId: Long,
     val eventName: String?,
-    val segmentMetrics: List<SegmentComparisonMetricDto>
+    val segmentMetrics: List<SegmentComparisonMetricDto>,
 )
 
 data class SegmentComparisonMetricDto(
@@ -41,5 +41,5 @@ data class SegmentComparisonMetricDto(
     val targetUserCount: Int,
     val eventUserCount: Int,
     val eventCount: Int,
-    val conversionRate: Double
+    val conversionRate: Double,
 )

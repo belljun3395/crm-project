@@ -36,9 +36,7 @@ class R2dbcConfig {
     }
 
     @Bean(name = [TRANSACTION_MANAGER])
-    fun transactionManager(connectionFactory: ConnectionFactory): ReactiveTransactionManager {
-        return R2dbcTransactionManager(connectionFactory)
-    }
+    fun transactionManager(connectionFactory: ConnectionFactory): ReactiveTransactionManager = R2dbcTransactionManager(connectionFactory)
 
     @Bean(name = [R2DBC_CUSTOM_CONVERSIONS])
     fun r2dbcCustomConversions(databaseClient: DatabaseClient): R2dbcCustomConversions {
@@ -64,8 +62,8 @@ class R2dbcConfig {
                 EmailTemplateVersionReadingConverter(),
                 EmailTemplateVersionWritingConverter(),
                 UserEmailReadingConverter(),
-                UserEmailWritingConverter()
-            )
+                UserEmailWritingConverter(),
+            ),
         )
     }
 }

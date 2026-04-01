@@ -14,7 +14,7 @@ class MockMailSendProvider : MailSendProvider {
         from: String,
         to: String,
         subject: String,
-        message: String
+        message: String,
     ): String {
         val messageId = "mock-${UUID.randomUUID()}"
         log.debug { "Mock email sent: from=$from, to=$to, subject=$subject, messageId=$messageId" }

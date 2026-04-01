@@ -27,7 +27,7 @@ class SegmentCondition(
     var position: Int,
     @CreatedDate
     @Column("created_at")
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
@@ -36,16 +36,15 @@ class SegmentCondition(
             operator: String,
             valueType: String,
             conditionValue: String,
-            position: Int
-        ): SegmentCondition {
-            return SegmentCondition(
+            position: Int,
+        ): SegmentCondition =
+            SegmentCondition(
                 segmentId = segmentId,
                 fieldName = fieldName,
                 operator = operator,
                 valueType = valueType,
                 conditionValue = conditionValue,
-                position = position
+                position = position,
             )
-        }
     }
 }

@@ -28,7 +28,7 @@ import kotlin.collections.get
  */
 @Service
 class CampaignDashboardStreamManager(
-    private val reactiveRedisTemplate: ReactiveRedisTemplate<String, Any>
+    private val reactiveRedisTemplate: ReactiveRedisTemplate<String, Any>,
 ) {
     private val log = KotlinLogging.logger { }
 
@@ -48,17 +48,20 @@ class CampaignDashboardStreamManager(
     suspend fun publishEvent(event: CampaignDashboardEvent) {
         try {
             val streamKey = getStreamKey(event.campaignId)
-            val record: StringRecord = StreamRecords.string(
-                mapOf(
-                    "campaignId" to event.campaignId.toString(),
-                    "eventId" to event.eventId.toString(),
-                    "userId" to event.userId.toString(),
-                    "eventName" to event.eventName,
-                    "timestamp" to event.timestamp.format(DATE_TIME_FORMATTER)
-                )
-            ).withStreamKey(streamKey)
+            val record: StringRecord =
+                StreamRecords
+                    .string(
+                        mapOf(
+                            "campaignId" to event.campaignId.toString(),
+                            "eventId" to event.eventId.toString(),
+                            "userId" to event.userId.toString(),
+                            "eventName" to event.eventName,
+                            "timestamp" to event.timestamp.format(DATE_TIME_FORMATTER),
+                        ),
+                    ).withStreamKey(streamKey)
 
-            reactiveRedisTemplate.opsForStream<String, Any>()
+            reactiveRedisTemplate
+                .opsForStream<String, Any>()
                 .add(record)
                 .awaitSingle()
         } catch (e: Exception) {
@@ -79,51 +82,55 @@ class CampaignDashboardStreamManager(
     fun streamEvents(
         campaignId: Long,
         duration: Duration = Duration.ofHours(1),
-        lastEventId: String? = null
+        lastEventId: String? = null,
     ): Flux<CampaignDashboardEvent> {
         val streamKey = getStreamKey(campaignId)
-        val startOffset = if (lastEventId.isNullOrBlank()) {
-            ReadOffset.from("0-0")
-        } else {
-            ReadOffset.from(lastEventId)
-        }
-
-        return Flux.create<CampaignDashboardEvent> { sink ->
-            val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-            val job = scope.launch {
-                var currentOffset = startOffset
-                val deadline = System.currentTimeMillis() + duration.toMillis()
-                while (isActive && !sink.isCancelled && System.currentTimeMillis() < deadline) {
-                    val records = reactiveRedisTemplate.opsForStream<String, Any>()
-                        .read(
-                            StreamReadOptions.empty()
-                                .count(100)
-                                .block(Duration.ofSeconds(1)),
-                            StreamOffset.create(streamKey, currentOffset)
-                        )
-                        .collectList()
-                        .awaitSingle()
-
-                    if (records.isEmpty()) {
-                        continue
-                    }
-
-                    records.forEach { record ->
-                        sink.next(mapRecordToEvent(record))
-                        currentOffset = ReadOffset.from(record.id.value)
-                    }
-                }
-
-                if (!sink.isCancelled) {
-                    sink.complete()
-                }
+        val startOffset =
+            if (lastEventId.isNullOrBlank()) {
+                ReadOffset.from("0-0")
+            } else {
+                ReadOffset.from(lastEventId)
             }
 
-            sink.onDispose {
-                job.cancel()
-            }
-        }
-            .onErrorResume { error ->
+        return Flux
+            .create<CampaignDashboardEvent> { sink ->
+                val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+                val job =
+                    scope.launch {
+                        var currentOffset = startOffset
+                        val deadline = System.currentTimeMillis() + duration.toMillis()
+                        while (isActive && !sink.isCancelled && System.currentTimeMillis() < deadline) {
+                            val records =
+                                reactiveRedisTemplate
+                                    .opsForStream<String, Any>()
+                                    .read(
+                                        StreamReadOptions
+                                            .empty()
+                                            .count(100)
+                                            .block(Duration.ofSeconds(1)),
+                                        StreamOffset.create(streamKey, currentOffset),
+                                    ).collectList()
+                                    .awaitSingle()
+
+                            if (records.isEmpty()) {
+                                continue
+                            }
+
+                            records.forEach { record ->
+                                sink.next(mapRecordToEvent(record))
+                                currentOffset = ReadOffset.from(record.id.value)
+                            }
+                        }
+
+                        if (!sink.isCancelled) {
+                            sink.complete()
+                        }
+                    }
+
+                sink.onDispose {
+                    job.cancel()
+                }
+            }.onErrorResume { error ->
                 log.error(error) { "Error streaming events for campaign: $campaignId" }
                 Flux.empty()
             }
@@ -132,25 +139,29 @@ class CampaignDashboardStreamManager(
     /**
      * Returns current stream length. Returns `0` on read failure.
      */
-    suspend fun getStreamLength(campaignId: Long): Long {
-        return try {
+    suspend fun getStreamLength(campaignId: Long): Long =
+        try {
             val streamKey = getStreamKey(campaignId)
-            reactiveRedisTemplate.opsForStream<String, Any>()
+            reactiveRedisTemplate
+                .opsForStream<String, Any>()
                 .size(streamKey)
                 .awaitSingle()
         } catch (e: Exception) {
             log.error(e) { "Failed to get stream length for campaign: $campaignId" }
             0L
         }
-    }
 
     /**
      * Trims the stream to bounded length to prevent unbounded growth.
      */
-    suspend fun trimStream(campaignId: Long, maxLength: Long = 10000) {
+    suspend fun trimStream(
+        campaignId: Long,
+        maxLength: Long = 10000,
+    ) {
         try {
             val streamKey = getStreamKey(campaignId)
-            reactiveRedisTemplate.opsForStream<String, Any>()
+            reactiveRedisTemplate
+                .opsForStream<String, Any>()
                 .trim(streamKey, maxLength)
                 .awaitFirstOrNull()
         } catch (e: Exception) {
@@ -178,22 +189,23 @@ class CampaignDashboardStreamManager(
     suspend fun readEventsBatch(
         campaignId: Long,
         lastId: String?,
-        count: Long = 100
+        count: Long = 100,
     ): List<CampaignDashboardEvent> {
         val streamKey = getStreamKey(campaignId)
-        val readOffset = if (lastId.isNullOrBlank()) {
-            ReadOffset.from("0-0")
-        } else {
-            ReadOffset.from(lastId)
-        }
+        val readOffset =
+            if (lastId.isNullOrBlank()) {
+                ReadOffset.from("0-0")
+            } else {
+                ReadOffset.from(lastId)
+            }
 
         return try {
-            reactiveRedisTemplate.opsForStream<String, Any>()
+            reactiveRedisTemplate
+                .opsForStream<String, Any>()
                 .read(
                     StreamReadOptions.empty().count(count),
-                    StreamOffset.create(streamKey, readOffset)
-                )
-                .map { record -> mapRecordToEvent(record) }
+                    StreamOffset.create(streamKey, readOffset),
+                ).map { record -> mapRecordToEvent(record) }
                 .collectList()
                 .awaitSingle()
         } catch (e: Exception) {
@@ -208,28 +220,31 @@ class CampaignDashboardStreamManager(
     private fun mapRecordToEvent(record: MapRecord<String, *, *>): CampaignDashboardEvent {
         val values = record.value
         return CampaignDashboardEvent(
-            campaignId = values["campaignId"]?.toString()?.toLong()
-                ?: throw IllegalArgumentException("Missing campaignId"),
-            eventId = values["eventId"]?.toString()?.toLong()
-                ?: throw IllegalArgumentException("Missing eventId"),
-            userId = values["userId"]?.toString()?.toLong()
-                ?: throw IllegalArgumentException("Missing userId"),
-            eventName = values["eventName"]?.toString()
-                ?: throw IllegalArgumentException("Missing eventName"),
+            campaignId =
+                values["campaignId"]?.toString()?.toLong()
+                    ?: throw IllegalArgumentException("Missing campaignId"),
+            eventId =
+                values["eventId"]?.toString()?.toLong()
+                    ?: throw IllegalArgumentException("Missing eventId"),
+            userId =
+                values["userId"]?.toString()?.toLong()
+                    ?: throw IllegalArgumentException("Missing userId"),
+            eventName =
+                values["eventName"]?.toString()
+                    ?: throw IllegalArgumentException("Missing eventName"),
             timestamp = parseTimestamp(values["timestamp"]?.toString()) ?: LocalDateTime.now(),
-            streamId = record.id.value
+            streamId = record.id.value,
         )
     }
 
     /**
      * Parses ISO timestamp value written to stream record.
      */
-    private fun parseTimestamp(timestampStr: String?): LocalDateTime? {
-        return try {
+    private fun parseTimestamp(timestampStr: String?): LocalDateTime? =
+        try {
             timestampStr?.let { LocalDateTime.parse(it, DATE_TIME_FORMATTER) }
         } catch (e: Exception) {
             log.error(e) { "Failed to parse timestamp: $timestampStr" }
             null
         }
-    }
 }

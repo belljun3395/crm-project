@@ -8,16 +8,16 @@ import org.springframework.stereotype.Component
 
 @Component
 class UserEventListener(
-    val refreshTotalUsersCommandHandler: RefreshTotalUsersCommandHandler
+    val refreshTotalUsersCommandHandler: RefreshTotalUsersCommandHandler,
 ) {
-
     @EventListener
     fun handleEvent(event: UserEvent) {
         eventListenerCoroutineScope().apply {
             when (event) {
-                is RefreshTotalUsersCommand -> launch {
-                    refreshTotalUsersCommandHandler.handle(event)
-                }
+                is RefreshTotalUsersCommand ->
+                    launch {
+                        refreshTotalUsersCommandHandler.handle(event)
+                    }
             }
         }
     }

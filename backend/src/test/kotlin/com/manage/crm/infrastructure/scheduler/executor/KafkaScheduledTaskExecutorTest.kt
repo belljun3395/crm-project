@@ -22,7 +22,6 @@ import java.time.LocalDateTime
 import java.util.concurrent.CompletableFuture
 
 class KafkaScheduledTaskExecutorTest {
-
     private lateinit var kafkaTemplate: KafkaTemplate<String, ScheduledTaskEvent>
     private lateinit var executor: KafkaScheduledTaskExecutor
 
@@ -32,36 +31,40 @@ class KafkaScheduledTaskExecutorTest {
     fun setup() {
         kafkaTemplate = mock()
         executor = KafkaScheduledTaskExecutor(kafkaTemplate)
-        scheduleData = DueSchedule(
-            name = "schedule-1",
-            scheduleTime = LocalDateTime.now(),
-            payload = NotificationEmailSendTimeOutEventInput(
-                templateId = 1L,
-                templateVersion = 1.0f,
-                userIds = listOf(1L, 2L),
-                eventId = EventId("schedule-1"),
-                expiredTime = LocalDateTime.now()
+        scheduleData =
+            DueSchedule(
+                name = "schedule-1",
+                scheduleTime = LocalDateTime.now(),
+                payload =
+                    NotificationEmailSendTimeOutEventInput(
+                        templateId = 1L,
+                        templateVersion = 1.0f,
+                        userIds = listOf(1L, 2L),
+                        eventId = EventId("schedule-1"),
+                        expiredTime = LocalDateTime.now(),
+                    ),
             )
-        )
     }
 
     @Test
-    fun `execute should return true when kafka publish succeeds`() = runTest {
-        val sendResult: SendResult<String, ScheduledTaskEvent> = mock()
-        val metadata = RecordMetadata(TopicPartition("scheduled-tasks", 0), 0, 0, 0, 0, 0, 0)
+    fun `execute should return true when kafka publish succeeds`() =
+        runTest {
+            val sendResult: SendResult<String, ScheduledTaskEvent> = mock()
+            val metadata = RecordMetadata(TopicPartition("scheduled-tasks", 0), 0, 0, 0, 0, 0, 0)
 
-        whenever(sendResult.recordMetadata).thenReturn(metadata)
-        whenever(kafkaTemplate.send(eq("scheduled-tasks"), eq(scheduleData.name), any()))
-            .thenReturn(CompletableFuture.completedFuture(sendResult))
+            whenever(sendResult.recordMetadata).thenReturn(metadata)
+            whenever(kafkaTemplate.send(eq("scheduled-tasks"), eq(scheduleData.name), any()))
+                .thenReturn(CompletableFuture.completedFuture(sendResult))
 
-        executor.execute(scheduleData).shouldBeTrue()
-        verify(kafkaTemplate).send(eq("scheduled-tasks"), eq(scheduleData.name), any())
-    }
+            executor.execute(scheduleData).shouldBeTrue()
+            verify(kafkaTemplate).send(eq("scheduled-tasks"), eq(scheduleData.name), any())
+        }
 
     @Test
-    fun `execute should return false when kafka publish throws`() = runTest {
-        whenever(kafkaTemplate.send(any<String>(), any(), any())).thenThrow(RuntimeException("kafka down"))
+    fun `execute should return false when kafka publish throws`() =
+        runTest {
+            whenever(kafkaTemplate.send(any<String>(), any(), any())).thenThrow(RuntimeException("kafka down"))
 
-        executor.execute(scheduleData).shouldBeFalse()
-    }
+            executor.execute(scheduleData).shouldBeFalse()
+        }
 }

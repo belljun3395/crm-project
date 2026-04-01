@@ -15,17 +15,16 @@ class CampaignEvents(
     @Column("event_id")
     var eventId: Long,
     @CreatedDate
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
             campaignId: Long,
-            eventId: Long
-        ): CampaignEvents {
-            return CampaignEvents(
+            eventId: Long,
+        ): CampaignEvents =
+            CampaignEvents(
                 campaignId = campaignId,
-                eventId = eventId
+                eventId = eventId,
             )
-        }
     }
 }

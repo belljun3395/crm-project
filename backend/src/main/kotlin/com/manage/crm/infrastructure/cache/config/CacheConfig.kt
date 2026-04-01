@@ -17,26 +17,26 @@ import org.springframework.data.redis.serializer.StringRedisSerializer
 @EnableCaching
 class CacheConfig {
     @Bean
-    fun allKeyGenerator(): KeyGenerator {
-        return KeyGenerator { _, _, _ -> "all" }
-    }
+    fun allKeyGenerator(): KeyGenerator = KeyGenerator { _, _, _ -> "all" }
 
     // ----------------- Redis -----------------
     @Bean
-    fun cacheManager(@Qualifier("redisConnectionFactory") connectionFactory: RedisConnectionFactory, serializer: RedisSerializer<Any>): CacheManager {
-        return RedisCacheManager.builder(connectionFactory)
+    fun cacheManager(
+        @Qualifier("redisConnectionFactory") connectionFactory: RedisConnectionFactory,
+        serializer: RedisSerializer<Any>,
+    ): CacheManager =
+        RedisCacheManager
+            .builder(connectionFactory)
             .cacheDefaults(redisCacheConfiguration(serializer))
             .build()
-    }
 
-    fun redisCacheConfiguration(serializer: RedisSerializer<Any>): RedisCacheConfiguration {
-        return RedisCacheConfiguration.defaultCacheConfig()
+    fun redisCacheConfiguration(serializer: RedisSerializer<Any>): RedisCacheConfiguration =
+        RedisCacheConfiguration
+            .defaultCacheConfig()
             .disableCachingNullValues()
             .serializeKeysWith(
-                RedisSerializationContext.SerializationPair.fromSerializer(StringRedisSerializer())
+                RedisSerializationContext.SerializationPair.fromSerializer(StringRedisSerializer()),
+            ).serializeValuesWith(
+                RedisSerializationContext.SerializationPair.fromSerializer(serializer),
             )
-            .serializeValuesWith(
-                RedisSerializationContext.SerializationPair.fromSerializer(serializer)
-            )
-    }
 }

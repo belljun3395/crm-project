@@ -8,5 +8,5 @@ data class RecordAuditLogCommand(
     val requestMethod: String?,
     val requestPath: String?,
     val statusCode: Int?,
-    val detail: String?
+    val detail: String?,
 )

@@ -12,7 +12,7 @@ interface CampaignDashboardMetricsCustomRepository {
         metricValue: Long,
         timeWindowStart: LocalDateTime,
         timeWindowEnd: LocalDateTime,
-        timeWindowUnit: TimeWindowUnit
+        timeWindowUnit: TimeWindowUnit,
     ): Int
 
     suspend fun upsertMetricAbsolute(
@@ -21,12 +21,12 @@ interface CampaignDashboardMetricsCustomRepository {
         metricValue: Long,
         timeWindowStart: LocalDateTime,
         timeWindowEnd: LocalDateTime,
-        timeWindowUnit: TimeWindowUnit
+        timeWindowUnit: TimeWindowUnit,
     ): Int
 
     suspend fun getCampaignSummaryMetrics(
         campaignId: Long,
         last24Hours: LocalDateTime,
-        last7Days: LocalDateTime
+        last7Days: LocalDateTime,
     ): CampaignSummaryMetricsProjection
 }

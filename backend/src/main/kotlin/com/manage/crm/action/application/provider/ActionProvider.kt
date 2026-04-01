@@ -7,10 +7,11 @@ data class ActionProviderRequest(
     val destination: String,
     val subject: String?,
     val body: String,
-    val variables: Map<String, String>
+    val variables: Map<String, String>,
 )
 
 interface ActionProvider {
     val channel: ActionChannel
+
     suspend fun dispatch(request: ActionProviderRequest): ActionDispatchOut
 }

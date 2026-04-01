@@ -17,16 +17,19 @@ import org.springframework.stereotype.Component
 @Component
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class ScheduledTaskConsumer(
-    private val applicationEventPublisher: ApplicationEventPublisher
+    private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
     private val log = KotlinLogging.logger {}
 
     @KafkaListener(
         topics = ["scheduled-tasks"],
         groupId = "crm-scheduled-tasks-consumer",
-        containerFactory = "scheduledTaskKafkaListenerContainerFactory"
+        containerFactory = "scheduledTaskKafkaListenerContainerFactory",
     )
-    fun consume(event: ScheduledTaskEvent, acknowledgment: Acknowledgment) {
+    fun consume(
+        event: ScheduledTaskEvent,
+        acknowledgment: Acknowledgment,
+    ) {
         try {
             log.info { "Received scheduled task event: ${event.scheduleName}" }
 
@@ -64,8 +67,8 @@ class ScheduledTaskConsumer(
                 templateId = input.templateId,
                 templateVersion = input.templateVersion,
                 userIds = input.userIds,
-                segmentId = input.segmentId
-            )
+                segmentId = input.segmentId,
+            ),
         )
     }
 

@@ -8,11 +8,11 @@ class PostEmailNotificationSchedulesUseCaseIn(
     val templateVersion: Float? = 1.0f,
     val userIds: List<Long>,
     val segmentId: Long? = null,
-    val expiredTime: LocalDateTime
+    val expiredTime: LocalDateTime,
 )
 
 class PostEmailNotificationSchedulesUseCaseOut(
-    val newSchedule: String
+    val newSchedule: String,
 )
 
 class PostEmailNotificationSchedulesUseCaseDto

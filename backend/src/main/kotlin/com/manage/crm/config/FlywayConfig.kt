@@ -47,7 +47,7 @@ class FlywayConfig {
         flywayProperties().locations.forEach(
             Consumer { locations: String? ->
                 configuration.locations(locations)
-            }
+            },
         )
         return configuration
     }

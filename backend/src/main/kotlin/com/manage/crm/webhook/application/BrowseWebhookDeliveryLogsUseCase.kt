@@ -20,7 +20,7 @@ import java.time.format.DateTimeFormatter
 @ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
 class BrowseWebhookDeliveryLogsUseCase(
     private val webhookRepository: WebhookRepository,
-    private val webhookDeliveryLogRepository: WebhookDeliveryLogRepository
+    private val webhookDeliveryLogRepository: WebhookDeliveryLogRepository,
 ) {
     companion object {
         private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -33,22 +33,24 @@ class BrowseWebhookDeliveryLogsUseCase(
         webhookRepository.findById(webhookId) ?: throw NotFoundByIdException("Webhook", webhookId)
 
         val normalizedLimit = useCaseIn.limit.coerceIn(MIN_LIMIT, MAX_LIMIT)
-        val deliveries = webhookDeliveryLogRepository.findByWebhookIdOrderByDeliveredAtDesc(webhookId)
-            .take(normalizedLimit)
-            .toList()
-            .map { delivery ->
-                WebhookDeliveryLogDto(
-                    id = delivery.id!!,
-                    webhookId = delivery.webhookId,
-                    eventId = delivery.eventId,
-                    eventType = delivery.eventType,
-                    deliveryStatus = delivery.deliveryStatus,
-                    attemptCount = delivery.attemptCount,
-                    responseStatus = delivery.responseStatus,
-                    errorMessage = delivery.errorMessage,
-                    deliveredAt = delivery.deliveredAt?.format(formatter)
-                )
-            }
+        val deliveries =
+            webhookDeliveryLogRepository
+                .findByWebhookIdOrderByDeliveredAtDesc(webhookId)
+                .take(normalizedLimit)
+                .toList()
+                .map { delivery ->
+                    WebhookDeliveryLogDto(
+                        id = delivery.id!!,
+                        webhookId = delivery.webhookId,
+                        eventId = delivery.eventId,
+                        eventType = delivery.eventType,
+                        deliveryStatus = delivery.deliveryStatus,
+                        attemptCount = delivery.attemptCount,
+                        responseStatus = delivery.responseStatus,
+                        errorMessage = delivery.errorMessage,
+                        deliveredAt = delivery.deliveredAt?.format(formatter),
+                    )
+                }
 
         return out {
             BrowseWebhookDeliveryLogsUseCaseOut(deliveries)

@@ -8,7 +8,7 @@ import org.springframework.modulith.ApplicationModule
         "email",
         "user",
         "event",
-        "webhook"
-    ]
+        "webhook",
+    ],
 )
 class Metadata

@@ -27,7 +27,6 @@ import org.springframework.kafka.support.serializer.JsonSerializer
 @Configuration
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class KafkaConfig {
-
     @Value("\${spring.kafka.bootstrap-servers}")
     private lateinit var bootstrapServers: String
 
@@ -42,43 +41,43 @@ class KafkaConfig {
      */
     @Bean
     fun scheduledTaskProducerFactory(): ProducerFactory<String, ScheduledTaskEvent> {
-        val configProps = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
-            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java,
-            ProducerConfig.ACKS_CONFIG to "all", // Wait for all replicas
-            ProducerConfig.RETRIES_CONFIG to 3,
-            ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION to 1, // Ensure ordering
-            ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true // Prevent duplicates
-        )
+        val configProps =
+            mapOf(
+                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java,
+                ProducerConfig.ACKS_CONFIG to "all", // Wait for all replicas
+                ProducerConfig.RETRIES_CONFIG to 3,
+                ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION to 1, // Ensure ordering
+                ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true, // Prevent duplicates
+            )
         return DefaultKafkaProducerFactory(configProps)
     }
 
     @Bean
-    fun scheduledTaskKafkaTemplate(): KafkaTemplate<String, ScheduledTaskEvent> {
-        return KafkaTemplate(scheduledTaskProducerFactory())
-    }
+    fun scheduledTaskKafkaTemplate(): KafkaTemplate<String, ScheduledTaskEvent> = KafkaTemplate(scheduledTaskProducerFactory())
 
     /**
      * Consumer configuration for ScheduledTaskEvent
      */
     @Bean
     fun scheduledTaskConsumerFactory(): ConsumerFactory<String, ScheduledTaskEvent> {
-        val props = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
-            ConsumerConfig.GROUP_ID_CONFIG to groupId,
-            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to JsonDeserializer::class.java,
-            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
-            ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false, // Manual acknowledgment
-            ConsumerConfig.MAX_POLL_RECORDS_CONFIG to 10,
-            JsonDeserializer.TRUSTED_PACKAGES to "*", // Allow all packages for deserialization
-            JsonDeserializer.VALUE_DEFAULT_TYPE to ScheduledTaskEvent::class.java.name
-        )
+        val props =
+            mapOf(
+                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+                ConsumerConfig.GROUP_ID_CONFIG to groupId,
+                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to JsonDeserializer::class.java,
+                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
+                ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false, // Manual acknowledgment
+                ConsumerConfig.MAX_POLL_RECORDS_CONFIG to 10,
+                JsonDeserializer.TRUSTED_PACKAGES to "*", // Allow all packages for deserialization
+                JsonDeserializer.VALUE_DEFAULT_TYPE to ScheduledTaskEvent::class.java.name,
+            )
         return DefaultKafkaConsumerFactory(
             props,
             StringDeserializer(),
-            JsonDeserializer(ScheduledTaskEvent::class.java)
+            JsonDeserializer(ScheduledTaskEvent::class.java),
         )
     }
 
@@ -93,40 +92,40 @@ class KafkaConfig {
 
     @Bean
     fun journeyTriggerProducerFactory(): ProducerFactory<String, JourneyTriggerQueueMessage> {
-        val configProps = mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
-            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java,
-            ProducerConfig.ACKS_CONFIG to "all",
-            ProducerConfig.RETRIES_CONFIG to 3,
-            ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION to 1,
-            ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true
-        )
+        val configProps =
+            mapOf(
+                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java,
+                ProducerConfig.ACKS_CONFIG to "all",
+                ProducerConfig.RETRIES_CONFIG to 3,
+                ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION to 1,
+                ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true,
+            )
         return DefaultKafkaProducerFactory(configProps)
     }
 
     @Bean
-    fun journeyTriggerKafkaTemplate(): KafkaTemplate<String, JourneyTriggerQueueMessage> {
-        return KafkaTemplate(journeyTriggerProducerFactory())
-    }
+    fun journeyTriggerKafkaTemplate(): KafkaTemplate<String, JourneyTriggerQueueMessage> = KafkaTemplate(journeyTriggerProducerFactory())
 
     @Bean
     fun journeyTriggerConsumerFactory(): ConsumerFactory<String, JourneyTriggerQueueMessage> {
-        val props = mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
-            ConsumerConfig.GROUP_ID_CONFIG to journeyTriggerGroupId,
-            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to JsonDeserializer::class.java,
-            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
-            ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
-            ConsumerConfig.MAX_POLL_RECORDS_CONFIG to 20,
-            JsonDeserializer.TRUSTED_PACKAGES to "*",
-            JsonDeserializer.VALUE_DEFAULT_TYPE to JourneyTriggerQueueMessage::class.java.name
-        )
+        val props =
+            mapOf(
+                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+                ConsumerConfig.GROUP_ID_CONFIG to journeyTriggerGroupId,
+                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to JsonDeserializer::class.java,
+                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
+                ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
+                ConsumerConfig.MAX_POLL_RECORDS_CONFIG to 20,
+                JsonDeserializer.TRUSTED_PACKAGES to "*",
+                JsonDeserializer.VALUE_DEFAULT_TYPE to JourneyTriggerQueueMessage::class.java.name,
+            )
         return DefaultKafkaConsumerFactory(
             props,
             StringDeserializer(),
-            JsonDeserializer(JourneyTriggerQueueMessage::class.java)
+            JsonDeserializer(JourneyTriggerQueueMessage::class.java),
         )
     }
 

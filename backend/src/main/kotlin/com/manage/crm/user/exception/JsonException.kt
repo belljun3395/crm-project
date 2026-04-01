@@ -6,12 +6,8 @@ class JsonException : IllegalArgumentException {
     constructor(cause: Throwable) : super(cause)
 
     companion object {
-        fun notContainKey(key: String): JsonException {
-            return JsonException("Attribute does not contain key: $key")
-        }
+        fun notContainKey(key: String): JsonException = JsonException("Attribute does not contain key: $key")
 
-        fun notJsonFormat(attribute: String): JsonException {
-            return JsonException("Attribute is not JSON format: $attribute")
-        }
+        fun notJsonFormat(attribute: String): JsonException = JsonException("Attribute is not JSON format: $attribute")
     }
 }

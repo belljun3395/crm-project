@@ -9,13 +9,13 @@ enum class SegmentValueType {
     STRING,
     NUMBER,
     DATETIME,
-    BOOLEAN;
+    BOOLEAN,
+    ;
 
     companion object {
-        fun from(value: String): SegmentValueType {
-            return entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+        fun from(value: String): SegmentValueType =
+            entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
                 ?: throw InvalidSegmentConditionException("Unsupported valueType: $value")
-        }
     }
 }
 
@@ -31,12 +31,12 @@ enum class SegmentOperator {
     LTE,
     IN,
     CONTAINS,
-    BETWEEN;
+    BETWEEN,
+    ;
 
     companion object {
-        fun from(value: String): SegmentOperator {
-            return entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+        fun from(value: String): SegmentOperator =
+            entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
                 ?: throw InvalidSegmentConditionException("Unsupported operator: $value")
-        }
     }
 }

@@ -20,7 +20,7 @@ class EmailSendEventListener(
     private val emailOpenEventHandler: EmailOpenEventHandler,
     private val emailClickEventHandler: EmailClickEventHandler,
     private val emailDeliveryDelayEventHandler: EmailDeliveryDelayEventHandler,
-    private val transactionalTemplates: TransactionTemplates
+    private val transactionalTemplates: TransactionTemplates,
 ) {
     val log = KotlinLogging.logger {}
 
@@ -28,31 +28,36 @@ class EmailSendEventListener(
     fun onEvent(event: EmailSendEvent) {
         eventListenerCoroutineScope().apply {
             when (event) {
-                is EmailSentEvent -> launch {
-                    transactionalTemplates.newTxWriter.executeAndAwait {
-                        emailSentEventHandler.handle(event)
+                is EmailSentEvent ->
+                    launch {
+                        transactionalTemplates.newTxWriter.executeAndAwait {
+                            emailSentEventHandler.handle(event)
+                        }
                     }
-                }
-                is EmailDeliveryEvent -> launch {
-                    transactionalTemplates.newTxWriter.executeAndAwait {
-                        emailDeliveryEventHandler.handle(event)
+                is EmailDeliveryEvent ->
+                    launch {
+                        transactionalTemplates.newTxWriter.executeAndAwait {
+                            emailDeliveryEventHandler.handle(event)
+                        }
                     }
-                }
-                is EmailOpenEvent -> launch {
-                    transactionalTemplates.newTxWriter.executeAndAwait {
-                        emailOpenEventHandler.handle(event)
+                is EmailOpenEvent ->
+                    launch {
+                        transactionalTemplates.newTxWriter.executeAndAwait {
+                            emailOpenEventHandler.handle(event)
+                        }
                     }
-                }
-                is EmailClickEvent -> launch {
-                    transactionalTemplates.newTxWriter.executeAndAwait {
-                        emailClickEventHandler.handle(event)
+                is EmailClickEvent ->
+                    launch {
+                        transactionalTemplates.newTxWriter.executeAndAwait {
+                            emailClickEventHandler.handle(event)
+                        }
                     }
-                }
-                is EmailDeliveryDelayEvent -> launch {
-                    transactionalTemplates.newTxWriter.executeAndAwait {
-                        emailDeliveryDelayEventHandler.handle(event)
+                is EmailDeliveryDelayEvent ->
+                    launch {
+                        transactionalTemplates.newTxWriter.executeAndAwait {
+                            emailDeliveryDelayEventHandler.handle(event)
+                        }
                     }
-                }
             }
         }
     }

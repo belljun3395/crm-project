@@ -15,7 +15,7 @@ import java.time.temporal.ChronoUnit
 @Service
 class CampaignDashboardMetricsService(
     private val campaignEventsRepository: CampaignEventsRepository,
-    private val campaignDashboardMetricsRepository: CampaignDashboardMetricsRepository
+    private val campaignDashboardMetricsRepository: CampaignDashboardMetricsRepository,
 ) {
     /**
      * Aggregates streamed events into fixed time windows and persists metrics.
@@ -26,17 +26,19 @@ class CampaignDashboardMetricsService(
      * 3. Recompute absolute counters (total interactions / unique users) for each window.
      */
     suspend fun updateMetricsForEvents(events: List<CampaignDashboardEvent>) {
-        val timeWindowUnits = listOf(
-            TimeWindowUnit.MINUTE,
-            TimeWindowUnit.HOUR,
-            TimeWindowUnit.DAY,
-            TimeWindowUnit.WEEK,
-            TimeWindowUnit.MONTH
-        )
+        val timeWindowUnits =
+            listOf(
+                TimeWindowUnit.MINUTE,
+                TimeWindowUnit.HOUR,
+                TimeWindowUnit.DAY,
+                TimeWindowUnit.WEEK,
+                TimeWindowUnit.MONTH,
+            )
 
         events.groupBy { it.campaignId }.forEach { (campaignId, campaignEvents) ->
             timeWindowUnits.forEach { unit ->
-                campaignEvents.groupBy { event -> calculateTimeWindow(event.timestamp, unit) }
+                campaignEvents
+                    .groupBy { event -> calculateTimeWindow(event.timestamp, unit) }
                     .forEach { (window, windowEvents) ->
                         val (start, end) = window
                         upsertEventCountMetric(campaignId, unit, start, end, windowEvents.size.toLong())
@@ -47,7 +49,7 @@ class CampaignDashboardMetricsService(
                             campaignEventsRepository.countDistinctUsersByCampaignIdAndCreatedAtRange(
                                 campaignId,
                                 start,
-                                end
+                                end,
                             )
 
                         // TOTAL_USER_COUNT is currently used as a legacy key for total interaction volume.
@@ -58,7 +60,7 @@ class CampaignDashboardMetricsService(
                             unit,
                             start,
                             end,
-                            uniqueUserCount
+                            uniqueUserCount,
                         )
                     }
             }
@@ -73,7 +75,7 @@ class CampaignDashboardMetricsService(
         timeWindowUnit: TimeWindowUnit,
         timeWindowStart: LocalDateTime,
         timeWindowEnd: LocalDateTime,
-        metricValue: Long
+        metricValue: Long,
     ) {
         campaignDashboardMetricsRepository.upsertMetric(
             campaignId = campaignId,
@@ -81,7 +83,7 @@ class CampaignDashboardMetricsService(
             metricValue = metricValue,
             timeWindowStart = timeWindowStart,
             timeWindowEnd = timeWindowEnd,
-            timeWindowUnit = timeWindowUnit
+            timeWindowUnit = timeWindowUnit,
         )
     }
 
@@ -94,7 +96,7 @@ class CampaignDashboardMetricsService(
         timeWindowUnit: TimeWindowUnit,
         timeWindowStart: LocalDateTime,
         timeWindowEnd: LocalDateTime,
-        metricValue: Long
+        metricValue: Long,
     ) {
         campaignDashboardMetricsRepository.upsertMetricAbsolute(
             campaignId = campaignId,
@@ -102,7 +104,7 @@ class CampaignDashboardMetricsService(
             metricValue = metricValue,
             timeWindowStart = timeWindowStart,
             timeWindowEnd = timeWindowEnd,
-            timeWindowUnit = timeWindowUnit
+            timeWindowUnit = timeWindowUnit,
         )
     }
 
@@ -111,9 +113,9 @@ class CampaignDashboardMetricsService(
      */
     private fun calculateTimeWindow(
         timestamp: LocalDateTime,
-        unit: TimeWindowUnit
-    ): Pair<LocalDateTime, LocalDateTime> {
-        return when (unit) {
+        unit: TimeWindowUnit,
+    ): Pair<LocalDateTime, LocalDateTime> =
+        when (unit) {
             TimeWindowUnit.MINUTE -> {
                 val start = timestamp.truncatedTo(ChronoUnit.MINUTES)
                 val end = start.plusMinutes(1)
@@ -144,5 +146,4 @@ class CampaignDashboardMetricsService(
                 start to end
             }
         }
-    }
 }

@@ -17,17 +17,18 @@ import org.springframework.stereotype.Component
 class ScheduleTaskServiceImpl(
     private val scheduledEventRepository: ScheduledEventRepository,
     private val schedulerProvider: SchedulerProvider,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) : ScheduleTaskAllService {
     val log = KotlinLogging.logger {}
 
-    override suspend fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String {
-        return when (
-            val result = schedulerProvider.createSchedule(
-                name = input.eventId.value,
-                scheduleTime = input.expiredTime,
-                input = input
-            )
+    override suspend fun newSchedule(input: NotificationEmailSendTimeOutEventInput): String =
+        when (
+            val result =
+                schedulerProvider.createSchedule(
+                    name = input.eventId.value,
+                    scheduleTime = input.expiredTime,
+                    input = input,
+                )
         ) {
             is ScheduleCreationResult.Success -> result.scheduleId
             is ScheduleCreationResult.Failure -> {
@@ -35,7 +36,6 @@ class ScheduleTaskServiceImpl(
                 throw RuntimeException("Failed to create schedule: ${result.reason}", result.cause)
             }
         }
-    }
 
     override suspend fun cancel(scheduleName: String) {
         schedulerProvider.deleteSchedule(ScheduleName(scheduleName))
@@ -48,9 +48,11 @@ class ScheduleTaskServiceImpl(
     }
 
     override suspend fun browseScheduledTasksView(): List<ScheduleTaskView> {
-        val scheduleViews = schedulerProvider.browseSchedules()
-            .map { EventId(it.value) }
-            .filter { it.value.matches(Regex("[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}")) }
+        val scheduleViews =
+            schedulerProvider
+                .browseSchedules()
+                .map { EventId(it.value) }
+                .filter { it.value.matches(Regex("[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}")) }
 
         return scheduledEventRepository
             .findAllByEventIdIn(scheduleViews)
@@ -66,7 +68,7 @@ class ScheduleTaskServiceImpl(
                     templateId = payload["templateId"].asLong(),
                     userIds = (payload["userIds"] as? List<*>)?.mapNotNull { it.asLong() } ?: emptyList(),
                     segmentId = payload["segmentId"]?.asLong(),
-                    expiredTime = (payload["expiredTime"] as String).parseISOExpiredTime()
+                    expiredTime = (payload["expiredTime"] as String).parseISOExpiredTime(),
                 )
             }.toList()
     }

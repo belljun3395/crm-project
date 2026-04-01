@@ -22,219 +22,248 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import java.time.LocalDateTime
 
-class SearchEventsUseCaseTest : BehaviorSpec({
-    lateinit var eventRepository: EventRepository
-    lateinit var userReadPort: UserReadPort
-    lateinit var searchEventsUseCase: SearchEventsUseCase
+class SearchEventsUseCaseTest :
+    BehaviorSpec({
+        lateinit var eventRepository: EventRepository
+        lateinit var userReadPort: UserReadPort
+        lateinit var searchEventsUseCase: SearchEventsUseCase
 
-    beforeContainer {
-        eventRepository = mockk()
-        userReadPort = mockk()
-        searchEventsUseCase = SearchEventsUseCase(eventRepository, userReadPort)
-    }
+        beforeContainer {
+            eventRepository = mockk()
+            userReadPort = mockk()
+            searchEventsUseCase = SearchEventsUseCase(eventRepository, userReadPort)
+        }
 
-    given("UC-EVENT-003: SearchEventsUseCase") {
-        `when`("search events with one property") {
-            val useCaseIn = SearchEventsUseCaseIn(
-                eventName = "event",
-                propertyAndOperations = listOf(
-                    PropertyAndOperationDto(
-                        properties = listOf(
-                            SearchEventPropertyDto(
-                                key = "key",
-                                value = "value"
-                            )
-                        ),
-                        operation = Operation.EQUALS,
-                        joinOperation = JoinOperation.END
+        given("UC-EVENT-003: SearchEventsUseCase") {
+            `when`("search events with one property") {
+                val useCaseIn =
+                    SearchEventsUseCaseIn(
+                        eventName = "event",
+                        propertyAndOperations =
+                            listOf(
+                                PropertyAndOperationDto(
+                                    properties =
+                                        listOf(
+                                            SearchEventPropertyDto(
+                                                key = "key",
+                                                value = "value",
+                                            ),
+                                        ),
+                                    operation = Operation.EQUALS,
+                                    joinOperation = JoinOperation.END,
+                                ),
+                            ),
                     )
-                )
-            )
 
-            val eventSize = 10
-            val events = (1..eventSize).map {
-                Event.new(
-                    id = it.toLong(),
-                    name = "event$it",
-                    userId = it.toLong(),
-                    properties = EventProperties(
-                        listOf(
-                            EventProperty("key", "value")
+                val eventSize = 10
+                val events =
+                    (1..eventSize).map {
+                        Event.new(
+                            id = it.toLong(),
+                            name = "event$it",
+                            userId = it.toLong(),
+                            properties =
+                                EventProperties(
+                                    listOf(
+                                        EventProperty("key", "value"),
+                                    ),
+                                ),
+                            createdAt = LocalDateTime.now(),
                         )
-                    ),
-                    createdAt = LocalDateTime.now()
-                )
-            }
-            coEvery { eventRepository.searchByProperty(any(SearchByPropertyQuery::class)) } answers {
-                events
-            }
+                    }
+                coEvery { eventRepository.searchByProperty(any(SearchByPropertyQuery::class)) } answers {
+                    events
+                }
 
-            val userIds = events.map { it.userId }.toSet().toList()
-            val users = userIds.map {
-                UserReadModel(
-                    id = it,
-                    externalId = "externalId-$it",
-                    userAttributesJson = "{}",
-                    createdAt = LocalDateTime.now()
-                )
-            }.toList()
-
-            coEvery { userReadPort.findAllByIdIn(userIds) } answers {
-                users
-            }
-
-            val result = searchEventsUseCase.execute(useCaseIn)
-            then("should return SearchEventsUseCaseOut") {
-                result.events.size shouldBe eventSize
-            }
-
-            then("search events with property") {
-                coVerify(exactly = 1) { eventRepository.searchByProperty(any(SearchByPropertyQuery::class)) }
-            }
-
-            then("find all users by events userIds") {
-                coVerify(exactly = 1) { userReadPort.findAllByIdIn(userIds) }
-            }
-        }
-
-        `when`("search events with multiple properties") {
-            val useCaseIn = SearchEventsUseCaseIn(
-                eventName = "event",
-                propertyAndOperations = listOf(
-                    PropertyAndOperationDto(
-                        properties = listOf(
-                            SearchEventPropertyDto(
-                                key = "key1",
-                                value = "value1"
+                val userIds = events.map { it.userId }.toSet().toList()
+                val users =
+                    userIds
+                        .map {
+                            UserReadModel(
+                                id = it,
+                                externalId = "externalId-$it",
+                                userAttributesJson = "{}",
+                                createdAt = LocalDateTime.now(),
                             )
-                        ),
-                        operation = Operation.EQUALS,
-                        joinOperation = JoinOperation.AND
-                    ),
-                    PropertyAndOperationDto(
-                        properties = listOf(
-                            SearchEventPropertyDto(
-                                key = "key2",
-                                value = "value2"
-                            )
-                        ),
-                        operation = Operation.EQUALS,
-                        joinOperation = JoinOperation.END
+                        }.toList()
+
+                coEvery { userReadPort.findAllByIdIn(userIds) } answers {
+                    users
+                }
+
+                val result = searchEventsUseCase.execute(useCaseIn)
+                then("should return SearchEventsUseCaseOut") {
+                    result.events.size shouldBe eventSize
+                }
+
+                then("search events with property") {
+                    coVerify(exactly = 1) { eventRepository.searchByProperty(any(SearchByPropertyQuery::class)) }
+                }
+
+                then("find all users by events userIds") {
+                    coVerify(exactly = 1) { userReadPort.findAllByIdIn(userIds) }
+                }
+            }
+
+            `when`("search events with multiple properties") {
+                val useCaseIn =
+                    SearchEventsUseCaseIn(
+                        eventName = "event",
+                        propertyAndOperations =
+                            listOf(
+                                PropertyAndOperationDto(
+                                    properties =
+                                        listOf(
+                                            SearchEventPropertyDto(
+                                                key = "key1",
+                                                value = "value1",
+                                            ),
+                                        ),
+                                    operation = Operation.EQUALS,
+                                    joinOperation = JoinOperation.AND,
+                                ),
+                                PropertyAndOperationDto(
+                                    properties =
+                                        listOf(
+                                            SearchEventPropertyDto(
+                                                key = "key2",
+                                                value = "value2",
+                                            ),
+                                        ),
+                                    operation = Operation.EQUALS,
+                                    joinOperation = JoinOperation.END,
+                                ),
+                            ),
                     )
-                )
-            )
 
-            val eventSize = 10
-            val events = (1..eventSize).map {
-                EventFixtures.giveMeOne()
-                    .withId(it.toLong())
-                    .withName("event$it")
-                    .withUserId(it.toLong())
-                    .withProperties(
-                        PropertiesFixtures.giveMeOne()
-                            .withValue(
-                                listOf(
-                                    PropertyFixtures.giveMeOne().withKey("key1").withValue("value1").buildEvent(),
-                                    PropertyFixtures.giveMeOne().withKey("key2").withValue("value2").buildEvent()
-                                )
+                val eventSize = 10
+                val events =
+                    (1..eventSize).map {
+                        EventFixtures
+                            .giveMeOne()
+                            .withId(it.toLong())
+                            .withName("event$it")
+                            .withUserId(it.toLong())
+                            .withProperties(
+                                PropertiesFixtures
+                                    .giveMeOne()
+                                    .withValue(
+                                        listOf(
+                                            PropertyFixtures
+                                                .giveMeOne()
+                                                .withKey("key1")
+                                                .withValue("value1")
+                                                .buildEvent(),
+                                            PropertyFixtures
+                                                .giveMeOne()
+                                                .withKey("key2")
+                                                .withValue("value2")
+                                                .buildEvent(),
+                                        ),
+                                    ).buildEvent(),
+                            ).build()
+                    }
+                coEvery { eventRepository.searchByProperties(any()) } answers {
+                    events
+                }
+
+                val userIds = events.map { it.userId }.toSet().toList()
+                val users =
+                    userIds
+                        .map {
+                            UserReadModel(
+                                id = it,
+                                externalId = "externalId-$it",
+                                userAttributesJson = "{}",
+                                createdAt = LocalDateTime.now(),
                             )
-                            .buildEvent()
+                        }.toList()
+
+                coEvery { userReadPort.findAllByIdIn(userIds) } answers {
+                    users
+                }
+
+                val result = searchEventsUseCase.execute(useCaseIn)
+                then("should return SearchEventsUseCaseOut") {
+                    result.events.size shouldBe eventSize
+                }
+
+                then("search events with properties") {
+                    coVerify(exactly = 1) { eventRepository.searchByProperties(any()) }
+                }
+
+                then("find all users by events userIds") {
+                    coVerify(exactly = 1) { userReadPort.findAllByIdIn(userIds) }
+                }
+            }
+
+            `when`("search events return empty result") {
+                val useCaseIn =
+                    SearchEventsUseCaseIn(
+                        eventName = "nonexistent-event",
+                        propertyAndOperations = emptyList(),
                     )
-                    .build()
-            }
-            coEvery { eventRepository.searchByProperties(any()) } answers {
-                events
-            }
 
-            val userIds = events.map { it.userId }.toSet().toList()
-            val users = userIds.map {
-                UserReadModel(
-                    id = it,
-                    externalId = "externalId-$it",
-                    userAttributesJson = "{}",
-                    createdAt = LocalDateTime.now()
-                )
-            }.toList()
+                coEvery { eventRepository.findAllByName(any()) } answers { emptyList() }
+                coEvery { userReadPort.findAllByIdIn(emptyList()) } returns emptyList()
 
-            coEvery { userReadPort.findAllByIdIn(userIds) } answers {
-                users
+                val result = searchEventsUseCase.execute(useCaseIn)
+
+                then("returns empty event list") {
+                    result.events shouldBe emptyList()
+                }
             }
 
-            val result = searchEventsUseCase.execute(useCaseIn)
-            then("should return SearchEventsUseCaseOut") {
-                result.events.size shouldBe eventSize
-            }
+            `when`("search events without properties") {
+                val useCaseIn =
+                    SearchEventsUseCaseIn(
+                        eventName = "event",
+                        propertyAndOperations = emptyList(),
+                    )
 
-            then("search events with properties") {
-                coVerify(exactly = 1) { eventRepository.searchByProperties(any()) }
-            }
+                val eventSize = 10
+                val events =
+                    (1..eventSize).map {
+                        EventFixtures
+                            .giveMeOne()
+                            .withId(it.toLong())
+                            .withName("event$it")
+                            .withUserId(it.toLong())
+                            .withProperties(PropertiesFixtures.giveMeOne().withValue(emptyList()).buildEvent())
+                            .build()
+                    }
+                coEvery { eventRepository.findAllByName(any()) } answers {
+                    events
+                }
 
-            then("find all users by events userIds") {
-                coVerify(exactly = 1) { userReadPort.findAllByIdIn(userIds) }
-            }
-        }
+                val userIds = events.map { it.userId }.toSet().toList()
+                val users =
+                    userIds
+                        .map {
+                            UserReadModel(
+                                id = it,
+                                externalId = "externalId-$it",
+                                userAttributesJson = "{}",
+                                createdAt = LocalDateTime.now(),
+                            )
+                        }.toList()
 
-        `when`("search events return empty result") {
-            val useCaseIn = SearchEventsUseCaseIn(
-                eventName = "nonexistent-event",
-                propertyAndOperations = emptyList()
-            )
+                coEvery { userReadPort.findAllByIdIn(userIds) } answers {
+                    users
+                }
 
-            coEvery { eventRepository.findAllByName(any()) } answers { emptyList() }
-            coEvery { userReadPort.findAllByIdIn(emptyList()) } returns emptyList()
+                val result = searchEventsUseCase.execute(useCaseIn)
+                then("should return SearchEventsUseCaseOut") {
+                    result.events.size shouldBe eventSize
+                }
 
-            val result = searchEventsUseCase.execute(useCaseIn)
+                then("search events with name") {
+                    coVerify(exactly = 1) { eventRepository.findAllByName(any()) }
+                }
 
-            then("returns empty event list") {
-                result.events shouldBe emptyList()
-            }
-        }
-
-        `when`("search events without properties") {
-            val useCaseIn = SearchEventsUseCaseIn(
-                eventName = "event",
-                propertyAndOperations = emptyList()
-            )
-
-            val eventSize = 10
-            val events = (1..eventSize).map {
-                EventFixtures.giveMeOne()
-                    .withId(it.toLong())
-                    .withName("event$it")
-                    .withUserId(it.toLong())
-                    .withProperties(PropertiesFixtures.giveMeOne().withValue(emptyList()).buildEvent())
-                    .build()
-            }
-            coEvery { eventRepository.findAllByName(any()) } answers {
-                events
-            }
-
-            val userIds = events.map { it.userId }.toSet().toList()
-            val users = userIds.map {
-                UserReadModel(
-                    id = it,
-                    externalId = "externalId-$it",
-                    userAttributesJson = "{}",
-                    createdAt = LocalDateTime.now()
-                )
-            }.toList()
-
-            coEvery { userReadPort.findAllByIdIn(userIds) } answers {
-                users
-            }
-
-            val result = searchEventsUseCase.execute(useCaseIn)
-            then("should return SearchEventsUseCaseOut") {
-                result.events.size shouldBe eventSize
-            }
-
-            then("search events with name") {
-                coVerify(exactly = 1) { eventRepository.findAllByName(any()) }
-            }
-
-            then("find all users by events userIds") {
-                coVerify(exactly = 1) { userReadPort.findAllByIdIn(userIds) }
+                then("find all users by events userIds") {
+                    coVerify(exactly = 1) { userReadPort.findAllByIdIn(userIds) }
+                }
             }
         }
-    }
-})
+    })

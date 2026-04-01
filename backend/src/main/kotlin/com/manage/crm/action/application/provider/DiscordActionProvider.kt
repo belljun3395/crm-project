@@ -7,14 +7,13 @@ import org.springframework.web.reactive.function.client.WebClient
 
 @Component
 class DiscordActionProvider(
-    webClientBuilder: WebClient.Builder
+    webClientBuilder: WebClient.Builder,
 ) : WebhookBasedActionProvider(webClientBuilder) {
     override val channel: ActionChannel = ActionChannel.DISCORD
 
-    override suspend fun dispatch(request: ActionProviderRequest): ActionDispatchOut {
-        return postJson(
+    override suspend fun dispatch(request: ActionProviderRequest): ActionDispatchOut =
+        postJson(
             destination = request.destination,
-            payload = mapOf("content" to request.body)
+            payload = mapOf("content" to request.body),
         )
-    }
 }

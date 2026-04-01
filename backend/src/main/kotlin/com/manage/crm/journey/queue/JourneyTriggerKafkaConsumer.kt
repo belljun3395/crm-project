@@ -10,16 +10,19 @@ import org.springframework.stereotype.Component
 @Component
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class JourneyTriggerKafkaConsumer(
-    private val processor: JourneyTriggerQueueProcessor
+    private val processor: JourneyTriggerQueueProcessor,
 ) {
     private val log = KotlinLogging.logger {}
 
     @KafkaListener(
         topics = [JourneyTriggerQueuePublisher.TOPIC],
         groupId = "\${spring.kafka.consumer.journey-group-id:crm-journey-trigger-consumer}",
-        containerFactory = "journeyTriggerKafkaListenerContainerFactory"
+        containerFactory = "journeyTriggerKafkaListenerContainerFactory",
     )
-    fun consume(message: JourneyTriggerQueueMessage, acknowledgment: Acknowledgment) {
+    fun consume(
+        message: JourneyTriggerQueueMessage,
+        acknowledgment: Acknowledgment,
+    ) {
         try {
             runBlocking {
                 processor.process(message)

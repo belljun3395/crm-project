@@ -15,7 +15,7 @@ data class SegmentConditionRequest(
     @field:NotBlank
     val valueType: String,
     @field:NotNull
-    val value: JsonNode
+    val value: JsonNode,
 )
 
 data class PostSegmentRequest(
@@ -24,5 +24,5 @@ data class PostSegmentRequest(
     val description: String? = null,
     val active: Boolean? = true,
     @field:Size(min = 1, message = "conditions must not be empty")
-    val conditions: List<@Valid SegmentConditionRequest>
+    val conditions: List<@Valid SegmentConditionRequest>,
 )

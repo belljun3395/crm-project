@@ -3,13 +3,13 @@ package com.manage.crm.journey.application
 enum class JourneyTriggerType {
     EVENT,
     SEGMENT,
-    CONDITION;
+    CONDITION,
+    ;
 
     companion object {
-        fun from(value: String): JourneyTriggerType {
-            return entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+        fun from(value: String): JourneyTriggerType =
+            entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
                 ?: throw IllegalArgumentException("Unsupported triggerType: $value")
-        }
     }
 }
 
@@ -18,33 +18,33 @@ enum class JourneySegmentTriggerEventType {
     EXIT,
     UPDATE,
     COUNT_REACHED,
-    COUNT_DROPPED;
+    COUNT_DROPPED,
+    ;
 
     companion object {
-        fun from(value: String): JourneySegmentTriggerEventType {
-            return entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+        fun from(value: String): JourneySegmentTriggerEventType =
+            entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
                 ?: throw IllegalArgumentException("Unsupported segment trigger event type: $value")
-        }
     }
 }
 
 enum class JourneyStepType {
     ACTION,
     DELAY,
-    BRANCH;
+    BRANCH,
+    ;
 
     companion object {
-        fun from(value: String): JourneyStepType {
-            return entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+        fun from(value: String): JourneyStepType =
+            entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
                 ?: throw IllegalArgumentException("Unsupported stepType: $value")
-        }
     }
 }
 
 enum class JourneyExecutionStatus {
     RUNNING,
     SUCCESS,
-    FAILED
+    FAILED,
 }
 
 enum class JourneyExecutionHistoryStatus {
@@ -53,20 +53,20 @@ enum class JourneyExecutionHistoryStatus {
     FAILED,
     RETRYING,
     SKIPPED,
-    SKIPPED_DUPLICATE
+    SKIPPED_DUPLICATE,
 }
 
 enum class JourneyLifecycleStatus {
     DRAFT,
     ACTIVE,
     PAUSED,
-    ARCHIVED;
+    ARCHIVED,
+    ;
 
     companion object {
-        fun from(value: String): JourneyLifecycleStatus {
-            return entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+        fun from(value: String): JourneyLifecycleStatus =
+            entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
                 ?: throw IllegalArgumentException("Unsupported lifecycle status: $value")
-        }
     }
 }
 
@@ -80,7 +80,7 @@ data class PostJourneyStepIn(
     val variables: Map<String, String>,
     val delayMillis: Long?,
     val conditionExpression: String?,
-    val retryCount: Int
+    val retryCount: Int,
 )
 
 data class PostJourneyIn(
@@ -92,7 +92,7 @@ data class PostJourneyIn(
     val triggerSegmentWatchFields: List<String>,
     val triggerSegmentCountThreshold: Long?,
     val active: Boolean,
-    val steps: List<PostJourneyStepIn>
+    val steps: List<PostJourneyStepIn>,
 )
 
 data class JourneyStepDto(
@@ -107,7 +107,7 @@ data class JourneyStepDto(
     val delayMillis: Long?,
     val conditionExpression: String?,
     val retryCount: Int,
-    val createdAt: String
+    val createdAt: String,
 )
 
 data class JourneyDto(
@@ -123,7 +123,7 @@ data class JourneyDto(
     val lifecycleStatus: String,
     val version: Int,
     val steps: List<JourneyStepDto>,
-    val createdAt: String
+    val createdAt: String,
 )
 
 data class JourneyExecutionDto(
@@ -138,7 +138,7 @@ data class JourneyExecutionDto(
     val startedAt: String,
     val completedAt: String?,
     val createdAt: String,
-    val updatedAt: String?
+    val updatedAt: String?,
 )
 
 data class JourneyExecutionHistoryDto(
@@ -149,5 +149,5 @@ data class JourneyExecutionHistoryDto(
     val attempt: Int,
     val message: String?,
     val idempotencyKey: String?,
-    val createdAt: String
+    val createdAt: String,
 )

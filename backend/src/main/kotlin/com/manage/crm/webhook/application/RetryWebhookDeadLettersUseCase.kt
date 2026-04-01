@@ -32,7 +32,7 @@ class RetryWebhookDeadLettersUseCase(
     private val webhookDeadLetterRepository: WebhookDeadLetterRepository,
     private val webhookDeliveryLogRepository: WebhookDeliveryLogRepository,
     private val webhookClient: WebhookClient,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
     private val log = KotlinLogging.logger {}
 
@@ -41,9 +41,13 @@ class RetryWebhookDeadLettersUseCase(
         private const val MAX_LIMIT = 200
     }
 
-    suspend fun retrySingle(webhookId: Long, deadLetterId: Long): WebhookDeadLetterRetryResultDto {
+    suspend fun retrySingle(
+        webhookId: Long,
+        deadLetterId: Long,
+    ): WebhookDeadLetterRetryResultDto {
         val webhook = webhookRepository.findById(webhookId) ?: throw NotFoundByIdException("Webhook", webhookId)
-        val deadLetter = webhookDeadLetterRepository.findById(deadLetterId) ?: throw NotFoundByIdException("WebhookDeadLetter", deadLetterId)
+        val deadLetter =
+            webhookDeadLetterRepository.findById(deadLetterId) ?: throw NotFoundByIdException("WebhookDeadLetter", deadLetterId)
         if (deadLetter.webhookId != webhookId) {
             throw IllegalArgumentException("Dead letter $deadLetterId does not belong to webhook $webhookId")
         }
@@ -51,36 +55,39 @@ class RetryWebhookDeadLettersUseCase(
     }
 
     suspend fun retryBatch(useCaseIn: RetryWebhookDeadLettersUseCaseIn): RetryWebhookDeadLettersUseCaseOut {
-        val webhook = webhookRepository.findById(useCaseIn.webhookId)
-            ?: throw NotFoundByIdException("Webhook", useCaseIn.webhookId)
+        val webhook =
+            webhookRepository.findById(useCaseIn.webhookId)
+                ?: throw NotFoundByIdException("Webhook", useCaseIn.webhookId)
 
         val normalizedLimit = useCaseIn.limit.coerceIn(MIN_LIMIT, MAX_LIMIT)
-        val targets = if (useCaseIn.deadLetterIds.isNotEmpty()) {
-            val validDeadLetters = mutableListOf<WebhookDeadLetter>()
-            val invalidDeadLetterIds = mutableListOf<Long>()
+        val targets =
+            if (useCaseIn.deadLetterIds.isNotEmpty()) {
+                val validDeadLetters = mutableListOf<WebhookDeadLetter>()
+                val invalidDeadLetterIds = mutableListOf<Long>()
 
-            useCaseIn.deadLetterIds.distinct().forEach { deadLetterId ->
-                val deadLetter = webhookDeadLetterRepository.findById(deadLetterId)
-                if (deadLetter == null || deadLetter.webhookId != useCaseIn.webhookId) {
-                    invalidDeadLetterIds += deadLetterId
-                } else {
-                    validDeadLetters += deadLetter
+                useCaseIn.deadLetterIds.distinct().forEach { deadLetterId ->
+                    val deadLetter = webhookDeadLetterRepository.findById(deadLetterId)
+                    if (deadLetter == null || deadLetter.webhookId != useCaseIn.webhookId) {
+                        invalidDeadLetterIds += deadLetterId
+                    } else {
+                        validDeadLetters += deadLetter
+                    }
                 }
-            }
 
-            if (invalidDeadLetterIds.isNotEmpty()) {
-                throw IllegalArgumentException(
-                    "Invalid deadLetterIds for webhookId=${useCaseIn.webhookId}: ${invalidDeadLetterIds.joinToString(",")}"
-                )
-            }
+                if (invalidDeadLetterIds.isNotEmpty()) {
+                    throw IllegalArgumentException(
+                        "Invalid deadLetterIds for webhookId=${useCaseIn.webhookId}: ${invalidDeadLetterIds.joinToString(",")}",
+                    )
+                }
 
-            validDeadLetters
-        } else {
-            webhookDeadLetterRepository.findByWebhookIdOrderByCreatedAtDesc(useCaseIn.webhookId)
-                .filter { it.deliveryStatus != "REDRIVEN_SUCCESS" && it.deliveryStatus != "REDRIVING" }
-                .take(normalizedLimit)
-                .toList()
-        }
+                validDeadLetters
+            } else {
+                webhookDeadLetterRepository
+                    .findByWebhookIdOrderByCreatedAtDesc(useCaseIn.webhookId)
+                    .filter { it.deliveryStatus != "REDRIVEN_SUCCESS" && it.deliveryStatus != "REDRIVING" }
+                    .take(normalizedLimit)
+                    .toList()
+            }
 
         val results = mutableListOf<WebhookDeadLetterRetryResultDto>()
         for (deadLetter in targets) {
@@ -94,37 +101,38 @@ class RetryWebhookDeadLettersUseCase(
 
     private suspend fun retryDeadLetter(
         webhook: com.manage.crm.webhook.domain.Webhook,
-        deadLetter: WebhookDeadLetter
+        deadLetter: WebhookDeadLetter,
     ): WebhookDeadLetterRetryResultDto {
         val deadLetterId = requireNotNull(deadLetter.id) { "deadLetter id cannot be null" }
         if (deadLetter.deliveryStatus == "REDRIVING") {
             throw IllegalStateException(
                 "deadLetterId=$deadLetterId is in REDRIVING state from a previous incomplete persistence. " +
-                    "Resolve state before retrying to avoid duplicate delivery."
+                    "Resolve state before retrying to avoid duplicate delivery.",
             )
         }
 
-        val payload = runCatching {
-            objectMapper.readValue(deadLetter.payloadJson, WebhookEventPayload::class.java)
-        }.getOrElse { error ->
-            deadLetter.deliveryStatus = "REDRIVE_PARSE_FAILED"
-            deadLetter.attemptCount = deadLetter.attemptCount + 1
-            deadLetter.responseStatus = null
-            deadLetter.errorMessage = error.message
-            webhookDeliveryLogRepository.save(
-                WebhookDeliveryLog.new(
-                    webhookId = deadLetter.webhookId,
-                    eventId = deadLetter.eventId,
-                    eventType = deadLetter.eventType,
-                    deliveryStatus = deadLetter.deliveryStatus,
-                    attemptCount = 1,
-                    responseStatus = null,
-                    errorMessage = error.message
+        val payload =
+            runCatching {
+                objectMapper.readValue(deadLetter.payloadJson, WebhookEventPayload::class.java)
+            }.getOrElse { error ->
+                deadLetter.deliveryStatus = "REDRIVE_PARSE_FAILED"
+                deadLetter.attemptCount = deadLetter.attemptCount + 1
+                deadLetter.responseStatus = null
+                deadLetter.errorMessage = error.message
+                webhookDeliveryLogRepository.save(
+                    WebhookDeliveryLog.new(
+                        webhookId = deadLetter.webhookId,
+                        eventId = deadLetter.eventId,
+                        eventType = deadLetter.eventType,
+                        deliveryStatus = deadLetter.deliveryStatus,
+                        attemptCount = 1,
+                        responseStatus = null,
+                        errorMessage = error.message,
+                    ),
                 )
-            )
-            val updatedDeadLetter = webhookDeadLetterRepository.save(deadLetter)
-            return toRetryResultDto(updatedDeadLetter)
-        }
+                val updatedDeadLetter = webhookDeadLetterRepository.save(deadLetter)
+                return toRetryResultDto(updatedDeadLetter)
+            }
 
         deadLetter.deliveryStatus = "REDRIVING"
         deadLetter.attemptCount = deadLetter.attemptCount + 1
@@ -143,33 +151,35 @@ class RetryWebhookDeadLettersUseCase(
             throw IllegalStateException(
                 "Webhook redrive delivered but failed to persist delivery log for deadLetterId=$deadLetterId. " +
                     "State remains REDRIVING to prevent duplicate resend.",
-                error
+                error,
             )
         }
 
-        val nextStatus = if (result.status == WebhookDeliveryStatus.SUCCESS) {
-            "REDRIVEN_SUCCESS"
-        } else {
-            "REDRIVE_FAILED"
-        }
+        val nextStatus =
+            if (result.status == WebhookDeliveryStatus.SUCCESS) {
+                "REDRIVEN_SUCCESS"
+            } else {
+                "REDRIVE_FAILED"
+            }
         persistedDeadLetter.deliveryStatus = nextStatus
         persistedDeadLetter.attemptCount =
             persistedDeadLetter.attemptCount + (result.attemptCount - 1).coerceAtLeast(0)
         persistedDeadLetter.responseStatus = result.responseStatus
         persistedDeadLetter.errorMessage = result.errorMessage
-        val updatedDeadLetter = runCatching {
-            webhookDeadLetterRepository.save(persistedDeadLetter)
-        }.onFailure { error ->
-            log.error(error) {
-                "Webhook redrive final state persist failed after send: deadLetterId=$deadLetterId"
+        val updatedDeadLetter =
+            runCatching {
+                webhookDeadLetterRepository.save(persistedDeadLetter)
+            }.onFailure { error ->
+                log.error(error) {
+                    "Webhook redrive final state persist failed after send: deadLetterId=$deadLetterId"
+                }
+            }.getOrElse { error ->
+                throw IllegalStateException(
+                    "Webhook redrive delivered but failed to persist completion state for deadLetterId=$deadLetterId. " +
+                        "State remains REDRIVING to prevent duplicate resend.",
+                    error,
+                )
             }
-        }.getOrElse { error ->
-            throw IllegalStateException(
-                "Webhook redrive delivered but failed to persist completion state for deadLetterId=$deadLetterId. " +
-                    "State remains REDRIVING to prevent duplicate resend.",
-                error
-            )
-        }
 
         return toRetryResultDto(updatedDeadLetter)
     }
@@ -177,7 +187,7 @@ class RetryWebhookDeadLettersUseCase(
     private suspend fun saveDeliveryLog(
         webhookId: Long,
         payload: WebhookEventPayload,
-        deliveryResult: WebhookDeliveryResult
+        deliveryResult: WebhookDeliveryResult,
     ) {
         webhookDeliveryLogRepository.save(
             WebhookDeliveryLog.new(
@@ -187,20 +197,19 @@ class RetryWebhookDeadLettersUseCase(
                 deliveryStatus = deliveryResult.status.name,
                 attemptCount = deliveryResult.attemptCount,
                 responseStatus = deliveryResult.responseStatus,
-                errorMessage = deliveryResult.errorMessage
-            )
+                errorMessage = deliveryResult.errorMessage,
+            ),
         )
     }
 
-    private fun toRetryResultDto(deadLetter: WebhookDeadLetter): WebhookDeadLetterRetryResultDto {
-        return WebhookDeadLetterRetryResultDto(
+    private fun toRetryResultDto(deadLetter: WebhookDeadLetter): WebhookDeadLetterRetryResultDto =
+        WebhookDeadLetterRetryResultDto(
             deadLetterId = requireNotNull(deadLetter.id) { "deadLetter id cannot be null" },
             webhookId = deadLetter.webhookId,
             eventId = deadLetter.eventId,
             status = deadLetter.deliveryStatus,
             attemptCount = deadLetter.attemptCount,
             responseStatus = deadLetter.responseStatus,
-            errorMessage = deadLetter.errorMessage
+            errorMessage = deadLetter.errorMessage,
         )
-    }
 }

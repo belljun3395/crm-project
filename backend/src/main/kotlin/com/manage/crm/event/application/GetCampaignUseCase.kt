@@ -19,20 +19,23 @@ import org.springframework.stereotype.Component
 @Component
 class GetCampaignUseCase(
     private val campaignRepository: CampaignRepository,
-    private val campaignSegmentsRepository: CampaignSegmentsRepository
+    private val campaignSegmentsRepository: CampaignSegmentsRepository,
 ) {
     suspend fun execute(input: GetCampaignUseCaseIn): GetCampaignUseCaseOut {
-        val campaign = campaignRepository.findById(input.campaignId)
-            ?: throw NotFoundByIdException("Campaign", input.campaignId)
-        val segmentIds = campaignSegmentsRepository.findAllByCampaignId(input.campaignId)
-            .map { it.segmentId }
+        val campaign =
+            campaignRepository.findById(input.campaignId)
+                ?: throw NotFoundByIdException("Campaign", input.campaignId)
+        val segmentIds =
+            campaignSegmentsRepository
+                .findAllByCampaignId(input.campaignId)
+                .map { it.segmentId }
 
         return GetCampaignUseCaseOut(
             id = campaign.id ?: input.campaignId,
             name = campaign.name,
             properties = campaign.properties.value.map { CampaignPropertyUseCaseDto(it.key, it.value) },
             segmentIds = segmentIds,
-            createdAt = campaign.createdAt
+            createdAt = campaign.createdAt,
         )
     }
 }

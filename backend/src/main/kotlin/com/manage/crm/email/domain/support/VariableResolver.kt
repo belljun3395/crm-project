@@ -15,7 +15,11 @@ import com.manage.crm.user.domain.vo.UserAttributes
  */
 interface VariableResolver {
     fun supports(source: VariableSource): Boolean
-    fun resolve(variable: Variable, context: VariableResolverContext): Map<String, String>
+
+    fun resolve(
+        variable: Variable,
+        context: VariableResolverContext,
+    ): Map<String, String>
 }
 
 /**
@@ -24,5 +28,5 @@ interface VariableResolver {
 data class VariableResolverContext(
     val userAttributes: UserAttributes? = null,
     val eventProperties: EventProperties? = null,
-    val objectMapper: ObjectMapper? = null
+    val objectMapper: ObjectMapper? = null,
 )

@@ -6,7 +6,13 @@ import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 
 interface JourneyExecutionRepository : CoroutineCrudRepository<JourneyExecution, Long> {
     suspend fun findByTriggerKey(triggerKey: String): JourneyExecution?
+
     fun findAllByOrderByCreatedAtDesc(): Flow<JourneyExecution>
+
     fun findAllByJourneyIdOrderByCreatedAtDesc(journeyId: Long): Flow<JourneyExecution>
-    fun findAllByEventIdAndUserIdOrderByCreatedAtDesc(eventId: Long, userId: Long): Flow<JourneyExecution>
+
+    fun findAllByEventIdAndUserIdOrderByCreatedAtDesc(
+        eventId: Long,
+        userId: Long,
+    ): Flow<JourneyExecution>
 }

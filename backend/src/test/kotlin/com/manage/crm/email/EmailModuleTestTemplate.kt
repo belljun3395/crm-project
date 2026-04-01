@@ -14,6 +14,7 @@ import org.springframework.test.context.DynamicPropertySource
 @EnableAutoConfiguration
 abstract class EmailModuleTestTemplate : BehaviorSpec() {
     override fun extensions() = listOf(SpringExtension)
+
     companion object {
         @DynamicPropertySource
         @JvmStatic

@@ -21,21 +21,20 @@ class Segment(
     var active: Boolean = true,
     @CreatedDate
     @Column("created_at")
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
             id: Long? = null,
             name: String,
             description: String?,
-            active: Boolean
-        ): Segment {
-            return Segment(
+            active: Boolean,
+        ): Segment =
+            Segment(
                 id = id,
                 name = name,
                 description = description,
-                active = active
+                active = active,
             )
-        }
     }
 }

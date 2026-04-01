@@ -5,8 +5,6 @@ package com.manage.crm.support
  *
  * In this Scope, Any Logic can be executed. **Only map the result to the return type.**
  */
-fun <T, R> T.out(block: T.() -> R): R {
-    return run(block)
-}
+fun <T, R> T.out(block: T.() -> R): R = run(block)
 
 class UseCaseExtension

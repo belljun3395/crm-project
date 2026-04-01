@@ -35,7 +35,7 @@ class PostCampaignUseCase(
     private val campaignSegmentsRepository: CampaignSegmentsRepository,
     private val segmentReadPort: SegmentReadPort,
     private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate,
-    private val campaignCacheManager: CampaignCacheManager
+    private val campaignCacheManager: CampaignCacheManager,
 ) {
     @Transactional
     suspend fun execute(useCaseIn: PostCampaignUseCaseIn): PostCampaignUseCaseOut {
@@ -53,30 +53,32 @@ class PostCampaignUseCase(
             }
         }
 
-        val savedCampaign = try {
-            campaignRepository.save(
-                Campaign.new(
-                    name = campaignName,
-                    properties = CampaignProperties(
-                        properties.map { (key, value) ->
-                            CampaignProperty(key = key, value = value)
-                        }
-                    )
+        val savedCampaign =
+            try {
+                campaignRepository.save(
+                    Campaign.new(
+                        name = campaignName,
+                        properties =
+                            CampaignProperties(
+                                properties.map { (key, value) ->
+                                    CampaignProperty(key = key, value = value)
+                                },
+                            ),
+                    ),
                 )
-            )
-        } catch (e: DataIntegrityViolationException) {
-            if (isCampaignNameDuplicate(e)) {
-                throw AlreadyExistsException("Campaign", "name", campaignName)
+            } catch (e: DataIntegrityViolationException) {
+                if (isCampaignNameDuplicate(e)) {
+                    throw AlreadyExistsException("Campaign", "name", campaignName)
+                }
+                throw e
             }
-            throw e
-        }
 
         segmentIds.forEach { segmentId ->
             campaignSegmentsRepository.save(
                 CampaignSegments.new(
                     campaignId = savedCampaign.id!!,
-                    segmentId = segmentId
-                )
+                    segmentId = segmentId,
+                ),
             )
         }
 
@@ -88,13 +90,15 @@ class PostCampaignUseCase(
             PostCampaignUseCaseOut(
                 id = savedCampaign.id!!,
                 name = savedCampaign.name,
-                properties = savedCampaign.properties.value.map {
-                    PostCampaignPropertyDto(
-                        key = it.key,
-                        value = it.value
-                    )
-                }.toList(),
-                segmentIds = segmentIds
+                properties =
+                    savedCampaign.properties.value
+                        .map {
+                            PostCampaignPropertyDto(
+                                key = it.key,
+                                value = it.value,
+                            )
+                        }.toList(),
+                segmentIds = segmentIds,
             )
         }
     }

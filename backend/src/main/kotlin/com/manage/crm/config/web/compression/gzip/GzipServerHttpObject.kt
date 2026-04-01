@@ -15,21 +15,20 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 class GzipServerHttpRequest(
-    delegate: ServerHttpRequest
+    delegate: ServerHttpRequest,
 ) : ServerHttpRequestDecorator(delegate) {
-
-    override fun getBody(): Flux<DataBuffer> {
-        return DataBufferUtils.join(super.getBody())
+    override fun getBody(): Flux<DataBuffer> =
+        DataBufferUtils
+            .join(super.getBody())
             .flatMapMany { joined ->
                 val bytes = readByte(joined)
                 Flux.just(decompress(bytes))
             }
-    }
 }
 
 class GzipServerHttpResponse(
     delegate: ServerHttpResponse,
-    properties: CompressionUrlProperties
+    properties: CompressionUrlProperties,
 ) : CompressionHttpResponse(delegate, properties) {
     override fun writeWith(body: Publisher<out DataBuffer>): Mono<Void> {
         // Skip if the response is not gzip compatible
@@ -38,15 +37,17 @@ class GzipServerHttpResponse(
         }
 
         return Mono.defer {
-            DataBufferUtils.join(body)
+            DataBufferUtils
+                .join(body)
                 .flatMap { joined ->
                     val bytes = readByte(joined)
-                    val buffer = if (isResponseSizeValid(bytes.size.toLong())) {
-                        setCompressionHeaders(GZIP)
-                        compress(delegate.bufferFactory(), bytes)
-                    } else {
-                        delegate.bufferFactory().wrap(bytes)
-                    }
+                    val buffer =
+                        if (isResponseSizeValid(bytes.size.toLong())) {
+                            setCompressionHeaders(GZIP)
+                            compress(delegate.bufferFactory(), bytes)
+                        } else {
+                            delegate.bufferFactory().wrap(bytes)
+                        }
                     super.writeWith(Mono.just(buffer))
                 }
         }
@@ -65,4 +66,5 @@ private fun readByte(buffer: DataBuffer): ByteArray {
         DataBufferUtils.release(buffer)
     }
 }
+
 class GzipServerHttpObject

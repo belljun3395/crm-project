@@ -8,5 +8,5 @@ data class CampaignDashboardEvent(
     val userId: Long,
     val eventName: String,
     val timestamp: LocalDateTime,
-    val streamId: String? = null
+    val streamId: String? = null,
 )

@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component
 @Component
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws", matchIfMissing = true)
 class InMemoryJourneyTriggerQueuePublisher(
-    private val processor: JourneyTriggerQueueProcessor
+    private val processor: JourneyTriggerQueueProcessor,
 ) : JourneyTriggerQueuePublisher {
     private val log = KotlinLogging.logger {}
     private val queue = Channel<JourneyTriggerQueueMessage>(capacity = Channel.UNLIMITED)
@@ -23,15 +23,16 @@ class InMemoryJourneyTriggerQueuePublisher(
     @PostConstruct
     fun startConsumers() {
         repeat(2) {
-            val job = eventListenerCoroutineScope(Dispatchers.IO).launch {
-                for (message in queue) {
-                    runCatching {
-                        processor.process(message)
-                    }.onFailure { error ->
-                        log.error(error) { "Failed to process in-memory journey trigger message: $message" }
+            val job =
+                eventListenerCoroutineScope(Dispatchers.IO).launch {
+                    for (message in queue) {
+                        runCatching {
+                            processor.process(message)
+                        }.onFailure { error ->
+                            log.error(error) { "Failed to process in-memory journey trigger message: $message" }
+                        }
                     }
                 }
-            }
             consumerJobs.add(job)
         }
     }
@@ -43,24 +44,26 @@ class InMemoryJourneyTriggerQueuePublisher(
     }
 
     override suspend fun publishEventTrigger(event: JourneyEventPayload) {
-        val result = queue.trySend(
-            JourneyTriggerQueueMessage(
-                triggerType = JourneyTriggerQueueType.EVENT,
-                event = event
+        val result =
+            queue.trySend(
+                JourneyTriggerQueueMessage(
+                    triggerType = JourneyTriggerQueueType.EVENT,
+                    event = event,
+                ),
             )
-        )
         if (result.isFailure) {
             log.error { "Failed to enqueue in-memory EVENT journey trigger for eventId=${event.id}" }
         }
     }
 
     override suspend fun publishSegmentContextTrigger(changedUserIds: List<Long>) {
-        val result = queue.trySend(
-            JourneyTriggerQueueMessage(
-                triggerType = JourneyTriggerQueueType.SEGMENT_CONTEXT,
-                changedUserIds = changedUserIds
+        val result =
+            queue.trySend(
+                JourneyTriggerQueueMessage(
+                    triggerType = JourneyTriggerQueueType.SEGMENT_CONTEXT,
+                    changedUserIds = changedUserIds,
+                ),
             )
-        )
         if (result.isFailure) {
             log.error { "Failed to enqueue in-memory SEGMENT_CONTEXT journey trigger" }
         }

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component
 @Component
 class EmailActionProvider(
     @Qualifier("mailServiceImpl")
-    private val mailService: MailService
+    private val mailService: MailService,
 ) : ActionProvider {
     override val channel: ActionChannel = ActionChannel.EMAIL
 
@@ -24,28 +24,29 @@ class EmailActionProvider(
                 channel = channel,
                 destination = request.destination,
                 errorCode = "EMPTY_DESTINATION",
-                errorMessage = "Email destination is required"
+                errorMessage = "Email destination is required",
             )
         }
 
         return runCatching {
-            val result = mailService.send(
-                SendEmailInDto(
-                    to = request.destination,
-                    subject = request.subject ?: "(no subject)",
-                    template = request.body,
-                    content = VariablesContent(request.variables),
-                    emailBody = request.body,
-                    destination = request.destination,
-                    eventType = SentEmailStatus.SEND
+            val result =
+                mailService.send(
+                    SendEmailInDto(
+                        to = request.destination,
+                        subject = request.subject ?: "(no subject)",
+                        template = request.body,
+                        content = VariablesContent(request.variables),
+                        emailBody = request.body,
+                        destination = request.destination,
+                        eventType = SentEmailStatus.SEND,
+                    ),
                 )
-            )
 
             ActionDispatchOut(
                 status = ActionDispatchStatus.SUCCESS,
                 channel = channel,
                 destination = request.destination,
-                providerMessageId = result.messageId
+                providerMessageId = result.messageId,
             )
         }.getOrElse { error ->
             ActionDispatchOut(
@@ -53,7 +54,7 @@ class EmailActionProvider(
                 channel = channel,
                 destination = request.destination,
                 errorCode = "EMAIL_SEND_FAILED",
-                errorMessage = error.message
+                errorMessage = error.message,
             )
         }
     }

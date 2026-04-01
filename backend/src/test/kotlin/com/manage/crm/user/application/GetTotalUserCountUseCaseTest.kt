@@ -7,29 +7,30 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 
-class GetTotalUserCountUseCaseTest : BehaviorSpec({
-    lateinit var userService: UserService
-    lateinit var useCase: GetTotalUserCountUseCase
+class GetTotalUserCountUseCaseTest :
+    BehaviorSpec({
+        lateinit var userService: UserService
+        lateinit var useCase: GetTotalUserCountUseCase
 
-    beforeContainer {
-        userService = mockk()
-        useCase = GetTotalUserCountUseCase(userService)
-    }
+        beforeContainer {
+            userService = mockk()
+            useCase = GetTotalUserCountUseCase(userService)
+        }
 
-    given("GetTotalUserCountUseCase") {
-        `when`("execute is called") {
-            val expectedCount = 42L
-            coEvery { userService.getTotalUserCount() } returns expectedCount
+        given("GetTotalUserCountUseCase") {
+            `when`("execute is called") {
+                val expectedCount = 42L
+                coEvery { userService.getTotalUserCount() } returns expectedCount
 
-            val result = useCase.execute()
+                val result = useCase.execute()
 
-            then("should return GetTotalUserCountUseCaseOut with correct count") {
-                result.totalCount shouldBe expectedCount
-            }
+                then("should return GetTotalUserCountUseCaseOut with correct count") {
+                    result.totalCount shouldBe expectedCount
+                }
 
-            then("call userService to get total user count") {
-                coVerify(exactly = 1) { userService.getTotalUserCount() }
+                then("call userService to get total user count") {
+                    coVerify(exactly = 1) { userService.getTotalUserCount() }
+                }
             }
         }
-    }
-})
+    })

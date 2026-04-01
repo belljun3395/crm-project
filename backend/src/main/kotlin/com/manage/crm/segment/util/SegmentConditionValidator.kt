@@ -8,51 +8,57 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
 object SegmentConditionValidator {
-    private val fieldValueTypeMap = mapOf(
-        "user.id" to SegmentValueType.NUMBER,
-        "user.email" to SegmentValueType.STRING,
-        "user.name" to SegmentValueType.STRING,
-        "user.createdAt" to SegmentValueType.DATETIME,
-        "event.name" to SegmentValueType.STRING,
-        "event.occurredAt" to SegmentValueType.DATETIME
-    )
-
-    private val allowedOperatorsByType = mapOf(
-        SegmentValueType.STRING to setOf(
-            SegmentOperator.EQ,
-            SegmentOperator.NEQ,
-            SegmentOperator.CONTAINS,
-            SegmentOperator.IN
-        ),
-        SegmentValueType.NUMBER to setOf(
-            SegmentOperator.EQ,
-            SegmentOperator.NEQ,
-            SegmentOperator.GT,
-            SegmentOperator.GTE,
-            SegmentOperator.LT,
-            SegmentOperator.LTE,
-            SegmentOperator.IN,
-            SegmentOperator.BETWEEN
-        ),
-        SegmentValueType.DATETIME to setOf(
-            SegmentOperator.EQ,
-            SegmentOperator.GT,
-            SegmentOperator.GTE,
-            SegmentOperator.LT,
-            SegmentOperator.LTE,
-            SegmentOperator.BETWEEN
-        ),
-        SegmentValueType.BOOLEAN to setOf(
-            SegmentOperator.EQ,
-            SegmentOperator.NEQ
+    private val fieldValueTypeMap =
+        mapOf(
+            "user.id" to SegmentValueType.NUMBER,
+            "user.email" to SegmentValueType.STRING,
+            "user.name" to SegmentValueType.STRING,
+            "user.createdAt" to SegmentValueType.DATETIME,
+            "event.name" to SegmentValueType.STRING,
+            "event.occurredAt" to SegmentValueType.DATETIME,
         )
-    )
+
+    private val allowedOperatorsByType =
+        mapOf(
+            SegmentValueType.STRING to
+                setOf(
+                    SegmentOperator.EQ,
+                    SegmentOperator.NEQ,
+                    SegmentOperator.CONTAINS,
+                    SegmentOperator.IN,
+                ),
+            SegmentValueType.NUMBER to
+                setOf(
+                    SegmentOperator.EQ,
+                    SegmentOperator.NEQ,
+                    SegmentOperator.GT,
+                    SegmentOperator.GTE,
+                    SegmentOperator.LT,
+                    SegmentOperator.LTE,
+                    SegmentOperator.IN,
+                    SegmentOperator.BETWEEN,
+                ),
+            SegmentValueType.DATETIME to
+                setOf(
+                    SegmentOperator.EQ,
+                    SegmentOperator.GT,
+                    SegmentOperator.GTE,
+                    SegmentOperator.LT,
+                    SegmentOperator.LTE,
+                    SegmentOperator.BETWEEN,
+                ),
+            SegmentValueType.BOOLEAN to
+                setOf(
+                    SegmentOperator.EQ,
+                    SegmentOperator.NEQ,
+                ),
+        )
 
     fun validate(
         field: String,
         operator: String,
         valueType: String,
-        value: JsonNode
+        value: JsonNode,
     ) {
         if (field.isBlank()) {
             throw InvalidSegmentConditionException("field is required")
@@ -62,11 +68,12 @@ object SegmentConditionValidator {
         }
 
         val parsedValueType = SegmentValueType.Companion.from(valueType)
-        val requiredValueType = fieldValueTypeMap[field]
-            ?: throw InvalidSegmentConditionException("Unsupported field: $field")
+        val requiredValueType =
+            fieldValueTypeMap[field]
+                ?: throw InvalidSegmentConditionException("Unsupported field: $field")
         if (parsedValueType != requiredValueType) {
             throw InvalidSegmentConditionException(
-                "Field $field requires valueType ${requiredValueType.name}"
+                "Field $field requires valueType ${requiredValueType.name}",
             )
         }
 
@@ -75,7 +82,7 @@ object SegmentConditionValidator {
 
         if (parsedOperator !in allowedOperators) {
             throw InvalidSegmentConditionException(
-                "Operator $operator is not allowed for valueType $valueType"
+                "Operator $operator is not allowed for valueType $valueType",
             )
         }
 
@@ -85,7 +92,7 @@ object SegmentConditionValidator {
     private fun validateValue(
         valueType: SegmentValueType,
         operator: SegmentOperator,
-        value: JsonNode
+        value: JsonNode,
     ) {
         if (value.isNull || value.isMissingNode) {
             throw InvalidSegmentConditionException("value is required")
@@ -117,7 +124,10 @@ object SegmentConditionValidator {
         }
     }
 
-    private fun validateStringValue(operator: SegmentOperator, value: JsonNode) {
+    private fun validateStringValue(
+        operator: SegmentOperator,
+        value: JsonNode,
+    ) {
         when (operator) {
             SegmentOperator.IN -> {
                 if (!value.all { it.isTextual }) {
@@ -132,7 +142,10 @@ object SegmentConditionValidator {
         }
     }
 
-    private fun validateNumberValue(operator: SegmentOperator, value: JsonNode) {
+    private fun validateNumberValue(
+        operator: SegmentOperator,
+        value: JsonNode,
+    ) {
         when (operator) {
             SegmentOperator.IN, SegmentOperator.BETWEEN -> {
                 if (!value.all { it.isNumber }) {
@@ -147,7 +160,10 @@ object SegmentConditionValidator {
         }
     }
 
-    private fun validateDateTimeValue(operator: SegmentOperator, value: JsonNode) {
+    private fun validateDateTimeValue(
+        operator: SegmentOperator,
+        value: JsonNode,
+    ) {
         when (operator) {
             SegmentOperator.BETWEEN -> {
                 if (!value.all { it.isTextual && isIsoDateTime(it.asText()) }) {
@@ -162,14 +178,13 @@ object SegmentConditionValidator {
         }
     }
 
-    private fun isIsoDateTime(value: String): Boolean {
-        return try {
+    private fun isIsoDateTime(value: String): Boolean =
+        try {
             DateTimeFormatter.ISO_DATE_TIME.parse(value)
             true
         } catch (_: DateTimeParseException) {
             false
         }
-    }
 
     private fun validateBooleanValue(value: JsonNode) {
         if (!value.isBoolean) {

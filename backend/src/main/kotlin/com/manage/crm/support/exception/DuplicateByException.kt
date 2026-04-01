@@ -2,7 +2,7 @@ package com.manage.crm.support.exception
 
 class DuplicateByException : IllegalArgumentException {
     constructor(entityName: String, fieldName: String, fieldValue: Any) : super(
-        createMessage(entityName, fieldName, fieldValue)
+        createMessage(entityName, fieldName, fieldValue),
     )
     constructor(message: String) : super(message)
     constructor(message: String, cause: Throwable) : super(message, cause)
@@ -12,9 +12,7 @@ class DuplicateByException : IllegalArgumentException {
         fun createMessage(
             entityName: String,
             fieldName: String,
-            fieldValue: Any
-        ): String {
-            return "Duplicate $entityName by $fieldName: $fieldValue"
-        }
+            fieldValue: Any,
+        ): String = "Duplicate $entityName by $fieldName: $fieldValue"
     }
 }

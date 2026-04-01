@@ -7,14 +7,13 @@ import org.springframework.web.reactive.function.client.WebClient
 
 @Component
 class SlackActionProvider(
-    webClientBuilder: WebClient.Builder
+    webClientBuilder: WebClient.Builder,
 ) : WebhookBasedActionProvider(webClientBuilder) {
     override val channel: ActionChannel = ActionChannel.SLACK
 
-    override suspend fun dispatch(request: ActionProviderRequest): ActionDispatchOut {
-        return postJson(
+    override suspend fun dispatch(request: ActionProviderRequest): ActionDispatchOut =
+        postJson(
             destination = request.destination,
-            payload = mapOf("text" to request.body)
+            payload = mapOf("text" to request.body),
         )
-    }
 }

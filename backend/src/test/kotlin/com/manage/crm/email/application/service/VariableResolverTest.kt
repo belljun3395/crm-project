@@ -11,98 +11,101 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.shouldBe
 
-class VariableResolverTest : FeatureSpec({
+class VariableResolverTest :
+    FeatureSpec({
 
-    val objectMapper = ObjectMapper()
-    val userVariableResolver = UserVariableResolver()
-    val campaignVariableResolver = CampaignVariableResolver()
+        val objectMapper = ObjectMapper()
+        val userVariableResolver = UserVariableResolver()
+        val campaignVariableResolver = CampaignVariableResolver()
 
-    feature("UserVariableResolver#resolve") {
-        scenario("resolve with attribute key that exists in attributes") {
-            // given
-            val userVariable = UserVariable("name")
-            val attributes = UserAttributes("""{"name": "John Doe"}""")
-            val context = VariableResolverContext(userAttributes = attributes, objectMapper = objectMapper)
+        feature("UserVariableResolver#resolve") {
+            scenario("resolve with attribute key that exists in attributes") {
+                // given
+                val userVariable = UserVariable("name")
+                val attributes = UserAttributes("""{"name": "John Doe"}""")
+                val context = VariableResolverContext(userAttributes = attributes, objectMapper = objectMapper)
 
-            // when
-            val result = userVariableResolver.resolve(userVariable, context)
+                // when
+                val result = userVariableResolver.resolve(userVariable, context)
 
-            // then - legacy format key for Thymeleaf template substitution
-            result["user_name"] shouldBe "John Doe"
-        }
+                // then - legacy format key for Thymeleaf template substitution
+                result["user_name"] shouldBe "John Doe"
+            }
 
-        scenario("resolve with attribute key that does not exist in attributes") {
-            // given
-            val userVariable = UserVariable("name")
-            val attributes = UserAttributes("""{"email": "john@example.com"}""")
-            val context = VariableResolverContext(userAttributes = attributes, objectMapper = objectMapper)
+            scenario("resolve with attribute key that does not exist in attributes") {
+                // given
+                val userVariable = UserVariable("name")
+                val attributes = UserAttributes("""{"email": "john@example.com"}""")
+                val context = VariableResolverContext(userAttributes = attributes, objectMapper = objectMapper)
 
-            // when & then
-            shouldThrow<IllegalArgumentException> {
-                userVariableResolver.resolve(userVariable, context)
+                // when & then
+                shouldThrow<IllegalArgumentException> {
+                    userVariableResolver.resolve(userVariable, context)
+                }
             }
         }
-    }
 
-    feature("CampaignVariableResolver#resolve") {
-        scenario("resolve with property key that exists in campaign properties") {
-            // given
-            val campaignVariable = CampaignVariable("eventCount")
-            val properties = EventProperties(listOf(EventProperty("eventCount", "10")))
-            val context = VariableResolverContext(eventProperties = properties)
+        feature("CampaignVariableResolver#resolve") {
+            scenario("resolve with property key that exists in campaign properties") {
+                // given
+                val campaignVariable = CampaignVariable("eventCount")
+                val properties = EventProperties(listOf(EventProperty("eventCount", "10")))
+                val context = VariableResolverContext(eventProperties = properties)
 
-            // when
-            val result = campaignVariableResolver.resolve(campaignVariable, context)
+                // when
+                val result = campaignVariableResolver.resolve(campaignVariable, context)
 
-            // then - legacy format key for Thymeleaf template substitution
-            result["campaign_eventCount"] shouldBe "10"
+                // then - legacy format key for Thymeleaf template substitution
+                result["campaign_eventCount"] shouldBe "10"
+            }
+
+            scenario("resolve with property key that does not exist in campaign properties") {
+                // given
+                val campaignVariable = CampaignVariable("eventCount")
+                val properties = EventProperties(listOf(EventProperty("totalCount", "5")))
+                val context = VariableResolverContext(eventProperties = properties)
+
+                // when
+                val result = campaignVariableResolver.resolve(campaignVariable, context)
+
+                // then
+                result.isEmpty() shouldBe true
+            }
+
+            scenario("resolve with multiple campaign properties") {
+                // given
+                val campaignVariables =
+                    listOf(
+                        CampaignVariable("eventCount"),
+                        CampaignVariable("totalRevenue"),
+                    )
+                val properties =
+                    EventProperties(
+                        listOf(
+                            EventProperty("eventCount", "10"),
+                            EventProperty("totalRevenue", "1000.50"),
+                        ),
+                    )
+                val context = VariableResolverContext(eventProperties = properties)
+
+                // when & then
+                val resultA = campaignVariableResolver.resolve(campaignVariables[0], context)
+                resultA["campaign_eventCount"] shouldBe "10"
+
+                val resultB = campaignVariableResolver.resolve(campaignVariables[1], context)
+                resultB["campaign_totalRevenue"] shouldBe "1000.50"
+            }
+
+            scenario("resolve returns empty map when no event properties in context") {
+                // given
+                val campaignVariable = CampaignVariable("eventCount")
+                val context = VariableResolverContext(eventProperties = null)
+
+                // when
+                val result = campaignVariableResolver.resolve(campaignVariable, context)
+
+                // then
+                result.isEmpty() shouldBe true
+            }
         }
-
-        scenario("resolve with property key that does not exist in campaign properties") {
-            // given
-            val campaignVariable = CampaignVariable("eventCount")
-            val properties = EventProperties(listOf(EventProperty("totalCount", "5")))
-            val context = VariableResolverContext(eventProperties = properties)
-
-            // when
-            val result = campaignVariableResolver.resolve(campaignVariable, context)
-
-            // then
-            result.isEmpty() shouldBe true
-        }
-
-        scenario("resolve with multiple campaign properties") {
-            // given
-            val campaignVariables = listOf(
-                CampaignVariable("eventCount"),
-                CampaignVariable("totalRevenue")
-            )
-            val properties = EventProperties(
-                listOf(
-                    EventProperty("eventCount", "10"),
-                    EventProperty("totalRevenue", "1000.50")
-                )
-            )
-            val context = VariableResolverContext(eventProperties = properties)
-
-            // when & then
-            val resultA = campaignVariableResolver.resolve(campaignVariables[0], context)
-            resultA["campaign_eventCount"] shouldBe "10"
-
-            val resultB = campaignVariableResolver.resolve(campaignVariables[1], context)
-            resultB["campaign_totalRevenue"] shouldBe "1000.50"
-        }
-
-        scenario("resolve returns empty map when no event properties in context") {
-            // given
-            val campaignVariable = CampaignVariable("eventCount")
-            val context = VariableResolverContext(eventProperties = null)
-
-            // when
-            val result = campaignVariableResolver.resolve(campaignVariable, context)
-
-            // then
-            result.isEmpty() shouldBe true
-        }
-    }
-})
+    })

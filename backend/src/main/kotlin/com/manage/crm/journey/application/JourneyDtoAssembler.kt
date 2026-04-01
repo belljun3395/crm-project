@@ -11,7 +11,7 @@ private val formatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 fun assembleJourneyDto(
     journey: Journey,
     steps: List<JourneyStep>,
-    objectMapper: ObjectMapper
+    objectMapper: ObjectMapper,
 ): JourneyDto {
     val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }
     return JourneyDto(
@@ -26,29 +26,30 @@ fun assembleJourneyDto(
         active = journey.active,
         lifecycleStatus = journey.lifecycleStatus,
         version = journey.version,
-        steps = steps.map { step ->
-            JourneyStepDto(
-                id = requireNotNull(step.id) { "JourneyStep id cannot be null" },
-                stepOrder = step.stepOrder,
-                stepType = step.stepType,
-                channel = step.channel,
-                destination = step.destination,
-                subject = step.subject,
-                body = step.body,
-                variables = fromVariablesJson(step.variablesJson, objectMapper),
-                delayMillis = step.delayMillis,
-                conditionExpression = step.conditionExpression,
-                retryCount = step.retryCount,
-                createdAt = step.createdAt?.format(formatter) ?: ""
-            )
-        },
-        createdAt = journey.createdAt?.format(formatter) ?: ""
+        steps =
+            steps.map { step ->
+                JourneyStepDto(
+                    id = requireNotNull(step.id) { "JourneyStep id cannot be null" },
+                    stepOrder = step.stepOrder,
+                    stepType = step.stepType,
+                    channel = step.channel,
+                    destination = step.destination,
+                    subject = step.subject,
+                    body = step.body,
+                    variables = fromVariablesJson(step.variablesJson, objectMapper),
+                    delayMillis = step.delayMillis,
+                    conditionExpression = step.conditionExpression,
+                    retryCount = step.retryCount,
+                    createdAt = step.createdAt?.format(formatter) ?: "",
+                )
+            },
+        createdAt = journey.createdAt?.format(formatter) ?: "",
     )
 }
 
 fun fromVariablesJson(
     variablesJson: String?,
-    objectMapper: ObjectMapper
+    objectMapper: ObjectMapper,
 ): Map<String, String> {
     if (variablesJson.isNullOrBlank()) {
         return emptyMap()
@@ -62,7 +63,7 @@ fun fromVariablesJson(
 
 fun fromTriggerSegmentWatchFieldsJson(
     json: String?,
-    objectMapper: ObjectMapper
+    objectMapper: ObjectMapper,
 ): List<String> {
     if (json.isNullOrBlank()) {
         return emptyList()

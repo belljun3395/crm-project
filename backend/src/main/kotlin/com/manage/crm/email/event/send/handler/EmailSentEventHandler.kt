@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class EmailSentEventHandler(
-    private val emailSendHistoryRepository: EmailSendHistoryRepository
+    private val emailSendHistoryRepository: EmailSendHistoryRepository,
 ) {
     val log = KotlinLogging.logger {}
 
@@ -23,8 +23,8 @@ class EmailSentEventHandler(
                 userEmail = event.destination,
                 emailMessageId = event.messageId,
                 emailBody = event.emailBody,
-                sendStatus = SentEmailStatus.SEND.name
-            )
+                sendStatus = SentEmailStatus.SEND.name,
+            ),
         )
     }
 }

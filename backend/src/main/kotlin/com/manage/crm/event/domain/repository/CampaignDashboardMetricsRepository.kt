@@ -14,20 +14,17 @@ import java.time.LocalDateTime
 interface CampaignDashboardMetricsRepository :
     CoroutineCrudRepository<CampaignDashboardMetrics, Long>,
     CampaignDashboardMetricsCustomRepository {
-
     fun findByCampaignIdAndTimeWindowUnitAndTimeWindowStartAfter(
         campaignId: Long,
         timeWindowUnit: TimeWindowUnit,
-        timeWindowStart: LocalDateTime
+        timeWindowStart: LocalDateTime,
     ): Flow<CampaignDashboardMetrics>
 
     fun findByCampaignIdAndTimeWindowStartBetween(
         campaignId: Long,
         startTime: LocalDateTime,
-        endTime: LocalDateTime
+        endTime: LocalDateTime,
     ): Flow<CampaignDashboardMetrics>
 
-    fun findAllByCampaignIdOrderByTimeWindowStartDesc(
-        campaignId: Long
-    ): Flow<CampaignDashboardMetrics>
+    fun findAllByCampaignIdOrderByTimeWindowStartDesc(campaignId: Long): Flow<CampaignDashboardMetrics>
 }

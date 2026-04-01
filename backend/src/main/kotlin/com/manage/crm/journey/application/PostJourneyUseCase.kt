@@ -14,46 +14,48 @@ import org.springframework.stereotype.Service
 class PostJourneyUseCase(
     private val journeyRepository: JourneyRepository,
     private val journeyStepRepository: JourneyStepRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
     suspend fun execute(useCaseIn: PostJourneyIn): JourneyDto {
         validate(useCaseIn)
 
-        val savedJourney = journeyRepository.save(
-            Journey.new(
-                name = useCaseIn.name,
-                triggerType = useCaseIn.triggerType.name,
-                triggerEventName = useCaseIn.triggerEventName,
-                triggerSegmentId = useCaseIn.triggerSegmentId,
-                triggerSegmentEvent = useCaseIn.triggerSegmentEvent?.name,
-                triggerSegmentWatchFields = toTriggerSegmentWatchFieldsJson(useCaseIn.triggerSegmentWatchFields),
-                triggerSegmentCountThreshold = useCaseIn.triggerSegmentCountThreshold,
-                active = useCaseIn.active,
-                lifecycleStatus = if (useCaseIn.active) JourneyLifecycleStatus.ACTIVE.name else JourneyLifecycleStatus.DRAFT.name,
-                version = 1
+        val savedJourney =
+            journeyRepository.save(
+                Journey.new(
+                    name = useCaseIn.name,
+                    triggerType = useCaseIn.triggerType.name,
+                    triggerEventName = useCaseIn.triggerEventName,
+                    triggerSegmentId = useCaseIn.triggerSegmentId,
+                    triggerSegmentEvent = useCaseIn.triggerSegmentEvent?.name,
+                    triggerSegmentWatchFields = toTriggerSegmentWatchFieldsJson(useCaseIn.triggerSegmentWatchFields),
+                    triggerSegmentCountThreshold = useCaseIn.triggerSegmentCountThreshold,
+                    active = useCaseIn.active,
+                    lifecycleStatus = if (useCaseIn.active) JourneyLifecycleStatus.ACTIVE.name else JourneyLifecycleStatus.DRAFT.name,
+                    version = 1,
+                ),
             )
-        )
 
         val journeyId = requireNotNull(savedJourney.id) { "Journey id cannot be null" }
-        val savedSteps = useCaseIn.steps
-            .sortedBy { it.stepOrder }
-            .map { step ->
-                journeyStepRepository.save(
-                    JourneyStep.new(
-                        journeyId = journeyId,
-                        stepOrder = step.stepOrder,
-                        stepType = step.stepType.name,
-                        channel = step.channel,
-                        destination = step.destination,
-                        subject = step.subject,
-                        body = step.body,
-                        variablesJson = toVariablesJson(step.variables),
-                        delayMillis = step.delayMillis,
-                        conditionExpression = step.conditionExpression,
-                        retryCount = step.retryCount.coerceAtLeast(0)
+        val savedSteps =
+            useCaseIn.steps
+                .sortedBy { it.stepOrder }
+                .map { step ->
+                    journeyStepRepository.save(
+                        JourneyStep.new(
+                            journeyId = journeyId,
+                            stepOrder = step.stepOrder,
+                            stepType = step.stepType.name,
+                            channel = step.channel,
+                            destination = step.destination,
+                            subject = step.subject,
+                            body = step.body,
+                            variablesJson = toVariablesJson(step.variables),
+                            delayMillis = step.delayMillis,
+                            conditionExpression = step.conditionExpression,
+                            retryCount = step.retryCount.coerceAtLeast(0),
+                        ),
                     )
-                )
-            }
+                }
 
         return assembleJourneyDto(savedJourney, savedSteps, objectMapper)
     }
@@ -69,7 +71,11 @@ class PostJourneyUseCase(
         if (useCaseIn.steps.any { it.stepOrder <= 0 }) {
             throw IllegalArgumentException("stepOrder must be greater than 0")
         }
-        if (useCaseIn.steps.groupingBy { it.stepOrder }.eachCount().any { it.value > 1 }) {
+        if (useCaseIn.steps
+                .groupingBy { it.stepOrder }
+                .eachCount()
+                .any { it.value > 1 }
+        ) {
             throw IllegalArgumentException("stepOrder must be unique")
         }
 
@@ -84,11 +90,13 @@ class PostJourneyUseCase(
                 if (useCaseIn.triggerSegmentId == null) {
                     throw IllegalArgumentException("triggerSegmentId is required for SEGMENT trigger")
                 }
-                val segmentEvent = useCaseIn.triggerSegmentEvent
-                    ?: throw IllegalArgumentException("triggerSegmentEvent is required for SEGMENT trigger")
+                val segmentEvent =
+                    useCaseIn.triggerSegmentEvent
+                        ?: throw IllegalArgumentException("triggerSegmentEvent is required for SEGMENT trigger")
                 when (segmentEvent) {
                     JourneySegmentTriggerEventType.ENTER,
-                    JourneySegmentTriggerEventType.EXIT -> Unit
+                    JourneySegmentTriggerEventType.EXIT,
+                    -> Unit
 
                     JourneySegmentTriggerEventType.UPDATE -> {
                         if (useCaseIn.triggerSegmentWatchFields.isEmpty()) {
@@ -97,7 +105,8 @@ class PostJourneyUseCase(
                     }
 
                     JourneySegmentTriggerEventType.COUNT_REACHED,
-                    JourneySegmentTriggerEventType.COUNT_DROPPED -> {
+                    JourneySegmentTriggerEventType.COUNT_DROPPED,
+                    -> {
                         val threshold = useCaseIn.triggerSegmentCountThreshold
                         if (threshold == null || threshold <= 0L) {
                             throw IllegalArgumentException("triggerSegmentCountThreshold must be greater than 0 for SEGMENT COUNT trigger")
@@ -108,13 +117,14 @@ class PostJourneyUseCase(
 
             JourneyTriggerType.CONDITION -> {
                 val triggerExpression = useCaseIn.triggerEventName?.takeIf { it.isNotBlank() }
-                val branchExpressions = useCaseIn.steps
-                    .filter { it.stepType == JourneyStepType.BRANCH && !it.conditionExpression.isNullOrBlank() }
-                    .map { requireNotNull(it.conditionExpression).trim() }
+                val branchExpressions =
+                    useCaseIn.steps
+                        .filter { it.stepType == JourneyStepType.BRANCH && !it.conditionExpression.isNullOrBlank() }
+                        .map { requireNotNull(it.conditionExpression).trim() }
 
                 if (triggerExpression.isNullOrBlank() && branchExpressions.isEmpty()) {
                     throw IllegalArgumentException(
-                        "CONDITION trigger requires triggerEventName(condition expression) or BRANCH step conditionExpression"
+                        "CONDITION trigger requires triggerEventName(condition expression) or BRANCH step conditionExpression",
                     )
                 }
 
@@ -165,13 +175,15 @@ class PostJourneyUseCase(
         }
         return objectMapper.writeValueAsString(fields)
     }
+
     private fun validateConditionExpression(expression: String) {
         val raw = expression.trim()
-        val operator = when {
-            raw.contains("==") -> "=="
-            raw.contains("!=") -> "!="
-            else -> throw IllegalArgumentException("Unsupported condition expression: $expression")
-        }
+        val operator =
+            when {
+                raw.contains("==") -> "=="
+                raw.contains("!=") -> "!="
+                else -> throw IllegalArgumentException("Unsupported condition expression: $expression")
+            }
 
         val parts = raw.split(operator, limit = 2)
         if (parts.size != 2) {

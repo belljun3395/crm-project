@@ -24,284 +24,303 @@ import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import org.springframework.dao.DataIntegrityViolationException
 
-class PostCampaignUseCaseTest : BehaviorSpec({
-    lateinit var campaignRepository: CampaignRepository
-    lateinit var campaignSegmentsRepository: CampaignSegmentsRepository
-    lateinit var segmentReadPort: SegmentReadPort
-    lateinit var transactionSynchronizationTemplate: TransactionSynchronizationTemplate
-    lateinit var campaignCacheManager: CampaignCacheManager
-    lateinit var postCampaignUseCase: PostCampaignUseCase
+class PostCampaignUseCaseTest :
+    BehaviorSpec({
+        lateinit var campaignRepository: CampaignRepository
+        lateinit var campaignSegmentsRepository: CampaignSegmentsRepository
+        lateinit var segmentReadPort: SegmentReadPort
+        lateinit var transactionSynchronizationTemplate: TransactionSynchronizationTemplate
+        lateinit var campaignCacheManager: CampaignCacheManager
+        lateinit var postCampaignUseCase: PostCampaignUseCase
 
-    beforeContainer {
-        campaignRepository = mockk()
-        campaignSegmentsRepository = mockk(relaxed = true)
-        segmentReadPort = mockk()
-        transactionSynchronizationTemplate = mockk()
-        campaignCacheManager = mockk()
-        postCampaignUseCase =
-            PostCampaignUseCase(
-                campaignRepository = campaignRepository,
-                campaignSegmentsRepository = campaignSegmentsRepository,
-                segmentReadPort = segmentReadPort,
-                transactionSynchronizationTemplate = transactionSynchronizationTemplate,
-                campaignCacheManager = campaignCacheManager
-            )
-    }
-
-    given("UC-CAMPAIGN-001: PostCampaignUseCase") {
-        `when`("post campaign") {
-            val useCaseIn = PostCampaignUseCaseIn(
-                name = "campaign",
-                properties = listOf(
-                    PostCampaignPropertyDto(
-                        key = "key1",
-                        value = "value1"
-                    ),
-                    PostCampaignPropertyDto(
-                        key = "key2",
-                        value = "value2"
-                    )
+        beforeContainer {
+            campaignRepository = mockk()
+            campaignSegmentsRepository = mockk(relaxed = true)
+            segmentReadPort = mockk()
+            transactionSynchronizationTemplate = mockk()
+            campaignCacheManager = mockk()
+            postCampaignUseCase =
+                PostCampaignUseCase(
+                    campaignRepository = campaignRepository,
+                    campaignSegmentsRepository = campaignSegmentsRepository,
+                    segmentReadPort = segmentReadPort,
+                    transactionSynchronizationTemplate = transactionSynchronizationTemplate,
+                    campaignCacheManager = campaignCacheManager,
                 )
-            )
+        }
 
-            coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
+        given("UC-CAMPAIGN-001: PostCampaignUseCase") {
+            `when`("post campaign") {
+                val useCaseIn =
+                    PostCampaignUseCaseIn(
+                        name = "campaign",
+                        properties =
+                            listOf(
+                                PostCampaignPropertyDto(
+                                    key = "key1",
+                                    value = "value1",
+                                ),
+                                PostCampaignPropertyDto(
+                                    key = "key2",
+                                    value = "value2",
+                                ),
+                            ),
+                    )
 
-            val savedCampaignId = 1L
-            val savedCampaign = CampaignFixtures.giveMeOne()
-                .withId(savedCampaignId)
-                .withName(useCaseIn.name)
-                .withProperties(
-                    PropertiesFixtures.giveMeOne()
-                        .withValue(
-                            useCaseIn.properties.map {
-                                PropertyFixtures.giveMeOne()
-                                    .withKey(it.key)
-                                    .withValue(it.value)
-                                    .buildEvent()
-                            }
+                coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
+
+                val savedCampaignId = 1L
+                val savedCampaign =
+                    CampaignFixtures
+                        .giveMeOne()
+                        .withId(savedCampaignId)
+                        .withName(useCaseIn.name)
+                        .withProperties(
+                            PropertiesFixtures
+                                .giveMeOne()
+                                .withValue(
+                                    useCaseIn.properties.map {
+                                        PropertyFixtures
+                                            .giveMeOne()
+                                            .withKey(it.key)
+                                            .withValue(it.value)
+                                            .buildEvent()
+                                    },
+                                ).buildCampaign(),
+                        ).build()
+
+                coEvery { campaignRepository.save(any()) } answers { savedCampaign }
+
+                coEvery { campaignCacheManager.save(any()) } answers { savedCampaign }
+
+                coEvery {
+                    transactionSynchronizationTemplate.afterCommit(
+                        eq(Dispatchers.IO),
+                        eq("save campaign cache"),
+                        captureLambda<suspend () -> Unit>(),
+                    )
+                } coAnswers {
+                    lambda<suspend () -> Unit>().coInvoke()
+                }
+
+                val result = postCampaignUseCase.execute(useCaseIn)
+
+                then("should return PostCampaignUseCaseOut") {
+                    result.id shouldBe savedCampaignId
+                    result.name shouldBe useCaseIn.name
+                    result.properties.size shouldBe useCaseIn.properties.size
+                    result.segmentIds shouldBe emptyList()
+                }
+
+                then("check campaign name is exists") {
+                    coVerify(exactly = 1) { campaignRepository.existsCampaignsByName(useCaseIn.name) }
+                }
+
+                then("save campaign") {
+                    coVerify(exactly = 1) { campaignRepository.save(any()) }
+                }
+
+                then("skip campaign-segment linkage when no segments are provided") {
+                    coVerify(exactly = 0) { campaignSegmentsRepository.save(any()) }
+                }
+
+                then("register transaction synchronization after commit for save campaign cache") {
+                    coVerify(exactly = 1) {
+                        transactionSynchronizationTemplate.afterCommit(
+                            eq(Dispatchers.IO),
+                            eq("save campaign cache"),
+                            captureLambda<suspend () -> Unit>(),
                         )
-                        .buildCampaign()
-                )
-                .build()
+                    }
+                }
 
-            coEvery { campaignRepository.save(any()) } answers { savedCampaign }
-
-            coEvery { campaignCacheManager.save(any()) } answers { savedCampaign }
-
-            coEvery {
-                transactionSynchronizationTemplate.afterCommit(
-                    eq(Dispatchers.IO),
-                    eq("save campaign cache"),
-                    captureLambda<suspend () -> Unit>()
-                )
-            } coAnswers {
-                lambda<suspend () -> Unit>().coInvoke()
+                then("save campaign cache") {
+                    coVerify(exactly = 1) { campaignCacheManager.save(any()) }
+                }
             }
 
-            val result = postCampaignUseCase.execute(useCaseIn)
+            `when`("post campaign with existing name") {
+                val useCaseIn =
+                    PostCampaignUseCaseIn(
+                        name = "existing_campaign",
+                        properties =
+                            listOf(
+                                PostCampaignPropertyDto(
+                                    key = "key1",
+                                    value = "value1",
+                                ),
+                            ),
+                    )
 
-            then("should return PostCampaignUseCaseOut") {
-                result.id shouldBe savedCampaignId
-                result.name shouldBe useCaseIn.name
-                result.properties.size shouldBe useCaseIn.properties.size
-                result.segmentIds shouldBe emptyList()
+                coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns true
+
+                then("should throw exception") {
+                    val exception =
+                        shouldThrow<AlreadyExistsException> {
+                            postCampaignUseCase.execute(useCaseIn)
+                        }
+
+                    exception.message shouldBe "Campaign already exists with name: ${useCaseIn.name}"
+                }
+
+                then("check campaign name is exists") {
+                    coVerify(exactly = 1) { campaignRepository.existsCampaignsByName(useCaseIn.name) }
+                }
+
+                then("not called save campaign") {
+                    coVerify(exactly = 0) { campaignRepository.save(any(Campaign::class)) }
+                }
+
+                then("not called register transaction synchronization after commit for save campaign cache") {
+                    coVerify(exactly = 0) {
+                        transactionSynchronizationTemplate.afterCommit(
+                            eq(Dispatchers.IO),
+                            eq("save campaign cache"),
+                            captureLambda<suspend () -> Unit>(),
+                        )
+                    }
+                }
+
+                then("not called save campaign cache") {
+                    coVerify(exactly = 0) { campaignCacheManager.save(any()) }
+                }
             }
 
-            then("check campaign name is exists") {
-                coVerify(exactly = 1) { campaignRepository.existsCampaignsByName(useCaseIn.name) }
+            `when`("post campaign with concurrent duplicate save") {
+                val useCaseIn =
+                    PostCampaignUseCaseIn(
+                        name = "racing_campaign",
+                        properties =
+                            listOf(
+                                PostCampaignPropertyDto(
+                                    key = "key1",
+                                    value = "value1",
+                                ),
+                            ),
+                    )
+
+                coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
+                coEvery { campaignRepository.save(any()) } throws
+                    DataIntegrityViolationException("Duplicate entry for key 'uk_campaigns_name'")
+
+                val thrownException =
+                    runCatching {
+                        postCampaignUseCase.execute(useCaseIn)
+                    }.exceptionOrNull()
+
+                then("should throw already exists exception from db constraint") {
+                    thrownException.shouldBeInstanceOf<AlreadyExistsException>()
+                    thrownException.message shouldBe "Campaign already exists with name: ${useCaseIn.name}"
+                }
+
+                then("save campaign is attempted once") {
+                    coVerify(exactly = 1) { campaignRepository.save(any(Campaign::class)) }
+                }
+
+                then("post-save callbacks are not executed") {
+                    coVerify(exactly = 0) {
+                        transactionSynchronizationTemplate.afterCommit(
+                            eq(Dispatchers.IO),
+                            eq("save campaign cache"),
+                            captureLambda<suspend () -> Unit>(),
+                        )
+                    }
+                    coVerify(exactly = 0) { campaignCacheManager.save(any()) }
+                }
             }
 
-            then("save campaign") {
-                coVerify(exactly = 1) { campaignRepository.save(any()) }
-            }
+            `when`("post campaign with segment targets") {
+                val useCaseIn =
+                    PostCampaignUseCaseIn(
+                        name = "targeted_campaign",
+                        properties =
+                            listOf(
+                                PostCampaignPropertyDto(
+                                    key = "key1",
+                                    value = "value1",
+                                ),
+                            ),
+                        segmentIds = listOf(10L, 20L, 10L),
+                    )
 
-            then("skip campaign-segment linkage when no segments are provided") {
-                coVerify(exactly = 0) { campaignSegmentsRepository.save(any()) }
-            }
+                coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
+                coEvery { segmentReadPort.existsById(10L) } returns true
+                coEvery { segmentReadPort.existsById(20L) } returns true
 
-            then("register transaction synchronization after commit for save campaign cache") {
-                coVerify(exactly = 1) {
+                val savedCampaign =
+                    CampaignFixtures
+                        .giveMeOne()
+                        .withId(100L)
+                        .withName(useCaseIn.name)
+                        .build()
+                coEvery { campaignRepository.save(any()) } returns savedCampaign
+                coEvery { campaignSegmentsRepository.save(any()) } answers { firstArg() }
+                coEvery { campaignCacheManager.save(any()) } returns savedCampaign
+                coEvery {
                     transactionSynchronizationTemplate.afterCommit(
                         eq(Dispatchers.IO),
                         eq("save campaign cache"),
-                        captureLambda<suspend () -> Unit>()
+                        captureLambda<suspend () -> Unit>(),
                     )
+                } coAnswers {
+                    lambda<suspend () -> Unit>().coInvoke()
+                }
+
+                val result = postCampaignUseCase.execute(useCaseIn)
+
+                then("return distinct segment ids in campaign response") {
+                    result.segmentIds shouldBe listOf(10L, 20L)
+                }
+
+                then("save campaign-segment links") {
+                    coVerify(exactly = 2) { campaignSegmentsRepository.save(any()) }
                 }
             }
 
-            then("save campaign cache") {
-                coVerify(exactly = 1) { campaignCacheManager.save(any()) }
-            }
-        }
-
-        `when`("post campaign with existing name") {
-            val useCaseIn = PostCampaignUseCaseIn(
-                name = "existing_campaign",
-                properties = listOf(
-                    PostCampaignPropertyDto(
-                        key = "key1",
-                        value = "value1"
+            `when`("DataIntegrityViolationException is not a name duplicate") {
+                val useCaseIn =
+                    PostCampaignUseCaseIn(
+                        name = "unique_campaign",
+                        properties = listOf(PostCampaignPropertyDto(key = "k", value = "v")),
                     )
-                )
-            )
 
-            coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns true
+                coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
+                coEvery { campaignRepository.save(any()) } throws
+                    org.springframework.dao.DataIntegrityViolationException("some_other_constraint violated")
 
-            then("should throw exception") {
-                val exception = shouldThrow<AlreadyExistsException> {
-                    postCampaignUseCase.execute(useCaseIn)
-                }
-
-                exception.message shouldBe "Campaign already exists with name: ${useCaseIn.name}"
-            }
-
-            then("check campaign name is exists") {
-                coVerify(exactly = 1) { campaignRepository.existsCampaignsByName(useCaseIn.name) }
-            }
-
-            then("not called save campaign") {
-                coVerify(exactly = 0) { campaignRepository.save(any(Campaign::class)) }
-            }
-
-            then("not called register transaction synchronization after commit for save campaign cache") {
-                coVerify(exactly = 0) {
-                    transactionSynchronizationTemplate.afterCommit(
-                        eq(Dispatchers.IO),
-                        eq("save campaign cache"),
-                        captureLambda<suspend () -> Unit>()
-                    )
+                then("re-throws original DataIntegrityViolationException") {
+                    io.kotest.assertions.throwables.shouldThrow<org.springframework.dao.DataIntegrityViolationException> {
+                        postCampaignUseCase.execute(useCaseIn)
+                    }
                 }
             }
 
-            then("not called save campaign cache") {
-                coVerify(exactly = 0) { campaignCacheManager.save(any()) }
-            }
-        }
-
-        `when`("post campaign with concurrent duplicate save") {
-            val useCaseIn = PostCampaignUseCaseIn(
-                name = "racing_campaign",
-                properties = listOf(
-                    PostCampaignPropertyDto(
-                        key = "key1",
-                        value = "value1"
+            `when`("post campaign with missing segment id") {
+                val useCaseIn =
+                    PostCampaignUseCaseIn(
+                        name = "invalid_target_campaign",
+                        properties =
+                            listOf(
+                                PostCampaignPropertyDto(
+                                    key = "key1",
+                                    value = "value1",
+                                ),
+                            ),
+                        segmentIds = listOf(999L),
                     )
-                )
-            )
 
-            coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
-            coEvery { campaignRepository.save(any()) } throws DataIntegrityViolationException("Duplicate entry for key 'uk_campaigns_name'")
+                coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
+                coEvery { segmentReadPort.existsById(999L) } returns false
 
-            val thrownException = runCatching {
-                postCampaignUseCase.execute(useCaseIn)
-            }.exceptionOrNull()
-
-            then("should throw already exists exception from db constraint") {
-                thrownException.shouldBeInstanceOf<AlreadyExistsException>()
-                thrownException.message shouldBe "Campaign already exists with name: ${useCaseIn.name}"
-            }
-
-            then("save campaign is attempted once") {
-                coVerify(exactly = 1) { campaignRepository.save(any(Campaign::class)) }
-            }
-
-            then("post-save callbacks are not executed") {
-                coVerify(exactly = 0) {
-                    transactionSynchronizationTemplate.afterCommit(
-                        eq(Dispatchers.IO),
-                        eq("save campaign cache"),
-                        captureLambda<suspend () -> Unit>()
-                    )
+                then("throw not found before saving campaign") {
+                    shouldThrow<NotFoundByIdException> {
+                        postCampaignUseCase.execute(useCaseIn)
+                    }
                 }
-                coVerify(exactly = 0) { campaignCacheManager.save(any()) }
-            }
-        }
 
-        `when`("post campaign with segment targets") {
-            val useCaseIn = PostCampaignUseCaseIn(
-                name = "targeted_campaign",
-                properties = listOf(
-                    PostCampaignPropertyDto(
-                        key = "key1",
-                        value = "value1"
-                    )
-                ),
-                segmentIds = listOf(10L, 20L, 10L)
-            )
-
-            coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
-            coEvery { segmentReadPort.existsById(10L) } returns true
-            coEvery { segmentReadPort.existsById(20L) } returns true
-
-            val savedCampaign = CampaignFixtures.giveMeOne()
-                .withId(100L)
-                .withName(useCaseIn.name)
-                .build()
-            coEvery { campaignRepository.save(any()) } returns savedCampaign
-            coEvery { campaignSegmentsRepository.save(any()) } answers { firstArg() }
-            coEvery { campaignCacheManager.save(any()) } returns savedCampaign
-            coEvery {
-                transactionSynchronizationTemplate.afterCommit(
-                    eq(Dispatchers.IO),
-                    eq("save campaign cache"),
-                    captureLambda<suspend () -> Unit>()
-                )
-            } coAnswers {
-                lambda<suspend () -> Unit>().coInvoke()
-            }
-
-            val result = postCampaignUseCase.execute(useCaseIn)
-
-            then("return distinct segment ids in campaign response") {
-                result.segmentIds shouldBe listOf(10L, 20L)
-            }
-
-            then("save campaign-segment links") {
-                coVerify(exactly = 2) { campaignSegmentsRepository.save(any()) }
-            }
-        }
-
-        `when`("DataIntegrityViolationException is not a name duplicate") {
-            val useCaseIn = PostCampaignUseCaseIn(
-                name = "unique_campaign",
-                properties = listOf(PostCampaignPropertyDto(key = "k", value = "v"))
-            )
-
-            coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
-            coEvery { campaignRepository.save(any()) } throws
-                org.springframework.dao.DataIntegrityViolationException("some_other_constraint violated")
-
-            then("re-throws original DataIntegrityViolationException") {
-                io.kotest.assertions.throwables.shouldThrow<org.springframework.dao.DataIntegrityViolationException> {
-                    postCampaignUseCase.execute(useCaseIn)
+                then("do not save campaign when segment is missing") {
+                    coVerify(exactly = 0) { campaignRepository.save(any()) }
                 }
             }
         }
-
-        `when`("post campaign with missing segment id") {
-            val useCaseIn = PostCampaignUseCaseIn(
-                name = "invalid_target_campaign",
-                properties = listOf(
-                    PostCampaignPropertyDto(
-                        key = "key1",
-                        value = "value1"
-                    )
-                ),
-                segmentIds = listOf(999L)
-            )
-
-            coEvery { campaignRepository.existsCampaignsByName(useCaseIn.name) } returns false
-            coEvery { segmentReadPort.existsById(999L) } returns false
-
-            then("throw not found before saving campaign") {
-                shouldThrow<NotFoundByIdException> {
-                    postCampaignUseCase.execute(useCaseIn)
-                }
-            }
-
-            then("do not save campaign when segment is missing") {
-                coVerify(exactly = 0) { campaignRepository.save(any()) }
-            }
-        }
-    }
-})
+    })

@@ -13,25 +13,21 @@ import java.time.LocalDateTime
 @Component
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws", matchIfMissing = true)
 class AwsSchedulerProvider(
-    private val awsSchedulerService: AwsSchedulerService
+    private val awsSchedulerService: AwsSchedulerService,
 ) : SchedulerProvider {
-
     override suspend fun createSchedule(
         name: String,
         scheduleTime: LocalDateTime,
-        input: ScheduleInfo
-    ): ScheduleCreationResult {
-        return try {
+        input: ScheduleInfo,
+    ): ScheduleCreationResult =
+        try {
             val response = awsSchedulerService.createSchedule(name, scheduleTime, input)
             ScheduleCreationResult.Success(response.scheduleArn())
         } catch (ex: Exception) {
             ScheduleCreationResult.Failure(ex.message ?: "Unknown error", ex)
         }
-    }
 
-    override suspend fun browseSchedules(): List<ScheduleName> {
-        return awsSchedulerService.browseSchedule()
-    }
+    override suspend fun browseSchedules(): List<ScheduleName> = awsSchedulerService.browseSchedule()
 
     override suspend fun deleteSchedule(scheduleName: ScheduleName) {
         awsSchedulerService.deleteSchedule(scheduleName)

@@ -13,7 +13,6 @@ import java.util.Optional
 
 @Component
 class SesEmailEventFactory {
-
     fun toEmailSendEvent(notification: SesEmailNotification): Optional<EmailSendEvent> =
         when (notification.eventType) {
             SesEventType.OPEN ->
@@ -22,8 +21,8 @@ class SesEmailEventFactory {
                         messageId = notification.messageId,
                         destination = notification.destination,
                         timestamp = notification.occurredAt,
-                        provider = EmailProviderType.AWS
-                    )
+                        provider = EmailProviderType.AWS,
+                    ),
                 )
 
             SesEventType.DELIVERY ->
@@ -32,8 +31,8 @@ class SesEmailEventFactory {
                         messageId = notification.messageId,
                         destination = notification.destination,
                         timestamp = notification.occurredAt,
-                        provider = EmailProviderType.AWS
-                    )
+                        provider = EmailProviderType.AWS,
+                    ),
                 )
 
             SesEventType.CLICK ->
@@ -42,8 +41,8 @@ class SesEmailEventFactory {
                         messageId = notification.messageId,
                         destination = notification.destination,
                         timestamp = notification.occurredAt,
-                        provider = EmailProviderType.AWS
-                    )
+                        provider = EmailProviderType.AWS,
+                    ),
                 )
 
             SesEventType.DELIVERY_DELAY ->
@@ -52,14 +51,15 @@ class SesEmailEventFactory {
                         messageId = notification.messageId,
                         destination = notification.destination,
                         timestamp = notification.occurredAt,
-                        provider = EmailProviderType.AWS
-                    )
+                        provider = EmailProviderType.AWS,
+                    ),
                 )
 
             SesEventType.SEND,
             SesEventType.BOUNCE,
             SesEventType.COMPLAINT,
             SesEventType.REJECT,
-            SesEventType.RENDERING_FAILURE -> Optional.empty()
+            SesEventType.RENDERING_FAILURE,
+            -> Optional.empty()
         }
 }

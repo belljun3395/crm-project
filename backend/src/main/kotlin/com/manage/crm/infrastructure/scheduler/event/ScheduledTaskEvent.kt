@@ -12,7 +12,7 @@ data class ScheduledTaskEvent(
     val scheduleName: String,
     val scheduleTime: LocalDateTime,
     val payload: ScheduleInfo,
-    val createdAt: LocalDateTime = LocalDateTime.now()
+    val createdAt: LocalDateTime = LocalDateTime.now(),
 )
 
 /**
@@ -21,7 +21,7 @@ data class ScheduledTaskEvent(
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,
     include = JsonTypeInfo.As.PROPERTY,
-    property = "@type"
+    property = "@type",
 )
 @JsonSubTypes(
     // Add concrete ScheduleInfo types here as they are implemented

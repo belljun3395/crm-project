@@ -19,7 +19,7 @@ import java.time.LocalDateTime
  */
 @Component
 class GetCampaignDashboardUseCase(
-    private val campaignDashboardMetricsRepository: CampaignDashboardMetricsRepository
+    private val campaignDashboardMetricsRepository: CampaignDashboardMetricsRepository,
 ) {
     suspend fun execute(input: GetCampaignDashboardUseCaseIn): GetCampaignDashboardUseCaseOut {
         val metrics = getMetrics(input)
@@ -28,24 +28,26 @@ class GetCampaignDashboardUseCase(
         return GetCampaignDashboardUseCaseOut(
             campaignId = input.campaignId,
             metrics = metrics.map { it.toDto() },
-            summary = summary
+            summary = summary,
         )
     }
 
     private suspend fun getMetrics(input: GetCampaignDashboardUseCaseIn): List<CampaignDashboardMetrics> =
         if (input.timeWindowUnit != null) {
             val from = input.startTime ?: LocalDateTime.now().minusDays(7)
-            campaignDashboardMetricsRepository.findByCampaignIdAndTimeWindowUnitAndTimeWindowStartAfter(
-                input.campaignId,
-                input.timeWindowUnit,
-                from
-            ).toList()
+            campaignDashboardMetricsRepository
+                .findByCampaignIdAndTimeWindowUnitAndTimeWindowStartAfter(
+                    input.campaignId,
+                    input.timeWindowUnit,
+                    from,
+                ).toList()
         } else if (input.startTime != null && input.endTime != null) {
-            campaignDashboardMetricsRepository.findByCampaignIdAndTimeWindowStartBetween(
-                input.campaignId,
-                input.startTime,
-                input.endTime
-            ).toList()
+            campaignDashboardMetricsRepository
+                .findByCampaignIdAndTimeWindowStartBetween(
+                    input.campaignId,
+                    input.startTime,
+                    input.endTime,
+                ).toList()
         } else {
             campaignDashboardMetricsRepository.findAllByCampaignIdOrderByTimeWindowStartDesc(input.campaignId).toList()
         }
@@ -56,8 +58,7 @@ class GetCampaignDashboardUseCase(
                 .getCampaignSummaryMetrics(
                     campaignId = campaignId,
                     last24Hours = now.minusHours(24),
-                    last7Days = now.minusDays(7)
-                )
-                .toDashboardSummaryDto(campaignId = campaignId, lastUpdated = now)
+                    last7Days = now.minusDays(7),
+                ).toDashboardSummaryDto(campaignId = campaignId, lastUpdated = now)
         }
 }

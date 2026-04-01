@@ -9,10 +9,11 @@ import org.springframework.core.convert.converter.Converter
 import org.springframework.data.convert.ReadingConverter
 import org.springframework.data.convert.WritingConverter
 
-private val objectMapper = ObjectMapper().apply {
-    findAndRegisterModules()
-    registerModules(JavaTimeModule())
-}
+private val objectMapper =
+    ObjectMapper().apply {
+        findAndRegisterModules()
+        registerModules(JavaTimeModule())
+    }
 
 @ReadingConverter
 class WebhookEventsReadingConverter : Converter<Any, WebhookEvents> {
@@ -21,14 +22,15 @@ class WebhookEventsReadingConverter : Converter<Any, WebhookEvents> {
             return source
         }
 
-        val values = objectMapper.readValue(
-            when (source) {
-                is Json -> source.asString()
-                else -> source.toString()
-            },
-            List::class.java
-        )
-            .map { it.toString() }
+        val values =
+            objectMapper
+                .readValue(
+                    when (source) {
+                        is Json -> source.asString()
+                        else -> source.toString()
+                    },
+                    List::class.java,
+                ).map { it.toString() }
         val eventTypes = values.map { WebhookEventType.fromValue(it) }
         return WebhookEvents(eventTypes)
     }
@@ -36,7 +38,5 @@ class WebhookEventsReadingConverter : Converter<Any, WebhookEvents> {
 
 @WritingConverter
 class WebhookEventsWritingConverter : Converter<WebhookEvents, Json> {
-    override fun convert(source: WebhookEvents): Json {
-        return Json.of(objectMapper.writeValueAsString(source.toValues()))
-    }
+    override fun convert(source: WebhookEvents): Json = Json.of(objectMapper.writeValueAsString(source.toValues()))
 }

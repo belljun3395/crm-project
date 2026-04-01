@@ -5,12 +5,13 @@ import com.manage.crm.architecture.ControllerReturnPolicy
 import com.manage.crm.architecture.ModuleRuleSpec
 
 class EventArchitectureTest : BaseModuleArchitectureTest() {
-    override val spec = ModuleRuleSpec(
-        moduleName = "event",
-        packageToken = "event",
-        controllerReturnPolicy = ControllerReturnPolicy.USE_CASE_OUT_OR_DTO,
-        enforceCrossModuleDependencyViaQueryFacade = true,
-        enforceCrossModuleReadPortPrefix = true,
-        enforceUtilPureFunctions = true
-    )
+    override val spec =
+        ModuleRuleSpec(
+            moduleName = "event",
+            packageToken = "event",
+            controllerReturnPolicy = ControllerReturnPolicy.USE_CASE_OUT_OR_DTO,
+            enforceCrossModuleDependencyViaQueryFacade = true,
+            enforceCrossModuleReadPortPrefix = true,
+            enforceUtilPureFunctions = true,
+        )
 }

@@ -10,45 +10,49 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 
-class DeleteSegmentUseCaseTest : BehaviorSpec({
-    lateinit var segmentRepository: SegmentRepository
-    lateinit var useCase: DeleteSegmentUseCase
+class DeleteSegmentUseCaseTest :
+    BehaviorSpec({
+        lateinit var segmentRepository: SegmentRepository
+        lateinit var useCase: DeleteSegmentUseCase
 
-    beforeContainer {
-        segmentRepository = mockk(relaxed = true)
-        useCase = DeleteSegmentUseCase(
-            segmentRepository = segmentRepository
-        )
-    }
-
-    given("UC-SEGMENT-004 DeleteSegmentUseCase") {
-        `when`("segment exists") {
-            then("delete segment once") {
-                val segmentId = 10L
-                val segment = SegmentFixtures.aSegment()
-                    .withId(segmentId)
-                    .withName("active-users")
-                    .withDescription("desc")
-                    .withActive(true)
-                    .build()
-
-                coEvery { segmentRepository.findById(segmentId) } returns segment
-
-                useCase.execute(DeleteSegmentUseCaseIn(id = segmentId))
-
-                coVerify(exactly = 1) { segmentRepository.delete(segment) }
-            }
+        beforeContainer {
+            segmentRepository = mockk(relaxed = true)
+            useCase =
+                DeleteSegmentUseCase(
+                    segmentRepository = segmentRepository,
+                )
         }
 
-        `when`("segment does not exist") {
-            then("throw not found exception") {
-                val segmentId = 999L
-                coEvery { segmentRepository.findById(segmentId) } returns null
+        given("UC-SEGMENT-004 DeleteSegmentUseCase") {
+            `when`("segment exists") {
+                then("delete segment once") {
+                    val segmentId = 10L
+                    val segment =
+                        SegmentFixtures
+                            .aSegment()
+                            .withId(segmentId)
+                            .withName("active-users")
+                            .withDescription("desc")
+                            .withActive(true)
+                            .build()
 
-                shouldThrow<NotFoundByIdException> {
+                    coEvery { segmentRepository.findById(segmentId) } returns segment
+
                     useCase.execute(DeleteSegmentUseCaseIn(id = segmentId))
+
+                    coVerify(exactly = 1) { segmentRepository.delete(segment) }
+                }
+            }
+
+            `when`("segment does not exist") {
+                then("throw not found exception") {
+                    val segmentId = 999L
+                    coEvery { segmentRepository.findById(segmentId) } returns null
+
+                    shouldThrow<NotFoundByIdException> {
+                        useCase.execute(DeleteSegmentUseCaseIn(id = segmentId))
+                    }
                 }
             }
         }
-    }
-})
+    })

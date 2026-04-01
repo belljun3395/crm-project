@@ -5,7 +5,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 
 @Component
-class EmailDeliveryDelayEventHandler() {
+class EmailDeliveryDelayEventHandler {
     val log = KotlinLogging.logger {}
 
     suspend fun handle(event: EmailDeliveryDelayEvent) {

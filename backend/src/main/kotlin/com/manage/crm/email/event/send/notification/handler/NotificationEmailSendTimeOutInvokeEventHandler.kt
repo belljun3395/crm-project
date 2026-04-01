@@ -39,7 +39,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
     @Qualifier("mailServiceImpl")
     private val mailService: MailService,
     private val emailContentService: EmailContentService,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
     /**
      * - Find Invoked Event  and Mark it as completed
@@ -52,56 +52,59 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
                 .findByEventIdAndCompletedFalseForUpdate(event.timeOutEventId)
                 ?.complete()
                 ?: return
-            )
+        )
         scheduledEventRepository.save(scheduledEvent)
 
         val templateId = event.templateId
         val templateVersion = event.templateVersion
         val campaignId = event.campaignId
         validateCampaignSegmentLink(campaignId = campaignId, segmentId = event.segmentId)
-        val (segmentUsers, eventsByUserId) = if (event.segmentId != null) {
-            resolveSegmentEvaluationScope(campaignId)
-        } else {
-            emptyList<SegmentTargetUserReadModel>() to emptyMap()
-        }
-        val userIds = if (event.segmentId != null) {
-            segmentReadPort.findTargetUserIds(
-                segmentId = event.segmentId,
-                users = segmentUsers,
-                eventsByUserId = eventsByUserId
-            )
-        } else {
-            event.userIds
-        }
-        val template = run {
-            when {
-                (templateVersion != null) -> {
-                    emailTemplateHistoryRepository
-                        .findByTemplateIdAndVersion(templateId, templateVersion)
-                        ?.let {
-                            NotificationEmailTemplateVariablesModel(
-                                subject = it.subject,
-                                body = it.body,
-                                variables = it.variables
-                            )
-                        }
-                        ?: throw IllegalArgumentException("Email Template not found by id and version: $templateId, $templateVersion")
-                }
+        val (segmentUsers, eventsByUserId) =
+            if (event.segmentId != null) {
+                resolveSegmentEvaluationScope(campaignId)
+            } else {
+                emptyList<SegmentTargetUserReadModel>() to emptyMap()
+            }
+        val userIds =
+            if (event.segmentId != null) {
+                segmentReadPort.findTargetUserIds(
+                    segmentId = event.segmentId,
+                    users = segmentUsers,
+                    eventsByUserId = eventsByUserId,
+                )
+            } else {
+                event.userIds
+            }
+        val template =
+            run {
+                when {
+                    (templateVersion != null) -> {
+                        emailTemplateHistoryRepository
+                            .findByTemplateIdAndVersion(templateId, templateVersion)
+                            ?.let {
+                                NotificationEmailTemplateVariablesModel(
+                                    subject = it.subject,
+                                    body = it.body,
+                                    variables = it.variables,
+                                )
+                            }
+                            ?: throw IllegalArgumentException("Email Template not found by id and version: $templateId, $templateVersion")
+                    }
 
-                else -> {
-                    emailTemplateRepository
-                        .findById(templateId)
-                        ?.let {
-                            NotificationEmailTemplateVariablesModel(
-                                subject = it.subject,
-                                body = it.body,
-                                variables = it.variables
-                            )
-                        }
-                        ?: throw IllegalArgumentException("Email Template not found by id: $templateId")
+                    else -> {
+                        emailTemplateRepository
+                            .findById(templateId)
+                            ?.let {
+                                NotificationEmailTemplateVariablesModel(
+                                    subject = it.subject,
+                                    body = it.body,
+                                    variables = it.variables,
+                                )
+                            }
+                            ?: throw IllegalArgumentException("Email Template not found by id: $templateId")
+                    }
                 }
             }
-        }
 
         val users = userRepository.findAllById(userIds)
         users.collect { user ->
@@ -110,17 +113,18 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
             // TODO check if notification need to send to user filter by campaign
             val content = emailContentService.genUserEmailContent(user, template, campaignId) ?: return@collect
             val emailMessageId =
-                mailService.send(
-                    SendEmailInDto(
-                        to = email,
-                        subject = template.subject,
-                        template = template.body,
-                        content = content,
-                        emailBody = template.body,
-                        destination = email,
-                        eventType = SentEmailStatus.SEND
-                    )
-                ).messageId
+                mailService
+                    .send(
+                        SendEmailInDto(
+                            to = email,
+                            subject = template.subject,
+                            template = template.body,
+                            content = content,
+                            emailBody = template.body,
+                            destination = email,
+                            eventType = SentEmailStatus.SEND,
+                        ),
+                    ).messageId
 
             emailSendHistoryRepository.save(
                 EmailSendHistory.new(
@@ -128,13 +132,16 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
                     userEmail = email,
                     emailMessageId = emailMessageId,
                     emailBody = template.body,
-                    sendStatus = SentEmailStatus.SEND.name
-                )
+                    sendStatus = SentEmailStatus.SEND.name,
+                ),
             )
         }
     }
 
-    private suspend fun validateCampaignSegmentLink(campaignId: Long?, segmentId: Long?) {
+    private suspend fun validateCampaignSegmentLink(
+        campaignId: Long?,
+        segmentId: Long?,
+    ) {
         if (campaignId == null || segmentId == null) {
             return
         }
@@ -148,7 +155,7 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
     }
 
     private suspend fun resolveSegmentEvaluationScope(
-        campaignId: Long?
+        campaignId: Long?,
     ): Pair<List<SegmentTargetUserReadModel>, Map<Long, List<SegmentTargetEventReadModel>>> {
         if (campaignId != null) {
             val campaignEventIds = campaignEventReadPort.findEventIdsByCampaignId(campaignId).distinct()
@@ -162,49 +169,54 @@ class NotificationEmailSendTimeOutInvokeEventHandler(
                 return emptyList<SegmentTargetUserReadModel>() to emptyMap()
             }
 
-            val users = userRepository.findAllByIdIn(campaignUserIds).map { user ->
+            val users =
+                userRepository.findAllByIdIn(campaignUserIds).map { user ->
+                    SegmentTargetUserReadModel(
+                        id = requireNotNull(user.id) { "User id cannot be null" },
+                        userAttributesJson = user.userAttributes.value,
+                        createdAt = user.createdAt,
+                    )
+                }
+            val eventsByUserId =
+                campaignEvents
+                    .groupBy { it.userId }
+                    .mapValues { (_, events) ->
+                        events.map { event ->
+                            SegmentTargetEventReadModel(
+                                userId = event.userId,
+                                name = event.name,
+                                occurredAt = event.createdAt,
+                            )
+                        }
+                    }
+            return users to eventsByUserId
+        }
+
+        val users =
+            userRepository.findAll().toList().mapNotNull { user ->
+                val userId = user.id ?: return@mapNotNull null
                 SegmentTargetUserReadModel(
-                    id = requireNotNull(user.id) { "User id cannot be null" },
+                    id = userId,
                     userAttributesJson = user.userAttributes.value,
-                    createdAt = user.createdAt
+                    createdAt = user.createdAt,
                 )
             }
-            val eventsByUserId = campaignEvents
+        if (users.isEmpty()) {
+            return emptyList<SegmentTargetUserReadModel>() to emptyMap()
+        }
+        val eventsByUserId =
+            eventReadPort
+                .findAllByUserIdIn(users.map { it.id })
                 .groupBy { it.userId }
                 .mapValues { (_, events) ->
                     events.map { event ->
                         SegmentTargetEventReadModel(
                             userId = event.userId,
                             name = event.name,
-                            occurredAt = event.createdAt
+                            occurredAt = event.createdAt,
                         )
                     }
                 }
-            return users to eventsByUserId
-        }
-
-        val users = userRepository.findAll().toList().mapNotNull { user ->
-            val userId = user.id ?: return@mapNotNull null
-            SegmentTargetUserReadModel(
-                id = userId,
-                userAttributesJson = user.userAttributes.value,
-                createdAt = user.createdAt
-            )
-        }
-        if (users.isEmpty()) {
-            return emptyList<SegmentTargetUserReadModel>() to emptyMap()
-        }
-        val eventsByUserId = eventReadPort.findAllByUserIdIn(users.map { it.id })
-            .groupBy { it.userId }
-            .mapValues { (_, events) ->
-                events.map { event ->
-                    SegmentTargetEventReadModel(
-                        userId = event.userId,
-                        name = event.name,
-                        occurredAt = event.createdAt
-                    )
-                }
-            }
         return users to eventsByUserId
     }
 }

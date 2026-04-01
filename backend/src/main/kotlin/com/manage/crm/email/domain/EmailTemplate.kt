@@ -25,22 +25,25 @@ class EmailTemplate(
     @Column("version")
     var version: EmailTemplateVersion,
     @CreatedDate
-    var createdAt: LocalDateTime? = null
+    var createdAt: LocalDateTime? = null,
 ) {
     @Transient
     var domainEvents: MutableList<PostEmailTemplateEvent> = mutableListOf()
 
     companion object {
-
-        fun new(templateName: String, subject: String, body: String, variables: Variables): EmailTemplate {
-            return EmailTemplate(
+        fun new(
+            templateName: String,
+            subject: String,
+            body: String,
+            variables: Variables,
+        ): EmailTemplate =
+            EmailTemplate(
                 templateName = templateName,
                 subject = subject,
                 body = body,
                 variables = variables,
-                version = EmailTemplateVersion()
+                version = EmailTemplateVersion(),
             )
-        }
 
         fun new(
             id: Long,
@@ -49,18 +52,17 @@ class EmailTemplate(
             body: String,
             variables: Variables,
             version: Float,
-            createdAt: LocalDateTime
-        ): EmailTemplate {
-            return EmailTemplate(
+            createdAt: LocalDateTime,
+        ): EmailTemplate =
+            EmailTemplate(
                 id = id,
                 templateName = templateName,
                 subject = subject,
                 body = body,
                 variables = variables,
                 version = EmailTemplateVersion(version),
-                createdAt = createdAt
+                createdAt = createdAt,
             )
-        }
 
         fun new(
             id: Long,
@@ -69,18 +71,17 @@ class EmailTemplate(
             body: String,
             variables: Variables,
             version: EmailTemplateVersion,
-            createdAt: LocalDateTime
-        ): EmailTemplate {
-            return EmailTemplate(
+            createdAt: LocalDateTime,
+        ): EmailTemplate =
+            EmailTemplate(
                 id = id,
                 templateName = templateName,
                 subject = subject,
                 body = body,
                 variables = variables,
                 version = version,
-                createdAt = createdAt
+                createdAt = createdAt,
             )
-        }
     }
 
     /**
@@ -89,6 +90,7 @@ class EmailTemplate(
     fun isNewTemplate(): Boolean = id == null
 
     // ----------------- Modify Builder -----------------
+
     /**
      * Modify the email template.
      */
@@ -96,7 +98,7 @@ class EmailTemplate(
 
     class EmailTemplateModifyBuilder(
         private val template: EmailTemplate,
-        private var isVersionUpdated: Boolean = false
+        private var isVersionUpdated: Boolean = false,
     ) {
         /**
          * Finalize the modification and return the modified template.
@@ -124,7 +126,7 @@ class EmailTemplate(
          */
         fun modifyBody(
             body: String,
-            variables: Variables
+            variables: Variables,
         ): EmailTemplateModifyBuilder {
             template.body = body
             template.variables = variables
@@ -156,8 +158,8 @@ class EmailTemplate(
     private fun registerModifyEvent() {
         domainEvents.add(
             PostEmailTemplateEvent(
-                templateId = this.id!!
-            )
+                templateId = this.id!!,
+            ),
         )
     }
 }

@@ -18,151 +18,161 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import java.time.LocalDateTime
 
-class EnrollUserUseCaseTest : BehaviorSpec({
-    lateinit var userRepository: UserRepository
-    lateinit var userRepositoryEventProcessor: UserRepositoryEventProcessor
-    lateinit var jsonService: JsonService
-    lateinit var userCacheManager: UserCacheManager
-    lateinit var journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher
-    lateinit var transactionSynchronizationTemplate: TransactionSynchronizationTemplate
-    lateinit var useCase: EnrollUserUseCase
+class EnrollUserUseCaseTest :
+    BehaviorSpec({
+        lateinit var userRepository: UserRepository
+        lateinit var userRepositoryEventProcessor: UserRepositoryEventProcessor
+        lateinit var jsonService: JsonService
+        lateinit var userCacheManager: UserCacheManager
+        lateinit var journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher
+        lateinit var transactionSynchronizationTemplate: TransactionSynchronizationTemplate
+        lateinit var useCase: EnrollUserUseCase
 
-    beforeContainer {
-        userRepository = mockk()
-        userRepositoryEventProcessor = mockk()
-        jsonService = mockk()
-        userCacheManager = mockk(relaxed = true)
-        journeyTriggerQueuePublisher = mockk(relaxed = true)
-        transactionSynchronizationTemplate = mockk(relaxed = true)
-        useCase = EnrollUserUseCase(
-            userRepository,
-            userRepositoryEventProcessor,
-            jsonService,
-            userCacheManager,
-            journeyTriggerQueuePublisher,
-            transactionSynchronizationTemplate
-        )
-    }
-
-    given("UC-USER-001 EnrollUserUseCase") {
-        `when`("save new user") {
-            val useCaseIn = EnrollUserUseCaseIn(
-                id = null,
-                externalId = "1",
-                userAttributes = """
-                    {
-                        "email": "example@example.com",
-                        "name": "example"
-                    }
-                """.trimIndent()
-            )
-
-            val userAttributes = UserAttributes(useCaseIn.userAttributes)
-            coEvery {
-                jsonService.execute(useCaseIn.userAttributes, RequiredUserAttributeKey.EMAIL)
-            } answers {
-                useCaseIn.userAttributes
-            }
-            val expectedUser = User.new(
-                id = 1,
-                externalId = useCaseIn.externalId,
-                userAttributes = userAttributes,
-                createdAt = LocalDateTime.now(),
-                updatedAt = LocalDateTime.now()
-            )
-
-            coEvery { userRepositoryEventProcessor.save(any()) } answers {
-                expectedUser
-            }
-
-            val result = useCase.execute(useCaseIn)
-            then("should return EnrollUserUseCaseOut") {
-                result shouldBe EnrollUserUseCaseOut(
-                    id = 1,
-                    externalId = expectedUser.externalId!!,
-                    userAttributes = expectedUser.userAttributes!!.value
+        beforeContainer {
+            userRepository = mockk()
+            userRepositoryEventProcessor = mockk()
+            jsonService = mockk()
+            userCacheManager = mockk(relaxed = true)
+            journeyTriggerQueuePublisher = mockk(relaxed = true)
+            transactionSynchronizationTemplate = mockk(relaxed = true)
+            useCase =
+                EnrollUserUseCase(
+                    userRepository,
+                    userRepositoryEventProcessor,
+                    jsonService,
+                    userCacheManager,
+                    journeyTriggerQueuePublisher,
+                    transactionSynchronizationTemplate,
                 )
-            }
-            then("userAttributes should contain Email key") {
-                coVerify(exactly = 1) {
+        }
+
+        given("UC-USER-001 EnrollUserUseCase") {
+            `when`("save new user") {
+                val useCaseIn =
+                    EnrollUserUseCaseIn(
+                        id = null,
+                        externalId = "1",
+                        userAttributes =
+                            """
+                            {
+                                "email": "example@example.com",
+                                "name": "example"
+                            }
+                            """.trimIndent(),
+                    )
+
+                val userAttributes = UserAttributes(useCaseIn.userAttributes)
+                coEvery {
                     jsonService.execute(useCaseIn.userAttributes, RequiredUserAttributeKey.EMAIL)
+                } answers {
+                    useCaseIn.userAttributes
                 }
-            }
-
-            then("save user and process event") {
-                coVerify(exactly = 1) {
-                    userRepositoryEventProcessor.save(
-                        match {
-                            it.externalId == expectedUser.externalId &&
-                                it.userAttributes == expectedUser.userAttributes
-                        }
+                val expectedUser =
+                    User.new(
+                        id = 1,
+                        externalId = useCaseIn.externalId,
+                        userAttributes = userAttributes,
+                        createdAt = LocalDateTime.now(),
+                        updatedAt = LocalDateTime.now(),
                     )
-                }
-            }
-        }
 
-        `when`("modify user") {
-            val useCaseIn = EnrollUserUseCaseIn(
-                id = 1,
-                externalId = "1",
-                userAttributes = """
-                    {
-                        "email": "example@example.com",
-                        "name": "example",
-                        "age": 20
+                coEvery { userRepositoryEventProcessor.save(any()) } answers {
+                    expectedUser
+                }
+
+                val result = useCase.execute(useCaseIn)
+                then("should return EnrollUserUseCaseOut") {
+                    result shouldBe
+                        EnrollUserUseCaseOut(
+                            id = 1,
+                            externalId = expectedUser.externalId!!,
+                            userAttributes = expectedUser.userAttributes!!.value,
+                        )
+                }
+                then("userAttributes should contain Email key") {
+                    coVerify(exactly = 1) {
+                        jsonService.execute(useCaseIn.userAttributes, RequiredUserAttributeKey.EMAIL)
                     }
-                """.trimIndent()
-            )
+                }
 
-            val userUpdateAttributes = UserAttributes(useCaseIn.userAttributes)
-            coEvery {
-                jsonService.execute(useCaseIn.userAttributes, RequiredUserAttributeKey.EMAIL)
-            } answers {
-                useCaseIn.userAttributes
+                then("save user and process event") {
+                    coVerify(exactly = 1) {
+                        userRepositoryEventProcessor.save(
+                            match {
+                                it.externalId == expectedUser.externalId &&
+                                    it.userAttributes == expectedUser.userAttributes
+                            },
+                        )
+                    }
+                }
             }
 
-            val originUser = User.new(
-                id = 1,
-                externalId = useCaseIn.externalId,
-                userAttributes = userUpdateAttributes,
-                createdAt = LocalDateTime.now(),
-                updatedAt = LocalDateTime.now()
-            )
-            coEvery { userRepository.findById(any()) } answers {
-                originUser
-            }
-
-            originUser.updateAttributes(userUpdateAttributes)
-            val expectedUser = originUser
-
-            coEvery { userRepository.save(any()) } returns expectedUser
-
-            val result = useCase.execute(useCaseIn)
-            then("should return EnrollUserUseCaseOut") {
-                result shouldBe EnrollUserUseCaseOut(
-                    id = 1,
-                    externalId = expectedUser.externalId!!,
-                    userAttributes = expectedUser.userAttributes!!.value
-                )
-            }
-            then("userAttributes should contain Email key") {
-                coVerify(exactly = 1) {
-                    jsonService.execute(
-                        useCaseIn.userAttributes,
-                        RequiredUserAttributeKey.EMAIL
+            `when`("modify user") {
+                val useCaseIn =
+                    EnrollUserUseCaseIn(
+                        id = 1,
+                        externalId = "1",
+                        userAttributes =
+                            """
+                            {
+                                "email": "example@example.com",
+                                "name": "example",
+                                "age": 20
+                            }
+                            """.trimIndent(),
                     )
+
+                val userUpdateAttributes = UserAttributes(useCaseIn.userAttributes)
+                coEvery {
+                    jsonService.execute(useCaseIn.userAttributes, RequiredUserAttributeKey.EMAIL)
+                } answers {
+                    useCaseIn.userAttributes
                 }
-            }
-            then("find user by id for update") {
-                coVerify(exactly = 1) {
-                    userRepository.findById(useCaseIn.id!!)
+
+                val originUser =
+                    User.new(
+                        id = 1,
+                        externalId = useCaseIn.externalId,
+                        userAttributes = userUpdateAttributes,
+                        createdAt = LocalDateTime.now(),
+                        updatedAt = LocalDateTime.now(),
+                    )
+                coEvery { userRepository.findById(any()) } answers {
+                    originUser
                 }
-            }
-            then("update user") {
-                coVerify(exactly = 1) {
-                    userRepository.save(any())
+
+                originUser.updateAttributes(userUpdateAttributes)
+                val expectedUser = originUser
+
+                coEvery { userRepository.save(any()) } returns expectedUser
+
+                val result = useCase.execute(useCaseIn)
+                then("should return EnrollUserUseCaseOut") {
+                    result shouldBe
+                        EnrollUserUseCaseOut(
+                            id = 1,
+                            externalId = expectedUser.externalId!!,
+                            userAttributes = expectedUser.userAttributes!!.value,
+                        )
+                }
+                then("userAttributes should contain Email key") {
+                    coVerify(exactly = 1) {
+                        jsonService.execute(
+                            useCaseIn.userAttributes,
+                            RequiredUserAttributeKey.EMAIL,
+                        )
+                    }
+                }
+                then("find user by id for update") {
+                    coVerify(exactly = 1) {
+                        userRepository.findById(useCaseIn.id!!)
+                    }
+                }
+                then("update user") {
+                    coVerify(exactly = 1) {
+                        userRepository.save(any())
+                    }
                 }
             }
         }
-    }
-})
+    })

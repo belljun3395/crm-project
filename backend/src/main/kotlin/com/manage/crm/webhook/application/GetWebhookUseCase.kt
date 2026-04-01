@@ -13,7 +13,7 @@ import java.time.format.DateTimeFormatter
 @Service
 @ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
 class GetWebhookUseCase(
-    private val webhookRepository: WebhookRepository
+    private val webhookRepository: WebhookRepository,
 ) {
     companion object {
         private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -25,14 +25,15 @@ class GetWebhookUseCase(
 
         return out {
             GetWebhookUseCaseOut(
-                webhook = WebhookDto(
-                    id = webhook.id!!,
-                    name = webhook.name,
-                    url = webhook.url,
-                    events = webhook.events.toValues(),
-                    active = webhook.active,
-                    createdAt = webhook.createdAt?.format(formatter)
-                )
+                webhook =
+                    WebhookDto(
+                        id = webhook.id!!,
+                        name = webhook.name,
+                        url = webhook.url,
+                        events = webhook.events.toValues(),
+                        active = webhook.active,
+                        createdAt = webhook.createdAt?.format(formatter),
+                    ),
             )
         }
     }

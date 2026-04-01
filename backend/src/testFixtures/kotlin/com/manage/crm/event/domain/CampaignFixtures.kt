@@ -11,16 +11,20 @@ class CampaignFixtures private constructor() {
     private var createdAt: LocalDateTime = LocalDateTime.now()
 
     fun withId(id: Long) = apply { this.id = id }
+
     fun withName(name: String) = apply { this.name = name }
+
     fun withProperties(properties: CampaignProperties) = apply { this.properties = properties }
+
     fun withCreatedAt(createdAt: LocalDateTime) = apply { this.createdAt = createdAt }
 
-    fun build(): Campaign = Campaign(
-        id = id,
-        name = name,
-        properties = properties,
-        createdAt = createdAt
-    )
+    fun build(): Campaign =
+        Campaign(
+            id = id,
+            name = name,
+            properties = properties,
+            createdAt = createdAt,
+        )
 
     companion object {
         fun aCampaign() = CampaignFixtures()

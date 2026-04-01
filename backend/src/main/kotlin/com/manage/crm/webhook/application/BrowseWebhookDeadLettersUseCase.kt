@@ -17,7 +17,7 @@ import java.time.format.DateTimeFormatter
 @ConditionalOnProperty(name = ["webhook.enabled"], havingValue = "true", matchIfMissing = true)
 class BrowseWebhookDeadLettersUseCase(
     private val webhookRepository: WebhookRepository,
-    private val webhookDeadLetterRepository: WebhookDeadLetterRepository
+    private val webhookDeadLetterRepository: WebhookDeadLetterRepository,
 ) {
     companion object {
         private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -30,23 +30,25 @@ class BrowseWebhookDeadLettersUseCase(
         webhookRepository.findById(webhookId) ?: throw NotFoundByIdException("Webhook", webhookId)
 
         val normalizedLimit = useCaseIn.limit.coerceIn(MIN_LIMIT, MAX_LIMIT)
-        val deadLetters = webhookDeadLetterRepository.findByWebhookIdOrderByCreatedAtDesc(webhookId)
-            .take(normalizedLimit)
-            .toList()
-            .map { deadLetter ->
-                WebhookDeadLetterDto(
-                    id = deadLetter.id!!,
-                    webhookId = deadLetter.webhookId,
-                    eventId = deadLetter.eventId,
-                    eventType = deadLetter.eventType,
-                    payloadJson = deadLetter.payloadJson,
-                    deliveryStatus = deadLetter.deliveryStatus,
-                    attemptCount = deadLetter.attemptCount,
-                    responseStatus = deadLetter.responseStatus,
-                    errorMessage = deadLetter.errorMessage,
-                    createdAt = deadLetter.createdAt?.format(formatter)
-                )
-            }
+        val deadLetters =
+            webhookDeadLetterRepository
+                .findByWebhookIdOrderByCreatedAtDesc(webhookId)
+                .take(normalizedLimit)
+                .toList()
+                .map { deadLetter ->
+                    WebhookDeadLetterDto(
+                        id = deadLetter.id!!,
+                        webhookId = deadLetter.webhookId,
+                        eventId = deadLetter.eventId,
+                        eventType = deadLetter.eventType,
+                        payloadJson = deadLetter.payloadJson,
+                        deliveryStatus = deadLetter.deliveryStatus,
+                        attemptCount = deadLetter.attemptCount,
+                        responseStatus = deadLetter.responseStatus,
+                        errorMessage = deadLetter.errorMessage,
+                        createdAt = deadLetter.createdAt?.format(formatter),
+                    )
+                }
 
         return out {
             BrowseWebhookDeadLettersUseCaseOut(deadLetters)

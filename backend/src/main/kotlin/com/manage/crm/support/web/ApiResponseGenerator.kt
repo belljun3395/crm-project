@@ -6,45 +6,45 @@ object ApiResponseGenerator {
     fun success(status: HttpStatus): ApiResponse<ApiResponse.Success> =
         ApiResponse(
             ApiResponse.Success(MessageCode.SUCCESS.value),
-            status
+            status,
         )
 
     fun success(
         status: HttpStatus,
-        code: MessageCode
+        code: MessageCode,
     ): ApiResponse<ApiResponse.Success> = ApiResponse(ApiResponse.Success(code.value), status)
 
     fun <D> success(
         data: D,
-        status: HttpStatus
+        status: HttpStatus,
     ): ApiResponse<ApiResponse.SuccessBody<D>> =
         ApiResponse(
             ApiResponse.SuccessBody(
                 data,
-                MessageCode.SUCCESS.value
+                MessageCode.SUCCESS.value,
             ),
-            status
+            status,
         )
 
     fun <D> success(
         data: D,
         status: HttpStatus,
-        code: MessageCode
+        code: MessageCode,
     ): ApiResponse<ApiResponse.SuccessBody<D>> =
         ApiResponse(
             ApiResponse.SuccessBody(data, code.value),
-            status
+            status,
         )
 
     fun fail(status: HttpStatus): ApiResponse<Void> = ApiResponse(status)
 
     fun fail(
         body: ApiResponse.FailureBody,
-        status: HttpStatus
+        status: HttpStatus,
     ): ApiResponse<ApiResponse.FailureBody> = ApiResponse(body, status)
 
     fun fail(
         message: String,
-        status: HttpStatus
+        status: HttpStatus,
     ): ApiResponse<ApiResponse.FailureBody> = ApiResponse(ApiResponse.FailureBody(message), status)
 }

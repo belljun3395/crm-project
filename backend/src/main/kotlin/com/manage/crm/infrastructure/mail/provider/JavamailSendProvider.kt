@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component
 @Component
 @ConditionalOnProperty(name = ["mail.provider"], havingValue = "smtp", matchIfMissing = true)
 class JavamailSendProvider(
-    private val emailSender: JavaMailSender
+    private val emailSender: JavaMailSender,
 ) : MailSendProvider {
     companion object {
         private const val UTF_8 = "utf-8"
@@ -20,7 +20,7 @@ class JavamailSendProvider(
         from: String,
         to: String,
         subject: String,
-        message: String
+        message: String,
     ): String {
         val sendMessage: MimeMessage = emailSender.createMimeMessage()
         val helper = MimeMessageHelper(sendMessage, UTF_8)

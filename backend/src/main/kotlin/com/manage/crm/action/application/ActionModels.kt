@@ -3,19 +3,19 @@ package com.manage.crm.action.application
 enum class ActionChannel {
     EMAIL,
     SLACK,
-    DISCORD;
+    DISCORD,
+    ;
 
     companion object {
-        fun from(value: String): ActionChannel {
-            return entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+        fun from(value: String): ActionChannel =
+            entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
                 ?: throw IllegalArgumentException("Unsupported channel: $value")
-        }
     }
 }
 
 enum class ActionDispatchStatus {
     SUCCESS,
-    FAILED
+    FAILED,
 }
 
 data class ActionDispatchIn(
@@ -25,7 +25,7 @@ data class ActionDispatchIn(
     val body: String,
     val variables: Map<String, String>,
     val campaignId: Long?,
-    val journeyExecutionId: Long?
+    val journeyExecutionId: Long?,
 )
 
 data class ActionDispatchOut(
@@ -34,7 +34,7 @@ data class ActionDispatchOut(
     val destination: String,
     val providerMessageId: String? = null,
     val errorCode: String? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
 )
 
 data class ActionDispatchHistoryDto(
@@ -50,5 +50,5 @@ data class ActionDispatchHistoryDto(
     val errorMessage: String?,
     val campaignId: Long?,
     val journeyExecutionId: Long?,
-    val createdAt: String
+    val createdAt: String,
 )

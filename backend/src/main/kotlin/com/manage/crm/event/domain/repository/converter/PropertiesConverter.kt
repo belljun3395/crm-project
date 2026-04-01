@@ -11,17 +11,17 @@ import org.springframework.core.convert.converter.Converter
 import org.springframework.data.convert.ReadingConverter
 import org.springframework.data.convert.WritingConverter
 
-private val objectMapper = ObjectMapper().apply {
-    findAndRegisterModules()
-    registerModules(JavaTimeModule())
-}
+private val objectMapper =
+    ObjectMapper().apply {
+        findAndRegisterModules()
+        registerModules(JavaTimeModule())
+    }
 
-private fun Any.toStoredJson(): String {
-    return when (this) {
+private fun Any.toStoredJson(): String =
+    when (this) {
         is Json -> this.asString()
         else -> toString()
     }
-}
 
 @ReadingConverter
 class EventPropertiesReadingConverter : Converter<Any, EventProperties> {
@@ -31,19 +31,19 @@ class EventPropertiesReadingConverter : Converter<Any, EventProperties> {
         }
 
         return EventProperties(
-            objectMapper.readValue(source.toStoredJson(), List::class.java).stream()
+            objectMapper
+                .readValue(source.toStoredJson(), List::class.java)
+                .stream()
                 .map { objectMapper.convertValue(it, Map::class.java) }
                 .map { EventProperty(it["key"] as String, it["value"] as String) }
-                .toList()
+                .toList(),
         )
     }
 }
 
 @WritingConverter
 class EventPropertiesWritingConverter : Converter<EventProperties, Json> {
-    override fun convert(source: EventProperties): Json {
-        return Json.of(objectMapper.writeValueAsString(source.value))
-    }
+    override fun convert(source: EventProperties): Json = Json.of(objectMapper.writeValueAsString(source.value))
 }
 
 @ReadingConverter
@@ -54,17 +54,17 @@ class CampaignPropertiesReadingConverter : Converter<Any, CampaignProperties> {
         }
 
         return CampaignProperties(
-            objectMapper.readValue(source.toStoredJson(), List::class.java).stream()
+            objectMapper
+                .readValue(source.toStoredJson(), List::class.java)
+                .stream()
                 .map { objectMapper.convertValue(it, Map::class.java) }
                 .map { CampaignProperty(it["key"] as String, it["value"] as String) }
-                .toList()
+                .toList(),
         )
     }
 }
 
 @WritingConverter
 class CampaignPropertiesWritingConverter : Converter<CampaignProperties, Json> {
-    override fun convert(source: CampaignProperties): Json {
-        return Json.of(objectMapper.writeValueAsString(source.value))
-    }
+    override fun convert(source: CampaignProperties): Json = Json.of(objectMapper.writeValueAsString(source.value))
 }

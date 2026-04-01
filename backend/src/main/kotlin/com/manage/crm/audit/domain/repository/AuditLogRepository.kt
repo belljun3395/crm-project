@@ -30,7 +30,7 @@ interface AuditLogRepository : CoroutineCrudRepository<AuditLog, Long> {
      */
     fun findByActionAndResourceTypeOrderByCreatedAtDesc(
         action: String,
-        resourceType: String
+        resourceType: String,
     ): Flow<AuditLog>
 
     /**
@@ -38,7 +38,7 @@ interface AuditLogRepository : CoroutineCrudRepository<AuditLog, Long> {
      */
     fun findByActionAndActorIdOrderByCreatedAtDesc(
         action: String,
-        actorId: String
+        actorId: String,
     ): Flow<AuditLog>
 
     /**
@@ -46,7 +46,7 @@ interface AuditLogRepository : CoroutineCrudRepository<AuditLog, Long> {
      */
     fun findByResourceTypeAndActorIdOrderByCreatedAtDesc(
         resourceType: String,
-        actorId: String
+        actorId: String,
     ): Flow<AuditLog>
 
     /**
@@ -55,6 +55,6 @@ interface AuditLogRepository : CoroutineCrudRepository<AuditLog, Long> {
     fun findByActionAndResourceTypeAndActorIdOrderByCreatedAtDesc(
         action: String,
         resourceType: String,
-        actorId: String
+        actorId: String,
     ): Flow<AuditLog>
 }

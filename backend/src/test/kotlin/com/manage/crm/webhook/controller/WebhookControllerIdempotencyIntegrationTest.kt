@@ -14,92 +14,112 @@ class WebhookControllerIdempotencyIntegrationTest : AbstractIntegrationTest() {
     init {
         describe("Webhook idempotency") {
             it("returns 400 when Idempotency-Key is missing for update") {
-                val createdId = createWebhook(
-                    "missing-key-base",
-                    "idem-webhook-create-${UUID.randomUUID()}"
-                )
+                val createdId =
+                    createWebhook(
+                        "missing-key-base",
+                        "idem-webhook-create-${UUID.randomUUID()}",
+                    )
 
-                val updateJson = """
+                val updateJson =
+                    """
                     {
                       "name": "updated-${System.currentTimeMillis()}",
                       "url": "https://example.com/updated",
                       "events": ["USER_CREATED"],
                       "active": false
                     }
-                """.trimIndent()
+                    """.trimIndent()
 
-                webTestClient.put()
+                webTestClient
+                    .put()
                     .uri("/api/v1/webhooks/$createdId")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(updateJson)
                     .exchange()
-                    .expectStatus().isBadRequest
+                    .expectStatus()
+                    .isBadRequest
                     .expectBody()
-                    .jsonPath("$.message").isEqualTo("Idempotency-Key header is required")
+                    .jsonPath("$.message")
+                    .isEqualTo("Idempotency-Key header is required")
             }
 
             it("replays completed response for same key and same update body") {
-                val createdId = createWebhook(
-                    "same-body-base",
-                    "idem-webhook-create-${UUID.randomUUID()}"
-                )
+                val createdId =
+                    createWebhook(
+                        "same-body-base",
+                        "idem-webhook-create-${UUID.randomUUID()}",
+                    )
                 val key = "idem-webhook-update-same-${UUID.randomUUID()}"
-                val updateJson = """
+                val updateJson =
+                    """
                     {
                       "name": "updated-${UUID.randomUUID()}",
                       "url": "https://example.com/updated",
                       "events": ["USER_CREATED", "EMAIL_SENT"],
                       "active": true
                     }
-                """.trimIndent()
+                    """.trimIndent()
 
-                val firstResponse = webTestClient.put()
-                    .uri("/api/v1/webhooks/$createdId")
-                    .header("Idempotency-Key", key)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(updateJson)
-                    .exchange()
-                    .expectStatus().isOk
-                    .expectBody<String>()
-                    .returnResult()
-                    .responseBody!!
+                val firstResponse =
+                    webTestClient
+                        .put()
+                        .uri("/api/v1/webhooks/$createdId")
+                        .header("Idempotency-Key", key)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(updateJson)
+                        .exchange()
+                        .expectStatus()
+                        .isOk
+                        .expectBody<String>()
+                        .returnResult()
+                        .responseBody!!
 
-                val secondResponse = webTestClient.put()
-                    .uri("/api/v1/webhooks/$createdId")
-                    .header("Idempotency-Key", key)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(updateJson)
-                    .exchange()
-                    .expectStatus().isOk
-                    .expectBody<String>()
-                    .returnResult()
-                    .responseBody!!
+                val secondResponse =
+                    webTestClient
+                        .put()
+                        .uri("/api/v1/webhooks/$createdId")
+                        .header("Idempotency-Key", key)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(updateJson)
+                        .exchange()
+                        .expectStatus()
+                        .isOk
+                        .expectBody<String>()
+                        .returnResult()
+                        .responseBody!!
 
                 firstResponse shouldBe secondResponse
             }
         }
     }
 
-    private fun createWebhook(namePrefix: String, key: String): Long {
-        val requestJson = """
+    private fun createWebhook(
+        namePrefix: String,
+        key: String,
+    ): Long {
+        val requestJson =
+            """
             {
               "name": "$namePrefix-${UUID.randomUUID()}",
               "url": "https://example.com/webhook",
               "events": ["USER_CREATED", "EMAIL_SENT"],
               "active": true
             }
-        """.trimIndent()
+            """.trimIndent()
 
-        val responseBody = webTestClient.post()
-            .uri("/api/v1/webhooks")
-            .header("Idempotency-Key", key)
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(requestJson)
-            .exchange()
-            .expectStatus().isCreated
-            .expectBody<String>()
-            .returnResult()
-            .responseBody!!
+        val responseBody =
+            webTestClient
+                .post()
+                .uri("/api/v1/webhooks")
+                .header("Idempotency-Key", key)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestJson)
+                .exchange()
+                .expectStatus()
+                .isCreated
+                .expectBody<String>()
+                .returnResult()
+                .responseBody!!
 
         return objectMapper.readTree(responseBody)["data"]["id"].asLong()
     }

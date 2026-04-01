@@ -1,11 +1,11 @@
 package com.manage.crm.webhook.application.dto
 
 data class GetWebhookUseCaseIn(
-    val id: Long
+    val id: Long,
 )
 
 data class GetWebhookUseCaseOut(
-    val webhook: WebhookDto
+    val webhook: WebhookDto,
 )
 
 class GetWebhookUseCaseDto

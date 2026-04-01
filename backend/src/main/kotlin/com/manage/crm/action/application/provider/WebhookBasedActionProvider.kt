@@ -13,21 +13,22 @@ import java.net.URI
 import java.time.Duration
 
 abstract class WebhookBasedActionProvider(
-    webClientBuilder: WebClient.Builder
+    webClientBuilder: WebClient.Builder,
 ) : ActionProvider {
-    private val webClient = webClientBuilder
-        .clientConnector(
-            ReactorClientHttpConnector(
-                HttpClient.create()
-                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
-                    .responseTimeout(Duration.ofSeconds(10))
-            )
-        )
-        .build()
+    private val webClient =
+        webClientBuilder
+            .clientConnector(
+                ReactorClientHttpConnector(
+                    HttpClient
+                        .create()
+                        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
+                        .responseTimeout(Duration.ofSeconds(10)),
+                ),
+            ).build()
 
     protected suspend fun postJson(
         destination: String,
-        payload: Map<String, Any?>
+        payload: Map<String, Any?>,
     ): ActionDispatchOut {
         if (!isUrlSafe(destination)) {
             return ActionDispatchOut(
@@ -35,12 +36,13 @@ abstract class WebhookBasedActionProvider(
                 channel = channel,
                 destination = destination,
                 errorCode = "UNSAFE_URL",
-                errorMessage = "Destination URL is not allowed"
+                errorMessage = "Destination URL is not allowed",
             )
         }
 
         return runCatching {
-            webClient.post()
+            webClient
+                .post()
                 .uri(destination)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(payload)
@@ -50,7 +52,7 @@ abstract class WebhookBasedActionProvider(
             ActionDispatchOut(
                 status = ActionDispatchStatus.SUCCESS,
                 channel = channel,
-                destination = destination
+                destination = destination,
             )
         }.getOrElse { error ->
             ActionDispatchOut(
@@ -58,14 +60,12 @@ abstract class WebhookBasedActionProvider(
                 channel = channel,
                 destination = destination,
                 errorCode = "WEBHOOK_SEND_FAILED",
-                errorMessage = error.message
+                errorMessage = error.message,
             )
         }
     }
 
-    private suspend fun WebClient.ResponseSpec.awaitBodyOrNull(): String? {
-        return bodyToMono(String::class.java).awaitSingleOrNull()
-    }
+    private suspend fun WebClient.ResponseSpec.awaitBodyOrNull(): String? = bodyToMono(String::class.java).awaitSingleOrNull()
 
     private fun isUrlSafe(url: String): Boolean {
         return runCatching {

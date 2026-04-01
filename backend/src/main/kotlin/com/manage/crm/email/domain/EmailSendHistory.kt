@@ -26,7 +26,7 @@ class EmailSendHistory(
     @CreatedDate
     var createdAt: LocalDateTime? = null,
     @LastModifiedDate
-    var updatedAt: LocalDateTime? = null
+    var updatedAt: LocalDateTime? = null,
 ) {
     companion object {
         fun new(
@@ -34,17 +34,15 @@ class EmailSendHistory(
             userEmail: String,
             emailMessageId: String,
             emailBody: String,
-            sendStatus: String
-        ): EmailSendHistory {
-            return this.new(userId, Email(userEmail), emailMessageId, emailBody, sendStatus)
-        }
+            sendStatus: String,
+        ): EmailSendHistory = this.new(userId, Email(userEmail), emailMessageId, emailBody, sendStatus)
 
         fun new(
             userId: Long,
             userEmail: Email,
             emailMessageId: String,
             emailBody: String,
-            sendStatus: String
+            sendStatus: String,
         ): EmailSendHistory {
             require(SentEmailStatus.contains(sendStatus)) { "Invalid send status: $sendStatus" }
             return EmailSendHistory(
@@ -52,7 +50,7 @@ class EmailSendHistory(
                 userEmail = userEmail,
                 emailMessageId = emailMessageId,
                 emailBody = emailBody,
-                sendStatus = sendStatus
+                sendStatus = sendStatus,
             )
         }
     }

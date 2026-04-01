@@ -7,13 +7,13 @@ import com.manage.crm.email.application.dto.NotificationEmailSendTimeOutEventInp
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,
     include = JsonTypeInfo.As.PROPERTY,
-    property = "@type"
+    property = "@type",
 )
 @JsonSubTypes(
-    JsonSubTypes.Type(value = NotificationEmailSendTimeOutEventInput::class, name = "notification-email-timeout")
+    JsonSubTypes.Type(value = NotificationEmailSendTimeOutEventInput::class, name = "notification-email-timeout"),
 )
 abstract class ScheduleInfo
 
 data class ScheduleName(
-    val value: String
+    val value: String,
 )

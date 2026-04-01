@@ -8,6 +8,6 @@ interface EmailTemplateHistoryRepository : CoroutineCrudRepository<EmailTemplate
 
     suspend fun findByTemplateIdAndVersion(
         templateId: Long,
-        version: Float
+        version: Float,
     ): EmailTemplateHistory?
 }

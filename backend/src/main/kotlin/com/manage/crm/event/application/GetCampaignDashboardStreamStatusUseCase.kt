@@ -15,7 +15,7 @@ import java.time.LocalDateTime
  */
 @Component
 class GetCampaignDashboardStreamStatusUseCase(
-    private val campaignDashboardStreamManager: CampaignDashboardStreamManager
+    private val campaignDashboardStreamManager: CampaignDashboardStreamManager,
 ) {
     suspend fun execute(input: GetStreamStatusUseCaseIn): GetStreamStatusUseCaseOut {
         val streamLength = campaignDashboardStreamManager.getStreamLength(input.campaignId)
@@ -23,7 +23,7 @@ class GetCampaignDashboardStreamStatusUseCase(
         return GetStreamStatusUseCaseOut(
             campaignId = input.campaignId,
             streamLength = streamLength,
-            checkedAt = LocalDateTime.now()
+            checkedAt = LocalDateTime.now(),
         )
     }
 }

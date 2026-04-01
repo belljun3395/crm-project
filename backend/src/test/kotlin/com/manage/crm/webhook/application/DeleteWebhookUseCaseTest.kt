@@ -11,32 +11,33 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 
-class DeleteWebhookUseCaseTest : BehaviorSpec({
-    lateinit var webhookRepository: WebhookRepository
-    lateinit var deleteWebhookUseCase: DeleteWebhookUseCase
+class DeleteWebhookUseCaseTest :
+    BehaviorSpec({
+        lateinit var webhookRepository: WebhookRepository
+        lateinit var deleteWebhookUseCase: DeleteWebhookUseCase
 
-    beforeTest {
-        webhookRepository = mockk()
-        deleteWebhookUseCase = DeleteWebhookUseCase(webhookRepository)
-    }
+        beforeTest {
+            webhookRepository = mockk()
+            deleteWebhookUseCase = DeleteWebhookUseCase(webhookRepository)
+        }
 
-    afterTest { (_, _) ->
-        clearMocks(webhookRepository)
-    }
+        afterTest { (_, _) ->
+            clearMocks(webhookRepository)
+        }
 
-    given("delete webhook") {
-        `when`("webhook is missing") {
-            then("throw NotFoundByIdException and skip delete") {
-                val webhookId = 123L
-                coEvery { webhookRepository.findById(webhookId) } returns null
+        given("delete webhook") {
+            `when`("webhook is missing") {
+                then("throw NotFoundByIdException and skip delete") {
+                    val webhookId = 123L
+                    coEvery { webhookRepository.findById(webhookId) } returns null
 
-                shouldThrow<NotFoundByIdException> {
-                    runBlocking { deleteWebhookUseCase.execute(DeleteWebhookUseCaseIn(webhookId)) }
+                    shouldThrow<NotFoundByIdException> {
+                        runBlocking { deleteWebhookUseCase.execute(DeleteWebhookUseCaseIn(webhookId)) }
+                    }
+
+                    coVerify(exactly = 1) { webhookRepository.findById(webhookId) }
+                    coVerify(exactly = 0) { webhookRepository.delete(any()) }
                 }
-
-                coVerify(exactly = 1) { webhookRepository.findById(webhookId) }
-                coVerify(exactly = 0) { webhookRepository.delete(any()) }
             }
         }
-    }
-})
+    })

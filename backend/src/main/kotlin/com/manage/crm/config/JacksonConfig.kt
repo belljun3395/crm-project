@@ -15,16 +15,13 @@ class JacksonConfig {
      * you can also customize via yml configuration. spring.jackson.x
      */
     @Bean
-    fun customizeJson(): Jackson2ObjectMapperBuilderCustomizer {
-        return Jackson2ObjectMapperBuilderCustomizer { builder: Jackson2ObjectMapperBuilder ->
+    fun customizeJson(): Jackson2ObjectMapperBuilderCustomizer =
+        Jackson2ObjectMapperBuilderCustomizer { builder: Jackson2ObjectMapperBuilder ->
             builder
                 .failOnUnknownProperties(false)
                 .serializationInclusion(JsonInclude.Include.NON_ABSENT)
         }
-    }
 
     @Bean
-    fun jackson2HashMapper(objectMapper: ObjectMapper): Jackson2HashMapper {
-        return Jackson2HashMapper(objectMapper, true)
-    }
+    fun jackson2HashMapper(objectMapper: ObjectMapper): Jackson2HashMapper = Jackson2HashMapper(objectMapper, true)
 }

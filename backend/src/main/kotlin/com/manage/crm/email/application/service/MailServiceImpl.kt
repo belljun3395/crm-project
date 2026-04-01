@@ -18,9 +18,9 @@ class MailServiceImpl(
     private val userRepository: UserRepository,
     private val mailTemplateProcessor: MailTemplateProcessor,
     mailProperties: MailProperties,
-    mailSendProvider: MailSendProvider
-) : MailSender<SendEmailArgs>(mailProperties, mailSendProvider), MailService {
-
+    mailSendProvider: MailSendProvider,
+) : MailSender<SendEmailArgs>(mailProperties, mailSendProvider),
+    MailService {
     override fun getHtml(args: SendEmailArgs): String {
         val context = MailContext()
         args.content.getKeys().forEach { key ->
@@ -38,7 +38,7 @@ class MailServiceImpl(
                 emailBody = args.emailBody,
                 messageId = it,
                 destination = args.destination,
-                provider = EmailProviderType.AWS
+                provider = EmailProviderType.AWS,
             )
         }
     }

@@ -10,7 +10,7 @@ import org.springframework.modulith.ApplicationModule
         "event",
         "action",
         "user",
-        "segment"
-    ]
+        "segment",
+    ],
 )
 class Metadata

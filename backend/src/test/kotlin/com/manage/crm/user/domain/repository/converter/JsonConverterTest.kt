@@ -5,45 +5,47 @@ import io.kotest.core.spec.style.FeatureSpec
 import io.kotest.matchers.shouldBe
 import io.r2dbc.postgresql.codec.Json
 
-class JsonConverterTest : FeatureSpec({
-    val readingConverter = UserAttributeReadingConverter()
-    val writingConverter = UserAttributeWritingConverter()
+class JsonConverterTest :
+    FeatureSpec({
+        val readingConverter = UserAttributeReadingConverter()
+        val writingConverter = UserAttributeWritingConverter()
 
-    feature("UserAttributeReadingConverter#convert") {
-        scenario("returns existing UserAttributes values as-is") {
-            val source = UserAttributes("""{"email":"existing@example.com"}""")
+        feature("UserAttributeReadingConverter#convert") {
+            scenario("returns existing UserAttributes values as-is") {
+                val source = UserAttributes("""{"email":"existing@example.com"}""")
 
-            val result = readingConverter.convert(source)
+                val result = readingConverter.convert(source)
 
-            result shouldBe source
-        }
-
-        scenario("converts any database value to UserAttributes via toString") {
-            val source = object {
-                override fun toString(): String = """{"email":"example@example.com"}"""
+                result shouldBe source
             }
 
-            val result = readingConverter.convert(source)
+            scenario("converts any database value to UserAttributes via toString") {
+                val source =
+                    object {
+                        override fun toString(): String = """{"email":"example@example.com"}"""
+                    }
 
-            result shouldBe UserAttributes(source.toString())
+                val result = readingConverter.convert(source)
+
+                result shouldBe UserAttributes(source.toString())
+            }
+
+            scenario("reads PostgreSQL Json values") {
+                val source = Json.of("""{"email":"json@example.com"}""")
+
+                val result = readingConverter.convert(source)
+
+                result shouldBe UserAttributes(source.asString())
+            }
         }
 
-        scenario("reads PostgreSQL Json values") {
-            val source = Json.of("""{"email":"json@example.com"}""")
+        feature("UserAttributeWritingConverter#convert") {
+            scenario("returns PostgreSQL Json values") {
+                val source = UserAttributes("""{"email":"example@example.com"}""")
 
-            val result = readingConverter.convert(source)
+                val result = writingConverter.convert(source)
 
-            result shouldBe UserAttributes(source.asString())
+                result.asString() shouldBe source.value
+            }
         }
-    }
-
-    feature("UserAttributeWritingConverter#convert") {
-        scenario("returns PostgreSQL Json values") {
-            val source = UserAttributes("""{"email":"example@example.com"}""")
-
-            val result = writingConverter.convert(source)
-
-            result.asString() shouldBe source.value
-        }
-    }
-})
+    })

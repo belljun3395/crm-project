@@ -16,50 +16,55 @@ data class SesEmailNotification(
     val eventType: SesEventType,
     val messageId: String,
     val destination: String,
-    val occurredAt: LocalDateTime
+    val occurredAt: LocalDateTime,
 )
 
 @Component
 class SesMessageMapper(
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) {
-
     fun map(message: String): SesEmailNotification {
         val snsNotification = objectMapper.readValue(message, SesSnsNotification::class.java)
         val eventPayload = objectMapper.readValue(snsNotification.rawMessage, SesEventMessage::class.java)
 
-        val resolvedEventType = eventPayload.resolvedEventType
-            ?: throw IllegalArgumentException("Unsupported SES event without eventType/notificationType: ${snsNotification.messageId}")
+        val resolvedEventType =
+            eventPayload.resolvedEventType
+                ?: throw IllegalArgumentException("Unsupported SES event without eventType/notificationType: ${snsNotification.messageId}")
 
-        val timestamp = eventPayload.resolveTimestamp()
-            ?: throw IllegalArgumentException("SES event missing timestamp for type: $resolvedEventType")
+        val timestamp =
+            eventPayload.resolveTimestamp()
+                ?: throw IllegalArgumentException("SES event missing timestamp for type: $resolvedEventType")
 
-        val destination = eventPayload.mail.destination.firstOrNull()
-            ?: eventPayload.mail.commonHeaders?.to?.firstOrNull()
-            ?: throw IllegalArgumentException("SES event missing destination: ${eventPayload.mail}")
+        val destination =
+            eventPayload.mail.destination.firstOrNull()
+                ?: eventPayload.mail.commonHeaders
+                    ?.to
+                    ?.firstOrNull()
+                ?: throw IllegalArgumentException("SES event missing destination: ${eventPayload.mail}")
 
         return SesEmailNotification(
             eventType = resolvedEventType,
             messageId = eventPayload.mail.messageId,
             destination = destination,
-            occurredAt = timestamp
+            occurredAt = timestamp,
         )
     }
 
     private fun SesEventMessage.resolveTimestamp(): LocalDateTime? {
-        val candidateTimestamp = delivery?.timestamp
-            ?: open?.timestamp
-            ?: click?.timestamp
-            ?: deliveryDelay?.timestamp
-            ?: bounce?.timestamp
-            ?: complaint?.timestamp
-            ?: send?.timestamp
-            ?: mail.timestamp
+        val candidateTimestamp =
+            delivery?.timestamp
+                ?: open?.timestamp
+                ?: click?.timestamp
+                ?: deliveryDelay?.timestamp
+                ?: bounce?.timestamp
+                ?: complaint?.timestamp
+                ?: send?.timestamp
+                ?: mail.timestamp
         return candidateTimestamp?.let(::parseToLocalDateTime)
     }
 
-    private fun parseToLocalDateTime(value: String): LocalDateTime? {
-        return try {
+    private fun parseToLocalDateTime(value: String): LocalDateTime? =
+        try {
             ZonedDateTime.parse(value).toLocalDateTime()
         } catch (_: DateTimeParseException) {
             try {
@@ -72,5 +77,4 @@ class SesMessageMapper(
                 }
             }
         }
-    }
 }

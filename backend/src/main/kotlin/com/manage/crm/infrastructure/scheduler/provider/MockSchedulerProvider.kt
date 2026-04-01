@@ -15,21 +15,21 @@ import java.util.concurrent.ConcurrentHashMap
 @Component
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "mock")
 class MockSchedulerProvider : SchedulerProvider {
-
     private val log = KotlinLogging.logger {}
     private val schedules = ConcurrentHashMap<String, DueSchedule>()
 
     override suspend fun createSchedule(
         name: String,
         scheduleTime: LocalDateTime,
-        input: ScheduleInfo
-    ): ScheduleCreationResult {
-        return try {
-            val dueSchedule = DueSchedule(
-                name = name,
-                scheduleTime = scheduleTime,
-                payload = input
-            )
+        input: ScheduleInfo,
+    ): ScheduleCreationResult =
+        try {
+            val dueSchedule =
+                DueSchedule(
+                    name = name,
+                    scheduleTime = scheduleTime,
+                    payload = input,
+                )
 
             schedules[name] = dueSchedule
             log.info { "Mock scheduler: Created schedule '$name' for $scheduleTime" }
@@ -38,11 +38,8 @@ class MockSchedulerProvider : SchedulerProvider {
             log.error(ex) { "Mock scheduler: Failed to create schedule '$name'" }
             ScheduleCreationResult.Failure("Failed to create mock schedule: ${ex.message}", ex)
         }
-    }
 
-    override suspend fun browseSchedules(): List<ScheduleName> {
-        return schedules.keys.map { ScheduleName(it) }
-    }
+    override suspend fun browseSchedules(): List<ScheduleName> = schedules.keys.map { ScheduleName(it) }
 
     override suspend fun deleteSchedule(scheduleName: ScheduleName) {
         schedules.remove(scheduleName.value)

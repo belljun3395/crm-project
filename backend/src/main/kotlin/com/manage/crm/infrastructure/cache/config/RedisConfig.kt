@@ -35,7 +35,7 @@ data class RedisConfigurationProperties(
     var connectIp: String? = null,
     var nodes: List<String>? = null,
     var password: String? = null,
-    var maxRedirects: Int? = null
+    var maxRedirects: Int? = null,
 )
 
 @Configuration
@@ -43,61 +43,68 @@ data class RedisConfigurationProperties(
 class RedisConfig {
     @Bean
     @ConfigurationProperties(prefix = "spring.data.redis.cluster")
-    fun redisConfigurationProperties(): RedisConfigurationProperties {
-        return RedisConfigurationProperties()
-    }
+    fun redisConfigurationProperties(): RedisConfigurationProperties = RedisConfigurationProperties()
 
     @Bean
-    fun redisSerializer(objectMapper: ObjectMapper): RedisSerializer<Any> {
-        return Jackson2JsonRedisSerializer(objectMapper, Any::class.java)
-    }
+    fun redisSerializer(objectMapper: ObjectMapper): RedisSerializer<Any> = Jackson2JsonRedisSerializer(objectMapper, Any::class.java)
 
     @Bean
     @Primary
-    fun redisConnectionFactory(rcp: RedisConfigurationProperties): RedisConnectionFactory {
-        return createConnectionFactory(rcp, ReadFrom.REPLICA_PREFERRED)
-    }
+    fun redisConnectionFactory(rcp: RedisConfigurationProperties): RedisConnectionFactory =
+        createConnectionFactory(rcp, ReadFrom.REPLICA_PREFERRED)
 
     private fun createConnectionFactory(
         rcp: RedisConfigurationProperties,
-        readFrom: ReadFrom
+        readFrom: ReadFrom,
     ): LettuceConnectionFactory {
-        val redisClusterConfiguration = RedisClusterConfiguration(rcp.nodes!!).apply {
-            password = RedisPassword.of(rcp.password!!)
-            maxRedirects = rcp.maxRedirects!!
-        }
+        val redisClusterConfiguration =
+            RedisClusterConfiguration(rcp.nodes!!).apply {
+                password = RedisPassword.of(rcp.password!!)
+                maxRedirects = rcp.maxRedirects!!
+            }
 
-        val socketOptions = SocketOptions.builder()
-            .connectTimeout(Duration.ofMillis(100L))
-            .keepAlive(true)
-            .build()
-
-        val clusterTopologyRefreshOptions = ClusterTopologyRefreshOptions.builder()
-            .enableAllAdaptiveRefreshTriggers()
-            .enablePeriodicRefresh(Duration.ofHours(1L))
-            .build()
-
-        val clientOptions = ClusterClientOptions.builder()
-            .topologyRefreshOptions(clusterTopologyRefreshOptions)
-            .socketOptions(socketOptions)
-            .build()
-
-        val clientResources = if (rcp.connectIp != null) {
-            val resolver = MappingSocketAddressResolver.create(
-                DnsResolvers.UNRESOLVED
-            ) { hostAndPort -> HostAndPort.of(rcp.connectIp, hostAndPort.port) }
-            ClientResources.builder()
-                .socketAddressResolver(resolver)
+        val socketOptions =
+            SocketOptions
+                .builder()
+                .connectTimeout(Duration.ofMillis(100L))
+                .keepAlive(true)
                 .build()
-        } else {
-            ClientResources.create()
-        }
 
-        val clientConfiguration = LettuceClientConfiguration.builder()
-            .clientOptions(clientOptions)
-            .clientResources(clientResources)
-            .readFrom(readFrom)
-            .build()
+        val clusterTopologyRefreshOptions =
+            ClusterTopologyRefreshOptions
+                .builder()
+                .enableAllAdaptiveRefreshTriggers()
+                .enablePeriodicRefresh(Duration.ofHours(1L))
+                .build()
+
+        val clientOptions =
+            ClusterClientOptions
+                .builder()
+                .topologyRefreshOptions(clusterTopologyRefreshOptions)
+                .socketOptions(socketOptions)
+                .build()
+
+        val clientResources =
+            if (rcp.connectIp != null) {
+                val resolver =
+                    MappingSocketAddressResolver.create(
+                        DnsResolvers.UNRESOLVED,
+                    ) { hostAndPort -> HostAndPort.of(rcp.connectIp, hostAndPort.port) }
+                ClientResources
+                    .builder()
+                    .socketAddressResolver(resolver)
+                    .build()
+            } else {
+                ClientResources.create()
+            }
+
+        val clientConfiguration =
+            LettuceClientConfiguration
+                .builder()
+                .clientOptions(clientOptions)
+                .clientResources(clientResources)
+                .readFrom(readFrom)
+                .build()
 
         return LettuceConnectionFactory(redisClusterConfiguration, clientConfiguration)
     }
@@ -106,7 +113,7 @@ class RedisConfig {
     @Primary
     fun redisTemplate(
         @Qualifier("redisConnectionFactory") redisConnectionFactory: RedisConnectionFactory,
-        serializer: RedisSerializer<Any>
+        serializer: RedisSerializer<Any>,
     ): RedisTemplate<String, Any> {
         val redisTemplate = RedisTemplate<String, Any>()
         redisTemplate.connectionFactory = redisConnectionFactory
@@ -120,79 +127,80 @@ class RedisConfig {
     // ----------------- Reactive -----------------
     @Bean
     fun reactiveRedisConnectionFactory(
-        @Qualifier("redisConnectionFactory") redisConnectionFactory: RedisConnectionFactory
-    ): ReactiveRedisConnectionFactory {
-        return redisConnectionFactory as ReactiveRedisConnectionFactory
-    }
+        @Qualifier("redisConnectionFactory") redisConnectionFactory: RedisConnectionFactory,
+    ): ReactiveRedisConnectionFactory = redisConnectionFactory as ReactiveRedisConnectionFactory
 
     @Bean
     @Primary
     fun reactiveRedisTemplate(
         @Qualifier("reactiveRedisConnectionFactory") redisConnectionFactory: ReactiveRedisConnectionFactory,
-        serializer: RedisSerializer<Any>
+        serializer: RedisSerializer<Any>,
     ): ReactiveRedisTemplate<String, Any> {
         val builder = newSerializationContext<String, Any>(StringRedisSerializer())
         val keySerializer = StringRedisSerializer()
-        val context = builder
-            .key(keySerializer)
-            .value(serializer)
-            .hashValue(serializer)
-            .hashKey(keySerializer)
-            .build()
+        val context =
+            builder
+                .key(keySerializer)
+                .value(serializer)
+                .hashValue(serializer)
+                .hashKey(keySerializer)
+                .build()
         return ReactiveRedisTemplate(redisConnectionFactory, context)
     }
 
     @Bean("idempotencyReactiveRedisConnectionFactory")
-    fun idempotencyReactiveRedisConnectionFactory(rcp: RedisConfigurationProperties): ReactiveRedisConnectionFactory {
-        return createConnectionFactory(rcp, ReadFrom.MASTER).apply { afterPropertiesSet() }
-    }
+    fun idempotencyReactiveRedisConnectionFactory(rcp: RedisConfigurationProperties): ReactiveRedisConnectionFactory =
+        createConnectionFactory(rcp, ReadFrom.MASTER).apply { afterPropertiesSet() }
 
     @Bean("idempotencyReactiveRedisTemplate")
     fun idempotencyReactiveRedisTemplate(
         @Qualifier("idempotencyReactiveRedisConnectionFactory")
         redisConnectionFactory: ReactiveRedisConnectionFactory,
-        serializer: RedisSerializer<Any>
+        serializer: RedisSerializer<Any>,
     ): ReactiveRedisTemplate<String, Any> {
         val builder = newSerializationContext<String, Any>(StringRedisSerializer())
         val keySerializer = StringRedisSerializer()
-        val context = builder
-            .key(keySerializer)
-            .value(serializer)
-            .hashValue(serializer)
-            .hashKey(keySerializer)
-            .build()
+        val context =
+            builder
+                .key(keySerializer)
+                .value(serializer)
+                .hashValue(serializer)
+                .hashKey(keySerializer)
+                .build()
         return ReactiveRedisTemplate(redisConnectionFactory, context)
     }
 
     @Bean
     @Primary
     fun reactiveStringRedisTemplate(
-        @Qualifier("reactiveRedisConnectionFactory") redisConnectionFactory: ReactiveRedisConnectionFactory
+        @Qualifier("reactiveRedisConnectionFactory") redisConnectionFactory: ReactiveRedisConnectionFactory,
     ): ReactiveRedisTemplate<String, String> {
         val serializer = StringRedisSerializer()
         val builder = newSerializationContext<String, String>(serializer)
-        val context = builder
-            .key(serializer)
-            .value(serializer)
-            .hashKey(serializer)
-            .hashValue(serializer)
-            .build()
+        val context =
+            builder
+                .key(serializer)
+                .value(serializer)
+                .hashKey(serializer)
+                .hashValue(serializer)
+                .build()
         return ReactiveRedisTemplate(redisConnectionFactory, context)
     }
 
     @Bean("idempotencyReactiveStringRedisTemplate")
     fun idempotencyReactiveStringRedisTemplate(
         @Qualifier("idempotencyReactiveRedisConnectionFactory")
-        redisConnectionFactory: ReactiveRedisConnectionFactory
+        redisConnectionFactory: ReactiveRedisConnectionFactory,
     ): ReactiveRedisTemplate<String, String> {
         val serializer = StringRedisSerializer()
         val builder = newSerializationContext<String, String>(serializer)
-        val context = builder
-            .key(serializer)
-            .value(serializer)
-            .hashKey(serializer)
-            .hashValue(serializer)
-            .build()
+        val context =
+            builder
+                .key(serializer)
+                .value(serializer)
+                .hashKey(serializer)
+                .hashValue(serializer)
+                .build()
         return ReactiveRedisTemplate(redisConnectionFactory, context)
     }
 }
