@@ -185,6 +185,9 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.withType<Test> {
     useJUnitPlatform()
     systemProperty("api.version", System.getProperty("api.version") ?: "1.44")
+    // Byte Buddy 1.15.x officially supports up to Java 24. Enable experimental mode
+    // to allow Mockito's inline mock maker to instrument classes on Java 25.
+    jvmArgs("-Dnet.bytebuddy.experimental=true")
     finalizedBy(tasks.jacocoTestReport)
 }
 
