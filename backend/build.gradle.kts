@@ -33,12 +33,12 @@ fun bomCoordinate(dependency: Provider<MinimalExternalModuleDependency>): String
 
 group = "com.manage"
 version = "0.0.1-SNAPSHOT"
+val jvmVersion = libs.versions.java.get()
+val jvmVersionInt = jvmVersion.toInt()
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(
-            libs.versions.java.get().toInt()
-        )
+        languageVersion = JavaLanguageVersion.of(jvmVersionInt)
     }
 }
 
@@ -169,13 +169,13 @@ dependencies {
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_21)
+        jvmTarget.set(JvmTarget.fromTarget(jvmVersion))
         freeCompilerArgs.addAll("-Xjsr305=strict")
     }
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.release.set(21)
+    options.release.set(jvmVersionInt)
 }
 
 tasks.withType<Test> {
@@ -199,4 +199,9 @@ openApi {
     }
 }
 
-springBoot.buildInfo { properties { } }
+springBoot {
+    mainClass.set("com.manage.crm.CrmApplicationKt")
+    buildInfo {
+        properties { }
+    }
+}
