@@ -35,6 +35,10 @@ group = "com.manage"
 version = "0.0.1-SNAPSHOT"
 val jvmVersion = libs.versions.java.get()
 val jvmVersionInt = jvmVersion.toInt()
+// Compile to Java 21 bytecode: ArchUnit 1.3.x and Spring Modulith 1.3.x
+// only support up to Java 23 class files. Keep toolchain at Java 25.
+val jvmTargetVersion = "21"
+val jvmTargetVersionInt = 21
 
 java {
     toolchain {
@@ -169,13 +173,13 @@ dependencies {
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(JvmTarget.fromTarget(jvmVersion))
+        jvmTarget.set(JvmTarget.fromTarget(jvmTargetVersion))
         freeCompilerArgs.addAll("-Xjsr305=strict")
     }
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.release.set(jvmVersionInt)
+    options.release.set(jvmTargetVersionInt)
 }
 
 tasks.withType<Test> {

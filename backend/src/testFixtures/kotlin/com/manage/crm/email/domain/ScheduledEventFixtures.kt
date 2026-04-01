@@ -4,7 +4,7 @@ import com.manage.crm.email.domain.vo.EventId
 import com.manage.crm.email.domain.vo.EventIdFixtures
 import com.manage.crm.email.domain.vo.ScheduleType
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 import kotlin.random.Random
 
 class ScheduledEventFixtures private constructor() {

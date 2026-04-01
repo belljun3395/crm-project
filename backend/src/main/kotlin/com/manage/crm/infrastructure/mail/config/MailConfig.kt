@@ -11,7 +11,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ses.SesClient
 import java.net.URI
-import java.util.*
+import java.util.Properties
 
 @Configuration
 class MailConfig {

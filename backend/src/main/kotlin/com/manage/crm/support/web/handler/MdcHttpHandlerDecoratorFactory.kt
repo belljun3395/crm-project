@@ -6,7 +6,7 @@ import org.springframework.http.server.reactive.HttpHandler
 import org.springframework.http.server.reactive.HttpHandlerDecoratorFactory
 import org.springframework.stereotype.Component
 import reactor.util.context.Context
-import java.util.*
+import java.util.UUID
 
 @Component
 class MdcHttpHandlerDecoratorFactory : HttpHandlerDecoratorFactory {
