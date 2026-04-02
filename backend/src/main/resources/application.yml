@@ -24,11 +24,6 @@ spring:
                 - prd
             dev:
                 - dev
-    cloud:
-        gcp:
-            pubsub:
-                enabled: false
-
 mail:
     # Mail send provider.
     # Supported values:

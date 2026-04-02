@@ -4,14 +4,14 @@ spring:
     application:
         name: crm
     r2dbc:
-        url: ${DATABASE_URL:r2dbc:pool:postgresql://localhost:5432/crm}
-        username: ${DATABASE_USERNAME:postgres}
-        password: ${DATABASE_PASSWORD:postgres}
+        url: ${DATABASE_URL}
+        username: ${DATABASE_USERNAME}
+        password: ${DATABASE_PASSWORD}
         routing:
-            master-url: ${MASTER_DATABASE_URL:r2dbc:pool:postgresql://localhost:5432/crm}
-            replica-url: ${REPLICA_DATABASE_URL:r2dbc:pool:postgresql://localhost:5432/crm}
-            username: ${DATABASE_USERNAME:postgres}
-            password: ${DATABASE_PASSWORD:postgres}
+            master-url: ${MASTER_DATABASE_URL}
+            replica-url: ${REPLICA_DATABASE_URL}
+            username: ${DATABASE_USERNAME}
+            password: ${DATABASE_PASSWORD}
     data:
         redis:
             cluster:
@@ -57,9 +57,6 @@ spring:
         sql-migration-suffixes: sql
         baseline-on-migrate: true
         baseline-version: 0
-
-# GCP 환경에서 CLOUD_PROVIDER=gcp 설정 시 아래 값들이 필요합니다.
-# cloud.provider=aws(기본값)일 때는 아래 설정이 무시됩니다.
 
 springdoc:
     swagger-ui:

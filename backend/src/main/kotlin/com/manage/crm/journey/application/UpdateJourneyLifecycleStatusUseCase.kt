@@ -1,30 +1,45 @@
 package com.manage.crm.journey.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.manage.crm.journey.application.dto.JourneyDto
+import com.manage.crm.journey.application.dto.JourneyLifecycleAction
+import com.manage.crm.journey.application.dto.JourneyLifecycleStatus
+import com.manage.crm.journey.application.dto.UpdateJourneyLifecycleStatusUseCaseIn
+import com.manage.crm.journey.application.dto.UpdateJourneyLifecycleStatusUseCaseOut
+import com.manage.crm.journey.application.dto.toJourneyDto
+import com.manage.crm.journey.application.dto.toJourneyStepDto
 import com.manage.crm.journey.domain.repository.JourneyRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
+import com.manage.crm.journey.exception.InvalidJourneyException
 import com.manage.crm.support.exception.NotFoundByIdException
 import kotlinx.coroutines.flow.toList
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
 /**
+ * UC-JOURNEY-006
  * Handles lifecycle transitions for journeys and increments the version on change.
+ *
+ * Input: journey id and lifecycle action (pause/resume/archive).
+ * Success: applies allowed state transition and returns the updated journey DTO.
  */
-@Service
+@Component
 class UpdateJourneyLifecycleStatusUseCase(
     private val journeyRepository: JourneyRepository,
     private val journeyStepRepository: JourneyStepRepository,
     private val objectMapper: ObjectMapper,
 ) {
     @Transactional
-    suspend fun pause(journeyId: Long): JourneyDto = changeStatus(journeyId, JourneyLifecycleStatus.PAUSED)
+    suspend fun execute(useCaseIn: UpdateJourneyLifecycleStatusUseCaseIn): UpdateJourneyLifecycleStatusUseCaseOut {
+        val targetStatus =
+            when (useCaseIn.action) {
+                JourneyLifecycleAction.PAUSE -> JourneyLifecycleStatus.PAUSED
+                JourneyLifecycleAction.RESUME -> JourneyLifecycleStatus.ACTIVE
+                JourneyLifecycleAction.ARCHIVE -> JourneyLifecycleStatus.ARCHIVED
+            }
 
-    @Transactional
-    suspend fun resume(journeyId: Long): JourneyDto = changeStatus(journeyId, JourneyLifecycleStatus.ACTIVE)
-
-    @Transactional
-    suspend fun archive(journeyId: Long): JourneyDto = changeStatus(journeyId, JourneyLifecycleStatus.ARCHIVED)
+        return UpdateJourneyLifecycleStatusUseCaseOut(changeStatus(useCaseIn.journeyId, targetStatus))
+    }
 
     private suspend fun changeStatus(
         journeyId: Long,
@@ -36,11 +51,11 @@ class UpdateJourneyLifecycleStatusUseCase(
 
         val currentStatus = JourneyLifecycleStatus.from(journey.lifecycleStatus)
         if (currentStatus == JourneyLifecycleStatus.ARCHIVED && status != JourneyLifecycleStatus.ARCHIVED) {
-            throw IllegalArgumentException("Archived journey cannot be resumed or paused")
+            throw InvalidJourneyException("Archived journey cannot be resumed or paused")
         }
         if (currentStatus == status) {
             val steps = journeyStepRepository.findAllByJourneyIdOrderByStepOrderAsc(journeyId).toList()
-            return assembleJourneyDto(journey, steps, objectMapper)
+            return journey.toJourneyDto(steps.map { it.toJourneyStepDto(objectMapper) }, objectMapper)
         }
 
         val expectedVersion = journey.version
@@ -61,6 +76,6 @@ class UpdateJourneyLifecycleStatusUseCase(
             journeyRepository.findById(journeyId)
                 ?: throw NotFoundByIdException("Journey", journeyId)
         val steps = journeyStepRepository.findAllByJourneyIdOrderByStepOrderAsc(journeyId).toList()
-        return assembleJourneyDto(savedJourney, steps, objectMapper)
+        return savedJourney.toJourneyDto(steps.map { it.toJourneyStepDto(objectMapper) }, objectMapper)
     }
 }

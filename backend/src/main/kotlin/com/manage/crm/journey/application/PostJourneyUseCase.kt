@@ -1,22 +1,38 @@
 package com.manage.crm.journey.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.manage.crm.journey.application.dto.JourneyLifecycleStatus
+import com.manage.crm.journey.application.dto.JourneySegmentTriggerEventType
+import com.manage.crm.journey.application.dto.JourneyStepType
+import com.manage.crm.journey.application.dto.JourneyTriggerType
+import com.manage.crm.journey.application.dto.PostJourneyUseCaseIn
+import com.manage.crm.journey.application.dto.PostJourneyUseCaseOut
+import com.manage.crm.journey.application.dto.toJourneyDto
+import com.manage.crm.journey.application.dto.toJourneyStepDto
 import com.manage.crm.journey.domain.Journey
 import com.manage.crm.journey.domain.JourneyStep
 import com.manage.crm.journey.domain.repository.JourneyRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
-import org.springframework.stereotype.Service
+import com.manage.crm.journey.exception.InvalidJourneyException
+import com.manage.crm.journey.exception.InvalidJourneyStepException
+import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 
 /**
+ * UC-JOURNEY-001
  * Creates a journey with trigger metadata and ordered execution steps.
+ *
+ * Input: journey name, trigger configuration, and ordered step definitions.
+ * Success: persists journey/steps and returns a journey DTO with normalized lifecycle metadata.
  */
-@Service
+@Component
 class PostJourneyUseCase(
     private val journeyRepository: JourneyRepository,
     private val journeyStepRepository: JourneyStepRepository,
     private val objectMapper: ObjectMapper,
 ) {
-    suspend fun execute(useCaseIn: PostJourneyIn): JourneyDto {
+    @Transactional
+    suspend fun execute(useCaseIn: PostJourneyUseCaseIn): PostJourneyUseCaseOut {
         validate(useCaseIn)
 
         val savedJourney =
@@ -57,42 +73,43 @@ class PostJourneyUseCase(
                     )
                 }
 
-        return assembleJourneyDto(savedJourney, savedSteps, objectMapper)
+        val stepDtos = savedSteps.map { it.toJourneyStepDto(objectMapper) }
+        return PostJourneyUseCaseOut(savedJourney.toJourneyDto(stepDtos, objectMapper))
     }
 
-    private fun validate(useCaseIn: PostJourneyIn) {
+    private fun validate(useCaseIn: PostJourneyUseCaseIn) {
         if (useCaseIn.name.isBlank()) {
-            throw IllegalArgumentException("Journey name is required")
+            throw InvalidJourneyException("Journey name is required")
         }
 
         if (useCaseIn.steps.isEmpty()) {
-            throw IllegalArgumentException("Journey steps are required")
+            throw InvalidJourneyException("Journey steps are required")
         }
         if (useCaseIn.steps.any { it.stepOrder <= 0 }) {
-            throw IllegalArgumentException("stepOrder must be greater than 0")
+            throw InvalidJourneyStepException("stepOrder must be greater than 0")
         }
         if (useCaseIn.steps
                 .groupingBy { it.stepOrder }
                 .eachCount()
                 .any { it.value > 1 }
         ) {
-            throw IllegalArgumentException("stepOrder must be unique")
+            throw InvalidJourneyStepException("stepOrder must be unique")
         }
 
         when (useCaseIn.triggerType) {
             JourneyTriggerType.EVENT -> {
                 if (useCaseIn.triggerEventName.isNullOrBlank()) {
-                    throw IllegalArgumentException("triggerEventName is required for EVENT trigger")
+                    throw InvalidJourneyException("triggerEventName is required for EVENT trigger")
                 }
             }
 
             JourneyTriggerType.SEGMENT -> {
                 if (useCaseIn.triggerSegmentId == null) {
-                    throw IllegalArgumentException("triggerSegmentId is required for SEGMENT trigger")
+                    throw InvalidJourneyException("triggerSegmentId is required for SEGMENT trigger")
                 }
                 val segmentEvent =
                     useCaseIn.triggerSegmentEvent
-                        ?: throw IllegalArgumentException("triggerSegmentEvent is required for SEGMENT trigger")
+                        ?: throw InvalidJourneyException("triggerSegmentEvent is required for SEGMENT trigger")
                 when (segmentEvent) {
                     JourneySegmentTriggerEventType.ENTER,
                     JourneySegmentTriggerEventType.EXIT,
@@ -100,7 +117,7 @@ class PostJourneyUseCase(
 
                     JourneySegmentTriggerEventType.UPDATE -> {
                         if (useCaseIn.triggerSegmentWatchFields.isEmpty()) {
-                            throw IllegalArgumentException("triggerSegmentWatchFields is required for SEGMENT UPDATE trigger")
+                            throw InvalidJourneyException("triggerSegmentWatchFields is required for SEGMENT UPDATE trigger")
                         }
                     }
 
@@ -109,27 +126,19 @@ class PostJourneyUseCase(
                     -> {
                         val threshold = useCaseIn.triggerSegmentCountThreshold
                         if (threshold == null || threshold <= 0L) {
-                            throw IllegalArgumentException("triggerSegmentCountThreshold must be greater than 0 for SEGMENT COUNT trigger")
+                            throw InvalidJourneyException("triggerSegmentCountThreshold must be greater than 0 for SEGMENT COUNT trigger")
                         }
                     }
                 }
             }
 
             JourneyTriggerType.CONDITION -> {
-                val triggerExpression = useCaseIn.triggerEventName?.takeIf { it.isNotBlank() }
-                val branchExpressions =
-                    useCaseIn.steps
-                        .filter { it.stepType == JourneyStepType.BRANCH && !it.conditionExpression.isNullOrBlank() }
-                        .map { requireNotNull(it.conditionExpression).trim() }
-
-                if (triggerExpression.isNullOrBlank() && branchExpressions.isEmpty()) {
-                    throw IllegalArgumentException(
-                        "CONDITION trigger requires triggerEventName(condition expression) or BRANCH step conditionExpression",
-                    )
+                if (useCaseIn.triggerEventName.isNullOrBlank()) {
+                    throw InvalidJourneyException("triggerEventName is required for CONDITION trigger")
                 }
-
-                triggerExpression?.let { validateConditionExpression(it) }
-                branchExpressions.forEach { validateConditionExpression(it) }
+                if (useCaseIn.steps.none { it.stepType == JourneyStepType.BRANCH }) {
+                    throw InvalidJourneyException("At least one BRANCH step is required for CONDITION trigger")
+                }
             }
         }
 
@@ -137,25 +146,25 @@ class PostJourneyUseCase(
             when (step.stepType) {
                 JourneyStepType.ACTION -> {
                     if (step.channel.isNullOrBlank()) {
-                        throw IllegalArgumentException("channel is required for ACTION step")
+                        throw InvalidJourneyStepException("channel is required for ACTION step")
                     }
                     if (step.destination.isNullOrBlank()) {
-                        throw IllegalArgumentException("destination is required for ACTION step")
+                        throw InvalidJourneyStepException("destination is required for ACTION step")
                     }
                     if (step.body.isNullOrBlank()) {
-                        throw IllegalArgumentException("body is required for ACTION step")
+                        throw InvalidJourneyStepException("body is required for ACTION step")
                     }
                 }
 
                 JourneyStepType.DELAY -> {
                     if (step.delayMillis == null || step.delayMillis < 0) {
-                        throw IllegalArgumentException("delayMillis must be zero or greater for DELAY step")
+                        throw InvalidJourneyStepException("delayMillis must be zero or greater for DELAY step")
                     }
                 }
 
                 JourneyStepType.BRANCH -> {
                     if (step.conditionExpression.isNullOrBlank()) {
-                        throw IllegalArgumentException("conditionExpression is required for BRANCH step")
+                        throw InvalidJourneyStepException("conditionExpression is required for BRANCH step")
                     }
                 }
             }
@@ -174,26 +183,5 @@ class PostJourneyUseCase(
             return null
         }
         return objectMapper.writeValueAsString(fields)
-    }
-
-    private fun validateConditionExpression(expression: String) {
-        val raw = expression.trim()
-        val operator =
-            when {
-                raw.contains("==") -> "=="
-                raw.contains("!=") -> "!="
-                else -> throw IllegalArgumentException("Unsupported condition expression: $expression")
-            }
-
-        val parts = raw.split(operator, limit = 2)
-        if (parts.size != 2) {
-            throw IllegalArgumentException("Invalid condition expression: $expression")
-        }
-
-        val left = parts[0].trim()
-        val right = parts[1].trim().trim('"').trim('\'')
-        if (!left.startsWith("event.") || left.removePrefix("event.").isBlank() || right.isBlank()) {
-            throw IllegalArgumentException("Invalid condition expression: $expression")
-        }
     }
 }

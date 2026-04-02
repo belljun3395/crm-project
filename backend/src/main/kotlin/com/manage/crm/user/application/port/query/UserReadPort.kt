@@ -7,6 +7,7 @@ data class UserReadModel(
     val externalId: String,
     val userAttributesJson: String,
     val createdAt: LocalDateTime?,
+    val updatedAt: LocalDateTime? = null,
 )
 
 interface UserReadPort {

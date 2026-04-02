@@ -1,19 +1,23 @@
 package com.manage.crm.journey.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.manage.crm.journey.application.dto.JourneyLifecycleAction
+import com.manage.crm.journey.application.dto.JourneyLifecycleStatus
+import com.manage.crm.journey.application.dto.JourneyStepType
+import com.manage.crm.journey.application.dto.JourneyTriggerType
+import com.manage.crm.journey.application.dto.UpdateJourneyLifecycleStatusUseCaseIn
 import com.manage.crm.journey.domain.Journey
 import com.manage.crm.journey.domain.JourneyStep
 import com.manage.crm.journey.domain.repository.JourneyRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 
 class UpdateJourneyLifecycleStatusUseCaseTest :
-    BehaviorSpec({
+    JourneyUnitTestTemplate({
         lateinit var journeyRepository: JourneyRepository
         lateinit var journeyStepRepository: JourneyStepRepository
         lateinit var useCase: UpdateJourneyLifecycleStatusUseCase
@@ -29,7 +33,7 @@ class UpdateJourneyLifecycleStatusUseCaseTest :
                 )
         }
 
-        given("pause lifecycle") {
+        given("UC-JOURNEY-006 pause lifecycle") {
             `when`("active journey is paused") {
                 then("mark status paused and increment version") {
                     val currentJourney =
@@ -89,11 +93,17 @@ class UpdateJourneyLifecycleStatusUseCaseTest :
                     } returns 1
                     coEvery { journeyStepRepository.findAllByJourneyIdOrderByStepOrderAsc(100L) } returns flowOf(step)
 
-                    val result = useCase.pause(100L)
+                    val result =
+                        useCase.execute(
+                            UpdateJourneyLifecycleStatusUseCaseIn(
+                                journeyId = 100L,
+                                action = JourneyLifecycleAction.PAUSE,
+                            ),
+                        )
 
-                    result.lifecycleStatus shouldBe JourneyLifecycleStatus.PAUSED.name
-                    result.active shouldBe false
-                    result.version shouldBe 2
+                    result.journey.lifecycleStatus shouldBe JourneyLifecycleStatus.PAUSED.name
+                    result.journey.active shouldBe false
+                    result.journey.version shouldBe 2
                 }
             }
         }
@@ -128,7 +138,12 @@ class UpdateJourneyLifecycleStatusUseCaseTest :
                     } returns 0
 
                     shouldThrow<IllegalStateException> {
-                        useCase.pause(100L)
+                        useCase.execute(
+                            UpdateJourneyLifecycleStatusUseCaseIn(
+                                journeyId = 100L,
+                                action = JourneyLifecycleAction.PAUSE,
+                            ),
+                        )
                     }
                 }
             }
@@ -155,7 +170,12 @@ class UpdateJourneyLifecycleStatusUseCaseTest :
                     coEvery { journeyRepository.findById(11L) } returns journey
 
                     shouldThrow<IllegalArgumentException> {
-                        useCase.resume(11L)
+                        useCase.execute(
+                            UpdateJourneyLifecycleStatusUseCaseIn(
+                                journeyId = 11L,
+                                action = JourneyLifecycleAction.RESUME,
+                            ),
+                        )
                     }
                 }
             }

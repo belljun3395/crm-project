@@ -9,6 +9,11 @@ import com.manage.crm.event.application.port.query.EventReadPort
 import com.manage.crm.event.domain.Event
 import com.manage.crm.event.domain.vo.EventProperties
 import com.manage.crm.event.domain.vo.EventProperty
+import com.manage.crm.journey.application.dto.JourneyAutomationUseCaseIn
+import com.manage.crm.journey.application.dto.JourneyExecutionHistoryStatus
+import com.manage.crm.journey.application.dto.JourneyExecutionStatus
+import com.manage.crm.journey.application.dto.JourneyStepType
+import com.manage.crm.journey.application.dto.JourneyTriggerType
 import com.manage.crm.journey.domain.Journey
 import com.manage.crm.journey.domain.JourneyExecution
 import com.manage.crm.journey.domain.JourneyExecutionHistory
@@ -22,10 +27,8 @@ import com.manage.crm.journey.domain.repository.JourneySegmentUserStateRepositor
 import com.manage.crm.journey.domain.repository.JourneyStepDeduplicationRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
 import com.manage.crm.segment.application.port.query.SegmentReadPort
-import com.manage.crm.user.domain.User
-import com.manage.crm.user.domain.repository.UserRepository
-import com.manage.crm.user.domain.vo.UserAttributes
-import io.kotest.core.spec.style.BehaviorSpec
+import com.manage.crm.user.application.port.query.UserReadModel
+import com.manage.crm.user.application.port.query.UserReadPort
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
 import io.mockk.coEvery
@@ -37,8 +40,8 @@ import kotlinx.coroutines.flow.flowOf
 import org.springframework.dao.DataIntegrityViolationException
 import java.time.LocalDateTime
 
-class JourneyAutomationServiceTest :
-    BehaviorSpec({
+class JourneyAutomationUseCaseTest :
+    JourneyUnitTestTemplate({
         lateinit var journeyRepository: JourneyRepository
         lateinit var journeyStepRepository: JourneyStepRepository
         lateinit var journeyExecutionRepository: JourneyExecutionRepository
@@ -49,8 +52,8 @@ class JourneyAutomationServiceTest :
         lateinit var segmentReadPort: SegmentReadPort
         lateinit var eventReadPort: EventReadPort
         lateinit var actionDispatchService: ActionDispatchService
-        lateinit var userRepository: UserRepository
-        lateinit var service: JourneyAutomationService
+        lateinit var userReadPort: UserReadPort
+        lateinit var useCase: JourneyAutomationUseCase
 
         beforeTest {
             journeyRepository = mockk()
@@ -63,10 +66,10 @@ class JourneyAutomationServiceTest :
             segmentReadPort = mockk()
             eventReadPort = mockk()
             actionDispatchService = mockk()
-            userRepository = mockk()
+            userReadPort = mockk()
 
-            service =
-                JourneyAutomationService(
+            useCase =
+                JourneyAutomationUseCase(
                     journeyRepository = journeyRepository,
                     journeyStepRepository = journeyStepRepository,
                     journeyExecutionRepository = journeyExecutionRepository,
@@ -77,20 +80,26 @@ class JourneyAutomationServiceTest :
                     segmentReadPort = segmentReadPort,
                     eventReadPort = eventReadPort,
                     actionDispatchService = actionDispatchService,
-                    userRepository = userRepository,
+                    userReadPort = userReadPort,
                     objectMapper = ObjectMapper(),
                 )
 
             coEvery { journeyRepository.findAllByTriggerTypeAndActiveTrue(JourneyTriggerType.CONDITION.name) } returns emptyFlow()
 
-            coEvery { userRepository.findById(1L) } returns
-                User.new(
-                    id = 1L,
-                    externalId = "user-1",
-                    userAttributes = UserAttributes("""{"email":"user1@example.com","name":"tester"}"""),
-                    createdAt = LocalDateTime.of(2026, 2, 25, 9, 0, 0),
-                    updatedAt = LocalDateTime.of(2026, 2, 25, 9, 0, 0),
-                )
+            coEvery { userReadPort.findByExternalId(any()) } returns null
+            coEvery { userReadPort.findAll() } returns emptyList()
+            coEvery { userReadPort.findAllByIdIn(any()) } answers {
+                val ids = firstArg<Collection<Long>>()
+                ids.map { id ->
+                    UserReadModel(
+                        id = id,
+                        externalId = "user-$id",
+                        userAttributesJson = """{"email":"user$id@example.com","name":"tester"}""",
+                        createdAt = LocalDateTime.of(2026, 2, 25, 9, 0, 0),
+                        updatedAt = LocalDateTime.of(2026, 2, 25, 9, 0, 0),
+                    )
+                }
+            }
         }
 
         afterTest { (_, _) ->
@@ -105,11 +114,11 @@ class JourneyAutomationServiceTest :
                 segmentReadPort,
                 eventReadPort,
                 actionDispatchService,
-                userRepository,
+                userReadPort,
             )
         }
 
-        given("JourneyAutomationService.onEvent") {
+        given("UC-JOURNEY-007 JourneyAutomationUseCase.onEvent") {
             `when`("journey has executable action step") {
                 then("dispatch action and mark execution as success") {
                     val event = newEvent()
@@ -175,7 +184,7 @@ class JourneyAutomationServiceTest :
                         }
                     }
 
-                    service.onEvent(event)
+                    useCase.execute(JourneyAutomationUseCaseIn(event = event))
 
                     coVerify(exactly = 1) { actionDispatchService.dispatch(any()) }
                     val executionSlot = mutableListOf<JourneyExecution>()
@@ -252,7 +261,7 @@ class JourneyAutomationServiceTest :
                         }
                     }
 
-                    service.onEvent(event)
+                    useCase.execute(JourneyAutomationUseCaseIn(event = event))
 
                     coVerify(exactly = 0) { actionDispatchService.dispatch(any()) }
 

@@ -1,6 +1,6 @@
 package com.manage.crm.segment.application
 
-import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
+import com.manage.crm.journey.application.port.out.JourneyTriggerPort
 import com.manage.crm.segment.application.dto.PostSegmentConditionIn
 import com.manage.crm.segment.application.dto.PostSegmentUseCaseIn
 import com.manage.crm.segment.application.dto.PostSegmentUseCaseOut
@@ -36,7 +36,7 @@ import org.springframework.transaction.annotation.Transactional
 class PostSegmentUseCase(
     private val segmentRepository: SegmentRepository,
     private val segmentConditionRepository: SegmentConditionRepository,
-    private val journeyTriggerQueuePublisher: JourneyTriggerQueuePublisher,
+    private val journeyTriggerPort: JourneyTriggerPort,
     private val transactionSynchronizationTemplate: TransactionSynchronizationTemplate,
 ) {
     private val log = KotlinLogging.logger {}
@@ -96,7 +96,7 @@ class PostSegmentUseCase(
             transactionSynchronizationTemplate.afterCommit(
                 blockDescription = "enqueue journey segment trigger after segment commit",
             ) {
-                journeyTriggerQueuePublisher.publishSegmentContextTrigger()
+                journeyTriggerPort.triggerBySegmentContextChange()
             }
         }.onFailure { error ->
             log.error(error) {

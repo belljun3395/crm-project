@@ -145,6 +145,9 @@ CREATE UNIQUE INDEX uk_campaign_events_campaign_event
     ON campaign_events (campaign_id, event_id);
 CREATE INDEX idx_campaign_events_event_id ON campaign_events (event_id);
 
+DELETE FROM email_send_histories
+WHERE user_id IS NULL;
+
 UPDATE email_send_histories
 SET user_email = 'unknown+' || id || '@legacy.local'
 WHERE user_email IS NULL OR btrim(user_email) = '';

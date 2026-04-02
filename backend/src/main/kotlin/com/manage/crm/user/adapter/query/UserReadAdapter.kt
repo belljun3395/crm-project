@@ -30,5 +30,6 @@ private fun User.toQueryResult(): UserReadModel {
         externalId = externalId,
         userAttributesJson = userAttributes.value,
         createdAt = createdAt,
+        updatedAt = updatedAt,
     )
 }
