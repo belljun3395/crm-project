@@ -6,8 +6,6 @@ import com.manage.crm.action.application.ActionChannel
 import com.manage.crm.action.application.ActionDispatchIn
 import com.manage.crm.action.application.ActionDispatchService
 import com.manage.crm.action.application.ActionDispatchStatus
-import com.manage.crm.event.application.port.query.EventReadPort
-import com.manage.crm.event.domain.Event
 import com.manage.crm.journey.application.automation.condition.ConditionEvaluator
 import com.manage.crm.journey.application.automation.condition.ConditionExpressionResolver
 import com.manage.crm.journey.application.automation.condition.ConditionTriggerHandler
@@ -16,6 +14,7 @@ import com.manage.crm.journey.application.dto.JourneyAutomationUseCaseIn
 import com.manage.crm.journey.application.dto.JourneyExecutionHistoryStatus
 import com.manage.crm.journey.application.dto.JourneyExecutionStatus
 import com.manage.crm.journey.application.dto.JourneyStepType
+import com.manage.crm.journey.application.dto.JourneyTriggerEvent
 import com.manage.crm.journey.application.dto.JourneyTriggerType
 import com.manage.crm.journey.domain.Journey
 import com.manage.crm.journey.domain.JourneyExecution
@@ -62,7 +61,6 @@ class JourneyAutomationUseCase(
     private val journeySegmentUserStateRepository: JourneySegmentUserStateRepository,
     private val journeySegmentCountStateRepository: JourneySegmentCountStateRepository,
     private val segmentReadPort: SegmentReadPort,
-    private val eventReadPort: EventReadPort,
     private val actionDispatchService: ActionDispatchService,
     private val userReadPort: UserReadPort,
     private val objectMapper: ObjectMapper,
@@ -82,7 +80,6 @@ class JourneyAutomationUseCase(
             journeySegmentUserStateRepository = journeySegmentUserStateRepository,
             journeySegmentCountStateRepository = journeySegmentCountStateRepository,
             segmentReadPort = segmentReadPort,
-            eventReadPort = eventReadPort,
             userReadPort = userReadPort,
             objectMapper = objectMapper,
         )
@@ -96,7 +93,7 @@ class JourneyAutomationUseCase(
         onSegmentContextChanged(useCaseIn.changedUserIds)
     }
 
-    private suspend fun onEvent(event: Event) {
+    private suspend fun onEvent(event: JourneyTriggerEvent) {
         val eventJourneys =
             journeyRepository
                 .findAllByTriggerTypeAndTriggerEventNameAndActiveTrue(
@@ -124,7 +121,7 @@ class JourneyAutomationUseCase(
 
     private suspend fun executeJourney(
         journey: Journey,
-        event: Event,
+        event: JourneyTriggerEvent,
         triggerKey: String,
     ) {
         val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }
@@ -189,7 +186,7 @@ class JourneyAutomationUseCase(
 
     private suspend fun executeJourneySteps(
         execution: JourneyExecution,
-        event: Event,
+        event: JourneyTriggerEvent,
     ) {
         val journeyId = execution.journeyId
         val executionId = requireNotNull(execution.id) { "JourneyExecution id cannot be null" }
@@ -216,7 +213,7 @@ class JourneyAutomationUseCase(
     private suspend fun executeBranchStep(
         executionId: Long,
         step: JourneyStep,
-        event: Event,
+        event: JourneyTriggerEvent,
     ): JourneyStepExecutionDecision {
         val stepId = requireNotNull(step.id) { "JourneyStep id cannot be null" }
         val conditionMatched = conditionEvaluator.evaluate(step.conditionExpression, event)
@@ -247,7 +244,7 @@ class JourneyAutomationUseCase(
     private suspend fun executeDelayStep(
         executionId: Long,
         step: JourneyStep,
-        event: Event,
+        event: JourneyTriggerEvent,
     ): JourneyStepExecutionDecision {
         val stepId = requireNotNull(step.id) { "JourneyStep id cannot be null" }
         val conditionMatched = conditionEvaluator.evaluate(step.conditionExpression, event)
@@ -282,7 +279,7 @@ class JourneyAutomationUseCase(
     private suspend fun executeActionStep(
         executionId: Long,
         step: JourneyStep,
-        event: Event,
+        event: JourneyTriggerEvent,
     ): JourneyStepExecutionDecision {
         val stepId = requireNotNull(step.id) { "JourneyStep id cannot be null" }
 
@@ -420,7 +417,7 @@ class JourneyAutomationUseCase(
 
     private suspend fun resolveStepVariables(
         variablesJson: String?,
-        event: Event,
+        event: JourneyTriggerEvent,
     ): Map<String, String> {
         val eventId = requireNotNull(event.id) { "Event id cannot be null" }
         val eventVariables =
@@ -428,8 +425,8 @@ class JourneyAutomationUseCase(
                 put("eventId", eventId.toString())
                 put("userId", event.userId.toString())
                 put("eventName", event.name)
-                event.properties.value.forEach {
-                    put("event.${it.key}", it.value)
+                event.properties.forEach { (key, value) ->
+                    put("event.$key", value)
                 }
             }
         val userVariables =

@@ -2,7 +2,6 @@ package com.manage.crm.event.application
 
 import com.manage.crm.event.application.dto.PostEventPropertyDto
 import com.manage.crm.event.application.dto.PostEventUseCaseIn
-import com.manage.crm.event.application.port.query.EventReadPort
 import com.manage.crm.event.domain.Campaign
 import com.manage.crm.event.domain.CampaignEvents
 import com.manage.crm.event.domain.CampaignFixtures
@@ -41,7 +40,6 @@ class PostEventUseCaseTest :
         lateinit var campaignEventsRepository: CampaignEventsRepository
         lateinit var campaignCacheManager: CampaignCacheManager
         lateinit var userReadPort: UserReadPort
-        lateinit var eventReadPort: EventReadPort
         lateinit var segmentReadPort: SegmentReadPort
         lateinit var journeyTriggerPort: JourneyTriggerPort
         lateinit var campaignEventPublisher: CampaignEventPublisher
@@ -53,7 +51,6 @@ class PostEventUseCaseTest :
             campaignEventsRepository = mockk()
             campaignCacheManager = mockk()
             userReadPort = mockk()
-            eventReadPort = mockk()
             segmentReadPort = mockk()
             journeyTriggerPort = mockk(relaxed = true)
             campaignEventPublisher = mockk(relaxed = true)
@@ -64,7 +61,6 @@ class PostEventUseCaseTest :
                     campaignEventsRepository,
                     campaignCacheManager,
                     userReadPort,
-                    eventReadPort,
                     segmentReadPort,
                     journeyTriggerPort,
                     campaignEventPublisher,
@@ -628,9 +624,7 @@ class PostEventUseCaseTest :
                         campaignName = null,
                     )
 
-                coEvery { userReadPort.findAll() } returns listOf(readUser(1L), readUser(2L))
-                coEvery { eventReadPort.findAllByUserIdIn(any()) } returns emptyList()
-                coEvery { segmentReadPort.findTargetUserIds(55L, any(), any()) } returns listOf(1L, 2L)
+                coEvery { segmentReadPort.findTargetUserIds(55L) } returns listOf(1L, 2L)
                 coEvery { eventRepository.save(any(Event::class)) } answers {
                     firstArg<Event>().apply {
                         id = if (userId == 1L) 101L else 102L
@@ -641,7 +635,7 @@ class PostEventUseCaseTest :
                     val result = postEventUseCase.execute(useCaseIn)
                     result.id shouldBe 101L
                     result.message shouldBe "Event saved for segment users (2)"
-                    coVerify(exactly = 1) { segmentReadPort.findTargetUserIds(55L, any(), any()) }
+                    coVerify(exactly = 1) { segmentReadPort.findTargetUserIds(55L) }
                     coVerify(exactly = 0) { userReadPort.findByExternalId(any()) }
                     coVerify(exactly = 2) { eventRepository.save(any(Event::class)) }
                 }
@@ -657,9 +651,7 @@ class PostEventUseCaseTest :
                         campaignName = "seg-campaign",
                     )
 
-                coEvery { userReadPort.findAll() } returns listOf(readUser(1L), readUser(2L))
-                coEvery { eventReadPort.findAllByUserIdIn(any()) } returns emptyList()
-                coEvery { segmentReadPort.findTargetUserIds(77L, any(), any()) } returns listOf(1L, 2L)
+                coEvery { segmentReadPort.findTargetUserIds(77L) } returns listOf(1L, 2L)
                 coEvery { eventRepository.save(any(Event::class)) } answers {
                     firstArg<Event>().apply { id = if (userId == 1L) 201L else 202L }
                 }
@@ -702,9 +694,7 @@ class PostEventUseCaseTest :
                         campaignName = "missing-campaign",
                     )
 
-                coEvery { userReadPort.findAll() } returns listOf(readUser(10L))
-                coEvery { eventReadPort.findAllByUserIdIn(any()) } returns emptyList()
-                coEvery { segmentReadPort.findTargetUserIds(88L, any(), any()) } returns listOf(10L)
+                coEvery { segmentReadPort.findTargetUserIds(88L) } returns listOf(10L)
                 coEvery { eventRepository.save(any(Event::class)) } answers {
                     firstArg<Event>().apply { id = 301L }
                 }

@@ -3,7 +3,6 @@ package com.manage.crm.event.application
 import com.manage.crm.event.application.dto.PostEventPropertyDto
 import com.manage.crm.event.application.dto.PostEventUseCaseIn
 import com.manage.crm.event.application.dto.PostEventUseCaseOut
-import com.manage.crm.event.application.port.query.EventReadPort
 import com.manage.crm.event.domain.Campaign
 import com.manage.crm.event.domain.CampaignEvents
 import com.manage.crm.event.domain.Event
@@ -19,8 +18,6 @@ import com.manage.crm.journey.application.port.out.JourneyTriggerEventPayload
 import com.manage.crm.journey.application.port.out.JourneyTriggerEventPropertyPayload
 import com.manage.crm.journey.application.port.out.JourneyTriggerPort
 import com.manage.crm.segment.application.port.query.SegmentReadPort
-import com.manage.crm.segment.application.port.query.SegmentTargetEventReadModel
-import com.manage.crm.segment.application.port.query.SegmentTargetUserReadModel
 import com.manage.crm.support.exception.NotFoundByException
 import com.manage.crm.support.out
 import com.manage.crm.user.application.port.query.UserReadPort
@@ -53,7 +50,6 @@ class PostEventUseCase(
     private val campaignEventsRepository: CampaignEventsRepository,
     private val campaignCacheManager: CampaignCacheManager,
     private val userReadPort: UserReadPort,
-    private val eventReadPort: EventReadPort,
     private val segmentReadPort: SegmentReadPort,
     private val journeyTriggerPort: JourneyTriggerPort,
     private val campaignEventPublisher: CampaignEventPublisher,
@@ -67,7 +63,7 @@ class PostEventUseCase(
         val properties = useCaseIn.properties
         val campaignName = useCaseIn.campaignName
 
-        val targetUserIds = resolveTargetUserIds(externalId, segmentId)
+        val targetUserIds = findTargetUserIds(externalId, segmentId)
         val savedEvents =
             targetUserIds.map { userId ->
                 saveEvent(eventName, userId, properties)
@@ -157,39 +153,12 @@ class PostEventUseCase(
         }
     }
 
-    private suspend fun resolveTargetUserIds(
+    private suspend fun findTargetUserIds(
         externalId: String,
         segmentId: Long?,
     ): List<Long> {
         if (segmentId != null) {
-            val users =
-                userReadPort
-                    .findAll()
-                    .map { user ->
-                        SegmentTargetUserReadModel(
-                            id = user.id,
-                            userAttributesJson = user.userAttributesJson,
-                            createdAt = user.createdAt,
-                        )
-                    }
-            if (users.isEmpty()) {
-                return emptyList()
-            }
-
-            val eventsByUserId =
-                eventReadPort
-                    .findAllByUserIdIn(users.map { it.id })
-                    .groupBy { event -> event.userId }
-                    .mapValues { (_, events) ->
-                        events.map { event ->
-                            SegmentTargetEventReadModel(
-                                userId = event.userId,
-                                name = event.name,
-                                occurredAt = event.createdAt,
-                            )
-                        }
-                    }
-            return segmentReadPort.findTargetUserIds(segmentId, users, eventsByUserId)
+            return segmentReadPort.findTargetUserIds(segmentId)
         }
 
         val userId =

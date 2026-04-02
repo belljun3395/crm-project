@@ -1,11 +1,11 @@
 package com.manage.crm.journey.application.automation.condition
 
-import com.manage.crm.event.domain.Event
+import com.manage.crm.journey.application.dto.JourneyTriggerEvent
 
 class ConditionEvaluator {
     fun evaluate(
         conditionExpression: String?,
-        event: Event,
+        event: JourneyTriggerEvent,
     ): Boolean {
         if (conditionExpression.isNullOrBlank()) {
             return true
@@ -32,10 +32,7 @@ class ConditionEvaluator {
         }
 
         val key = left.removePrefix("event.")
-        val actual =
-            event.properties.value
-                .firstOrNull { it.key == key }
-                ?.value
+        val actual = event.properties[key]
 
         return when (operator) {
             "==" -> actual == right
