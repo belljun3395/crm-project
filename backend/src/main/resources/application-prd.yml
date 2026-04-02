@@ -58,9 +58,6 @@ spring:
         baseline-on-migrate: true
         baseline-version: 0
 
-# GCP 환경에서 CLOUD_PROVIDER=gcp 설정 시 아래 값들이 필요합니다.
-# cloud.provider=aws(기본값)일 때는 아래 설정이 무시됩니다.
-
 springdoc:
     swagger-ui:
         operations-sorter: alpha

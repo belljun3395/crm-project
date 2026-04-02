@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
@@ -15,14 +16,19 @@ import org.springframework.stereotype.Component
 @ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws", matchIfMissing = true)
 class InMemoryJourneyTriggerQueuePublisher(
     private val processor: JourneyTriggerQueueProcessor,
+    @Value("\${journey.trigger.queue.consumer-count:2}") private val consumerCount: Int,
 ) : JourneyTriggerQueuePublisher {
     private val log = KotlinLogging.logger {}
-    private val queue = Channel<JourneyTriggerQueueMessage>(capacity = Channel.UNLIMITED)
+    private val queue = Channel<JourneyTriggerQueueMessage>(capacity = QUEUE_CAPACITY)
     private val consumerJobs = mutableListOf<Job>()
+
+    companion object {
+        private const val QUEUE_CAPACITY = 1000
+    }
 
     @PostConstruct
     fun startConsumers() {
-        repeat(2) {
+        repeat(consumerCount) {
             val job =
                 eventListenerCoroutineScope(Dispatchers.IO).launch {
                     for (message in queue) {

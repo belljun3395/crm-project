@@ -27,10 +27,10 @@ class JourneyTriggerKafkaConsumer(
             runBlocking {
                 processor.process(message)
             }
-            acknowledgment.acknowledge()
         } catch (error: Exception) {
             log.error(error) { "Failed to process journey trigger message from Kafka: $message" }
-            throw error
+        } finally {
+            acknowledgment.acknowledge()
         }
     }
 }
