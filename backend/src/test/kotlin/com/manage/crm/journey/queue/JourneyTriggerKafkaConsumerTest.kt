@@ -1,6 +1,5 @@
 package com.manage.crm.journey.queue
 
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.BehaviorSpec
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -37,16 +36,14 @@ class JourneyTriggerKafkaConsumerTest :
 
         given("consume failure") {
             `when`("processor throws") {
-                then("it rethrows and does not acknowledge") {
+                then("it swallows the error and still acknowledges to prevent infinite retry") {
                     val message = JourneyTriggerQueueMessage(triggerType = JourneyTriggerQueueType.SEGMENT_CONTEXT)
                     coEvery { processor.process(message) } throws IllegalStateException("boom")
 
-                    shouldThrow<IllegalStateException> {
-                        consumer.consume(message, acknowledgment)
-                    }
+                    consumer.consume(message, acknowledgment)
 
                     coVerify(exactly = 1) { processor.process(message) }
-                    io.mockk.verify(exactly = 0) { acknowledgment.acknowledge() }
+                    io.mockk.verify(exactly = 1) { acknowledgment.acknowledge() }
                 }
             }
         }
