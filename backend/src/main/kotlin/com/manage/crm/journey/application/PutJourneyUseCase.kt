@@ -7,6 +7,8 @@ import com.manage.crm.journey.application.dto.JourneyStepType
 import com.manage.crm.journey.application.dto.JourneyTriggerType
 import com.manage.crm.journey.application.dto.PutJourneyUseCaseIn
 import com.manage.crm.journey.application.dto.PutJourneyUseCaseOut
+import com.manage.crm.journey.application.dto.toJourneyDto
+import com.manage.crm.journey.application.dto.toJourneyStepDto
 import com.manage.crm.journey.domain.JourneyStep
 import com.manage.crm.journey.domain.repository.JourneyExecutionHistoryRepository
 import com.manage.crm.journey.domain.repository.JourneyRepository
@@ -117,7 +119,8 @@ class PutJourneyUseCase(
             journeyStepRepository.delete(step)
         }
 
-        return PutJourneyUseCaseOut(assembleJourneyDto(savedJourney, savedSteps, objectMapper))
+        val stepDtos = savedSteps.map { it.toJourneyStepDto(objectMapper) }
+        return PutJourneyUseCaseOut(savedJourney.toJourneyDto(stepDtos, objectMapper))
     }
 
     private fun validate(useCaseIn: PutJourneyUseCaseIn) {

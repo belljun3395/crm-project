@@ -3,6 +3,8 @@ package com.manage.crm.journey.application
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.journey.application.dto.BrowseJourneyUseCaseIn
 import com.manage.crm.journey.application.dto.BrowseJourneyUseCaseOut
+import com.manage.crm.journey.application.dto.toJourneyDto
+import com.manage.crm.journey.application.dto.toJourneyStepDto
 import com.manage.crm.journey.domain.repository.JourneyRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
 import kotlinx.coroutines.flow.take
@@ -50,7 +52,7 @@ class BrowseJourneyUseCase(
             journeys.map { journey ->
                 val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }
                 val steps = stepsByJourneyId[journeyId].orEmpty()
-                assembleJourneyDto(journey, steps, objectMapper)
+                journey.toJourneyDto(steps.map { it.toJourneyStepDto(objectMapper) }, objectMapper)
             },
         )
     }

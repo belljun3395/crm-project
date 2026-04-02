@@ -6,6 +6,8 @@ import com.manage.crm.journey.application.dto.JourneyLifecycleAction
 import com.manage.crm.journey.application.dto.JourneyLifecycleStatus
 import com.manage.crm.journey.application.dto.UpdateJourneyLifecycleStatusUseCaseIn
 import com.manage.crm.journey.application.dto.UpdateJourneyLifecycleStatusUseCaseOut
+import com.manage.crm.journey.application.dto.toJourneyDto
+import com.manage.crm.journey.application.dto.toJourneyStepDto
 import com.manage.crm.journey.domain.repository.JourneyRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
 import com.manage.crm.journey.exception.InvalidJourneyException
@@ -53,7 +55,7 @@ class UpdateJourneyLifecycleStatusUseCase(
         }
         if (currentStatus == status) {
             val steps = journeyStepRepository.findAllByJourneyIdOrderByStepOrderAsc(journeyId).toList()
-            return assembleJourneyDto(journey, steps, objectMapper)
+            return journey.toJourneyDto(steps.map { it.toJourneyStepDto(objectMapper) }, objectMapper)
         }
 
         val expectedVersion = journey.version
@@ -74,6 +76,6 @@ class UpdateJourneyLifecycleStatusUseCase(
             journeyRepository.findById(journeyId)
                 ?: throw NotFoundByIdException("Journey", journeyId)
         val steps = journeyStepRepository.findAllByJourneyIdOrderByStepOrderAsc(journeyId).toList()
-        return assembleJourneyDto(savedJourney, steps, objectMapper)
+        return savedJourney.toJourneyDto(steps.map { it.toJourneyStepDto(objectMapper) }, objectMapper)
     }
 }
