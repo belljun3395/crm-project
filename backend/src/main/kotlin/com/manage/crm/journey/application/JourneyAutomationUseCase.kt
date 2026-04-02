@@ -145,7 +145,20 @@ class JourneyAutomationUseCase(
                 )
             }.getOrElse { error ->
                 if (error is DataIntegrityViolationException) {
-                    log.debug { "Skip duplicated journey execution by triggerKey=$triggerKey" }
+                    val existing = journeyExecutionRepository.findByTriggerKey(triggerKey)
+                    if (existing != null &&
+                        existing.status in
+                        listOf(
+                            JourneyExecutionStatus.SUCCESS.name,
+                            JourneyExecutionStatus.FAILED.name,
+                        )
+                    ) {
+                        log.debug { "Skip already completed journey execution by triggerKey=$triggerKey, status=${existing.status}" }
+                    } else {
+                        log.warn {
+                            "Journey execution with triggerKey=$triggerKey already exists but is still RUNNING — possible stale execution, skipping re-entry"
+                        }
+                    }
                     return
                 }
                 throw error
@@ -159,6 +172,13 @@ class JourneyAutomationUseCase(
             execution.lastError = null
             journeyExecutionRepository.save(execution)
         }.onFailure { error ->
+            if (error is kotlinx.coroutines.CancellationException) {
+                execution.status = JourneyExecutionStatus.FAILED.name
+                execution.completedAt = LocalDateTime.now()
+                execution.lastError = "Cancelled"
+                journeyExecutionRepository.save(execution)
+                throw error
+            }
             log.error(error) { "Journey execution failed: journeyId=$journeyId, eventId=$eventId, userId=${event.userId}" }
             execution.status = JourneyExecutionStatus.FAILED.name
             execution.completedAt = LocalDateTime.now()
@@ -363,7 +383,7 @@ class JourneyAutomationUseCase(
             }
         }
 
-        return JourneyStepExecutionDecision.CONTINUE
+        error("Unreachable: repeat loop must either return on success or throw on final failure")
     }
 
     private suspend fun saveHistory(
@@ -423,11 +443,13 @@ class JourneyAutomationUseCase(
                         val userAttributesNode = runCatching { objectMapper.readTree(user.userAttributesJson) }.getOrNull()
                         userAttributesNode
                             ?.get(RequiredUserAttributeKey.EMAIL.value)
+                            ?.takeIf { !it.isNull }
                             ?.asText()
                             ?.takeIf { it.isNotBlank() }
                             ?.let { put("user.email", it) }
                         userAttributesNode
                             ?.get(RequiredUserAttributeKey.NAME.value)
+                            ?.takeIf { !it.isNull }
                             ?.asText()
                             ?.takeIf { it.isNotBlank() }
                             ?.let { put("user.name", it) }

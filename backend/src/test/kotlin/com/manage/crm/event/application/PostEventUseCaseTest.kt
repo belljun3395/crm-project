@@ -754,6 +754,7 @@ class PostEventUseCaseTest :
                 then("event save succeeds despite journey trigger failure") {
                     result.id shouldBe 401L
                     result.message shouldBe SaveEventMessage.EVENT_SAVE_SUCCESS.message
+                    coVerify(exactly = 1) { journeyTriggerPort.triggerByEvent(any()) }
                 }
             }
 

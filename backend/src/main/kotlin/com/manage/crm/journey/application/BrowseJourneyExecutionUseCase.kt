@@ -25,6 +25,10 @@ class BrowseJourneyExecutionUseCase(
     }
 
     suspend fun execute(useCaseIn: BrowseJourneyExecutionUseCaseIn): BrowseJourneyExecutionUseCaseOut {
+        if (useCaseIn.journeyId != null && (useCaseIn.eventId != null || useCaseIn.userId != null)) {
+            throw InvalidJourneyException("journeyId cannot be combined with eventId or userId")
+        }
+
         val executions =
             when {
                 useCaseIn.journeyId != null -> journeyExecutionRepository.findAllByJourneyIdOrderByCreatedAtDesc(useCaseIn.journeyId)
