@@ -17,7 +17,6 @@ import com.manage.crm.journey.application.dto.JourneyExecutionHistoryStatus
 import com.manage.crm.journey.application.dto.JourneyExecutionStatus
 import com.manage.crm.journey.application.dto.JourneyStepType
 import com.manage.crm.journey.application.dto.JourneyTriggerType
-import com.manage.crm.journey.exception.InvalidJourneyStepException
 import com.manage.crm.journey.domain.Journey
 import com.manage.crm.journey.domain.JourneyExecution
 import com.manage.crm.journey.domain.JourneyExecutionHistory
@@ -30,6 +29,7 @@ import com.manage.crm.journey.domain.repository.JourneySegmentCountStateReposito
 import com.manage.crm.journey.domain.repository.JourneySegmentUserStateRepository
 import com.manage.crm.journey.domain.repository.JourneyStepDeduplicationRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
+import com.manage.crm.journey.exception.InvalidJourneyStepException
 import com.manage.crm.segment.application.port.query.SegmentReadPort
 import com.manage.crm.user.application.port.query.UserReadPort
 import com.manage.crm.user.domain.vo.RequiredUserAttributeKey

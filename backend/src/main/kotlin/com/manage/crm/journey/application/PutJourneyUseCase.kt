@@ -2,11 +2,11 @@ package com.manage.crm.journey.application
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.manage.crm.journey.application.dto.JourneyLifecycleStatus
-import com.manage.crm.journey.application.dto.PutJourneyUseCaseOut
 import com.manage.crm.journey.application.dto.JourneySegmentTriggerEventType
 import com.manage.crm.journey.application.dto.JourneyStepType
 import com.manage.crm.journey.application.dto.JourneyTriggerType
 import com.manage.crm.journey.application.dto.PutJourneyUseCaseIn
+import com.manage.crm.journey.application.dto.PutJourneyUseCaseOut
 import com.manage.crm.journey.domain.JourneyStep
 import com.manage.crm.journey.domain.repository.JourneyExecutionHistoryRepository
 import com.manage.crm.journey.domain.repository.JourneyRepository

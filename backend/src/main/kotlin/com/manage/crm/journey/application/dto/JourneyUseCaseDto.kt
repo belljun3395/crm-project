@@ -57,14 +57,26 @@ enum class JourneyLifecycleAction {
     ARCHIVE,
 }
 
-data class PostJourneyUseCaseOut(val journey: JourneyDto)
+data class PostJourneyUseCaseOut(
+    val journey: JourneyDto,
+)
 
-data class PutJourneyUseCaseOut(val journey: JourneyDto)
+data class PutJourneyUseCaseOut(
+    val journey: JourneyDto,
+)
 
-data class BrowseJourneyUseCaseOut(val journeys: List<JourneyDto>)
+data class BrowseJourneyUseCaseOut(
+    val journeys: List<JourneyDto>,
+)
 
-data class BrowseJourneyExecutionUseCaseOut(val executions: List<JourneyExecutionDto>)
+data class BrowseJourneyExecutionUseCaseOut(
+    val executions: List<JourneyExecutionDto>,
+)
 
-data class BrowseJourneyExecutionHistoryUseCaseOut(val histories: List<JourneyExecutionHistoryDto>)
+data class BrowseJourneyExecutionHistoryUseCaseOut(
+    val histories: List<JourneyExecutionHistoryDto>,
+)
 
-data class UpdateJourneyLifecycleStatusUseCaseOut(val journey: JourneyDto)
+data class UpdateJourneyLifecycleStatusUseCaseOut(
+    val journey: JourneyDto,
+)
