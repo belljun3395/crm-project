@@ -117,28 +117,3 @@ data class JourneyDto(
     val createdAt: String?,
 )
 
-data class JourneyExecutionDto(
-    val id: Long,
-    val journeyId: Long,
-    val eventId: Long,
-    val userId: Long,
-    val status: String,
-    val currentStepOrder: Int,
-    val lastError: String?,
-    val triggerKey: String,
-    val startedAt: String,
-    val completedAt: String?,
-    val createdAt: String,
-    val updatedAt: String?,
-)
-
-data class JourneyExecutionHistoryDto(
-    val id: Long,
-    val journeyExecutionId: Long,
-    val journeyStepId: Long,
-    val status: String,
-    val attempt: Int,
-    val message: String?,
-    val idempotencyKey: String?,
-    val createdAt: String?,
-)
