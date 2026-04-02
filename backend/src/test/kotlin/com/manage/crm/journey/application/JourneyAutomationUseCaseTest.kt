@@ -5,14 +5,11 @@ import com.manage.crm.action.application.ActionChannel
 import com.manage.crm.action.application.ActionDispatchOut
 import com.manage.crm.action.application.ActionDispatchService
 import com.manage.crm.action.application.ActionDispatchStatus
-import com.manage.crm.event.application.port.query.EventReadPort
-import com.manage.crm.event.domain.Event
-import com.manage.crm.event.domain.vo.EventProperties
-import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.journey.application.dto.JourneyAutomationUseCaseIn
 import com.manage.crm.journey.application.dto.JourneyExecutionHistoryStatus
 import com.manage.crm.journey.application.dto.JourneyExecutionStatus
 import com.manage.crm.journey.application.dto.JourneyStepType
+import com.manage.crm.journey.application.dto.JourneyTriggerEvent
 import com.manage.crm.journey.application.dto.JourneyTriggerType
 import com.manage.crm.journey.domain.Journey
 import com.manage.crm.journey.domain.JourneyExecution
@@ -50,7 +47,6 @@ class JourneyAutomationUseCaseTest :
         lateinit var journeySegmentUserStateRepository: JourneySegmentUserStateRepository
         lateinit var journeySegmentCountStateRepository: JourneySegmentCountStateRepository
         lateinit var segmentReadPort: SegmentReadPort
-        lateinit var eventReadPort: EventReadPort
         lateinit var actionDispatchService: ActionDispatchService
         lateinit var userReadPort: UserReadPort
         lateinit var useCase: JourneyAutomationUseCase
@@ -64,7 +60,6 @@ class JourneyAutomationUseCaseTest :
             journeySegmentUserStateRepository = mockk()
             journeySegmentCountStateRepository = mockk()
             segmentReadPort = mockk()
-            eventReadPort = mockk()
             actionDispatchService = mockk()
             userReadPort = mockk()
 
@@ -78,7 +73,6 @@ class JourneyAutomationUseCaseTest :
                     journeySegmentUserStateRepository = journeySegmentUserStateRepository,
                     journeySegmentCountStateRepository = journeySegmentCountStateRepository,
                     segmentReadPort = segmentReadPort,
-                    eventReadPort = eventReadPort,
                     actionDispatchService = actionDispatchService,
                     userReadPort = userReadPort,
                     objectMapper = ObjectMapper(),
@@ -112,7 +106,6 @@ class JourneyAutomationUseCaseTest :
                 journeySegmentUserStateRepository,
                 journeySegmentCountStateRepository,
                 segmentReadPort,
-                eventReadPort,
                 actionDispatchService,
                 userReadPort,
             )
@@ -275,18 +268,12 @@ class JourneyAutomationUseCaseTest :
         }
     }) {
     companion object {
-        private fun newEvent(): Event =
-            Event.new(
+        private fun newEvent(): JourneyTriggerEvent =
+            JourneyTriggerEvent(
                 id = 100L,
                 name = "purchase",
                 userId = 1L,
-                properties =
-                    EventProperties(
-                        listOf(
-                            EventProperty("amount", "120"),
-                            EventProperty("plan", "starter"),
-                        ),
-                    ),
+                properties = mapOf("amount" to "120", "plan" to "starter"),
                 createdAt = LocalDateTime.of(2026, 2, 25, 10, 0, 0),
             )
     }

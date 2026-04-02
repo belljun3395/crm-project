@@ -1,10 +1,8 @@
 package com.manage.crm.journey.queue
 
-import com.manage.crm.event.domain.Event
-import com.manage.crm.event.domain.vo.EventProperties
-import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.journey.application.JourneyAutomationUseCase
 import com.manage.crm.journey.application.dto.JourneyAutomationUseCaseIn
+import com.manage.crm.journey.application.dto.JourneyTriggerEvent
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
@@ -19,19 +17,11 @@ class JourneyTriggerQueueProcessor(
                 journeyAutomationUseCase.execute(
                     JourneyAutomationUseCaseIn(
                         event =
-                            Event.new(
+                            JourneyTriggerEvent(
                                 id = eventPayload.id,
                                 name = eventPayload.name,
                                 userId = eventPayload.userId,
-                                properties =
-                                    EventProperties(
-                                        eventPayload.properties.map { property ->
-                                            EventProperty(
-                                                key = property.key,
-                                                value = property.value,
-                                            )
-                                        },
-                                    ),
+                                properties = eventPayload.properties.associate { it.key to it.value },
                                 createdAt = eventPayload.createdAt ?: LocalDateTime.now(),
                             ),
                     ),

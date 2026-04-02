@@ -1,8 +1,6 @@
 package com.manage.crm.journey.application.automation.condition
 
-import com.manage.crm.event.domain.Event
-import com.manage.crm.event.domain.vo.EventProperties
-import com.manage.crm.event.domain.vo.EventProperty
+import com.manage.crm.journey.application.dto.JourneyTriggerEvent
 import com.manage.crm.journey.domain.Journey
 import com.manage.crm.journey.domain.JourneyStep
 import com.manage.crm.journey.domain.repository.JourneyRepository
@@ -63,11 +61,11 @@ class ConditionTriggerHandlerTest :
                             retryCount = 0,
                         )
                     val event =
-                        Event.new(
+                        JourneyTriggerEvent(
                             id = 100L,
                             name = "purchase",
                             userId = 10L,
-                            properties = EventProperties(listOf(EventProperty("plan", "pro"))),
+                            properties = mapOf("plan" to "pro"),
                             createdAt = LocalDateTime.of(2026, 4, 1, 10, 0, 0),
                         )
 
@@ -98,11 +96,11 @@ class ConditionTriggerHandlerTest :
                                 active = true,
                             ).apply { id = 88L }
                     val event =
-                        Event.new(
+                        JourneyTriggerEvent(
                             id = 101L,
                             name = "purchase",
                             userId = 10L,
-                            properties = EventProperties(listOf(EventProperty("plan", "pro"))),
+                            properties = mapOf("plan" to "pro"),
                             createdAt = LocalDateTime.of(2026, 4, 1, 10, 0, 0),
                         )
 

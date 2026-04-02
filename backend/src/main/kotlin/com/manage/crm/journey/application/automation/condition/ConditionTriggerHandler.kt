@@ -1,6 +1,6 @@
 package com.manage.crm.journey.application.automation.condition
 
-import com.manage.crm.event.domain.Event
+import com.manage.crm.journey.application.dto.JourneyTriggerEvent
 import com.manage.crm.journey.application.dto.JourneyTriggerType
 import com.manage.crm.journey.domain.Journey
 import com.manage.crm.journey.domain.repository.JourneyRepository
@@ -17,8 +17,8 @@ class ConditionTriggerHandler(
     private val log = KotlinLogging.logger {}
 
     suspend fun processConditionTriggeredJourneys(
-        event: Event,
-        executeJourney: suspend (journey: Journey, event: Event, triggerKey: String) -> Unit,
+        event: JourneyTriggerEvent,
+        executeJourney: suspend (journey: Journey, event: JourneyTriggerEvent, triggerKey: String) -> Unit,
     ) {
         val conditionJourneys =
             journeyRepository
@@ -28,7 +28,7 @@ class ConditionTriggerHandler(
             return
         }
 
-        val eventId = requireNotNull(event.id) { "Event id cannot be null" }
+        val eventId = event.id
         conditionJourneys.forEach { journey ->
             runCatching {
                 val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }

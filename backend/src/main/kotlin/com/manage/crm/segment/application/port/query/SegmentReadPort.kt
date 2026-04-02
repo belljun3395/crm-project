@@ -24,4 +24,6 @@ interface SegmentReadPort {
         users: List<SegmentTargetUserReadModel>,
         eventsByUserId: Map<Long, List<SegmentTargetEventReadModel>> = emptyMap(),
     ): List<Long>
+
+    suspend fun findTargetUserIds(segmentId: Long): List<Long>
 }

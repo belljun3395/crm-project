@@ -3,11 +3,8 @@ package com.manage.crm.journey.application.automation.segment
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.manage.crm.event.application.port.query.EventReadPort
-import com.manage.crm.event.domain.Event
-import com.manage.crm.event.domain.vo.EventProperties
-import com.manage.crm.event.domain.vo.EventProperty
 import com.manage.crm.journey.application.dto.JourneySegmentTriggerEventType
+import com.manage.crm.journey.application.dto.JourneyTriggerEvent
 import com.manage.crm.journey.application.dto.JourneyTriggerType
 import com.manage.crm.journey.domain.Journey
 import com.manage.crm.journey.domain.JourneySegmentCountState
@@ -16,8 +13,6 @@ import com.manage.crm.journey.domain.repository.JourneyRepository
 import com.manage.crm.journey.domain.repository.JourneySegmentCountStateRepository
 import com.manage.crm.journey.domain.repository.JourneySegmentUserStateRepository
 import com.manage.crm.segment.application.port.query.SegmentReadPort
-import com.manage.crm.segment.application.port.query.SegmentTargetEventReadModel
-import com.manage.crm.segment.application.port.query.SegmentTargetUserReadModel
 import com.manage.crm.user.application.port.query.UserReadModel
 import com.manage.crm.user.application.port.query.UserReadPort
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -30,7 +25,6 @@ class SegmentTriggerHandler(
     private val journeySegmentUserStateRepository: JourneySegmentUserStateRepository,
     private val journeySegmentCountStateRepository: JourneySegmentCountStateRepository,
     private val segmentReadPort: SegmentReadPort,
-    private val eventReadPort: EventReadPort,
     private val userReadPort: UserReadPort,
     private val objectMapper: ObjectMapper,
 ) {
@@ -38,7 +32,7 @@ class SegmentTriggerHandler(
 
     suspend fun processSegmentTriggeredJourneys(
         changedUserIds: List<Long>? = null,
-        executeJourney: suspend (journey: Journey, event: Event, triggerKey: String) -> Unit,
+        executeJourney: suspend (journey: Journey, event: JourneyTriggerEvent, triggerKey: String) -> Unit,
     ) {
         val journeys = journeyRepository.findAllByTriggerTypeAndActiveTrue(JourneyTriggerType.SEGMENT.name).toList()
         if (journeys.isEmpty()) {
@@ -58,7 +52,7 @@ class SegmentTriggerHandler(
     private suspend fun processSegmentJourney(
         journey: Journey,
         changedUserIds: List<Long>?,
-        executeJourney: suspend (journey: Journey, event: Event, triggerKey: String) -> Unit,
+        executeJourney: suspend (journey: Journey, event: JourneyTriggerEvent, triggerKey: String) -> Unit,
     ) {
         val segmentId = journey.triggerSegmentId ?: return
         val segmentTriggerEventType =
@@ -96,7 +90,7 @@ class SegmentTriggerHandler(
         segmentId: Long,
         segmentTriggerEventType: JourneySegmentTriggerEventType,
         changedUserIds: List<Long>?,
-        executeJourney: suspend (journey: Journey, event: Event, triggerKey: String) -> Unit,
+        executeJourney: suspend (journey: Journey, event: JourneyTriggerEvent, triggerKey: String) -> Unit,
     ) {
         val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }
         val currentMatchedUserIds = resolveSegmentTargetUserIds(segmentId).toSet()
@@ -198,7 +192,7 @@ class SegmentTriggerHandler(
         journey: Journey,
         segmentId: Long,
         segmentTriggerEventType: JourneySegmentTriggerEventType,
-        executeJourney: suspend (journey: Journey, event: Event, triggerKey: String) -> Unit,
+        executeJourney: suspend (journey: Journey, event: JourneyTriggerEvent, triggerKey: String) -> Unit,
     ) {
         val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }
         val threshold = journey.triggerSegmentCountThreshold ?: return
@@ -238,41 +232,7 @@ class SegmentTriggerHandler(
         executeJourney(journey, syntheticEvent, triggerKey)
     }
 
-    private suspend fun resolveSegmentTargetUserIds(segmentId: Long): List<Long> {
-        val users =
-            userReadPort
-                .findAll()
-                .map { user ->
-                    SegmentTargetUserReadModel(
-                        id = user.id,
-                        userAttributesJson = user.userAttributesJson,
-                        createdAt = user.createdAt,
-                    )
-                }
-        if (users.isEmpty()) {
-            return emptyList()
-        }
-
-        val eventsByUserId =
-            eventReadPort
-                .findAllByUserIdIn(users.map { it.id })
-                .groupBy { event -> event.userId }
-                .mapValues { (_, events) ->
-                    events.map { event ->
-                        SegmentTargetEventReadModel(
-                            userId = event.userId,
-                            name = event.name,
-                            occurredAt = event.createdAt,
-                        )
-                    }
-                }
-
-        return segmentReadPort.findTargetUserIds(
-            segmentId = segmentId,
-            users = users,
-            eventsByUserId = eventsByUserId,
-        )
-    }
+    private suspend fun resolveSegmentTargetUserIds(segmentId: Long): List<Long> = segmentReadPort.findTargetUserIds(segmentId)
 
     private suspend fun saveJourneySegmentUserState(
         previousState: JourneySegmentUserState?,
@@ -401,24 +361,24 @@ class SegmentTriggerHandler(
         segmentCount: Long,
         transitionVersion: Long,
         threshold: Long?,
-    ): Event {
+    ): JourneyTriggerEvent {
         val properties =
-            mutableListOf(
-                EventProperty("segmentId", segmentId.toString()),
-                EventProperty("segmentTriggerEvent", segmentTriggerEventType.name),
-                EventProperty("segmentCount", segmentCount.toString()),
-                EventProperty("transitionVersion", transitionVersion.toString()),
-            )
-        if (threshold != null) {
-            properties.add(EventProperty("segmentThreshold", threshold.toString()))
-        }
+            buildMap {
+                put("segmentId", segmentId.toString())
+                put("segmentTriggerEvent", segmentTriggerEventType.name)
+                put("segmentCount", segmentCount.toString())
+                put("transitionVersion", transitionVersion.toString())
+                if (threshold != null) {
+                    put("segmentThreshold", threshold.toString())
+                }
+            }
 
         val syntheticEventId = transitionVersion.coerceAtLeast(1L)
-        return Event.new(
+        return JourneyTriggerEvent(
             id = syntheticEventId,
             name = "SEGMENT_${segmentTriggerEventType.name}",
             userId = userId,
-            properties = EventProperties(properties),
+            properties = properties,
             createdAt = LocalDateTime.now(),
         )
     }

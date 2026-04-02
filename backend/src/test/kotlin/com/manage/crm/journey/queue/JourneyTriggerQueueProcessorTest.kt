@@ -47,9 +47,7 @@ class JourneyTriggerQueueProcessorTest :
                     inputSlot.captured.event?.name shouldBe "purchase"
                     inputSlot.captured.event?.userId shouldBe 101L
                     inputSlot.captured.event
-                        ?.properties
-                        ?.value
-                        ?.map { it.key to it.value } shouldContainExactly listOf("plan" to "pro")
+                        ?.properties shouldBe mapOf("plan" to "pro")
                     inputSlot.captured.changedUserIds shouldBe null
                 }
             }

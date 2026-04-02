@@ -16,5 +16,6 @@ class SegmentArchitectureTest : BaseModuleArchitectureTest() {
             enforceInternalLayerNoCrossModuleDependency = true,
             enforceUtilPureFunctions = false,
             crossModuleReadMethodPrefixes = DEFAULT_CROSS_MODULE_READ_METHOD_PREFIXES + "trigger",
+            adapterLayerAllowedExternalModules = setOf("user", "event"),
         )
 }
