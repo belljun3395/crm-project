@@ -4,14 +4,14 @@ spring:
     application:
         name: crm
     r2dbc:
-        url: ${DATABASE_URL:r2dbc:pool:postgresql://localhost:5432/crm}
-        username: ${DATABASE_USERNAME:postgres}
-        password: ${DATABASE_PASSWORD:postgres}
+        url: ${DATABASE_URL}
+        username: ${DATABASE_USERNAME}
+        password: ${DATABASE_PASSWORD}
         routing:
-            master-url: ${MASTER_DATABASE_URL:r2dbc:pool:postgresql://localhost:5432/crm}
-            replica-url: ${REPLICA_DATABASE_URL:r2dbc:pool:postgresql://localhost:5432/crm}
-            username: ${DATABASE_USERNAME:postgres}
-            password: ${DATABASE_PASSWORD:postgres}
+            master-url: ${MASTER_DATABASE_URL}
+            replica-url: ${REPLICA_DATABASE_URL}
+            username: ${DATABASE_USERNAME}
+            password: ${DATABASE_PASSWORD}
     data:
         redis:
             cluster:
