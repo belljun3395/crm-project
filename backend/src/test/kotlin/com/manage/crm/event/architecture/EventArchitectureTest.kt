@@ -2,6 +2,7 @@ package com.manage.crm.event.architecture
 
 import com.manage.crm.architecture.BaseModuleArchitectureTest
 import com.manage.crm.architecture.ControllerReturnPolicy
+import com.manage.crm.architecture.DEFAULT_CROSS_MODULE_READ_METHOD_PREFIXES
 import com.manage.crm.architecture.ModuleRuleSpec
 
 class EventArchitectureTest : BaseModuleArchitectureTest() {
@@ -13,5 +14,6 @@ class EventArchitectureTest : BaseModuleArchitectureTest() {
             enforceCrossModuleDependencyViaQueryFacade = true,
             enforceCrossModuleReadPortPrefix = true,
             enforceUtilPureFunctions = true,
+            crossModuleReadMethodPrefixes = DEFAULT_CROSS_MODULE_READ_METHOD_PREFIXES + "trigger",
         )
 }
