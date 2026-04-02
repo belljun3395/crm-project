@@ -24,13 +24,9 @@ class KafkaEmailEventRelay(
         event: EmailTrackingEvent,
         acknowledgment: Acknowledgment,
     ) {
-        runCatching {
-            emailTrackingEventMapper.toDomainEvent(event)?.let { domainEvent ->
-                emailEventPublisher.publishEvent(domainEvent)
-                log.info { "Published email tracking domain event: ${domainEvent::class.simpleName} for messageId=${event.messageId}" }
-            }
-        }.onFailure { e ->
-            log.error(e) { "Failed to process email tracking event: $event" }
+        emailTrackingEventMapper.toDomainEvent(event)?.let { domainEvent ->
+            emailEventPublisher.publishEvent(domainEvent)
+            log.info { "Published email tracking domain event: ${domainEvent::class.simpleName} for messageId=${event.messageId}" }
         }
         acknowledgment.acknowledge()
     }
