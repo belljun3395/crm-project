@@ -104,46 +104,6 @@ services:
         container_name: crm-redis-insight
         network_mode: "service:crm-redis-cluster"
 
-    crm-localstack:
-        container_name: crm-localstack
-        image: localstack/localstack:3.8
-        ports:
-            - "4566:4566"
-            - "4510-4559:4510-4559"
-        environment:
-            - DEBUG=1
-            - DOCKER_HOST=unix:///var/run/docker.sock
-            - START_WEB=1
-            - LEGACY_DIRECTORIES=1
-            - AWS_DEFAULT_REGION=ap-northeast-2
-            - AWS_ACCESS_KEY_ID=test
-            - AWS_SECRET_ACCESS_KEY=test
-        volumes:
-            - "/var/run/docker.sock:/var/run/docker.sock"
-        healthcheck:
-            test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
-            interval: 10s
-            timeout: 5s
-            retries: 3
-            start_period: 10s
-
-    crm-localstack-init:
-        container_name: crm-localstack-init
-        image: amazon/aws-cli:latest
-        depends_on:
-            crm-localstack:
-                condition: service_healthy
-        environment:
-            - LOCALSTACK_HOST=crm-localstack
-            - AWS_DEFAULT_REGION=ap-northeast-2
-            - AWS_ACCESS_KEY_ID=test
-            - AWS_SECRET_ACCESS_KEY=test
-            - AWS_ENDPOINT_URL=http://crm-localstack:4566
-        volumes:
-            - "./localstack-init:/scripts"
-        entrypoint: ["sh", "/scripts/setup-aws-services.sh"]
-
-    # Kafka for Redis+Kafka scheduler implementation
     crm-kafka:
         container_name: crm-kafka
         image: apache/kafka:3.8.1

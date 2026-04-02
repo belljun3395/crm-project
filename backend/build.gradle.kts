@@ -72,7 +72,6 @@ dependencyManagement {
     imports {
         mavenBom(bomCoordinate(libs.spring.modulith.bom))
         mavenBom(bomCoordinate(libs.spring.cloud.dependencies.bom))
-        mavenBom(bomCoordinate(libs.aws.sdk.bom))
     }
 }
 
@@ -125,14 +124,6 @@ dependencies {
     /** aspectj */
     implementation(libs.aspectjweaver)
 
-    /** aws */
-    implementation(libs.spring.cloud.aws.starter.sqs)
-    implementation(libs.aws.sdk.sqs)
-    implementation(libs.aws.sdk.sns)
-    implementation(libs.aws.sdk.ses)
-    implementation(libs.aws.sdk.scheduler)
-    implementation(libs.aws.query.protocol)
-
     /** docs */
     runtimeOnly(libs.therapi.runtime.javadoc.scribe)
     kapt(libs.therapi.runtime.javadoc.scribe)
@@ -164,7 +155,6 @@ dependencies {
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.testcontainers.kafka)
-    testImplementation(libs.testcontainers.localstack)
     testImplementation(libs.testcontainers)
 
     /** logger */

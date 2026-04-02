@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component
  * Publishes scheduled task events to Kafka for distributed processing
  */
 @Component
-@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
+@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka", matchIfMissing = true)
 class KafkaScheduledTaskExecutor(
     private val kafkaTemplate: KafkaTemplate<String, ScheduledTaskEvent>,
 ) {

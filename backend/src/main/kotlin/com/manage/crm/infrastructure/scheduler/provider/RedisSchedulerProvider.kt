@@ -22,7 +22,7 @@ import java.time.ZoneOffset
  * - Value: JSON containing schedule name, schedule time, and payload
  */
 @Component
-@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
+@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka", matchIfMissing = true)
 class RedisSchedulerProvider(
     private val redisTemplate: ReactiveRedisTemplate<String, String>,
     private val objectMapper: ObjectMapper,

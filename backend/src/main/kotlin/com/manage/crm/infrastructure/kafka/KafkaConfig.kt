@@ -1,5 +1,6 @@
 package com.manage.crm.infrastructure.kafka
 
+import com.manage.crm.email.event.relay.EmailTrackingEvent
 import com.manage.crm.infrastructure.scheduler.event.ScheduledTaskEvent
 import com.manage.crm.journey.queue.JourneyTriggerQueueMessage
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -7,7 +8,6 @@ import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
@@ -21,11 +21,10 @@ import org.springframework.kafka.support.serializer.JsonDeserializer
 import org.springframework.kafka.support.serializer.JsonSerializer
 
 /**
- * Kafka configuration for scheduled task system
- * Configures producers and consumers for the scheduled-tasks topic
+ * Kafka configuration for the messaging infrastructure.
+ * Configures producers and consumers for scheduled-tasks, journey-triggers, and email-tracking-events topics.
  */
 @Configuration
-@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
 class KafkaConfig {
     @Value("\${spring.kafka.bootstrap-servers}")
     private lateinit var bootstrapServers: String
@@ -36,9 +35,11 @@ class KafkaConfig {
     @Value("\${spring.kafka.consumer.journey-group-id:crm-journey-trigger-consumer}")
     private lateinit var journeyTriggerGroupId: String
 
-    /**
-     * Producer configuration for ScheduledTaskEvent
-     */
+    @Value("\${email.tracking.kafka.group-id:crm-email-tracking-consumer}")
+    private lateinit var emailTrackingGroupId: String
+
+    // ─── ScheduledTaskEvent ───────────────────────────────────────────────────
+
     @Bean
     fun scheduledTaskProducerFactory(): ProducerFactory<String, ScheduledTaskEvent> {
         val configProps =
@@ -46,10 +47,10 @@ class KafkaConfig {
                 ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
                 ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
                 ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java,
-                ProducerConfig.ACKS_CONFIG to "all", // Wait for all replicas
+                ProducerConfig.ACKS_CONFIG to "all",
                 ProducerConfig.RETRIES_CONFIG to 3,
-                ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION to 1, // Ensure ordering
-                ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true, // Prevent duplicates
+                ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION to 1,
+                ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true,
             )
         return DefaultKafkaProducerFactory(configProps)
     }
@@ -57,9 +58,6 @@ class KafkaConfig {
     @Bean
     fun scheduledTaskKafkaTemplate(): KafkaTemplate<String, ScheduledTaskEvent> = KafkaTemplate(scheduledTaskProducerFactory())
 
-    /**
-     * Consumer configuration for ScheduledTaskEvent
-     */
     @Bean
     fun scheduledTaskConsumerFactory(): ConsumerFactory<String, ScheduledTaskEvent> {
         val props =
@@ -69,9 +67,9 @@ class KafkaConfig {
                 ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
                 ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to JsonDeserializer::class.java,
                 ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
-                ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false, // Manual acknowledgment
+                ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
                 ConsumerConfig.MAX_POLL_RECORDS_CONFIG to 10,
-                JsonDeserializer.TRUSTED_PACKAGES to "*", // Allow all packages for deserialization
+                JsonDeserializer.TRUSTED_PACKAGES to "*",
                 JsonDeserializer.VALUE_DEFAULT_TYPE to ScheduledTaskEvent::class.java.name,
             )
         return DefaultKafkaConsumerFactory(
@@ -85,10 +83,12 @@ class KafkaConfig {
     fun scheduledTaskKafkaListenerContainerFactory(): ConcurrentKafkaListenerContainerFactory<String, ScheduledTaskEvent> {
         val factory = ConcurrentKafkaListenerContainerFactory<String, ScheduledTaskEvent>()
         factory.consumerFactory = scheduledTaskConsumerFactory()
-        factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL // Manual acknowledgment
-        factory.setConcurrency(3) // 3 concurrent consumers (matches 3 partitions)
+        factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
+        factory.setConcurrency(3)
         return factory
     }
+
+    // ─── JourneyTriggerQueueMessage ───────────────────────────────────────────
 
     @Bean
     fun journeyTriggerProducerFactory(): ProducerFactory<String, JourneyTriggerQueueMessage> {
@@ -133,6 +133,56 @@ class KafkaConfig {
     fun journeyTriggerKafkaListenerContainerFactory(): ConcurrentKafkaListenerContainerFactory<String, JourneyTriggerQueueMessage> {
         val factory = ConcurrentKafkaListenerContainerFactory<String, JourneyTriggerQueueMessage>()
         factory.consumerFactory = journeyTriggerConsumerFactory()
+        factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
+        factory.setConcurrency(3)
+        return factory
+    }
+
+    // ─── EmailTrackingEvent ───────────────────────────────────────────────────
+
+    @Bean
+    fun emailTrackingProducerFactory(): ProducerFactory<String, EmailTrackingEvent> {
+        val configProps =
+            mapOf(
+                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to JsonSerializer::class.java,
+                ProducerConfig.ACKS_CONFIG to "all",
+                ProducerConfig.RETRIES_CONFIG to 3,
+                ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION to 1,
+                ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true,
+            )
+        return DefaultKafkaProducerFactory(configProps)
+    }
+
+    @Bean
+    fun emailTrackingKafkaTemplate(): KafkaTemplate<String, EmailTrackingEvent> = KafkaTemplate(emailTrackingProducerFactory())
+
+    @Bean
+    fun emailTrackingConsumerFactory(): ConsumerFactory<String, EmailTrackingEvent> {
+        val props =
+            mapOf(
+                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+                ConsumerConfig.GROUP_ID_CONFIG to emailTrackingGroupId,
+                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to JsonDeserializer::class.java,
+                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
+                ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
+                ConsumerConfig.MAX_POLL_RECORDS_CONFIG to 20,
+                JsonDeserializer.TRUSTED_PACKAGES to "*",
+                JsonDeserializer.VALUE_DEFAULT_TYPE to EmailTrackingEvent::class.java.name,
+            )
+        return DefaultKafkaConsumerFactory(
+            props,
+            StringDeserializer(),
+            JsonDeserializer(EmailTrackingEvent::class.java),
+        )
+    }
+
+    @Bean
+    fun emailTrackingKafkaListenerContainerFactory(): ConcurrentKafkaListenerContainerFactory<String, EmailTrackingEvent> {
+        val factory = ConcurrentKafkaListenerContainerFactory<String, EmailTrackingEvent>()
+        factory.consumerFactory = emailTrackingConsumerFactory()
         factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
         factory.setConcurrency(3)
         return factory

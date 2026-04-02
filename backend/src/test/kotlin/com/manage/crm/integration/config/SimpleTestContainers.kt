@@ -3,7 +3,6 @@ package com.manage.crm.integration.config
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.kafka.KafkaContainer
 import org.testcontainers.utility.DockerImageName
@@ -19,13 +18,6 @@ object SimpleTestContainers {
             .withDatabaseName("crm")
             .withUsername("postgres")
             .withPassword("postgres")
-            .withReuse(true)
-            .apply { start() }
-    }
-
-    private val localstack by lazy {
-        LocalStackContainer(DockerImageName.parse("localstack/localstack:3.8"))
-            .withServices(LocalStackContainer.Service.SES)
             .withReuse(true)
             .apply { start() }
     }
@@ -104,12 +96,6 @@ object SimpleTestContainers {
         registry.add("spring.datasource.username") { postgres.username }
         registry.add("spring.datasource.password") { postgres.password }
         registry.add("spring.datasource.driver-class-name") { "org.postgresql.Driver" }
-
-        // LocalStack 설정
-        registry.add("spring.aws.endpoint-url") { localstack.endpoint.toString() }
-        registry.add("spring.aws.region") { localstack.region }
-        registry.add("spring.aws.credentials.access-key") { localstack.accessKey }
-        registry.add("spring.aws.credentials.secret-key") { localstack.secretKey }
 
         // Redis cluster 설정 (고정 포트 3-node 클러스터)
         redis // ensure container is started

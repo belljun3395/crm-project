@@ -32,17 +32,30 @@ spring:
 mail:
     # Mail send provider.
     # Supported values:
-    # - 'ses': Uses AWS Simple Email Service (Default, uses LocalStack in local profile)
-    # - 'smtp': Uses SMTP via JavaMail (cloud-neutral, requires spring.mail.* settings)
-    provider: ${MAIL_PROVIDER:ses}
+    # - 'smtp': Uses SMTP via JavaMail (Default, cloud-neutral, requires spring.mail.* settings)
+    # - 'ses': Uses AWS Simple Email Service (requires spring.aws.* settings)
+    provider: ${MAIL_PROVIDER:smtp}
 
 
 scheduler:
     # Scheduler implementation provider.
     # Supported values:
-    # - 'aws': Uses AWS EventBridge Scheduler (Default, uses LocalStack in local profile)
-    # - 'redis-kafka': Uses Redis Sorted Sets for scheduling and Kafka for distributed execution
-    provider: ${SCHEDULER_PROVIDER:aws}
+    # - 'redis-kafka': Uses Redis Sorted Sets for scheduling and Kafka for distributed execution (Default)
+    # - 'aws': Uses AWS EventBridge Scheduler (requires spring.aws.* settings)
+    provider: ${SCHEDULER_PROVIDER:redis-kafka}
+
+email:
+    tracking:
+        # Email tracking event receiver provider.
+        # Supported values:
+        # - 'kafka': Receives tracking events from Kafka topic 'email-tracking-events' (Default)
+        # - 'webhook': Receives tracking events via HTTP POST /api/v1/email/tracking/webhook
+        provider: ${EMAIL_TRACKING_PROVIDER:kafka}
+        kafka:
+            topic: ${EMAIL_TRACKING_KAFKA_TOPIC:email-tracking-events}
+            group-id: ${EMAIL_TRACKING_KAFKA_GROUP_ID:crm-email-tracking-consumer}
+        webhook:
+            signing-secret: ${EMAIL_TRACKING_WEBHOOK_SIGNING_SECRET:}
 
 webhook:
     # Enable/disable webhook feature globally (dispatching events to registered URLs)

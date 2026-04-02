@@ -12,7 +12,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 
 @Component
-@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "aws", matchIfMissing = true)
+@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "in-memory")
 class InMemoryJourneyTriggerQueuePublisher(
     private val processor: JourneyTriggerQueueProcessor,
 ) : JourneyTriggerQueuePublisher {

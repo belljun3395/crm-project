@@ -25,7 +25,7 @@ import kotlin.time.Duration.Companion.seconds
  * 3. Remove successfully published schedules from Redis
  */
 @Service
-@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
+@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka", matchIfMissing = true)
 class RedisScheduleMonitoringService(
     private val redisSchedulerProvider: SchedulerProvider,
     private val kafkaExecutor: KafkaScheduledTaskExecutor,

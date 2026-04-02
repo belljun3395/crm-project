@@ -119,19 +119,12 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
     }
 
     private fun assertSchedulerResponse(response: WebTestClient.ResponseSpec) {
-        // Accept 200 OK or 500 Internal Server Error as valid responses
-        // 500 occurs because LocalStack EventBridge Scheduler only provides mocked functionality
-        // and doesn't actually execute schedules or trigger targets as documented at:
-        // https://docs.localstack.cloud/user-guide/aws/scheduler/
-        val statusCode = response.returnResult(String::class.java).status.value()
-        assert(statusCode == 200 || statusCode == 500) { "Expected 200 or 500, but got $statusCode" }
+        response.expectStatus().isOk
     }
 
     private fun assertSchedulerDeleteResponse(response: WebTestClient.ResponseSpec) {
-        // Accept 200 OK, 404 Not Found, or 500 Internal Server Error as valid responses
-        // 500 occurs because LocalStack EventBridge Scheduler only provides mocked functionality
         val statusCode = response.returnResult(String::class.java).status.value()
-        assert(statusCode == 200 || statusCode == 404 || statusCode == 500) { "Expected 200, 404, or 500, but got $statusCode" }
+        assert(statusCode == 200 || statusCode == 404) { "Expected 200 or 404, but got $statusCode" }
     }
 
     private fun createTestEvent(
@@ -283,7 +276,6 @@ class EmailControllerIntegrationTest : AbstractIntegrationTest() {
             }
         }
 
-        // Note: Email sending tests using LocalStack SES
         describe("POST /api/v1/emails/send/notifications") {
             it("send notification email to specific users") {
                 // given - create user and template

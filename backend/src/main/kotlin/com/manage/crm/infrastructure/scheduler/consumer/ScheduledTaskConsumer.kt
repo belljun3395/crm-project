@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component
  * Processes messages from the scheduled-tasks topic and executes business logic
  */
 @Component
-@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
+@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka", matchIfMissing = true)
 class ScheduledTaskConsumer(
     private val applicationEventPublisher: ApplicationEventPublisher,
 ) {

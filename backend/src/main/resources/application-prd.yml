@@ -34,20 +34,6 @@ spring:
                         enable: true
                     EnableSSL:
                         enable: true
-    aws:
-        region: ap-northeast-2
-        credentials:
-            access-key: ${AWS_ACCESS_KEY}
-            secret-key: ${AWS_SECRET_KEY}
-        mail:
-            configuration-set:
-                default: ${AWS_CONFIGURATION_SET}
-        schedule:
-            role-arn: ${AWS_SCHEDULE_ROLE_ARN}
-            sqs-arn: ${AWS_SCHEDULE_SQS_ARN}
-            group-name: ${AWS_SCHEDULE_GROUP_NAME}
-        sns:
-            cache-invalidation-topic-arn: ${AWS_SNS_CACHE_INVALIDATION_TOPIC_ARN}
     kafka:
         bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
         consumer:
@@ -57,9 +43,6 @@ spring:
         sql-migration-suffixes: sql
         baseline-on-migrate: true
         baseline-version: 0
-
-# GCP 환경에서 CLOUD_PROVIDER=gcp 설정 시 아래 값들이 필요합니다.
-# cloud.provider=aws(기본값)일 때는 아래 설정이 무시됩니다.
 
 springdoc:
     swagger-ui:

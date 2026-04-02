@@ -10,8 +10,6 @@ springdoc = "2.3.0"
 springdoc-openapi-plugin = "1.9.0"
 javadoc-scribe = "0.15.0"
 hikari-cp = "6.2.1"
-aws-sqs = "3.0.1"
-aws-sdk = "2.29.45"
 jmolecules = "0.24.1"
 arrow = "1.2.1"
 aspectj = "1.9.5"
@@ -32,7 +30,6 @@ jooq = "3.19.18"
 [libraries]
 spring-modulith-bom = { module = "org.springframework.modulith:spring-modulith-bom", version.ref = "spring-modulith" }
 spring-cloud-dependencies-bom = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "spring-cloud" }
-aws-sdk-bom = { module = "software.amazon.awssdk:bom", version.ref = "aws-sdk" }
 
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5" }
@@ -72,13 +69,6 @@ arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
 aspectjweaver = { module = "org.aspectj:aspectjweaver", version.ref = "aspectj" }
 
-spring-cloud-aws-starter-sqs = { module = "io.awspring.cloud:spring-cloud-aws-starter-sqs", version.ref = "aws-sqs" }
-aws-sdk-sqs = { module = "software.amazon.awssdk:sqs" }
-aws-sdk-sns = { module = "software.amazon.awssdk:sns" }
-aws-sdk-ses = { module = "software.amazon.awssdk:ses" }
-aws-sdk-scheduler = { module = "software.amazon.awssdk:scheduler" }
-aws-query-protocol = { module = "software.amazon.awssdk:aws-query-protocol" }
-
 therapi-runtime-javadoc-scribe = { module = "com.github.therapi:therapi-runtime-javadoc-scribe", version.ref = "javadoc-scribe" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
@@ -100,7 +90,6 @@ testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
 testcontainers-kafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers" }
-testcontainers-localstack = { module = "org.testcontainers:localstack", version.ref = "testcontainers" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
