@@ -24,20 +24,23 @@ class GenericWebhookPayloadNormalizer : WebhookPayloadNormalizer {
 
     override fun normalize(payload: Map<String, Any?>): EmailTrackingEvent? {
         val eventTypeRaw = findValue(payload, "eventType", "event_type", "event") ?: return null
-        val eventType = EmailTrackingEventType.from(eventTypeRaw.toString()) ?: run {
-            log.debug { "Unrecognized email tracking event type: $eventTypeRaw" }
-            return null
-        }
+        val eventType =
+            EmailTrackingEventType.from(eventTypeRaw.toString()) ?: run {
+                log.debug { "Unrecognized email tracking event type: $eventTypeRaw" }
+                return null
+            }
 
-        val messageId = findValue(payload, "messageId", "message_id")?.toString() ?: run {
-            log.warn { "Missing messageId in webhook payload" }
-            return null
-        }
+        val messageId =
+            findValue(payload, "messageId", "message_id")?.toString() ?: run {
+                log.warn { "Missing messageId in webhook payload" }
+                return null
+            }
 
-        val destination = findValue(payload, "destination", "email", "recipient", "to")?.toString() ?: run {
-            log.warn { "Missing destination in webhook payload" }
-            return null
-        }
+        val destination =
+            findValue(payload, "destination", "email", "recipient", "to")?.toString() ?: run {
+                log.warn { "Missing destination in webhook payload" }
+                return null
+            }
 
         val timestampRaw = findValue(payload, "timestamp", "occurredAt", "occurred_at")?.toString()
         val occurredAt = timestampRaw?.let { parseTimestamp(it) } ?: LocalDateTime.now()

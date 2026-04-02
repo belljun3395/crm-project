@@ -43,7 +43,8 @@ class WebhookEmailEventController(
             return
         }
 
-        emailTrackingKafkaTemplate.send(topic, event.messageId, event)
+        emailTrackingKafkaTemplate
+            .send(topic, event.messageId, event)
             .whenComplete { _, ex ->
                 if (ex != null) {
                     log.error(ex) { "Failed to publish email tracking event to Kafka: messageId=${event.messageId}" }
