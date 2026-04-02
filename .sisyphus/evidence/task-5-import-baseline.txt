@@ -1,6 +1,0 @@
-backend/src/main/kotlin/com/manage/crm/segment/application/PostSegmentUseCase.kt:import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
-backend/src/main/kotlin/com/manage/crm/user/application/EnrollUserUseCase.kt:import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
-backend/src/main/kotlin/com/manage/crm/infrastructure/kafka/KafkaConfig.kt:import com.manage.crm.journey.queue.JourneyTriggerQueueMessage
-backend/src/main/kotlin/com/manage/crm/event/application/PostEventUseCase.kt:import com.manage.crm.journey.queue.JourneyEventPayload
-backend/src/main/kotlin/com/manage/crm/event/application/PostEventUseCase.kt:import com.manage.crm.journey.queue.JourneyEventPropertyPayload
-backend/src/main/kotlin/com/manage/crm/event/application/PostEventUseCase.kt:import com.manage.crm.journey.queue.JourneyTriggerQueuePublisher
