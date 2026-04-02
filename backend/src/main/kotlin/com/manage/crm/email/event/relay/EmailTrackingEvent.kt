@@ -31,13 +31,13 @@ enum class EmailTrackingEventType {
                     ?.replace(" ", "")
                     ?.uppercase()
             return when (normalized) {
-                "SEND" -> SEND
-                "DELIVERY" -> DELIVERY
-                "OPEN" -> OPEN
-                "CLICK" -> CLICK
-                "BOUNCE" -> BOUNCE
-                "COMPLAINT" -> COMPLAINT
-                "DELIVERYDELAY" -> DELIVERY_DELAY
+                "SEND", "SENT" -> SEND
+                "DELIVERY", "DELIVERED" -> DELIVERY
+                "OPEN", "OPENED" -> OPEN
+                "CLICK", "CLICKED" -> CLICK
+                "BOUNCE", "BOUNCED", "HARDBOUNCE", "SOFTBOUNCE" -> BOUNCE
+                "COMPLAINT", "COMPLAINED", "SPAMCOMPLAINT", "SPAM" -> COMPLAINT
+                "DELIVERYDELAY", "DELAYED" -> DELIVERY_DELAY
                 else -> null
             }
         }

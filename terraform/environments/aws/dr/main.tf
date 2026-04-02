@@ -18,7 +18,7 @@ locals {
 
   app_env_secret_values = {
     for key, value in var.app_env :
-    key => tostring(value)
+    key => tostring(value) if value != null
   }
 
   merged_secret_values = merge(local.app_env_secret_values, var.additional_secret_values)

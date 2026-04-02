@@ -57,7 +57,10 @@ class GenericWebhookPayloadNormalizer : WebhookPayloadNormalizer {
     private fun findValue(
         payload: Map<String, Any?>,
         vararg keys: String,
-    ): Any? = keys.firstNotNullOfOrNull { key -> payload[key] ?: payload[key.lowercase()] }
+    ): Any? =
+        payload.entries
+            .firstOrNull { (payloadKey, _) -> keys.any { it.equals(payloadKey, ignoreCase = true) } }
+            ?.value
 
     private fun parseTimestamp(value: String): LocalDateTime? =
         try {
