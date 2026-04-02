@@ -1283,6 +1283,42 @@
         }
       }
     },
+    "/api/v1/email/tracking/webhook": {
+      "post": {
+        "tags": [
+          "webhook-email-event-controller"
+        ],
+        "operationId": "receiveWebhook",
+        "parameters": [
+          {
+            "name": "X-Webhook-Signature",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/campaigns": {
       "get": {
         "tags": [
