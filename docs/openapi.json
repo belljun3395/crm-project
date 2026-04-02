@@ -784,6 +784,18 @@
           "Journeys API"
         ],
         "operationId": "browseJourneys",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
         "responses": {
           "400": {
             "description": "Bad Request",
