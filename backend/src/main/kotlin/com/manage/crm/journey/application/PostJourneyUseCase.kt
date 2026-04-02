@@ -132,7 +132,14 @@ class PostJourneyUseCase(
                 }
             }
 
-            JourneyTriggerType.CONDITION -> Unit
+            JourneyTriggerType.CONDITION -> {
+                if (useCaseIn.triggerEventName.isNullOrBlank()) {
+                    throw InvalidJourneyException("triggerEventName is required for CONDITION trigger")
+                }
+                if (useCaseIn.steps.none { it.stepType == JourneyStepType.BRANCH }) {
+                    throw InvalidJourneyException("At least one BRANCH step is required for CONDITION trigger")
+                }
+            }
         }
 
         useCaseIn.steps.forEach { step ->
