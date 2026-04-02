@@ -101,9 +101,9 @@ class UpdateJourneyLifecycleStatusUseCaseTest :
                             ),
                         )
 
-                    result.lifecycleStatus shouldBe JourneyLifecycleStatus.PAUSED.name
-                    result.active shouldBe false
-                    result.version shouldBe 2
+                    result.journey.lifecycleStatus shouldBe JourneyLifecycleStatus.PAUSED.name
+                    result.journey.active shouldBe false
+                    result.journey.version shouldBe 2
                 }
             }
         }

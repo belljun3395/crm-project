@@ -18,6 +18,8 @@ import com.manage.crm.journey.application.dto.UpdateJourneyLifecycleStatusUseCas
 import com.manage.crm.journey.controller.mapper.toUseCaseIn
 import com.manage.crm.journey.controller.request.PostJourneyRequest
 import com.manage.crm.journey.controller.request.PutJourneyRequest
+import com.manage.crm.journey.exception.InvalidJourneyException
+import com.manage.crm.journey.exception.InvalidJourneyStepException
 import com.manage.crm.support.web.ApiResponse
 import com.manage.crm.support.web.ApiResponseGenerator
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -55,7 +57,7 @@ class JourneyController(
     ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> =
         postJourneyUseCase
             .execute(request.toUseCaseIn())
-            .let { ApiResponseGenerator.success(it, HttpStatus.CREATED) }
+            .let { ApiResponseGenerator.success(it.journey, HttpStatus.CREATED) }
 
     @PutMapping("/{journeyId}")
     suspend fun updateJourney(
@@ -66,7 +68,7 @@ class JourneyController(
     ): ApiResponse<ApiResponse.SuccessBody<JourneyDto>> =
         putJourneyUseCase
             .execute(request.toUseCaseIn(journeyId))
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+            .let { ApiResponseGenerator.success(it.journey, HttpStatus.OK) }
 
     @PostMapping("/{journeyId}/pause")
     suspend fun pauseJourney(
@@ -78,7 +80,7 @@ class JourneyController(
                     journeyId = journeyId,
                     action = JourneyLifecycleAction.PAUSE,
                 ),
-            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+            ).let { ApiResponseGenerator.success(it.journey, HttpStatus.OK) }
 
     @PostMapping("/{journeyId}/resume")
     suspend fun resumeJourney(
@@ -90,7 +92,7 @@ class JourneyController(
                     journeyId = journeyId,
                     action = JourneyLifecycleAction.RESUME,
                 ),
-            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+            ).let { ApiResponseGenerator.success(it.journey, HttpStatus.OK) }
 
     @PostMapping("/{journeyId}/archive")
     suspend fun archiveJourney(
@@ -102,13 +104,15 @@ class JourneyController(
                     journeyId = journeyId,
                     action = JourneyLifecycleAction.ARCHIVE,
                 ),
-            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+            ).let { ApiResponseGenerator.success(it.journey, HttpStatus.OK) }
 
     @GetMapping
-    suspend fun browseJourneys(): ApiResponse<ApiResponse.SuccessBody<List<JourneyDto>>> =
+    suspend fun browseJourneys(
+        @RequestParam(defaultValue = "50") limit: Int,
+    ): ApiResponse<ApiResponse.SuccessBody<List<JourneyDto>>> =
         browseJourneyUseCase
-            .execute(BrowseJourneyUseCaseIn())
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+            .execute(BrowseJourneyUseCaseIn(limit = limit))
+            .let { ApiResponseGenerator.success(it.journeys, HttpStatus.OK) }
 
     @GetMapping("/executions")
     suspend fun browseExecutions(
@@ -123,7 +127,7 @@ class JourneyController(
                     eventId = eventId,
                     userId = userId,
                 ),
-            ).let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+            ).let { ApiResponseGenerator.success(it.executions, HttpStatus.OK) }
 
     @GetMapping("/executions/{executionId}/histories")
     suspend fun browseExecutionHistories(
@@ -131,7 +135,17 @@ class JourneyController(
     ): ApiResponse<ApiResponse.SuccessBody<List<JourneyExecutionHistoryDto>>> =
         browseJourneyExecutionHistoryUseCase
             .execute(BrowseJourneyExecutionHistoryUseCaseIn(executionId))
-            .let { ApiResponseGenerator.success(it, HttpStatus.OK) }
+            .let { ApiResponseGenerator.success(it.histories, HttpStatus.OK) }
+
+    @ExceptionHandler(InvalidJourneyException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleInvalidJourneyException(e: InvalidJourneyException): ApiResponse<ApiResponse.FailureBody> =
+        ApiResponseGenerator.fail(e.message ?: "invalid journey request", HttpStatus.BAD_REQUEST)
+
+    @ExceptionHandler(InvalidJourneyStepException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleInvalidJourneyStepException(e: InvalidJourneyStepException): ApiResponse<ApiResponse.FailureBody> =
+        ApiResponseGenerator.fail(e.message ?: "invalid journey step", HttpStatus.BAD_REQUEST)
 
     @ExceptionHandler(IllegalArgumentException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)

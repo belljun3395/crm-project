@@ -70,9 +70,9 @@ class PostJourneyUseCaseTest :
                             ),
                         )
 
-                    result.active shouldBe false
-                    result.lifecycleStatus shouldBe JourneyLifecycleStatus.DRAFT.name
-                    result.version shouldBe 1
+                    result.journey.active shouldBe false
+                    result.journey.lifecycleStatus shouldBe JourneyLifecycleStatus.DRAFT.name
+                    result.journey.version shouldBe 1
                 }
             }
         }

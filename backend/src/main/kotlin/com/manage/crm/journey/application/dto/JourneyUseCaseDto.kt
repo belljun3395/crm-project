@@ -2,8 +2,33 @@ package com.manage.crm.journey.application.dto
 
 import com.manage.crm.event.domain.Event
 
+data class PostJourneyStepIn(
+    val stepOrder: Int,
+    val stepType: JourneyStepType,
+    val channel: String?,
+    val destination: String?,
+    val subject: String?,
+    val body: String?,
+    val variables: Map<String, String>,
+    val delayMillis: Long?,
+    val conditionExpression: String?,
+    val retryCount: Int,
+)
+
+data class PostJourneyUseCaseIn(
+    val name: String,
+    val triggerType: JourneyTriggerType,
+    val triggerEventName: String?,
+    val triggerSegmentId: Long?,
+    val triggerSegmentEvent: JourneySegmentTriggerEventType?,
+    val triggerSegmentWatchFields: List<String>,
+    val triggerSegmentCountThreshold: Long?,
+    val active: Boolean,
+    val steps: List<PostJourneyStepIn>,
+)
+
 data class BrowseJourneyUseCaseIn(
-    val dummy: Unit = Unit,
+    val limit: Int = 50,
 )
 
 data class BrowseJourneyExecutionUseCaseIn(
@@ -32,14 +57,14 @@ enum class JourneyLifecycleAction {
     ARCHIVE,
 }
 
-@Deprecated("Use BrowseJourneyUseCaseIn")
-typealias BrowseJourneyIn = BrowseJourneyUseCaseIn
+data class PostJourneyUseCaseOut(val journey: JourneyDto)
 
-@Deprecated("Use BrowseJourneyExecutionUseCaseIn")
-typealias BrowseJourneyExecutionIn = BrowseJourneyExecutionUseCaseIn
+data class PutJourneyUseCaseOut(val journey: JourneyDto)
 
-@Deprecated("Use BrowseJourneyExecutionHistoryUseCaseIn")
-typealias BrowseJourneyExecutionHistoryIn = BrowseJourneyExecutionHistoryUseCaseIn
+data class BrowseJourneyUseCaseOut(val journeys: List<JourneyDto>)
 
-@Deprecated("Use UpdateJourneyLifecycleStatusUseCaseIn")
-typealias UpdateJourneyLifecycleIn = UpdateJourneyLifecycleStatusUseCaseIn
+data class BrowseJourneyExecutionUseCaseOut(val executions: List<JourneyExecutionDto>)
+
+data class BrowseJourneyExecutionHistoryUseCaseOut(val histories: List<JourneyExecutionHistoryDto>)
+
+data class UpdateJourneyLifecycleStatusUseCaseOut(val journey: JourneyDto)

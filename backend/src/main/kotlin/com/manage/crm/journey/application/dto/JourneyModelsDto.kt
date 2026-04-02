@@ -1,5 +1,7 @@
 package com.manage.crm.journey.application.dto
 
+import com.manage.crm.journey.exception.InvalidJourneyException
+
 enum class JourneyTriggerType {
     EVENT,
     SEGMENT,
@@ -9,7 +11,7 @@ enum class JourneyTriggerType {
     companion object {
         fun from(value: String): JourneyTriggerType =
             entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
-                ?: throw IllegalArgumentException("Unsupported triggerType: $value")
+                ?: throw InvalidJourneyException("Unsupported triggerType: $value")
     }
 }
 
@@ -24,7 +26,7 @@ enum class JourneySegmentTriggerEventType {
     companion object {
         fun from(value: String): JourneySegmentTriggerEventType =
             entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
-                ?: throw IllegalArgumentException("Unsupported segment trigger event type: $value")
+                ?: throw InvalidJourneyException("Unsupported segment trigger event type: $value")
     }
 }
 
@@ -37,7 +39,7 @@ enum class JourneyStepType {
     companion object {
         fun from(value: String): JourneyStepType =
             entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
-                ?: throw IllegalArgumentException("Unsupported stepType: $value")
+                ?: throw InvalidJourneyException("Unsupported stepType: $value")
     }
 }
 
@@ -45,6 +47,13 @@ enum class JourneyExecutionStatus {
     RUNNING,
     SUCCESS,
     FAILED,
+    ;
+
+    companion object {
+        fun from(value: String): JourneyExecutionStatus =
+            entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+                ?: throw InvalidJourneyException("Unsupported execution status: $value")
+    }
 }
 
 enum class JourneyExecutionHistoryStatus {
@@ -54,6 +63,13 @@ enum class JourneyExecutionHistoryStatus {
     RETRYING,
     SKIPPED,
     SKIPPED_DUPLICATE,
+    ;
+
+    companion object {
+        fun from(value: String): JourneyExecutionHistoryStatus =
+            entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
+                ?: throw InvalidJourneyException("Unsupported execution history status: $value")
+    }
 }
 
 enum class JourneyLifecycleStatus {
@@ -66,37 +82,9 @@ enum class JourneyLifecycleStatus {
     companion object {
         fun from(value: String): JourneyLifecycleStatus =
             entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
-                ?: throw IllegalArgumentException("Unsupported lifecycle status: $value")
+                ?: throw InvalidJourneyException("Unsupported lifecycle status: $value")
     }
 }
-
-data class PostJourneyStepIn(
-    val stepOrder: Int,
-    val stepType: JourneyStepType,
-    val channel: String?,
-    val destination: String?,
-    val subject: String?,
-    val body: String?,
-    val variables: Map<String, String>,
-    val delayMillis: Long?,
-    val conditionExpression: String?,
-    val retryCount: Int,
-)
-
-data class PostJourneyUseCaseIn(
-    val name: String,
-    val triggerType: JourneyTriggerType,
-    val triggerEventName: String?,
-    val triggerSegmentId: Long?,
-    val triggerSegmentEvent: JourneySegmentTriggerEventType?,
-    val triggerSegmentWatchFields: List<String>,
-    val triggerSegmentCountThreshold: Long?,
-    val active: Boolean,
-    val steps: List<PostJourneyStepIn>,
-)
-
-@Deprecated("Use PostJourneyUseCaseIn")
-typealias PostJourneyIn = PostJourneyUseCaseIn
 
 data class JourneyStepDto(
     val id: Long,
@@ -110,7 +98,7 @@ data class JourneyStepDto(
     val delayMillis: Long?,
     val conditionExpression: String?,
     val retryCount: Int,
-    val createdAt: String,
+    val createdAt: String?,
 )
 
 data class JourneyDto(
@@ -126,7 +114,7 @@ data class JourneyDto(
     val lifecycleStatus: String,
     val version: Int,
     val steps: List<JourneyStepDto>,
-    val createdAt: String,
+    val createdAt: String?,
 )
 
 data class JourneyExecutionDto(
@@ -152,5 +140,5 @@ data class JourneyExecutionHistoryDto(
     val attempt: Int,
     val message: String?,
     val idempotencyKey: String?,
-    val createdAt: String,
+    val createdAt: String?,
 )

@@ -5,8 +5,10 @@ import com.manage.crm.journey.application.dto.JourneyDto
 import com.manage.crm.journey.application.dto.JourneyLifecycleAction
 import com.manage.crm.journey.application.dto.JourneyLifecycleStatus
 import com.manage.crm.journey.application.dto.UpdateJourneyLifecycleStatusUseCaseIn
+import com.manage.crm.journey.application.dto.UpdateJourneyLifecycleStatusUseCaseOut
 import com.manage.crm.journey.domain.repository.JourneyRepository
 import com.manage.crm.journey.domain.repository.JourneyStepRepository
+import com.manage.crm.journey.exception.InvalidJourneyException
 import com.manage.crm.support.exception.NotFoundByIdException
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Component
@@ -26,7 +28,7 @@ class UpdateJourneyLifecycleStatusUseCase(
     private val objectMapper: ObjectMapper,
 ) {
     @Transactional
-    suspend fun execute(useCaseIn: UpdateJourneyLifecycleStatusUseCaseIn): JourneyDto {
+    suspend fun execute(useCaseIn: UpdateJourneyLifecycleStatusUseCaseIn): UpdateJourneyLifecycleStatusUseCaseOut {
         val targetStatus =
             when (useCaseIn.action) {
                 JourneyLifecycleAction.PAUSE -> JourneyLifecycleStatus.PAUSED
@@ -34,7 +36,7 @@ class UpdateJourneyLifecycleStatusUseCase(
                 JourneyLifecycleAction.ARCHIVE -> JourneyLifecycleStatus.ARCHIVED
             }
 
-        return changeStatus(useCaseIn.journeyId, targetStatus)
+        return UpdateJourneyLifecycleStatusUseCaseOut(changeStatus(useCaseIn.journeyId, targetStatus))
     }
 
     private suspend fun changeStatus(
@@ -47,7 +49,7 @@ class UpdateJourneyLifecycleStatusUseCase(
 
         val currentStatus = JourneyLifecycleStatus.from(journey.lifecycleStatus)
         if (currentStatus == JourneyLifecycleStatus.ARCHIVED && status != JourneyLifecycleStatus.ARCHIVED) {
-            throw IllegalArgumentException("Archived journey cannot be resumed or paused")
+            throw InvalidJourneyException("Archived journey cannot be resumed or paused")
         }
         if (currentStatus == status) {
             val steps = journeyStepRepository.findAllByJourneyIdOrderByStepOrderAsc(journeyId).toList()

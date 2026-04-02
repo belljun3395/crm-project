@@ -25,6 +25,3 @@ data class PutJourneyUseCaseIn(
     val active: Boolean,
     val steps: List<PutJourneyStepIn>,
 )
-
-@Deprecated("Use PutJourneyUseCaseIn")
-typealias PutJourneyIn = PutJourneyUseCaseIn

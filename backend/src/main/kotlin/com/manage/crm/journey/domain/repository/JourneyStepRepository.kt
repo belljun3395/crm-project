@@ -6,4 +6,6 @@ import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 
 interface JourneyStepRepository : CoroutineCrudRepository<JourneyStep, Long> {
     fun findAllByJourneyIdOrderByStepOrderAsc(journeyId: Long): Flow<JourneyStep>
+
+    fun findAllByJourneyIdInOrderByJourneyIdAscStepOrderAsc(journeyIds: Collection<Long>): Flow<JourneyStep>
 }

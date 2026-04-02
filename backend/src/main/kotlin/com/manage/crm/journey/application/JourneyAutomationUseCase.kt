@@ -17,6 +17,7 @@ import com.manage.crm.journey.application.dto.JourneyExecutionHistoryStatus
 import com.manage.crm.journey.application.dto.JourneyExecutionStatus
 import com.manage.crm.journey.application.dto.JourneyStepType
 import com.manage.crm.journey.application.dto.JourneyTriggerType
+import com.manage.crm.journey.exception.InvalidJourneyStepException
 import com.manage.crm.journey.domain.Journey
 import com.manage.crm.journey.domain.JourneyExecution
 import com.manage.crm.journey.domain.JourneyExecutionHistory
@@ -129,23 +130,26 @@ class JourneyAutomationUseCase(
         val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }
         val eventId = requireNotNull(event.id) { "Event id cannot be null" }
 
-        if (journeyExecutionRepository.findByTriggerKey(triggerKey) != null) {
-            log.debug { "Skip duplicated journey execution by triggerKey=$triggerKey" }
-            return
-        }
-
         val execution =
-            journeyExecutionRepository.save(
-                JourneyExecution.new(
-                    journeyId = journeyId,
-                    eventId = eventId,
-                    userId = event.userId,
-                    status = JourneyExecutionStatus.RUNNING.name,
-                    currentStepOrder = 0,
-                    triggerKey = triggerKey,
-                    startedAt = LocalDateTime.now(),
-                ),
-            )
+            runCatching {
+                journeyExecutionRepository.save(
+                    JourneyExecution.new(
+                        journeyId = journeyId,
+                        eventId = eventId,
+                        userId = event.userId,
+                        status = JourneyExecutionStatus.RUNNING.name,
+                        currentStepOrder = 0,
+                        triggerKey = triggerKey,
+                        startedAt = LocalDateTime.now(),
+                    ),
+                )
+            }.getOrElse { error ->
+                if (error is DataIntegrityViolationException) {
+                    log.debug { "Skip duplicated journey execution by triggerKey=$triggerKey" }
+                    return
+                }
+                throw error
+            }
 
         runCatching {
             executeJourneySteps(execution, event)
@@ -289,13 +293,13 @@ class JourneyAutomationUseCase(
 
         val channel =
             step.channel?.let { ActionChannel.from(it) }
-                ?: throw IllegalArgumentException("channel is required for ACTION step")
+                ?: throw InvalidJourneyStepException("channel is required for ACTION step")
         val destination =
             step.destination
-                ?: throw IllegalArgumentException("destination is required for ACTION step")
+                ?: throw InvalidJourneyStepException("destination is required for ACTION step")
         val body =
             step.body
-                ?: throw IllegalArgumentException("body is required for ACTION step")
+                ?: throw InvalidJourneyStepException("body is required for ACTION step")
 
         val retryCount = step.retryCount.coerceAtLeast(0)
         val variables = resolveStepVariables(step.variablesJson, event)

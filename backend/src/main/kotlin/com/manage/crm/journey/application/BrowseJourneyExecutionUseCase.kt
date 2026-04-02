@@ -1,7 +1,9 @@
 package com.manage.crm.journey.application
 
 import com.manage.crm.journey.application.dto.BrowseJourneyExecutionUseCaseIn
+import com.manage.crm.journey.application.dto.BrowseJourneyExecutionUseCaseOut
 import com.manage.crm.journey.application.dto.JourneyExecutionDto
+import com.manage.crm.journey.exception.InvalidJourneyException
 import com.manage.crm.journey.domain.repository.JourneyExecutionRepository
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Component
@@ -22,7 +24,7 @@ class BrowseJourneyExecutionUseCase(
         private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     }
 
-    suspend fun execute(useCaseIn: BrowseJourneyExecutionUseCaseIn): List<JourneyExecutionDto> {
+    suspend fun execute(useCaseIn: BrowseJourneyExecutionUseCaseIn): BrowseJourneyExecutionUseCaseOut {
         val executions =
             when {
                 useCaseIn.journeyId != null -> journeyExecutionRepository.findAllByJourneyIdOrderByCreatedAtDesc(useCaseIn.journeyId)
@@ -31,27 +33,29 @@ class BrowseJourneyExecutionUseCase(
                 }
 
                 useCaseIn.eventId != null || useCaseIn.userId != null -> {
-                    throw IllegalArgumentException("eventId and userId must be provided together")
+                    throw InvalidJourneyException("eventId and userId must be provided together")
                 }
 
                 else -> journeyExecutionRepository.findAllByOrderByCreatedAtDesc()
             }
 
-        return executions.toList().map { execution ->
-            JourneyExecutionDto(
-                id = requireNotNull(execution.id) { "JourneyExecution id cannot be null" },
-                journeyId = execution.journeyId,
-                eventId = execution.eventId,
-                userId = execution.userId,
-                status = execution.status,
-                currentStepOrder = execution.currentStepOrder,
-                lastError = execution.lastError,
-                triggerKey = execution.triggerKey,
-                startedAt = execution.startedAt.format(formatter),
-                completedAt = execution.completedAt?.format(formatter),
-                createdAt = execution.createdAt?.format(formatter) ?: "",
-                updatedAt = execution.updatedAt?.format(formatter),
-            )
-        }
+        return BrowseJourneyExecutionUseCaseOut(
+            executions.toList().map { execution ->
+                JourneyExecutionDto(
+                    id = requireNotNull(execution.id) { "JourneyExecution id cannot be null" },
+                    journeyId = execution.journeyId,
+                    eventId = execution.eventId,
+                    userId = execution.userId,
+                    status = execution.status,
+                    currentStepOrder = execution.currentStepOrder,
+                    lastError = execution.lastError,
+                    triggerKey = execution.triggerKey,
+                    startedAt = execution.startedAt.format(formatter),
+                    completedAt = execution.completedAt?.format(formatter),
+                    createdAt = execution.createdAt?.format(formatter) ?: "",
+                    updatedAt = execution.updatedAt?.format(formatter),
+                )
+            },
+        )
     }
 }

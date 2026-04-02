@@ -42,10 +42,10 @@ fun assembleJourneyDto(
                     delayMillis = step.delayMillis,
                     conditionExpression = step.conditionExpression,
                     retryCount = step.retryCount,
-                    createdAt = step.createdAt?.format(formatter) ?: "",
+                    createdAt = step.createdAt?.format(formatter),
                 )
             },
-        createdAt = journey.createdAt?.format(formatter) ?: "",
+        createdAt = journey.createdAt?.format(formatter),
     )
 }
 
