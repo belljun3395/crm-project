@@ -28,7 +28,7 @@ class ConditionTriggerHandler(
             return
         }
 
-        val eventId = requireNotNull(event.id) { "Event id cannot be null" }
+        val eventId = event.id
         conditionJourneys.forEach { journey ->
             runCatching {
                 val journeyId = requireNotNull(journey.id) { "Journey id cannot be null" }

@@ -26,6 +26,7 @@ data class ModuleRuleSpec(
     val crossModuleReadMethodPrefixes: List<String> = DEFAULT_CROSS_MODULE_READ_METHOD_PREFIXES,
     val enforceInternalLayerNoCrossModuleDependency: Boolean = false,
     val internalLayerAllowedExternalModules: Set<String> = DEFAULT_INTERNAL_LAYER_ALLOWED_EXTERNAL_MODULES,
+    val adapterLayerAllowedExternalModules: Set<String> = emptySet(),
     val enforceUtilPureFunctions: Boolean = false,
     val utilForbiddenImportPrefixes: List<String> = DEFAULT_UTIL_FORBIDDEN_IMPORT_PREFIXES,
 ) {

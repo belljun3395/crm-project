@@ -194,24 +194,28 @@ abstract class BaseModuleArchitectureTest {
             return
         }
 
-        val internalLayerClasses =
+        val allClasses =
             Konsist
                 .scopeFromProduction()
                 .classes()
-                .filter { declaration ->
-                    declaration.resideInPackage(spec.servicePackagePattern) ||
-                        declaration.resideInPackage(spec.adapterPackagePattern)
-                }
 
         val violations =
-            internalLayerClasses.flatMap { owner ->
+            allClasses.flatMap { owner ->
+                val allowedModules =
+                    when {
+                        owner.resideInPackage(spec.adapterPackagePattern) ->
+                            spec.internalLayerAllowedExternalModules + spec.adapterLayerAllowedExternalModules
+                        owner.resideInPackage(spec.servicePackagePattern) ->
+                            spec.internalLayerAllowedExternalModules
+                        else -> return@flatMap emptyList()
+                    }
                 constructorDependencyTypes(owner).mapNotNull { dependencyType ->
                     val dependency =
                         dependencyType.sourceDeclaration?.asClassOrInterfaceOrObjectDeclaration()
                             ?: return@mapNotNull null
                     val dependencyPackageName = dependency.packagee?.name ?: return@mapNotNull null
                     val dependencyModule = dependencyPackageName.crmModuleToken() ?: return@mapNotNull null
-                    if (dependencyModule == spec.packageToken || dependencyModule in spec.internalLayerAllowedExternalModules) {
+                    if (dependencyModule == spec.packageToken || dependencyModule in allowedModules) {
                         return@mapNotNull null
                     }
                     "${owner.name} -> $dependencyPackageName.${dependency.name}"

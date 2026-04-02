@@ -98,6 +98,11 @@
     background: var(--bg-tertiary);
   }
 
+  .theme-toggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
   /* Typography */
   h1 {
     font-size: 2rem;
@@ -497,7 +502,7 @@
   function setTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('modularity-review-theme', theme);
-    document.getElementById('theme-icon').textContent = theme === 'light' ? '☾' : '☀';
+    document.getElementById('theme-icon').textContent = theme === 'light' ? '☀' : '☾';
   }
 
   function toggleTheme() {
