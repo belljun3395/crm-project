@@ -7,11 +7,10 @@ import com.manage.crm.email.application.dto.SendEmailOutDto
 import com.manage.crm.email.application.service.MailService
 import com.manage.crm.email.domain.vo.EmailProviderType
 import com.manage.crm.email.domain.vo.SentEmailStatus
-import com.manage.crm.email.event.relay.aws.SesEmailEventFactory
-import com.manage.crm.email.event.relay.aws.SesMessageReverseRelay
-import com.manage.crm.email.event.relay.aws.mapper.SesMessageMapper
+import com.manage.crm.email.event.relay.EmailTrackingEvent
+import com.manage.crm.email.event.relay.EmailTrackingEventMapper
+import com.manage.crm.email.event.relay.EmailTrackingEventType
 import com.manage.crm.email.support.EmailEventPublisher
-import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
@@ -19,42 +18,14 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Qualifier
-import java.time.ZonedDateTime
-
-fun getMessage(
-    status: SentEmailStatus,
-    email: String,
-    timeStamp: ZonedDateTime,
-    messageId: String,
-): String =
-    """
-    {
-        "Type" : "Notification",
-        "MessageId" : "$messageId",
-        "TopicArn" : "arn:aws:sns:us-west-2:123456789012:MyTopic",
-        "Subject" : "test",
-        "Message" : "{ \"eventType\": \"${status.name}\", \"mail\": { \"messageId\": \"$messageId\", \"destination\": [\"$email\"], \"timestamp\": \"$timeStamp\" } }",
-        "Timestamp" : "$timeStamp",
-        "SignatureVersion" : "1",
-        "Signature" : "EXAMPLE",
-        "SigningCertURL" : "EXAMPLE",
-        "UnsubscribeURL" : "EXAMPLE"
-    }
-    """.trimIndent()
+import java.time.LocalDateTime
 
 class EmailSendEventListenerTest(
     @Qualifier("mailServicePostEventProcessor")
     val mailService: MailService,
-    eventMessageMapper: SesMessageMapper,
 ) : MailEventInvokeSituationTest() {
-    private val sesMessageReverseRelayEmailEventPublisher = mock(EmailEventPublisher::class.java)
-    private val sesEmailEventFactory = SesEmailEventFactory()
-    private var sesMessageReverseRelay: SesMessageReverseRelay =
-        SesMessageReverseRelay(
-            sesMessageReverseRelayEmailEventPublisher,
-            eventMessageMapper,
-            sesEmailEventFactory,
-        )
+    private val mapper = EmailTrackingEventMapper()
+    private val mockPublisher = mock(EmailEventPublisher::class.java)
 
     init {
         given("mail service") {
@@ -77,7 +48,7 @@ class EmailSendEventListenerTest(
                         emailBody = "body",
                         messageId = "messageId",
                         destination = "example@example.com",
-                        provider = EmailProviderType.AWS,
+                        provider = EmailProviderType.SMTP,
                     ),
                 )
 
@@ -87,7 +58,7 @@ class EmailSendEventListenerTest(
                         emailBody = "body",
                         messageId = "messageId",
                         destination = "example@example.com",
-                        provider = EmailProviderType.AWS,
+                        provider = EmailProviderType.SMTP,
                     )
                 doNothing().`when`(emailEventPublisher).publishEvent(event)
 
@@ -97,97 +68,90 @@ class EmailSendEventListenerTest(
             }
         }
 
-        given("ses message reverse relay") {
-            then("receive open message from ses") {
-                val zoneTime = ZonedDateTime.now()
-                val timeStamp = zoneTime.toLocalDateTime()
-                val email = "example@example.com"
-                val messageId = "messageId"
-                val message = getMessage(SentEmailStatus.OPEN, email, zoneTime, messageId)
-                val acknowledgement = mock(Acknowledgement::class.java)
-                doNothing().`when`(acknowledgement).acknowledge()
+        given("email tracking event mapper") {
+            val messageId = "messageId"
+            val email = "example@example.com"
+            val timestamp = LocalDateTime.now()
 
-                val event =
-                    EmailOpenEvent(
+            then("map open tracking event to domain event") {
+                val trackingEvent =
+                    EmailTrackingEvent(
+                        eventType = EmailTrackingEventType.OPEN,
                         messageId = messageId,
                         destination = email,
-                        timestamp = timeStamp,
-                        provider = EmailProviderType.AWS,
+                        occurredAt = timestamp,
+                        provider = EmailProviderType.WEBHOOK,
                     )
-                doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
+                val domainEvent = mapper.toDomainEvent(trackingEvent)
 
-                sesMessageReverseRelay.onMessage(message, acknowledgement)
+                doNothing().`when`(mockPublisher).publishEvent(domainEvent!!)
+                mockPublisher.publishEvent(domainEvent!!)
 
-                verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailOpenEvent>())
+                verify(mockPublisher, times(1)).publishEvent(any<EmailOpenEvent>())
             }
 
-            then("receive delivery message from ses") {
-                val zoneTime = ZonedDateTime.now()
-                val timeStamp = zoneTime.toLocalDateTime()
-                val email = "example@example.com"
-                val messageId = "messageId"
-                val message = getMessage(SentEmailStatus.DELIVERY, email, zoneTime, messageId)
-                val acknowledgement = mock(Acknowledgement::class.java)
-                doNothing().`when`(acknowledgement).acknowledge()
-
-                val event =
-                    EmailDeliveryEvent(
+            then("map delivery tracking event to domain event") {
+                val trackingEvent =
+                    EmailTrackingEvent(
+                        eventType = EmailTrackingEventType.DELIVERY,
                         messageId = messageId,
                         destination = email,
-                        timestamp = timeStamp,
-                        provider = EmailProviderType.AWS,
+                        occurredAt = timestamp,
+                        provider = EmailProviderType.WEBHOOK,
                     )
-                doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
+                val domainEvent = mapper.toDomainEvent(trackingEvent)
 
-                sesMessageReverseRelay.onMessage(message, acknowledgement)
+                doNothing().`when`(mockPublisher).publishEvent(domainEvent!!)
+                mockPublisher.publishEvent(domainEvent!!)
 
-                verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailDeliveryEvent>())
+                verify(mockPublisher, times(1)).publishEvent(any<EmailDeliveryEvent>())
             }
 
-            then("receive delivery delay message from ses") {
-                val zoneTime = ZonedDateTime.now()
-                val timeStamp = zoneTime.toLocalDateTime()
-                val email = "example@example.com"
-                val messageId = "messageId"
-                val message = getMessage(SentEmailStatus.DELIVERYDELAY, email, zoneTime, messageId)
-                val acknowledgement = mock(Acknowledgement::class.java)
-                doNothing().`when`(acknowledgement).acknowledge()
-
-                val event =
-                    EmailDeliveryDelayEvent(
+            then("map delivery delay tracking event to domain event") {
+                val trackingEvent =
+                    EmailTrackingEvent(
+                        eventType = EmailTrackingEventType.DELIVERY_DELAY,
                         messageId = messageId,
                         destination = email,
-                        timestamp = timeStamp,
-                        provider = EmailProviderType.AWS,
+                        occurredAt = timestamp,
+                        provider = EmailProviderType.WEBHOOK,
                     )
-                doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
+                val domainEvent = mapper.toDomainEvent(trackingEvent)
 
-                sesMessageReverseRelay.onMessage(message, acknowledgement)
+                doNothing().`when`(mockPublisher).publishEvent(domainEvent!!)
+                mockPublisher.publishEvent(domainEvent!!)
 
-                verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailDeliveryDelayEvent>())
+                verify(mockPublisher, times(1)).publishEvent(any<EmailDeliveryDelayEvent>())
             }
 
-            then("receive click message from ses") {
-                val zoneTime = ZonedDateTime.now()
-                val timeStamp = zoneTime.toLocalDateTime()
-                val email = "example@example.com"
-                val messageId = "messageId"
-                val message = getMessage(SentEmailStatus.CLICK, email, zoneTime, messageId)
-                val acknowledgement = mock(Acknowledgement::class.java)
-                doNothing().`when`(acknowledgement).acknowledge()
-
-                val event =
-                    EmailClickEvent(
+            then("map click tracking event to domain event") {
+                val trackingEvent =
+                    EmailTrackingEvent(
+                        eventType = EmailTrackingEventType.CLICK,
                         messageId = messageId,
                         destination = email,
-                        timestamp = timeStamp,
-                        provider = EmailProviderType.AWS,
+                        occurredAt = timestamp,
+                        provider = EmailProviderType.WEBHOOK,
                     )
-                doNothing().`when`(sesMessageReverseRelayEmailEventPublisher).publishEvent(event)
+                val domainEvent = mapper.toDomainEvent(trackingEvent)
 
-                sesMessageReverseRelay.onMessage(message, acknowledgement)
+                doNothing().`when`(mockPublisher).publishEvent(domainEvent!!)
+                mockPublisher.publishEvent(domainEvent!!)
 
-                verify(sesMessageReverseRelayEmailEventPublisher, times(1)).publishEvent(any<EmailClickEvent>())
+                verify(mockPublisher, times(1)).publishEvent(any<EmailClickEvent>())
+            }
+
+            then("bounce event should return null") {
+                val trackingEvent =
+                    EmailTrackingEvent(
+                        eventType = EmailTrackingEventType.BOUNCE,
+                        messageId = messageId,
+                        destination = email,
+                        occurredAt = timestamp,
+                        provider = EmailProviderType.WEBHOOK,
+                    )
+                val domainEvent = mapper.toDomainEvent(trackingEvent)
+                assert(domainEvent == null)
             }
         }
     }

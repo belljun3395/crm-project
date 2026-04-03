@@ -1,16 +1,11 @@
 package com.manage.crm.infrastructure.mail.config
 
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.autoconfigure.mail.MailProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.JavaMailSenderImpl
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
-import software.amazon.awssdk.regions.Region
-import software.amazon.awssdk.services.ses.SesClient
-import java.net.URI
 import java.util.Properties
 
 @Configuration
@@ -18,7 +13,6 @@ class MailConfig {
     companion object {
         const val MAIL_PROPERTIES = "mailProperties"
         const val MAIL_SENDER = "javaMailSender"
-        const val SES_CLIENT = "sesClient"
 
         const val MAIL_SMTP_AUTH_KEY = "mail.smtp.auth"
         const val MAIL_SMTP_DEBUG_KEY = "mail.smtp.debug"
@@ -88,25 +82,5 @@ class MailConfig {
 
         javaMailSender.javaMailProperties = props
         return javaMailSender
-    }
-
-    @Value("\${spring.aws.region:#{null}}")
-    private val region: String? = null
-
-    @Value("\${spring.aws.endpoint-url:#{null}}")
-    private val endpointUrl: String? = null
-
-    @Bean(name = [SES_CLIENT])
-    @ConditionalOnProperty(name = ["mail.provider"], havingValue = "ses")
-    fun sesClient(awsCredentialsProvider: AwsCredentialsProvider): SesClient {
-        val builder =
-            SesClient
-                .builder()
-                .credentialsProvider(awsCredentialsProvider)
-
-        region?.let { builder.region(Region.of(it)) }
-        endpointUrl?.let { builder.endpointOverride(URI.create(it)) }
-
-        return builder.build()
     }
 }

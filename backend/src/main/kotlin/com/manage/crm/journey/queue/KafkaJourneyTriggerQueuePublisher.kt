@@ -7,7 +7,7 @@ import org.springframework.kafka.support.SendResult
 import org.springframework.stereotype.Component
 
 @Component
-@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka")
+@ConditionalOnProperty(name = ["scheduler.provider"], havingValue = "redis-kafka", matchIfMissing = true)
 class KafkaJourneyTriggerQueuePublisher(
     private val journeyTriggerKafkaTemplate: KafkaTemplate<String, JourneyTriggerQueueMessage>,
 ) : JourneyTriggerQueuePublisher {

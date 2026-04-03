@@ -40,21 +40,6 @@ spring:
                         enable: true
                     EnableSSL:
                         enable: true
-    aws:
-        region: ap-northeast-2
-        endpoint-url: http://localhost:4566  # LocalStack endpoint for local development
-        credentials:
-            access-key: test  # LocalStack test credentials
-            secret-key: test
-        mail:
-            configuration-set:
-                default: local-configuration-set
-        schedule:
-            role-arn: arn:aws:iam::000000000000:role/LocalEventBridgeSchedulerRole
-            sqs-arn: arn:aws:sqs:ap-northeast-2:000000000000:ses_sqs
-            group-name: local-schedule-group
-        sns:
-            cache-invalidation-topic-arn: arn:aws:sns:ap-northeast-2:000000000000:cache-invalidation-topic
     kafka:
         bootstrap-servers: localhost:9092
         consumer:

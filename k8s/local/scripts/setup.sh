@@ -88,10 +88,9 @@ else
 fi
 
 # ────────────────────────────────────────────────
-# 6. 나머지 서비스 매니페스트 적용 (LocalStack, 관리 UI)
+# 6. 나머지 서비스 매니페스트 적용 (관리 UI)
 # ────────────────────────────────────────────────
 echo "▶ Applying remaining service manifests..."
-kubectl apply -f "${PROJECT_ROOT}/k8s/local/localstack/"
 kubectl apply -f "${PROJECT_ROOT}/k8s/local/adminer/"
 kubectl apply -f "${PROJECT_ROOT}/k8s/local/kafka-ui/"
 kubectl apply -f "${PROJECT_ROOT}/k8s/local/redis-insight/"
@@ -112,7 +111,6 @@ echo "  Database : localhost:13306"
 echo "  Adminer  : http://localhost:18080"
 echo "  Redis    : crm-redis-headless (클러스터 내부)"
 echo "  RedisUI  : http://localhost:18081"
-echo "  LocalStack: http://localhost:4566"
 echo "  Kafka    : localhost:9092"
 echo "  Kafka UI : http://localhost:18082"
 echo "  Backend  : http://localhost:8080"

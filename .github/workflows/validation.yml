@@ -189,7 +189,6 @@ jobs:
           services: |
             crm-postgres
             crm-redis-cluster-create
-            crm-localstack
             crm-kafka
 
       - name: OpenAPI Drift Check

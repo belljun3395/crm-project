@@ -17,7 +17,6 @@ class ScheduledEventListenerTest(
         given("schedule task service") {
             then("cancel method is called") {
                 val scheduleName = ScheduleName(EventIdFixtures.giveMeOne().build().value)
-                doNothing().`when`(awsSchedulerService).deleteSchedule(scheduleName)
 
                 val event = CancelScheduledEvent(EventIdFixtures.giveMeOne().withValue(scheduleName.value).build())
                 doNothing().`when`(emailEventPublisher).publishEvent(event)

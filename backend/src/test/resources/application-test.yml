@@ -40,20 +40,6 @@ spring:
                         enable: true
                     EnableSSL:
                         enable: true
-
-    aws:
-        region: ap-northeast-2
-        endpoint-url: http://localhost:4566
-        credentials:
-            access-key: test
-            secret-key: test
-        mail:
-            configuration-set:
-                default: local-configuration-set
-        schedule:
-            role-arn: arn:aws:iam::000000000000:role/LocalEventBridgeSchedulerRole
-            sqs-arn: arn:aws:sqs:ap-northeast-2:000000000000:ses_sqs
-            group-name: local-schedule-group
     kafka:
         bootstrap-servers: localhost:9092
     flyway:
@@ -67,11 +53,17 @@ spring:
         username: postgres
         password: postgres
         driver-class-name: org.postgresql.Driver
+
 mail:
     provider: mock
 
 scheduler:
     provider: redis-kafka
+
+email:
+    tracking:
+        provider: kafka
+
 springdoc:
     swagger-ui:
         operations-sorter: alpha
@@ -94,6 +86,4 @@ logging:
         org.apache.kafka: WARN
         reactor.kafka: WARN
         io.lettuce.core: WARN
-        software.amazon.awssdk: INFO
         org.testcontainers: INFO
-

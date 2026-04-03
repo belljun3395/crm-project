@@ -150,12 +150,12 @@ variable "app_env" {
     MAIL_PASSWORD           = string
     AWS_ACCESS_KEY          = string
     AWS_SECRET_KEY          = string
-    AWS_CONFIGURATION_SET   = string
-    AWS_SCHEDULE_ROLE_ARN   = string
-    AWS_SCHEDULE_SQS_ARN    = string
-    AWS_SCHEDULE_GROUP_NAME = string
+    AWS_CONFIGURATION_SET   = optional(string, null)
+    AWS_SCHEDULE_ROLE_ARN   = optional(string, null)
+    AWS_SCHEDULE_SQS_ARN    = optional(string, null)
+    AWS_SCHEDULE_GROUP_NAME = optional(string, null)
     KAFKA_BOOTSTRAP_SERVERS = string
-    SCHEDULER_PROVIDER      = optional(string, "aws")
+    SCHEDULER_PROVIDER      = optional(string, "redis-kafka")
   })
 }
 
